@@ -1,4 +1,21 @@
-﻿<Router AppAssembly="@typeof(App).Assembly" NotFoundPage="typeof(Pages.NotFound)">
+﻿@inject NavigationManager NavigationManager
+
+<Router AppAssembly="@typeof(App).Assembly">
+    @code {
+        // 桌面壳（MainForm）通过虚拟主机导航到 https://app.obshelper.local/index.html。
+        // Blazor 路由按 URL 路径匹配 @page 路由，而 /index.html 不是一个有效路由，
+        // 会落入 <NotFound> 分支（首页显示“404 没有找到这个页面”）。
+        // 这里在组件初始化时检测该路径并重定向到根路径 “/”，让路由命中首页。
+        protected override void OnInitialized()
+        {
+            var uri = NavigationManager.Uri;
+            if (uri.EndsWith("index.html", StringComparison.OrdinalIgnoreCase))
+            {
+                NavigationManager.NavigateTo("/");
+            }
+        }
+    }
+
     <Found Context="routeData">
         <ErrorBoundary>
             <ChildContent>
@@ -8,11 +25,25 @@
             <ErrorContent Context="ex">
                 <div class="error-boundary">
                     <h2>😵 页面出现了一点问题</h2>
-                    <p>当前页面加载出错，但不会影响其他功能。您可以返回首页或刷新重试。</p>
+                    <p>当前页面加载出错（报错码 <b>@OBS_Helper.Client.Errors.ErrorCodes.Unknown</b>），但不会影响其他功能。您可以返回首页或刷新重试。</p>
                     <p class="error-detail">@ex.Message</p>
+                    <details class="error-stack">
+                        <summary>查看技术详情</summary>
+                        <pre>@ex.ToString()</pre>
+                    </details>
                     <a class="btn btn-accent" href="">返回首页</a>
                 </div>
             </ErrorContent>
         </ErrorBoundary>
     </Found>
+    <NotFound>
+        <LayoutView Layout="@typeof(MainLayout)">
+            <PageTitle>页面未找到</PageTitle>
+            <div class="empty-page">
+                <h1>404</h1>
+                <p>没有找到这个页面。</p>
+                <a class="btn btn-accent" href="">返回首页</a>
+            </div>
+        </LayoutView>
+    </NotFound>
 </Router>

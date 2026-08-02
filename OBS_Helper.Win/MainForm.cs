@@ -65,8 +65,8 @@ namespace OBS_Helper.Win
                 if (!Directory.Exists(appFolder))
                 {
                     MessageBox.Show(
-                        "未找到站点资源目录 wwwroot。\n请确认 OBS_Helper.exe 与 wwwroot 文件夹位于同一目录。",
-                        "资源缺失", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        Errors.AppError.Format(Errors.AppError.SiteResourceMissing, "wwwroot 目录不存在: " + appFolder),
+                        "资源缺失 " + Errors.AppError.SiteResourceMissing, MessageBoxButtons.OK, MessageBoxIcon.Error);
                     return;
                 }
 
@@ -83,16 +83,17 @@ namespace OBS_Helper.Win
                     }
                 };
 
-                _webView.CoreWebView2.Navigate("https://app.obshelper.local/index.html");
+                // 注意：必须导航到虚拟主机的“根路径”而非 /index.html。
+                // Blazor 路由按 URL 路径匹配 @page 路由，若路径为 /index.html 则会落入
+                // <NotFound> 分支导致首页显示“404 没有找到这个页面”。导航到根路径 / 时，
+                // WebView2 会将虚拟主机根目录的默认文档（index.html）作为 / 提供，路由即可命中首页。
+                _webView.CoreWebView2.Navigate("https://app.obshelper.local/");
             }
             catch (Exception ex)
             {
                 MessageBox.Show(
-                    "无法初始化内置浏览器（WebView2）。\n\n" +
-                    "请确认系统已安装 Microsoft Edge WebView2 Runtime，\n" +
-                    "或改用随附的安装包（已内置运行时）。\n\n" +
-                    "详细错误：" + ex.Message,
-                    "启动失败", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    Errors.AppError.Format(Errors.AppError.WebViewInitFailed, ex.Message),
+                    "启动失败 " + Errors.AppError.WebViewInitFailed, MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
 

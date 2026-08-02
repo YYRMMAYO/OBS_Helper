@@ -1,0 +1,52 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "OBS 排障助手",
+  "version": "1.0.0",
+  "identifier": "com.obshelper.desktop",
+  "build": {
+    "frontendDist": "../../OBS_Helper.Client/bin/Release/net10.0/publish/wwwroot",
+    "devUrl": "",
+    "beforeDevCommand": "",
+    "beforeBuildCommand": ""
+  },
+  "app": {
+    "windows": [
+      {
+        "label": "main",
+        "title": "OBS 排障助手",
+        "width": 1180,
+        "height": 800,
+        "minWidth": 860,
+        "minHeight": 600,
+        "resizable": true,
+        "fullscreen": false,
+        "center": true
+      }
+    ],
+    "security": {
+      "csp": null
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": ["dmg", "app"],
+    "category": "Utility",
+    "shortDescription": "OBS 直播排障助手",
+    "longDescription": "OBS 直播排障助手：覆盖黑屏、卡顿、音画不同步、推流失败、直播间搭建等高频问题的分步解决方案，附官方文档跳转。",
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ],
+    "macOS": {
+      "minimumSystemVersion": "10.15",
+      "infoPlist": {
+        "NSScreenCaptureUsageDescription": "OBS 排障助手会展示 macOS 屏幕录制权限的设置步骤（本应用本身不捕获屏幕）。",
+        "NSMicrophoneUsageDescription": "OBS 排障助手会展示 macOS 麦克风权限的设置步骤（本应用本身不录音）。"
+      }
+    },
+    "outDir": "../../PAKE/macos"
+  }
+}

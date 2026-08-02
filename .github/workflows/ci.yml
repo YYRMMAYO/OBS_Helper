@@ -1,0 +1,81 @@
+name: Build & Package (Windows + macOS)
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+  workflow_dispatch:
+
+concurrency:
+  group: build-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # ---------------- Windows：WebView2 桌面壳 + Inno Setup 安装包 ----------------
+  windows:
+    name: Windows 安装包 (-> PAKE/windows)
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET 10 SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Install Inno Setup 6
+        run: choco install innosetup -y
+        shell: bash
+
+      - name: Build & Package to PAKE/windows
+        run: pwsh ./build.ps1 -Configuration Release -Runtime win-x64
+
+      - name: Smoke test (headless Edge CDP)
+        run: |
+          python -m pip install --quiet websocket-client
+          python scripts/cdp_smoke.py --root "OBS_Helper.Win/bin/Release/net10.0-windows10.0.19041.0/win-x64/publish/wwwroot"
+        shell: bash
+
+      - name: Upload PAKE/windows
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: OBS_Helper_Windows
+          path: PAKE/windows/*
+          if-no-files-found: warn
+
+  # ---------------- macOS：Tauri v2 桌面壳 + dmg/app ----------------
+  macos:
+    name: macOS 应用 (Tauri -> PAKE/macos)
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET 10 SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Setup Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Install Tauri CLI
+        run: npm install -g @tauri-apps/cli@latest
+        shell: bash
+
+      - name: Build & Package to PAKE/macos
+        run: bash OBS_Helper.Mac/src-tauri/build-mac.sh
+
+      - name: Verify bundle
+        run: |
+          test -d PAKE/macos || { echo "PAKE/macos missing"; exit 1; }
+          ls -la PAKE/macos
+
+      - name: Upload PAKE/macos
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: OBS_Helper_macOS
+          path: PAKE/macos/*
+          if-no-files-found: warn

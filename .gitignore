@@ -361,3 +361,43 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
+
+# ===== OBS Helper 自定义忽略规则 =====
+# 构建产物（由 build.ps1 / dotnet publish 生成，不入库）
+OBS_Helper.Win/wwwroot/
+OBS_Helper.Win/clientdist/
+OBS_Helper.Win/dist_fixed/
+OBS_Helper.Win/pkg/
+OBS_Helper.Win/obj2/
+OBS_Helper.Win/bin/
+OBS_Helper.Win/obj/
+OBS_Helper.Client/bin/
+OBS_Helper.Client/obj/
+OBS_Helper.Client/objc/
+OBS_Helper.Client/wwwroot/_framework/
+
+# 克隆 / 临时 / 参考项目（仅构建期使用，不入库）
+OBS_Helper.Client2/
+OBS_Helper.Client3/
+_refapp/
+
+# 安装包 / 打包输出（统一输出到 PAKE，不入库）
+OBS_Helper.Win/installer/
+PAKE/
+
+# Tauri (macOS) 构建产物
+OBS_Helper.Mac/src-tauri/target/
+OBS_Helper.Mac/src-tauri/gen/
+# Tauri 生成图标（由 `tauri icon app-icon.png` 从源图生成，不入库；仅保留源图 app-icon.png 与脚本）
+OBS_Helper.Mac/src-tauri/icons/icon.icns
+OBS_Helper.Mac/src-tauri/icons/icon.ico
+OBS_Helper.Mac/src-tauri/icons/32x32.png
+OBS_Helper.Mac/src-tauri/icons/128x128.png
+OBS_Helper.Mac/src-tauri/icons/128x128@2x.png
+OBS_Helper.Mac/src-tauri/icons/original.png
+
+# 本地测试 / 脚本临时产物
+build/smoke_test_cache/
+
+# 助手工作区（本地工具与记忆，不入库）
+.workbuddy/

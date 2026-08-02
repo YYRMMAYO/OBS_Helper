@@ -7,19 +7,6 @@
     "frontendDist": "../../OBS_Helper.Client/bin/Release/net10.0/publish/wwwroot"
   },
   "app": {
-    "windows": [
-      {
-        "label": "main",
-        "title": "OBS 排障助手",
-        "width": 1180,
-        "height": 800,
-        "minWidth": 860,
-        "minHeight": 600,
-        "resizable": true,
-        "fullscreen": false,
-        "center": true
-      }
-    ],
     "security": {
       "csp": "default-src 'self' ipc:; img-src 'self' data: blob:; style-src 'self' 'unsafe-inline'; script-src 'self' 'wasm-unsafe-eval'; font-src 'self' data:; connect-src 'self' ipc:; base-uri 'self'; form-action 'none'; frame-ancestors 'none'"
     }

@@ -11,6 +11,19 @@ OBS 排障助手 — 无头冒烟测试（Chrome DevTools Protocol）
 """
 import json, time, threading, http.server, os, sys, subprocess, urllib.request, argparse
 
+def _safe_print(*args, **kwargs):
+    """Print that never crashes on a non-UTF-8 console (e.g. GitHub Windows runner cp1252)."""
+    try:
+        print(*args, **kwargs)
+    except UnicodeEncodeError:
+        enc = (kwargs.pop("encoding", "utf-8") or "utf-8")
+        parts = " ".join(str(a) for a in args)
+        try:
+            safe = parts.encode(enc, "replace").decode(enc, "replace")
+        except Exception:
+            safe = parts.encode("ascii", "replace").decode("ascii")
+        print(safe, **kwargs)
+
 try:
     from websocket import create_connection
 except ImportError:
@@ -26,7 +39,7 @@ def main():
 
     ROOT = args.root
     if not os.path.isdir(ROOT):
-        print("站点目录不存在:", ROOT)
+        _safe_print("站点目录不存在:", ROOT)
         sys.exit(2)
 
     DEBUG_PORT = 9466
@@ -42,7 +55,7 @@ def main():
     if not os.path.exists(edge):
         edge = r"C:\Program Files\Microsoft\Edge\Application\msedge.exe"
     if not os.path.exists(edge):
-        print("未找到 Edge 浏览器，无法执行无头测试。")
+        _safe_print("未找到 Edge 浏览器，无法执行无头测试。")
         sys.exit(2)
 
     proc = subprocess.Popen([edge, "--headless=new",
@@ -65,7 +78,7 @@ def main():
 
     wsurl = get_ws()
     if not wsurl:
-        print("FAILED to get ws url")
+        _safe_print("FAILED to get ws url")
         proc.terminate()
         sys.exit(1)
 
@@ -126,28 +139,25 @@ def main():
                                    "returnByValue": True}}))
     time.sleep(1)
 
-    print("=== APP RENDERED:", ok)
-    print("=== EXCEPTIONS / CONSOLE / LOG ===")
+    _safe_print("=== APP RENDERED:", ok)
+    _safe_print("=== EXCEPTIONS / CONSOLE / LOG ===")
     err_count = 0
     for e in events:
         m = e["method"]
         if m == "Runtime.exceptionThrown":
             err_count += 1
             ex = e["params"]["exceptionDetails"]
-            print("EXCEPTION:", (ex.get("exception") or {}).get("description") or ex.get("text"))
+            _safe_print("EXCEPTION:", (ex.get("exception") or {}).get("description") or ex.get("text"))
         elif m == "Runtime.consoleAPICalled":
             a = [x.get("value", x.get("description", "")) for x in e["params"].get("args", [])]
-            print("CONSOLE[%s]:" % e["params"].get("type"), " ".join(str(x) for x in a))
+            _safe_print("CONSOLE[%s]:" % e["params"].get("type"), " ".join(str(x) for x in a))
         elif m == "Log.entryAdded":
-            print("LOG[%s]:" % e["params"].get("level"), e["params"].get("text"))
+            _safe_print("LOG[%s]:" % e["params"].get("level"), e["params"].get("text"))
 
-    print("=== APP INNERTEXT (first 600 chars) ===")
+    _safe_print("=== APP INNERTEXT (first 600 chars) ===")
     text = holder.get("text") or holder.get("inner") or "NONE"
-    try:
-        print(text[:600])
-    except Exception:
-        print(str(text)[:600])
-    print("=== EXCEPTION COUNT:", err_count)
+    _safe_print(text[:600])
+    _safe_print("=== EXCEPTION COUNT:", err_count)
 
     proc.terminate()
     try:
@@ -156,9 +166,9 @@ def main():
         pass
 
     if ok and err_count == 0:
-        print("SMOKE TEST PASSED")
+        _safe_print("SMOKE TEST PASSED")
         sys.exit(0)
-    print("SMOKE TEST FAILED")
+    _safe_print("SMOKE TEST FAILED")
     sys.exit(1)
 
 if __name__ == "__main__":

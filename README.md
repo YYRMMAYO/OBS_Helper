@@ -74,6 +74,9 @@ pwsh ./build.ps1 -Configuration Release -Runtime win-x64
 bash OBS_Helper.Mac/src-tauri/build-mac.sh
 # 产物：PAKE/macos/*.dmg 与 *.app
 ```
+> 可选代码签名 / 公证：设置环境变量 `MAC_SIGN_IDENTITY`（Developer ID Application）与
+> `MAC_NOTARY_KEYCHAIN_PROFILE`（notarytool 钥匙串配置文件）后脚本会自动深度签名并提交公证；
+> 未设置则产出未签名包（适合自测 / 内部分发）。
 
 ### 验证运行（无头冒烟测试）
 ```bash

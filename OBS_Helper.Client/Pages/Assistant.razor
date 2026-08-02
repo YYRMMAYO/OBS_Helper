@@ -8,9 +8,11 @@
     <p class="muted">描述你遇到的现象或关键词，自动匹配最可能的解决方案（离线可用，无需联网）。</p>
 
     <div class="ask-row">
-        <input class="ask-input" placeholder="例如：直播黑屏、音画不同步、推流失败…"
+        <label class="visually-hidden" for="ask-input">描述你遇到的现象或关键词</label>
+        <input id="ask-input" class="ask-input" type="search" autocomplete="off"
+               placeholder="例如：直播黑屏、音画不同步、推流失败…"
                value="@query" @oninput="async e => { query = e.Value?.ToString() ?? string.Empty; await Ask(); }" />
-        <button class="btn btn-accent" @onclick="async () => await Ask()">提问</button>
+        <button class="btn btn-accent" type="button" @onclick="async () => await Ask()">提问</button>
     </div>
 
     <div class="chips">

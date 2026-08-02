@@ -74,12 +74,31 @@ namespace OBS_Helper.Win
                 _webView.CoreWebView2.SetVirtualHostNameToFolderMapping(
                     "app.obshelper.local", appFolder, CoreWebView2HostResourceAccessKind.Allow);
 
+                // 减少攻击面：本地静态内容无需远程调试 / DevTools。
+                // 关闭后即使内容被篡改，也无法借助远程调试协议逃逸到宿主机。
+                _webView.CoreWebView2.Settings.AreDevToolsEnabled = false;
+                _webView.CoreWebView2.Settings.AreDefaultContextMenusEnabled = false;
+                _webView.CoreWebView2.Settings.IsWebMessageEnabled = false;
+                _webView.CoreWebView2.Settings.IsScriptEnabled = true; // 站点本身是可信的本地内容
+
                 // 渲染进程异常时自动重载，而非直接白屏
                 _webView.CoreWebView2.ProcessFailed += (s, args) =>
                 {
                     if (args.ProcessFailedKind == CoreWebView2ProcessFailedKind.RenderProcessExited)
                     {
                         BeginInvoke(() => _webView.CoreWebView2.Reload());
+                    }
+                };
+
+                // 站点内的「官方文档」等外链需离开本地虚拟主机，统一交由系统默认浏览器打开，
+                // 避免 WebView2 直接导航到外部不可信页面（纵深防御）。
+                _webView.CoreWebView2.NewWindowRequested += (s, args) =>
+                {
+                    if (Uri.TryCreate(args.Uri, UriKind.Absolute, out var uri))
+                    {
+                        args.Handled = true;
+                        try { System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(uri.AbsoluteUri) { UseShellExecute = true }); }
+                        catch { }
                     }
                 };
 

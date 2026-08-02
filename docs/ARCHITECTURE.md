@@ -53,6 +53,12 @@ OBS_Helper（仓库根）
 5. **CI 双端验证。** GitHub Actions 在 `windows-latest` 与 `macos-latest` 上分别构建并产出制品；
    Windows 端额外跑无头 Edge 冒烟测试，验证站点真实渲染且无控制台异常。
 
+6. **安全模型（本地优先、最小权限）。** 详见 `docs/SECURITY.md`。要点：
+   - 站点完全本地、离线运行，**不主动发起任何网络请求**；所有外链（官方文档）由 WebView2 / 系统浏览器代开，且经 `IsSafeUrl` 校验仅放行 `http/https`。
+   - macOS 端：Tauri 配置 `security.csp` 作为纵深防御；窗口禁用 devtools/远程调试，并对导航做白名单限制；capabilities 仅保留 `core:default`，不向前端暴露任何 IPC 命令。
+   - Windows 端：WebView2 关闭 DevTools / 默认右键菜单 / WebMessage，渲染进程崩溃自动重载；外链通过 `NewWindowRequested` 交由系统默认浏览器打开。
+   - 桌面壳与 `problems.json` 同源，内容可信，不存在用户可控输入注入路径（数据文件为打包内容，非运行时远程加载）。
+
 ## 本地开发
 
 - 前端：`dotnet run --project OBS_Helper.Client`（Blazor Dev Server）

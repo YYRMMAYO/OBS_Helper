@@ -68,8 +68,9 @@ if ($LASTEXITCODE -ne 0) { throw "Inno Setup 构建失败。" }
 Step "生成便携压缩包 -> PAKE\windows"
 $ver = "1.0.0"
 $zip = Join-Path $pakeWin "OBS_Helper_Portable_$ver.zip"
-# Compress-Archive -Force 会覆盖已存在的 zip，无需先删除
-Compress-Archive -Path (Join-Path $winPub "*") -DestinationPath $zip -Force
+# 仅当旧包存在时才删除（避免对不存在的文件执行删除），随后重新打包。
+if (Test-Path $zip) { Remove-Item $zip -Force }
+Compress-Archive -Path (Join-Path $winPub "*") -DestinationPath $zip
 
 Step "完成"
 Write-Host "`n产物位置：`n  - 安装包 : $pakeWin\OBS_Helper_Setup_$ver.exe`n  - 便携包 : $zip" -ForegroundColor Green

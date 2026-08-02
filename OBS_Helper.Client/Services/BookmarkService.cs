@@ -12,21 +12,25 @@ public class BookmarkService
 
     public BookmarkService(IJSRuntime js) => _js = js;
 
+    private bool _loaded;
+
     private async Task EnsureLoaded()
     {
-        if (_bookmarks.Count == 0)
+        if (_loaded) return;
+        try
         {
-            try
+            var json = await _js.InvokeAsync<string>("localStorage.getItem", BookmarksKey);
+            if (!string.IsNullOrEmpty(json))
             {
-                var json = await _js.InvokeAsync<string>("localStorage.getItem", BookmarksKey);
-                if (!string.IsNullOrEmpty(json))
-                {
-                    var list = JsonSerializer.Deserialize<List<string>>(json);
-                    if (list is not null) _bookmarks = new HashSet<string>(list);
-                }
+                var list = JsonSerializer.Deserialize<List<string>>(json);
+                if (list is not null) _bookmarks = new HashSet<string>(list);
             }
-            catch { }
         }
+        catch (Exception)
+        {
+            // 本地存储不可用（隐私模式 / 被禁用）：静默降级，收藏功能仅本次会话有效。
+        }
+        _loaded = true;
     }
 
     public async Task<List<string>> GetAllAsync()
@@ -60,7 +64,10 @@ public class BookmarkService
                 if (dict is not null && dict.TryGetValue(id, out var v)) return v;
             }
         }
-        catch { }
+        catch (Exception)
+        {
+            // 本地存储不可用：返回空进度，不影响浏览。
+        }
         return new List<int>();
     }
 
@@ -75,7 +82,10 @@ public class BookmarkService
             dict[id] = steps;
             await Save(StepsKey, dict);
         }
-        catch { }
+        catch (Exception)
+        {
+            // 本地存储不可用：忽略写入失败，避免阻断 UI。
+        }
     }
 
     private async Task Save(string key, object value)
@@ -85,6 +95,9 @@ public class BookmarkService
             var json = JsonSerializer.Serialize(value);
             await _js.InvokeVoidAsync("localStorage.setItem", key, json);
         }
-        catch { }
+        catch (Exception)
+        {
+            // 本地存储不可用：静默失败。
+        }
     }
 }

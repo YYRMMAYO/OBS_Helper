@@ -1,33 +1,35 @@
 ﻿@inherits LayoutComponentBase
 
 <div class="app-shell">
-    <header class="app-bar">
-        <a class="brand" href="">
+    <a class="skip-link" href="#main-content">跳到主内容</a>
+
+    <header class="app-bar" role="banner">
+        <a class="brand" href="" aria-label="OBS 直播排障助手 首页">
             <span class="brand-logo">OBS</span>
             <span class="brand-text">直播排障助手</span>
         </a>
         <span class="brand-sub">macOS · Windows 通用</span>
     </header>
 
-    <main class="app-content">
+    <main id="main-content" class="app-content" tabindex="-1">
         @Body
     </main>
 
-    <nav class="bottom-nav">
-        <NavLink class="nav-tab" href="" Match="NavLinkMatch.All">
-            <span class="tab-icon">🏠</span><span class="tab-label">首页</span>
+    <nav class="bottom-nav" aria-label="主导航">
+        <NavLink class="nav-tab" href="" Match="NavLinkMatch.All" aria-label="首页">
+            <span class="tab-icon" aria-hidden="true">🏠</span><span class="tab-label">首页</span>
         </NavLink>
-        <NavLink class="nav-tab" href="search">
-            <span class="tab-icon">🔍</span><span class="tab-label">搜索</span>
+        <NavLink class="nav-tab" href="search" aria-label="搜索">
+            <span class="tab-icon" aria-hidden="true">🔍</span><span class="tab-label">搜索</span>
         </NavLink>
-        <NavLink class="nav-tab" href="assistant">
-            <span class="tab-icon">🤖</span><span class="tab-label">助手</span>
+        <NavLink class="nav-tab" href="assistant" aria-label="助手">
+            <span class="tab-icon" aria-hidden="true">🤖</span><span class="tab-label">助手</span>
         </NavLink>
-        <NavLink class="nav-tab" href="diagnostic">
-            <span class="tab-icon">🩺</span><span class="tab-label">诊断</span>
+        <NavLink class="nav-tab" href="diagnostic" aria-label="诊断">
+            <span class="tab-icon" aria-hidden="true">🩺</span><span class="tab-label">诊断</span>
         </NavLink>
-        <NavLink class="nav-tab" href="setup">
-            <span class="tab-icon">🎬</span><span class="tab-label">搭建</span>
+        <NavLink class="nav-tab" href="setup" aria-label="搭建">
+            <span class="tab-icon" aria-hidden="true">🎬</span><span class="tab-label">搭建</span>
         </NavLink>
     </nav>
 </div>

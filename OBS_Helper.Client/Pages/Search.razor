@@ -4,7 +4,9 @@
 <PageTitle>搜索</PageTitle>
 
 <div class="search-page">
-    <input class="search-input" placeholder="搜索症状或关键词，如：黑屏、推流失败、音画不同步"
+    <label class="visually-hidden" for="search-input">搜索 OBS 排障方案</label>
+    <input id="search-input" class="search-input" type="search" autocomplete="off"
+           placeholder="搜索症状或关键词，如：黑屏、推流失败、音画不同步"
            value="@query" @oninput="async e => { query = e.Value?.ToString() ?? string.Empty; await DoSearch(); }" />
     <div class="cat-filter">
         <button class="chip @(activeCat == string.Empty ? "active" : "")" @onclick="async () => await SetAll()">全部</button>

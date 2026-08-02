@@ -41,21 +41,21 @@
 
         <section class="block">
             <h3>🛠️ 分步解决方案</h3>
-            <div class="steps">
-                @for (var i = 0; i < problem.Steps.Count; i++)
-                {
-                    var idx = i;
-                    var step = problem.Steps[i];
-                    <label class="step @(IsDone(idx) ? "done" : "")">
-                        <input type="checkbox" checked="@IsDone(idx)" @onchange="e => ToggleStep(idx, e)" />
-                        <span class="step-no">@(i + 1)</span>
-                        <span class="step-body">
-                            <span class="step-title">@step.Title <span class="lvl lvl-@UIHelper.LevelClass(step.Level)">@step.Level</span></span>
-                            <span class="step-detail">@step.Detail</span>
-                        </span>
-                    </label>
-                }
-            </div>
+                <div class="steps">
+                    @for (var i = 0; i < problem.Steps.Count; i++)
+                    {
+                        var idx = i;
+                        var step = problem.Steps[i];
+                        <label class="step @(IsDone(idx) ? "done" : "")" for="@($"step-{problem.Id}-{i}")">
+                            <input id="@($"step-{problem.Id}-{i}")" type="checkbox" checked="@IsDone(idx)" @onchange="e => ToggleStep(idx, e)" />
+                            <span class="step-no" aria-hidden="true">@(i + 1)</span>
+                            <span class="step-body">
+                                <span class="step-title">@step.Title <span class="lvl lvl-@UIHelper.LevelClass(step.Level)">@step.Level</span></span>
+                                <span class="step-detail">@step.Detail</span>
+                            </span>
+                        </label>
+                    }
+                </div>
         </section>
 
         @if (problem.Tips.Length > 0)
@@ -78,7 +78,14 @@
                 <ul class="link-list">
                     @foreach (var l in problem.Links)
                     {
-                        <li><a class="ext-link" href="@l.Url" target="_blank" rel="noopener">@l.Title <span class="ext">↗</span></a></li>
+                        @if (IsSafeUrl(l.Url))
+                        {
+                            <li><a class="ext-link" href="@l.Url" target="_blank" rel="noopener noreferrer" referrerpolicy="no-referrer">@l.Title <span class="ext">↗</span></a></li>
+                        }
+                        else
+                        {
+                            <li><span class="ext-link" title="链接地址不合法，已屏蔽">@l.Title <span class="ext">⚠</span></span></li>
+                        }
                     }
                 </ul>
             </section>
@@ -139,5 +146,13 @@ else
     {
         await BookmarkService.ToggleAsync(Id);
         bookmarked = !bookmarked;
+    }
+
+    /// <summary>仅允许 http/https 外链，屏蔽 javascript:/data:/file: 等可能用于 XSS 的协议。</summary>
+    private static bool IsSafeUrl(string? url)
+    {
+        if (string.IsNullOrWhiteSpace(url)) return false;
+        if (!Uri.TryCreate(url, UriKind.Absolute, out var uri)) return false;
+        return uri.Scheme is "http" or "https";
     }
 }

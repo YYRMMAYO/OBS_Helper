@@ -4,6 +4,10 @@
 #   1) dotnet publish Blazor WASM 客户端 -> OBS_Helper.Client/bin/Release/net10.0/publish/wwwroot
 #   2) tauri icon 由源图生成各尺寸图标
 #   3) tauri build -> 产物落到仓库根 PAKE/macos（.app 与 .dmg）
+#
+# 可选：通过环境变量开启代码签名 / 公证（未设置则产出未签名包，仅适合自测与内部分发）
+#   MAC_SIGN_IDENTITY="Developer ID Application: ..."   # 不传则 --no-sign
+#   MAC_NOTARY_KEYCHAIN_PROFILE="notarytool-profile"    # 不传则跳过公证
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
@@ -27,7 +31,27 @@ cd OBS_Helper.Mac/src-tauri
 $TAURI icon icons/app-icon.png
 
 echo "==> 3/3 $TAURI build"
-$TAURI build
+if [ -n "${MAC_SIGN_IDENTITY:-}" ]; then
+  echo "   使用签名身份: $MAC_SIGN_IDENTITY"
+  $TAURI build -- --no-default-features
+  # 对 .app 做 Developer ID 签名（深度签名，含运行时）
+  APP_BUNDLE="$ROOT/PAKE/macos/OBS 排障助手.app"
+  if [ -d "$APP_BUNDLE" ]; then
+    codesign --force --options runtime --timestamp --sign "$MAC_SIGN_IDENTITY" "$APP_BUNDLE"
+  fi
+  # 公证（可选）
+  if [ -n "${MAC_NOTARY_KEYCHAIN_PROFILE:-}" ]; then
+    DMG_PATH=$(ls "$ROOT/PAKE/macos"/*.dmg 2>/dev/null | head -1 || true)
+    if [ -n "$DMG_PATH" ]; then
+      echo "   提交公证: $DMG_PATH"
+      xcrun notarytool submit "$DMG_PATH" --keychain-profile "$MAC_NOTARY_KEYCHAIN_PROFILE" --wait
+      xcrun stapler staple "$DMG_PATH"
+    fi
+  fi
+else
+  echo "   未设置 MAC_SIGN_IDENTITY，产出未签名包（自测 / 内部分发用）"
+  $TAURI build
+fi
 
 echo "==> 完成。安装包与软件位于: $ROOT/PAKE/macos"
 ls -la "$ROOT/PAKE/macos"

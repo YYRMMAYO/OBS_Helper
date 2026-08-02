@@ -24,7 +24,7 @@ OutputDir=..\PAKE\windows
 OutputBaseFilename=OBS_Helper_Setup_{#MyAppVersion}
 SetupIconFile=appicon.ico
 ; 安装向导中展示 MIT 许可证，供最终用户确认
-LicenseFile=..\..\LICENSE
+LicenseFile=..\LICENSE
 ; 安装包/文件元数据（提升“属性-详细信息”完整度）
 VersionInfoVersion={#MyAppVersion}
 VersionInfoCompany={#MyAppPublisher}
@@ -44,7 +44,7 @@ Name: "chinese"; MessagesFile: "compiler:Default.isl"
 ; 打包自包含发布目录（运行时 + 站点 wwwroot 一并安装）
 Source: "bin\Release\net10.0-windows10.0.19041.0\win-x64\publish\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
 ; 随安装包附带 MIT 许可证文本，便于最终用户查看
-Source: "..\..\LICENSE"; DestDir: "{app}"; Flags: ignoreversion
+Source: "..\LICENSE"; DestDir: "{app}"; Flags: ignoreversion
 
 [Icons]
 Name: "{group}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"

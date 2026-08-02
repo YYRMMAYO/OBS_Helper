@@ -1,6 +1,6 @@
 {
-  "version": "1.1",
-  "updated": "2026-08-02",
+  "version": "1.2",
+  "updated": "2026-08-03",
   "categories": [
     {
       "id": "black-screen",
@@ -116,6 +116,20 @@
         "bs-game",
         "bs-dualgpu",
         "bs-win11"
+      ],
+      "links": [
+        {
+          "title": "OBS 官方 · macOS 屏幕录制/麦克风/辅助功能权限指南",
+          "url": "https://obsproject.com/kb/macos-permissions-guide"
+        },
+        {
+          "title": "OBS Versions · 黑屏与编码问题修复教程",
+          "url": "https://obs-versions.com/blog/fix-obs-black-screen"
+        },
+        {
+          "title": "OBS 官方 · Windows 排障指南（黑屏/编码/音频/崩溃）",
+          "url": "https://obs-studio-app.github.io/obs-studio-troubleshooting-windows.html"
+        }
       ]
     },
     {
@@ -165,6 +179,20 @@
       "related": [
         "bs-dualgpu",
         "bs-display"
+      ],
+      "links": [
+        {
+          "title": "OBS 官方 · macOS 屏幕录制/麦克风/辅助功能权限指南",
+          "url": "https://obsproject.com/kb/macos-permissions-guide"
+        },
+        {
+          "title": "OBS Versions · 黑屏与编码问题修复教程",
+          "url": "https://obs-versions.com/blog/fix-obs-black-screen"
+        },
+        {
+          "title": "OBS 官方 · Windows 排障指南（黑屏/编码/音频/崩溃）",
+          "url": "https://obs-studio-app.github.io/obs-studio-troubleshooting-windows.html"
+        }
       ]
     },
     {
@@ -208,6 +236,20 @@
       "related": [
         "bs-display",
         "bs-game"
+      ],
+      "links": [
+        {
+          "title": "OBS 官方 · macOS 屏幕录制/麦克风/辅助功能权限指南",
+          "url": "https://obsproject.com/kb/macos-permissions-guide"
+        },
+        {
+          "title": "OBS Versions · 黑屏与编码问题修复教程",
+          "url": "https://obs-versions.com/blog/fix-obs-black-screen"
+        },
+        {
+          "title": "OBS 官方 · Windows 排障指南（黑屏/编码/音频/崩溃）",
+          "url": "https://obs-studio-app.github.io/obs-studio-troubleshooting-windows.html"
+        }
       ]
     },
     {
@@ -243,6 +285,20 @@
       ],
       "related": [
         "bs-display"
+      ],
+      "links": [
+        {
+          "title": "OBS 官方 · macOS 屏幕录制/麦克风/辅助功能权限指南",
+          "url": "https://obsproject.com/kb/macos-permissions-guide"
+        },
+        {
+          "title": "OBS Versions · 黑屏与编码问题修复教程",
+          "url": "https://obs-versions.com/blog/fix-obs-black-screen"
+        },
+        {
+          "title": "OBS 官方 · Windows 排障指南（黑屏/编码/音频/崩溃）",
+          "url": "https://obs-studio-app.github.io/obs-studio-troubleshooting-windows.html"
+        }
       ]
     },
     {
@@ -284,6 +340,20 @@
       "related": [
         "bs-game",
         "bs-display"
+      ],
+      "links": [
+        {
+          "title": "OBS 官方 · macOS 屏幕录制/麦克风/辅助功能权限指南",
+          "url": "https://obsproject.com/kb/macos-permissions-guide"
+        },
+        {
+          "title": "OBS Versions · 黑屏与编码问题修复教程",
+          "url": "https://obs-versions.com/blog/fix-obs-black-screen"
+        },
+        {
+          "title": "OBS 官方 · Windows 排障指南（黑屏/编码/音频/崩溃）",
+          "url": "https://obs-studio-app.github.io/obs-studio-troubleshooting-windows.html"
+        }
       ]
     },
     {
@@ -335,6 +405,20 @@
       "related": [
         "enc-cpu",
         "enc-drop"
+      ],
+      "links": [
+        {
+          "title": "OBS 官方 · Windows 排障指南（黑屏/编码/音频/崩溃）",
+          "url": "https://obs-studio-app.github.io/obs-studio-troubleshooting-windows.html"
+        },
+        {
+          "title": "OBS Versions · 黑屏与编码问题修复教程",
+          "url": "https://obs-versions.com/blog/fix-obs-black-screen"
+        },
+        {
+          "title": "OBS 官方 · 日志分析器（自动诊断日志）",
+          "url": "https://obsproject.com/tools/analyzer"
+        }
       ]
     },
     {
@@ -377,6 +461,20 @@
       ],
       "related": [
         "enc-overload"
+      ],
+      "links": [
+        {
+          "title": "OBS 官方 · Windows 排障指南（黑屏/编码/音频/崩溃）",
+          "url": "https://obs-studio-app.github.io/obs-studio-troubleshooting-windows.html"
+        },
+        {
+          "title": "OBS Versions · 黑屏与编码问题修复教程",
+          "url": "https://obs-versions.com/blog/fix-obs-black-screen"
+        },
+        {
+          "title": "OBS 官方 · 日志分析器（自动诊断日志）",
+          "url": "https://obsproject.com/tools/analyzer"
+        }
       ]
     },
     {
@@ -420,6 +518,20 @@
       "related": [
         "enc-overload",
         "cf-resolution"
+      ],
+      "links": [
+        {
+          "title": "OBS 官方 · Windows 排障指南（黑屏/编码/音频/崩溃）",
+          "url": "https://obs-studio-app.github.io/obs-studio-troubleshooting-windows.html"
+        },
+        {
+          "title": "OBS Versions · 黑屏与编码问题修复教程",
+          "url": "https://obs-versions.com/blog/fix-obs-black-screen"
+        },
+        {
+          "title": "OBS 官方 · 日志分析器（自动诊断日志）",
+          "url": "https://obsproject.com/tools/analyzer"
+        }
       ]
     },
     {
@@ -470,6 +582,16 @@
       "related": [
         "lag-skip",
         "sf-drops"
+      ],
+      "links": [
+        {
+          "title": "OBS 官方 · Windows 排障指南（黑屏/编码/音频/崩溃）",
+          "url": "https://obs-studio-app.github.io/obs-studio-troubleshooting-windows.html"
+        },
+        {
+          "title": "OBS 官方 · 日志分析器（自动诊断日志）",
+          "url": "https://obsproject.com/tools/analyzer"
+        }
       ]
     },
     {
@@ -514,6 +636,16 @@
       "related": [
         "lag-network",
         "enc-overload"
+      ],
+      "links": [
+        {
+          "title": "OBS 官方 · Windows 排障指南（黑屏/编码/音频/崩溃）",
+          "url": "https://obs-studio-app.github.io/obs-studio-troubleshooting-windows.html"
+        },
+        {
+          "title": "OBS 官方 · 日志分析器（自动诊断日志）",
+          "url": "https://obsproject.com/tools/analyzer"
+        }
       ]
     },
     {
@@ -558,6 +690,16 @@
       "related": [
         "lag-network",
         "sf-drops"
+      ],
+      "links": [
+        {
+          "title": "OBS 官方 · Windows 排障指南（黑屏/编码/音频/崩溃）",
+          "url": "https://obs-studio-app.github.io/obs-studio-troubleshooting-windows.html"
+        },
+        {
+          "title": "OBS 官方 · 日志分析器（自动诊断日志）",
+          "url": "https://obsproject.com/tools/analyzer"
+        }
       ]
     },
     {
@@ -595,6 +737,16 @@
       ],
       "related": [
         "av-sample"
+      ],
+      "links": [
+        {
+          "title": "OBS 官方 · Windows 排障指南（黑屏/编码/音频/崩溃）",
+          "url": "https://obs-studio-app.github.io/obs-studio-troubleshooting-windows.html"
+        },
+        {
+          "title": "OBS 官方 · 日志分析器（自动诊断日志）",
+          "url": "https://obsproject.com/tools/analyzer"
+        }
       ]
     },
     {
@@ -638,6 +790,16 @@
       "related": [
         "av-desync",
         "au-mic"
+      ],
+      "links": [
+        {
+          "title": "OBS 官方 · Windows 排障指南（黑屏/编码/音频/崩溃）",
+          "url": "https://obs-studio-app.github.io/obs-studio-troubleshooting-windows.html"
+        },
+        {
+          "title": "OBS 官方 · 日志分析器（自动诊断日志）",
+          "url": "https://obsproject.com/tools/analyzer"
+        }
       ]
     },
     {
@@ -683,6 +845,16 @@
       "related": [
         "au-echo",
         "av-sample"
+      ],
+      "links": [
+        {
+          "title": "OBS 官方 · macOS 屏幕录制/麦克风/辅助功能权限指南",
+          "url": "https://obsproject.com/kb/macos-permissions-guide"
+        },
+        {
+          "title": "OBS 官方 · Windows 排障指南（黑屏/编码/音频/崩溃）",
+          "url": "https://obs-studio-app.github.io/obs-studio-troubleshooting-windows.html"
+        }
       ]
     },
     {
@@ -728,6 +900,16 @@
       "related": [
         "au-mic",
         "au-mute"
+      ],
+      "links": [
+        {
+          "title": "OBS 官方 · macOS 屏幕录制/麦克风/辅助功能权限指南",
+          "url": "https://obsproject.com/kb/macos-permissions-guide"
+        },
+        {
+          "title": "OBS 官方 · Windows 排障指南（黑屏/编码/音频/崩溃）",
+          "url": "https://obs-studio-app.github.io/obs-studio-troubleshooting-windows.html"
+        }
       ]
     },
     {
@@ -771,6 +953,16 @@
       ],
       "related": [
         "au-mic"
+      ],
+      "links": [
+        {
+          "title": "OBS 官方 · macOS 屏幕录制/麦克风/辅助功能权限指南",
+          "url": "https://obsproject.com/kb/macos-permissions-guide"
+        },
+        {
+          "title": "OBS 官方 · Windows 排障指南（黑屏/编码/音频/崩溃）",
+          "url": "https://obs-studio-app.github.io/obs-studio-troubleshooting-windows.html"
+        }
       ]
     },
     {
@@ -816,6 +1008,16 @@
       "related": [
         "sf-drops",
         "sf-vpn"
+      ],
+      "links": [
+        {
+          "title": "OBS 官方 · 日志分析器（自动诊断日志）",
+          "url": "https://obsproject.com/tools/analyzer"
+        },
+        {
+          "title": "OBS 官方 · Windows 排障指南（黑屏/编码/音频/崩溃）",
+          "url": "https://obs-studio-app.github.io/obs-studio-troubleshooting-windows.html"
+        }
       ]
     },
     {
@@ -860,6 +1062,16 @@
       "related": [
         "sf-timeout",
         "lag-network"
+      ],
+      "links": [
+        {
+          "title": "OBS 官方 · 日志分析器（自动诊断日志）",
+          "url": "https://obsproject.com/tools/analyzer"
+        },
+        {
+          "title": "OBS 官方 · Windows 排障指南（黑屏/编码/音频/崩溃）",
+          "url": "https://obs-studio-app.github.io/obs-studio-troubleshooting-windows.html"
+        }
       ]
     },
     {
@@ -901,6 +1113,16 @@
       ],
       "related": [
         "sf-timeout"
+      ],
+      "links": [
+        {
+          "title": "OBS 官方 · 日志分析器（自动诊断日志）",
+          "url": "https://obsproject.com/tools/analyzer"
+        },
+        {
+          "title": "OBS 官方 · Windows 排障指南（黑屏/编码/音频/崩溃）",
+          "url": "https://obs-studio-app.github.io/obs-studio-troubleshooting-windows.html"
+        }
       ]
     },
     {
@@ -944,6 +1166,16 @@
       "related": [
         "st-bilibili",
         "st-douyin"
+      ],
+      "links": [
+        {
+          "title": "OBS 官方首页 · 下载与文档",
+          "url": "https://obsproject.com"
+        },
+        {
+          "title": "OBS 中文站 · 入门与基础配置指南",
+          "url": "https://www.obsproject.com.cn/obs/62.html"
+        }
       ]
     },
     {
@@ -987,6 +1219,16 @@
       "related": [
         "st-twitch",
         "st-douyin"
+      ],
+      "links": [
+        {
+          "title": "OBS 官方首页 · 下载与文档",
+          "url": "https://obsproject.com"
+        },
+        {
+          "title": "OBS 中文站 · 入门与基础配置指南",
+          "url": "https://www.obsproject.com.cn/obs/62.html"
+        }
       ]
     },
     {
@@ -1030,6 +1272,16 @@
       "related": [
         "st-bilibili",
         "st-tencent"
+      ],
+      "links": [
+        {
+          "title": "OBS 官方首页 · 下载与文档",
+          "url": "https://obsproject.com"
+        },
+        {
+          "title": "OBS 中文站 · 入门与基础配置指南",
+          "url": "https://www.obsproject.com.cn/obs/62.html"
+        }
       ]
     },
     {
@@ -1073,6 +1325,16 @@
       "related": [
         "st-douyin",
         "st-multi"
+      ],
+      "links": [
+        {
+          "title": "OBS 官方首页 · 下载与文档",
+          "url": "https://obsproject.com"
+        },
+        {
+          "title": "OBS 中文站 · 入门与基础配置指南",
+          "url": "https://www.obsproject.com.cn/obs/62.html"
+        }
       ]
     },
     {
@@ -1116,6 +1378,16 @@
       "related": [
         "st-bilibili",
         "st-douyin"
+      ],
+      "links": [
+        {
+          "title": "OBS 官方首页 · 下载与文档",
+          "url": "https://obsproject.com"
+        },
+        {
+          "title": "OBS 中文站 · 入门与基础配置指南",
+          "url": "https://www.obsproject.com.cn/obs/62.html"
+        }
       ]
     },
     {
@@ -1160,6 +1432,16 @@
       "related": [
         "rc-black",
         "rc-local"
+      ],
+      "links": [
+        {
+          "title": "OBS 官方 · Windows 排障指南（黑屏/编码/音频/崩溃）",
+          "url": "https://obs-studio-app.github.io/obs-studio-troubleshooting-windows.html"
+        },
+        {
+          "title": "OBS 官方 · 日志分析器（自动诊断日志）",
+          "url": "https://obsproject.com/tools/analyzer"
+        }
       ]
     },
     {
@@ -1198,6 +1480,16 @@
       "related": [
         "rc-nofile",
         "bs-display"
+      ],
+      "links": [
+        {
+          "title": "OBS 官方 · Windows 排障指南（黑屏/编码/音频/崩溃）",
+          "url": "https://obs-studio-app.github.io/obs-studio-troubleshooting-windows.html"
+        },
+        {
+          "title": "OBS 官方 · 日志分析器（自动诊断日志）",
+          "url": "https://obsproject.com/tools/analyzer"
+        }
       ]
     },
     {
@@ -1240,6 +1532,16 @@
       ],
       "related": [
         "rc-nofile"
+      ],
+      "links": [
+        {
+          "title": "OBS 官方 · Windows 排障指南（黑屏/编码/音频/崩溃）",
+          "url": "https://obs-studio-app.github.io/obs-studio-troubleshooting-windows.html"
+        },
+        {
+          "title": "OBS 官方 · 日志分析器（自动诊断日志）",
+          "url": "https://obsproject.com/tools/analyzer"
+        }
       ]
     },
     {
@@ -1278,6 +1580,16 @@
       "related": [
         "enc-drop",
         "cf-wizard"
+      ],
+      "links": [
+        {
+          "title": "OBS 中文站 · 入门与基础配置指南",
+          "url": "https://www.obsproject.com.cn/obs/62.html"
+        },
+        {
+          "title": "OBS 官方 · Windows 排障指南（黑屏/编码/音频/崩溃）",
+          "url": "https://obs-studio-app.github.io/obs-studio-troubleshooting-windows.html"
+        }
       ]
     },
     {
@@ -1316,6 +1628,16 @@
       "related": [
         "cf-resolution",
         "cf-priority"
+      ],
+      "links": [
+        {
+          "title": "OBS 中文站 · 入门与基础配置指南",
+          "url": "https://www.obsproject.com.cn/obs/62.html"
+        },
+        {
+          "title": "OBS 官方 · Windows 排障指南（黑屏/编码/音频/崩溃）",
+          "url": "https://obs-studio-app.github.io/obs-studio-troubleshooting-windows.html"
+        }
       ]
     },
     {
@@ -1351,6 +1673,16 @@
       ],
       "related": [
         "enc-cpu"
+      ],
+      "links": [
+        {
+          "title": "OBS 中文站 · 入门与基础配置指南",
+          "url": "https://www.obsproject.com.cn/obs/62.html"
+        },
+        {
+          "title": "OBS 官方 · Windows 排障指南（黑屏/编码/音频/崩溃）",
+          "url": "https://obs-studio-app.github.io/obs-studio-troubleshooting-windows.html"
+        }
       ]
     },
     {
@@ -1392,6 +1724,20 @@
       "related": [
         "cr-hwaccel",
         "cr-downgrade"
+      ],
+      "links": [
+        {
+          "title": "OBS 官方 · Windows 排障指南（黑屏/编码/音频/崩溃）",
+          "url": "https://obs-studio-app.github.io/obs-studio-troubleshooting-windows.html"
+        },
+        {
+          "title": "OBS 官方 · macOS 屏幕录制/麦克风/辅助功能权限指南",
+          "url": "https://obsproject.com/kb/macos-permissions-guide"
+        },
+        {
+          "title": "OBS 官方 · 日志分析器（自动诊断日志）",
+          "url": "https://obsproject.com/tools/analyzer"
+        }
       ]
     },
     {
@@ -1427,6 +1773,20 @@
       "related": [
         "cr-driver",
         "bs-display"
+      ],
+      "links": [
+        {
+          "title": "OBS 官方 · Windows 排障指南（黑屏/编码/音频/崩溃）",
+          "url": "https://obs-studio-app.github.io/obs-studio-troubleshooting-windows.html"
+        },
+        {
+          "title": "OBS 官方 · macOS 屏幕录制/麦克风/辅助功能权限指南",
+          "url": "https://obsproject.com/kb/macos-permissions-guide"
+        },
+        {
+          "title": "OBS 官方 · 日志分析器（自动诊断日志）",
+          "url": "https://obsproject.com/tools/analyzer"
+        }
       ]
     },
     {
@@ -1469,6 +1829,20 @@
       ],
       "related": [
         "cr-driver"
+      ],
+      "links": [
+        {
+          "title": "OBS 官方 · Windows 排障指南（黑屏/编码/音频/崩溃）",
+          "url": "https://obs-studio-app.github.io/obs-studio-troubleshooting-windows.html"
+        },
+        {
+          "title": "OBS 官方 · macOS 屏幕录制/麦克风/辅助功能权限指南",
+          "url": "https://obsproject.com/kb/macos-permissions-guide"
+        },
+        {
+          "title": "OBS 官方 · 日志分析器（自动诊断日志）",
+          "url": "https://obsproject.com/tools/analyzer"
+        }
       ]
     },
     {
@@ -1511,6 +1885,20 @@
       "related": [
         "bs-display",
         "bs-window"
+      ],
+      "links": [
+        {
+          "title": "OBS 官方 · macOS 屏幕录制/麦克风/辅助功能权限指南",
+          "url": "https://obsproject.com/kb/macos-permissions-guide"
+        },
+        {
+          "title": "OBS Versions · 黑屏与编码问题修复教程",
+          "url": "https://obs-versions.com/blog/fix-obs-black-screen"
+        },
+        {
+          "title": "OBS 官方 · Windows 排障指南（黑屏/编码/音频/崩溃）",
+          "url": "https://obs-studio-app.github.io/obs-studio-troubleshooting-windows.html"
+        }
       ]
     },
     {
@@ -1561,6 +1949,20 @@
         "cf-colorspace",
         "cf-colorrange",
         "bs-display"
+      ],
+      "links": [
+        {
+          "title": "OBS 官方 · macOS 屏幕录制/麦克风/辅助功能权限指南",
+          "url": "https://obsproject.com/kb/macos-permissions-guide"
+        },
+        {
+          "title": "OBS Versions · 黑屏与编码问题修复教程",
+          "url": "https://obs-versions.com/blog/fix-obs-black-screen"
+        },
+        {
+          "title": "OBS 官方 · Windows 排障指南（黑屏/编码/音频/崩溃）",
+          "url": "https://obs-studio-app.github.io/obs-studio-troubleshooting-windows.html"
+        }
       ]
     },
     {
@@ -1610,6 +2012,20 @@
         "bs-display",
         "bs-window",
         "bs-mac-rosetta"
+      ],
+      "links": [
+        {
+          "title": "OBS 官方 · macOS 屏幕录制/麦克风/辅助功能权限指南",
+          "url": "https://obsproject.com/kb/macos-permissions-guide"
+        },
+        {
+          "title": "OBS Versions · 黑屏与编码问题修复教程",
+          "url": "https://obs-versions.com/blog/fix-obs-black-screen"
+        },
+        {
+          "title": "OBS 官方 · Windows 排障指南（黑屏/编码/音频/崩溃）",
+          "url": "https://obs-studio-app.github.io/obs-studio-troubleshooting-windows.html"
+        }
       ]
     },
     {
@@ -1652,6 +2068,20 @@
       "related": [
         "bs-mac-perm",
         "cr-mac-crash"
+      ],
+      "links": [
+        {
+          "title": "OBS 官方 · macOS 屏幕录制/麦克风/辅助功能权限指南",
+          "url": "https://obsproject.com/kb/macos-permissions-guide"
+        },
+        {
+          "title": "OBS Versions · 黑屏与编码问题修复教程",
+          "url": "https://obs-versions.com/blog/fix-obs-black-screen"
+        },
+        {
+          "title": "OBS 官方 · Windows 排障指南（黑屏/编码/音频/崩溃）",
+          "url": "https://obs-studio-app.github.io/obs-studio-troubleshooting-windows.html"
+        }
       ]
     },
     {
@@ -1702,6 +2132,20 @@
         "cf-colorrange",
         "cf-colorspace",
         "bs-display"
+      ],
+      "links": [
+        {
+          "title": "OBS 官方 · macOS 屏幕录制/麦克风/辅助功能权限指南",
+          "url": "https://obsproject.com/kb/macos-permissions-guide"
+        },
+        {
+          "title": "OBS Versions · 黑屏与编码问题修复教程",
+          "url": "https://obs-versions.com/blog/fix-obs-black-screen"
+        },
+        {
+          "title": "OBS 官方 · Windows 排障指南（黑屏/编码/音频/崩溃）",
+          "url": "https://obs-studio-app.github.io/obs-studio-troubleshooting-windows.html"
+        }
       ]
     },
     {
@@ -1744,6 +2188,20 @@
       "related": [
         "bs-window",
         "bs-display"
+      ],
+      "links": [
+        {
+          "title": "OBS 官方 · macOS 屏幕录制/麦克风/辅助功能权限指南",
+          "url": "https://obsproject.com/kb/macos-permissions-guide"
+        },
+        {
+          "title": "OBS Versions · 黑屏与编码问题修复教程",
+          "url": "https://obs-versions.com/blog/fix-obs-black-screen"
+        },
+        {
+          "title": "OBS 官方 · Windows 排障指南（黑屏/编码/音频/崩溃）",
+          "url": "https://obs-studio-app.github.io/obs-studio-troubleshooting-windows.html"
+        }
       ]
     },
     {
@@ -1792,6 +2250,20 @@
       "related": [
         "enc-overload",
         "bs-dualgpu"
+      ],
+      "links": [
+        {
+          "title": "OBS 官方 · Windows 排障指南（黑屏/编码/音频/崩溃）",
+          "url": "https://obs-studio-app.github.io/obs-studio-troubleshooting-windows.html"
+        },
+        {
+          "title": "OBS Versions · 黑屏与编码问题修复教程",
+          "url": "https://obs-versions.com/blog/fix-obs-black-screen"
+        },
+        {
+          "title": "OBS 官方 · 日志分析器（自动诊断日志）",
+          "url": "https://obsproject.com/tools/analyzer"
+        }
       ]
     },
     {
@@ -1835,6 +2307,20 @@
       "related": [
         "enc-nvenc",
         "enc-overload"
+      ],
+      "links": [
+        {
+          "title": "OBS 官方 · Windows 排障指南（黑屏/编码/音频/崩溃）",
+          "url": "https://obs-studio-app.github.io/obs-studio-troubleshooting-windows.html"
+        },
+        {
+          "title": "OBS Versions · 黑屏与编码问题修复教程",
+          "url": "https://obs-versions.com/blog/fix-obs-black-screen"
+        },
+        {
+          "title": "OBS 官方 · 日志分析器（自动诊断日志）",
+          "url": "https://obsproject.com/tools/analyzer"
+        }
       ]
     },
     {
@@ -1877,6 +2363,20 @@
       "related": [
         "enc-overload",
         "lag-skip"
+      ],
+      "links": [
+        {
+          "title": "OBS 官方 · Windows 排障指南（黑屏/编码/音频/崩溃）",
+          "url": "https://obs-studio-app.github.io/obs-studio-troubleshooting-windows.html"
+        },
+        {
+          "title": "OBS Versions · 黑屏与编码问题修复教程",
+          "url": "https://obs-versions.com/blog/fix-obs-black-screen"
+        },
+        {
+          "title": "OBS 官方 · 日志分析器（自动诊断日志）",
+          "url": "https://obsproject.com/tools/analyzer"
+        }
       ]
     },
     {
@@ -1921,6 +2421,20 @@
       "related": [
         "bs-hdr",
         "enc-nvenc"
+      ],
+      "links": [
+        {
+          "title": "OBS 官方 · Windows 排障指南（黑屏/编码/音频/崩溃）",
+          "url": "https://obs-studio-app.github.io/obs-studio-troubleshooting-windows.html"
+        },
+        {
+          "title": "OBS Versions · 黑屏与编码问题修复教程",
+          "url": "https://obs-versions.com/blog/fix-obs-black-screen"
+        },
+        {
+          "title": "OBS 官方 · 日志分析器（自动诊断日志）",
+          "url": "https://obsproject.com/tools/analyzer"
+        }
       ]
     },
     {
@@ -1964,6 +2478,16 @@
       "related": [
         "lag-network",
         "lag-buffer"
+      ],
+      "links": [
+        {
+          "title": "OBS 官方 · Windows 排障指南（黑屏/编码/音频/崩溃）",
+          "url": "https://obs-studio-app.github.io/obs-studio-troubleshooting-windows.html"
+        },
+        {
+          "title": "OBS 官方 · 日志分析器（自动诊断日志）",
+          "url": "https://obsproject.com/tools/analyzer"
+        }
       ]
     },
     {
@@ -2008,6 +2532,16 @@
       "related": [
         "lag-network",
         "enc-drop"
+      ],
+      "links": [
+        {
+          "title": "OBS 官方 · Windows 排障指南（黑屏/编码/音频/崩溃）",
+          "url": "https://obs-studio-app.github.io/obs-studio-troubleshooting-windows.html"
+        },
+        {
+          "title": "OBS 官方 · 日志分析器（自动诊断日志）",
+          "url": "https://obsproject.com/tools/analyzer"
+        }
       ]
     },
     {
@@ -2051,6 +2585,16 @@
       "related": [
         "lag-skip",
         "enc-cpu"
+      ],
+      "links": [
+        {
+          "title": "OBS 官方 · Windows 排障指南（黑屏/编码/音频/崩溃）",
+          "url": "https://obs-studio-app.github.io/obs-studio-troubleshooting-windows.html"
+        },
+        {
+          "title": "OBS 官方 · 日志分析器（自动诊断日志）",
+          "url": "https://obsproject.com/tools/analyzer"
+        }
       ]
     },
     {
@@ -2094,6 +2638,16 @@
       "related": [
         "av-desync",
         "av-virtualcam"
+      ],
+      "links": [
+        {
+          "title": "OBS 官方 · Windows 排障指南（黑屏/编码/音频/崩溃）",
+          "url": "https://obs-studio-app.github.io/obs-studio-troubleshooting-windows.html"
+        },
+        {
+          "title": "OBS 官方 · 日志分析器（自动诊断日志）",
+          "url": "https://obsproject.com/tools/analyzer"
+        }
       ]
     },
     {
@@ -2137,6 +2691,16 @@
         "av-offset",
         "av-desync",
         "au-monitor"
+      ],
+      "links": [
+        {
+          "title": "OBS 官方 · Windows 排障指南（黑屏/编码/音频/崩溃）",
+          "url": "https://obs-studio-app.github.io/obs-studio-troubleshooting-windows.html"
+        },
+        {
+          "title": "OBS 官方 · 日志分析器（自动诊断日志）",
+          "url": "https://obsproject.com/tools/analyzer"
+        }
       ]
     },
     {
@@ -2174,6 +2738,16 @@
       "related": [
         "av-sample",
         "av-offset"
+      ],
+      "links": [
+        {
+          "title": "OBS 官方 · Windows 排障指南（黑屏/编码/音频/崩溃）",
+          "url": "https://obs-studio-app.github.io/obs-studio-troubleshooting-windows.html"
+        },
+        {
+          "title": "OBS 官方 · 日志分析器（自动诊断日志）",
+          "url": "https://obsproject.com/tools/analyzer"
+        }
       ]
     },
     {
@@ -2217,6 +2791,16 @@
       "related": [
         "au-mute",
         "au-mic"
+      ],
+      "links": [
+        {
+          "title": "OBS 官方 · macOS 屏幕录制/麦克风/辅助功能权限指南",
+          "url": "https://obsproject.com/kb/macos-permissions-guide"
+        },
+        {
+          "title": "OBS 官方 · Windows 排障指南（黑屏/编码/音频/崩溃）",
+          "url": "https://obs-studio-app.github.io/obs-studio-troubleshooting-windows.html"
+        }
       ]
     },
     {
@@ -2261,6 +2845,16 @@
       "related": [
         "au-mic",
         "au-mic-noise"
+      ],
+      "links": [
+        {
+          "title": "OBS 官方 · macOS 屏幕录制/麦克风/辅助功能权限指南",
+          "url": "https://obsproject.com/kb/macos-permissions-guide"
+        },
+        {
+          "title": "OBS 官方 · Windows 排障指南（黑屏/编码/音频/崩溃）",
+          "url": "https://obs-studio-app.github.io/obs-studio-troubleshooting-windows.html"
+        }
       ]
     },
     {
@@ -2305,6 +2899,16 @@
       "related": [
         "au-mic-quiet",
         "au-mic"
+      ],
+      "links": [
+        {
+          "title": "OBS 官方 · macOS 屏幕录制/麦克风/辅助功能权限指南",
+          "url": "https://obsproject.com/kb/macos-permissions-guide"
+        },
+        {
+          "title": "OBS 官方 · Windows 排障指南（黑屏/编码/音频/崩溃）",
+          "url": "https://obs-studio-app.github.io/obs-studio-troubleshooting-windows.html"
+        }
       ]
     },
     {
@@ -2348,6 +2952,16 @@
       "related": [
         "av-virtualcam",
         "au-echo"
+      ],
+      "links": [
+        {
+          "title": "OBS 官方 · macOS 屏幕录制/麦克风/辅助功能权限指南",
+          "url": "https://obsproject.com/kb/macos-permissions-guide"
+        },
+        {
+          "title": "OBS 官方 · Windows 排障指南（黑屏/编码/音频/崩溃）",
+          "url": "https://obs-studio-app.github.io/obs-studio-troubleshooting-windows.html"
+        }
       ]
     },
     {
@@ -2386,6 +3000,16 @@
       "related": [
         "av-sample",
         "av-drift"
+      ],
+      "links": [
+        {
+          "title": "OBS 官方 · macOS 屏幕录制/麦克风/辅助功能权限指南",
+          "url": "https://obsproject.com/kb/macos-permissions-guide"
+        },
+        {
+          "title": "OBS 官方 · Windows 排障指南（黑屏/编码/音频/崩溃）",
+          "url": "https://obs-studio-app.github.io/obs-studio-troubleshooting-windows.html"
+        }
       ]
     },
     {
@@ -2430,6 +3054,16 @@
       "related": [
         "au-mic-noise",
         "au-mic-quiet"
+      ],
+      "links": [
+        {
+          "title": "OBS 官方 · macOS 屏幕录制/麦克风/辅助功能权限指南",
+          "url": "https://obsproject.com/kb/macos-permissions-guide"
+        },
+        {
+          "title": "OBS 官方 · Windows 排障指南（黑屏/编码/音频/崩溃）",
+          "url": "https://obs-studio-app.github.io/obs-studio-troubleshooting-windows.html"
+        }
       ]
     },
     {
@@ -2474,6 +3108,16 @@
       "related": [
         "sf-auth",
         "sf-server"
+      ],
+      "links": [
+        {
+          "title": "OBS 官方 · 日志分析器（自动诊断日志）",
+          "url": "https://obsproject.com/tools/analyzer"
+        },
+        {
+          "title": "OBS 官方 · Windows 排障指南（黑屏/编码/音频/崩溃）",
+          "url": "https://obs-studio-app.github.io/obs-studio-troubleshooting-windows.html"
+        }
       ]
     },
     {
@@ -2520,6 +3164,16 @@
         "sf-server",
         "st-bilibili",
         "st-douyin"
+      ],
+      "links": [
+        {
+          "title": "OBS 官方 · 日志分析器（自动诊断日志）",
+          "url": "https://obsproject.com/tools/analyzer"
+        },
+        {
+          "title": "OBS 官方 · Windows 排障指南（黑屏/编码/音频/崩溃）",
+          "url": "https://obs-studio-app.github.io/obs-studio-troubleshooting-windows.html"
+        }
       ]
     },
     {
@@ -2564,6 +3218,16 @@
       "related": [
         "sf-auth",
         "sf-firewall"
+      ],
+      "links": [
+        {
+          "title": "OBS 官方 · 日志分析器（自动诊断日志）",
+          "url": "https://obsproject.com/tools/analyzer"
+        },
+        {
+          "title": "OBS 官方 · Windows 排障指南（黑屏/编码/音频/崩溃）",
+          "url": "https://obs-studio-app.github.io/obs-studio-troubleshooting-windows.html"
+        }
       ]
     },
     {
@@ -2608,6 +3272,16 @@
       "related": [
         "sf-vpn",
         "sf-server"
+      ],
+      "links": [
+        {
+          "title": "OBS 官方 · 日志分析器（自动诊断日志）",
+          "url": "https://obsproject.com/tools/analyzer"
+        },
+        {
+          "title": "OBS 官方 · Windows 排障指南（黑屏/编码/音频/崩溃）",
+          "url": "https://obs-studio-app.github.io/obs-studio-troubleshooting-windows.html"
+        }
       ]
     },
     {
@@ -2653,6 +3327,16 @@
         "st-bilibili",
         "st-twitch",
         "sf-auth"
+      ],
+      "links": [
+        {
+          "title": "OBS 官方首页 · 下载与文档",
+          "url": "https://obsproject.com"
+        },
+        {
+          "title": "OBS 中文站 · 入门与基础配置指南",
+          "url": "https://www.obsproject.com.cn/obs/62.html"
+        }
       ]
     },
     {
@@ -2698,6 +3382,16 @@
         "st-bilibili",
         "st-douyin",
         "sf-auth"
+      ],
+      "links": [
+        {
+          "title": "OBS 官方首页 · 下载与文档",
+          "url": "https://obsproject.com"
+        },
+        {
+          "title": "OBS 中文站 · 入门与基础配置指南",
+          "url": "https://www.obsproject.com.cn/obs/62.html"
+        }
       ]
     },
     {
@@ -2743,6 +3437,16 @@
         "st-douyin",
         "st-videoaccount",
         "sf-auth"
+      ],
+      "links": [
+        {
+          "title": "OBS 官方首页 · 下载与文档",
+          "url": "https://obsproject.com"
+        },
+        {
+          "title": "OBS 中文站 · 入门与基础配置指南",
+          "url": "https://www.obsproject.com.cn/obs/62.html"
+        }
       ]
     },
     {
@@ -2798,6 +3502,16 @@
         "st-bilibili",
         "st-twitch",
         "st-scene"
+      ],
+      "links": [
+        {
+          "title": "OBS 官方首页 · 下载与文档",
+          "url": "https://obsproject.com"
+        },
+        {
+          "title": "OBS 中文站 · 入门与基础配置指南",
+          "url": "https://www.obsproject.com.cn/obs/62.html"
+        }
       ]
     },
     {
@@ -2847,6 +3561,16 @@
       "related": [
         "st-general",
         "cf-hotkeys"
+      ],
+      "links": [
+        {
+          "title": "OBS 官方首页 · 下载与文档",
+          "url": "https://obsproject.com"
+        },
+        {
+          "title": "OBS 中文站 · 入门与基础配置指南",
+          "url": "https://www.obsproject.com.cn/obs/62.html"
+        }
       ]
     },
     {
@@ -2897,6 +3621,16 @@
         "st-douyin",
         "st-general",
         "av-virtualcam"
+      ],
+      "links": [
+        {
+          "title": "OBS 官方首页 · 下载与文档",
+          "url": "https://obsproject.com"
+        },
+        {
+          "title": "OBS 中文站 · 入门与基础配置指南",
+          "url": "https://www.obsproject.com.cn/obs/62.html"
+        }
       ]
     },
     {
@@ -2946,6 +3680,16 @@
         "bs-mac-perm",
         "au-mac-desktop",
         "st-general"
+      ],
+      "links": [
+        {
+          "title": "OBS 官方首页 · 下载与文档",
+          "url": "https://obsproject.com"
+        },
+        {
+          "title": "OBS 中文站 · 入门与基础配置指南",
+          "url": "https://www.obsproject.com.cn/obs/62.html"
+        }
       ]
     },
     {
@@ -2984,6 +3728,16 @@
       "related": [
         "st-multi",
         "st-general"
+      ],
+      "links": [
+        {
+          "title": "OBS 官方首页 · 下载与文档",
+          "url": "https://obsproject.com"
+        },
+        {
+          "title": "OBS 中文站 · 入门与基础配置指南",
+          "url": "https://www.obsproject.com.cn/obs/62.html"
+        }
       ]
     },
     {
@@ -3029,6 +3783,16 @@
         "st-multi",
         "st-vertical",
         "lag-upload"
+      ],
+      "links": [
+        {
+          "title": "OBS 官方首页 · 下载与文档",
+          "url": "https://obsproject.com"
+        },
+        {
+          "title": "OBS 中文站 · 入门与基础配置指南",
+          "url": "https://www.obsproject.com.cn/obs/62.html"
+        }
       ]
     },
     {
@@ -3072,6 +3836,16 @@
       "related": [
         "rc-nofile",
         "rc-remux"
+      ],
+      "links": [
+        {
+          "title": "OBS 官方 · Windows 排障指南（黑屏/编码/音频/崩溃）",
+          "url": "https://obs-studio-app.github.io/obs-studio-troubleshooting-windows.html"
+        },
+        {
+          "title": "OBS 官方 · 日志分析器（自动诊断日志）",
+          "url": "https://obsproject.com/tools/analyzer"
+        }
       ]
     },
     {
@@ -3110,6 +3884,16 @@
       "related": [
         "rc-mkv",
         "rc-nofile"
+      ],
+      "links": [
+        {
+          "title": "OBS 官方 · Windows 排障指南（黑屏/编码/音频/崩溃）",
+          "url": "https://obs-studio-app.github.io/obs-studio-troubleshooting-windows.html"
+        },
+        {
+          "title": "OBS 官方 · 日志分析器（自动诊断日志）",
+          "url": "https://obsproject.com/tools/analyzer"
+        }
       ]
     },
     {
@@ -3155,6 +3939,16 @@
         "au-mute",
         "au-mac-desktop",
         "rc-nofile"
+      ],
+      "links": [
+        {
+          "title": "OBS 官方 · Windows 排障指南（黑屏/编码/音频/崩溃）",
+          "url": "https://obs-studio-app.github.io/obs-studio-troubleshooting-windows.html"
+        },
+        {
+          "title": "OBS 官方 · 日志分析器（自动诊断日志）",
+          "url": "https://obsproject.com/tools/analyzer"
+        }
       ]
     },
     {
@@ -3199,6 +3993,16 @@
       "related": [
         "rc-local",
         "enc-10bit"
+      ],
+      "links": [
+        {
+          "title": "OBS 官方 · Windows 排障指南（黑屏/编码/音频/崩溃）",
+          "url": "https://obs-studio-app.github.io/obs-studio-troubleshooting-windows.html"
+        },
+        {
+          "title": "OBS 官方 · 日志分析器（自动诊断日志）",
+          "url": "https://obsproject.com/tools/analyzer"
+        }
       ]
     },
     {
@@ -3243,6 +4047,16 @@
       "related": [
         "cf-colorrange",
         "bs-hdr"
+      ],
+      "links": [
+        {
+          "title": "OBS 中文站 · 入门与基础配置指南",
+          "url": "https://www.obsproject.com.cn/obs/62.html"
+        },
+        {
+          "title": "OBS 官方 · Windows 排障指南（黑屏/编码/音频/崩溃）",
+          "url": "https://obs-studio-app.github.io/obs-studio-troubleshooting-windows.html"
+        }
       ]
     },
     {
@@ -3287,6 +4101,16 @@
       "related": [
         "cf-colorspace",
         "bs-capturecard"
+      ],
+      "links": [
+        {
+          "title": "OBS 中文站 · 入门与基础配置指南",
+          "url": "https://www.obsproject.com.cn/obs/62.html"
+        },
+        {
+          "title": "OBS 官方 · Windows 排障指南（黑屏/编码/音频/崩溃）",
+          "url": "https://obs-studio-app.github.io/obs-studio-troubleshooting-windows.html"
+        }
       ]
     },
     {
@@ -3331,6 +4155,16 @@
       "related": [
         "cf-resolution",
         "st-vertical"
+      ],
+      "links": [
+        {
+          "title": "OBS 中文站 · 入门与基础配置指南",
+          "url": "https://www.obsproject.com.cn/obs/62.html"
+        },
+        {
+          "title": "OBS 官方 · Windows 排障指南（黑屏/编码/音频/崩溃）",
+          "url": "https://obs-studio-app.github.io/obs-studio-troubleshooting-windows.html"
+        }
       ]
     },
     {
@@ -3375,6 +4209,16 @@
       "related": [
         "cf-profiles",
         "st-scene"
+      ],
+      "links": [
+        {
+          "title": "OBS 中文站 · 入门与基础配置指南",
+          "url": "https://www.obsproject.com.cn/obs/62.html"
+        },
+        {
+          "title": "OBS 官方 · Windows 排障指南（黑屏/编码/音频/崩溃）",
+          "url": "https://obs-studio-app.github.io/obs-studio-troubleshooting-windows.html"
+        }
       ]
     },
     {
@@ -3419,6 +4263,16 @@
       "related": [
         "cf-hotkeys",
         "rc-local"
+      ],
+      "links": [
+        {
+          "title": "OBS 中文站 · 入门与基础配置指南",
+          "url": "https://www.obsproject.com.cn/obs/62.html"
+        },
+        {
+          "title": "OBS 官方 · Windows 排障指南（黑屏/编码/音频/崩溃）",
+          "url": "https://obs-studio-app.github.io/obs-studio-troubleshooting-windows.html"
+        }
       ]
     },
     {
@@ -3457,6 +4311,16 @@
       "related": [
         "st-scene",
         "cf-hotkeys"
+      ],
+      "links": [
+        {
+          "title": "OBS 中文站 · 入门与基础配置指南",
+          "url": "https://www.obsproject.com.cn/obs/62.html"
+        },
+        {
+          "title": "OBS 官方 · Windows 排障指南（黑屏/编码/音频/崩溃）",
+          "url": "https://obs-studio-app.github.io/obs-studio-troubleshooting-windows.html"
+        }
       ]
     },
     {
@@ -3501,6 +4365,20 @@
       "related": [
         "cr-mac-crash",
         "cr-downgrade"
+      ],
+      "links": [
+        {
+          "title": "OBS 官方 · Windows 排障指南（黑屏/编码/音频/崩溃）",
+          "url": "https://obs-studio-app.github.io/obs-studio-troubleshooting-windows.html"
+        },
+        {
+          "title": "OBS 官方 · macOS 屏幕录制/麦克风/辅助功能权限指南",
+          "url": "https://obsproject.com/kb/macos-permissions-guide"
+        },
+        {
+          "title": "OBS 官方 · 日志分析器（自动诊断日志）",
+          "url": "https://obsproject.com/tools/analyzer"
+        }
       ]
     },
     {
@@ -3537,6 +4415,20 @@
       "related": [
         "cr-downgrade",
         "cr-antivirus"
+      ],
+      "links": [
+        {
+          "title": "OBS 官方 · Windows 排障指南（黑屏/编码/音频/崩溃）",
+          "url": "https://obs-studio-app.github.io/obs-studio-troubleshooting-windows.html"
+        },
+        {
+          "title": "OBS 官方 · macOS 屏幕录制/麦克风/辅助功能权限指南",
+          "url": "https://obsproject.com/kb/macos-permissions-guide"
+        },
+        {
+          "title": "OBS 官方 · 日志分析器（自动诊断日志）",
+          "url": "https://obsproject.com/tools/analyzer"
+        }
       ]
     },
     {
@@ -3574,6 +4466,20 @@
       "related": [
         "cr-plugin",
         "cr-vcredist"
+      ],
+      "links": [
+        {
+          "title": "OBS 官方 · Windows 排障指南（黑屏/编码/音频/崩溃）",
+          "url": "https://obs-studio-app.github.io/obs-studio-troubleshooting-windows.html"
+        },
+        {
+          "title": "OBS 官方 · macOS 屏幕录制/麦克风/辅助功能权限指南",
+          "url": "https://obsproject.com/kb/macos-permissions-guide"
+        },
+        {
+          "title": "OBS 官方 · 日志分析器（自动诊断日志）",
+          "url": "https://obsproject.com/tools/analyzer"
+        }
       ]
     },
     {
@@ -3617,6 +4523,199 @@
       "related": [
         "bs-mac-rosetta",
         "cr-plugin"
+      ],
+      "links": [
+        {
+          "title": "OBS 官方 · Windows 排障指南（黑屏/编码/音频/崩溃）",
+          "url": "https://obs-studio-app.github.io/obs-studio-troubleshooting-windows.html"
+        },
+        {
+          "title": "OBS 官方 · macOS 屏幕录制/麦克风/辅助功能权限指南",
+          "url": "https://obsproject.com/kb/macos-permissions-guide"
+        },
+        {
+          "title": "OBS 官方 · 日志分析器（自动诊断日志）",
+          "url": "https://obsproject.com/tools/analyzer"
+        }
+      ]
+    },
+    {
+      "id": "cr-safe-mode",
+      "category": "crash",
+      "title": "用安全模式(safe-mode)排查 OBS 启动崩溃",
+      "platforms": [
+        "Windows",
+        "macOS"
+      ],
+      "severity": "严重",
+      "symptoms": [
+        "双击 OBS 直接闪退或无响应",
+        "进入主界面之前就崩溃",
+        "安装新插件或某次更新后才出现"
+      ],
+      "causes": [
+        "第三方插件冲突",
+        "显卡驱动或运行库（Visual C++ Redistributable）损坏",
+        "配置文件损坏"
+      ],
+      "steps": [
+        {
+          "title": "以安全模式启动",
+          "detail": "Windows：按住 Shift 双击 OBS，或在快捷方式目标后加 --safe-mode；macOS：打开时按住 Alt，或在终端执行 open -n /Applications/OBS.app --args --safe-mode。安全模式会禁用所有插件。",
+          "level": "基础"
+        },
+        {
+          "title": "定位冲突插件",
+          "detail": "若安全模式能正常打开，说明是插件问题。到 帮助 → 插件 中逐个禁用最近安装的插件，再正常启动验证。",
+          "level": "进阶"
+        },
+        {
+          "title": "修复运行库/驱动",
+          "detail": "Windows 重装最新 Visual C++ Redistributable 并更新显卡驱动；必要时删除 %APPDATA%\\obs-studio\\crashes 后重试。",
+          "level": "进阶"
+        },
+        {
+          "title": "回退或重装 OBS",
+          "detail": "若配置损坏，备份后重装 OBS；若问题始于某次更新，可下载旧稳定版（如 30.2.3）。",
+          "level": "进阶"
+        }
+      ],
+      "tips": [
+        "安全模式是区分「插件问题」与「OBS 本体问题」的最快办法",
+        "提交 issue 前先用日志分析器并附上崩溃日志"
+      ],
+      "related": [
+        "cr-plugin",
+        "cr-vcredist",
+        "cr-mac-crash"
+      ],
+      "links": [
+        {
+          "title": "OBS 官方 · Windows 排障指南（黑屏/编码/音频/崩溃）",
+          "url": "https://obs-studio-app.github.io/obs-studio-troubleshooting-windows.html"
+        },
+        {
+          "title": "OBS 官方 · macOS 屏幕录制/麦克风/辅助功能权限指南",
+          "url": "https://obsproject.com/kb/macos-permissions-guide"
+        },
+        {
+          "title": "OBS 官方 · 日志分析器（自动诊断日志）",
+          "url": "https://obsproject.com/tools/analyzer"
+        }
+      ]
+    },
+    {
+      "id": "au-blackhole",
+      "category": "audio",
+      "title": "macOS 采集桌面/系统音频（BlackHole 虚拟设备）",
+      "platforms": [
+        "macOS"
+      ],
+      "severity": "一般",
+      "symptoms": [
+        "macOS 下没有「桌面音频」设备可捕获",
+        "只能录到麦克风，游戏/视频声音丢失",
+        "想直播电脑播放的声音但系统不提供桌面音频源"
+      ],
+      "causes": [
+        "macOS 不像 Windows 自带「桌面音频」设备",
+        "未安装虚拟音频驱动",
+        "输出设备路由错误"
+      ],
+      "steps": [
+        {
+          "title": "安装 BlackHole 虚拟音频驱动",
+          "detail": "从 github.com/ExistentialAudio/BlackHole 安装 BlackHole 2ch（或 16ch），安装后重启 OBS。",
+          "level": "基础"
+        },
+        {
+          "title": "创建多输出设备",
+          "detail": "打开「音频 MIDI 设置」→ 创建多输出设备，勾选「内建输出」与「BlackHole 2ch」，并设为系统输出，这样既能听到声音又能被 OBS 捕获。",
+          "level": "进阶"
+        },
+        {
+          "title": "在 OBS 添加音频输入捕获",
+          "detail": "OBS 来源 → 音频输入捕获 → 设备选 BlackHole 2ch，即可把系统声音混入直播/录制。",
+          "level": "进阶"
+        }
+      ],
+      "tips": [
+        "BlackHole 是免费开源方案，比收费虚拟声卡轻量",
+        "多输出设备延迟略高，对延迟敏感可只用 BlackHole"
+      ],
+      "related": [
+        "bs-mac-perm",
+        "cr-mac-crash"
+      ],
+      "links": [
+        {
+          "title": "OBS 官方 · macOS 屏幕录制/麦克风/辅助功能权限指南",
+          "url": "https://obsproject.com/kb/macos-permissions-guide"
+        }
+      ]
+    },
+    {
+      "id": "en-nvenc",
+      "category": "encoding",
+      "title": "NVENC 编码失败：Failed to open / 驱动初始化错误",
+      "platforms": [
+        "Windows"
+      ],
+      "severity": "严重",
+      "symptoms": [
+        "开始推流/录制提示 NVENC 错误",
+        "日志含 \"Failed to open NVENC codec\"",
+        "编码器下拉为空或选中后无反应"
+      ],
+      "causes": [
+        "NVIDIA 驱动过旧或损坏",
+        "GPU 被其他程序占用或驱动被拦截（如杀软）",
+        "OBS 与新驱动版本不兼容"
+      ],
+      "steps": [
+        {
+          "title": "更新 NVIDIA 显卡驱动",
+          "detail": "到 NVIDIA 官网或用 GeForce Experience 安装最新 Game Ready 驱动，安装时选「清洁安装」。",
+          "level": "基础"
+        },
+        {
+          "title": "检查编码器是否被占用",
+          "detail": "关闭其他占用 NVENC 的软件（其他推流/录屏、剪映、游戏内录制），任务管理器确认无残留编码进程。",
+          "level": "进阶"
+        },
+        {
+          "title": "添加杀软/Defender 排除项",
+          "detail": "把 OBS 安装目录加入 Windows Defender 排除列表，避免驱动被拦截；必要时临时关闭第三方杀软验证。",
+          "level": "进阶"
+        },
+        {
+          "title": "回退或换用其他硬件编码器",
+          "detail": "若新驱动仍不行，回退到上一个稳定驱动；或改用 AMD(AMF)/Intel(QSV) 编码器，x264 作为兜底。",
+          "level": "进阶"
+        }
+      ],
+      "tips": [
+        "优先用 NVENC 而非 x264 以解放 CPU",
+        "笔记本双显卡需让 OBS 跑在独显上"
+      ],
+      "related": [
+        "enc-overload",
+        "enc-cpu",
+        "bs-dualgpu"
+      ],
+      "links": [
+        {
+          "title": "OBS 官方 · Windows 排障指南（黑屏/编码/音频/崩溃）",
+          "url": "https://obs-studio-app.github.io/obs-studio-troubleshooting-windows.html"
+        },
+        {
+          "title": "OBS Versions · 黑屏与编码问题修复教程",
+          "url": "https://obs-versions.com/blog/fix-obs-black-screen"
+        },
+        {
+          "title": "OBS 官方 · 日志分析器（自动诊断日志）",
+          "url": "https://obsproject.com/tools/analyzer"
+        }
       ]
     }
   ],

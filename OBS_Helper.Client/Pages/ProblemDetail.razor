@@ -71,6 +71,19 @@
             </section>
         }
 
+        @if (problem.Links.Count > 0)
+        {
+            <section class="block">
+                <h3>🔗 官方文档 / 参考链接</h3>
+                <ul class="link-list">
+                    @foreach (var l in problem.Links)
+                    {
+                        <li><a class="ext-link" href="@l.Url" target="_blank" rel="noopener">@l.Title <span class="ext">↗</span></a></li>
+                    }
+                </ul>
+            </section>
+        }
+
         @if (related.Count > 0)
         {
             <section class="block">
@@ -78,9 +91,7 @@
                 <div class="prob-list">
                     @foreach (var r in related)
                     {
-                        <a class="prob-card" href="@($"problem/{r.Id}")">
-                            <span class="prob-title">@r.Title</span>
-                        </a>
+                        <ProblemCard Problem="r" />
                     }
                 </div>
             </section>

@@ -1,0 +1,23 @@
+@using OBS_Helper.Client.Models
+
+@* 复用的「问题卡片」组件：首页收藏、分类、搜索、搭建向导、相关问题列表共用。 *@
+<a class="prob-card" href="@($"problem/{Problem.Id}")">
+    @if (ShowPlatforms)
+    {
+        <div class="prob-main">
+            <div class="prob-title">@Problem.Title</div>
+            <div class="prob-platforms">@string.Join(" · ", Problem.Platforms)</div>
+        </div>
+    }
+    else
+    {
+        <span class="prob-title">@Problem.Title</span>
+    }
+    <span class="prob-sev sev-@UIHelper.SevClass(Problem.Severity)">@Problem.Severity</span>
+</a>
+
+@code {
+    [Parameter] public Problem Problem { get; set; } = new();
+    /// <summary>是否展示平台标签（分类/搜索/搭建向导用，收藏与相关问题列表可省略）。</summary>
+    [Parameter] public bool ShowPlatforms { get; set; }
+}

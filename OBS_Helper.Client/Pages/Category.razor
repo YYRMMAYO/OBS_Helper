@@ -14,13 +14,7 @@
     <div class="prob-list">
         @foreach (var p in problems)
         {
-            <a class="prob-card" href="@($"problem/{p.Id}")">
-                <div class="prob-main">
-                    <div class="prob-title">@p.Title</div>
-                    <div class="prob-platforms">@string.Join(" · ", p.Platforms)</div>
-                </div>
-                <span class="prob-sev sev-@UIHelper.SevClass(p.Severity)">@p.Severity</span>
-            </a>
+            <ProblemCard Problem="p" ShowPlatforms="true" />
         }
     </div>
 }

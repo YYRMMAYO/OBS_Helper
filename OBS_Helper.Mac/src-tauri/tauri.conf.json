@@ -4,10 +4,7 @@
   "version": "1.0.0",
   "identifier": "com.obshelper.desktop",
   "build": {
-    "frontendDist": "../../OBS_Helper.Client/bin/Release/net10.0/publish/wwwroot",
-    "devUrl": "",
-    "beforeDevCommand": "",
-    "beforeBuildCommand": ""
+    "frontendDist": "../../OBS_Helper.Client/bin/Release/net10.0/publish/wwwroot"
   },
   "app": {
     "windows": [
@@ -42,11 +39,7 @@
     ],
     "macOS": {
       "minimumSystemVersion": "10.15",
-      "infoPlist": {
-        "NSScreenCaptureUsageDescription": "OBS 排障助手会展示 macOS 屏幕录制权限的设置步骤（本应用本身不捕获屏幕）。",
-        "NSMicrophoneUsageDescription": "OBS 排障助手会展示 macOS 麦克风权限的设置步骤（本应用本身不录音）。"
-      }
-    },
-    "outDir": "../../PAKE/macos"
+      "infoPlist": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<!DOCTYPE plist PUBLIC \"-//Apple//DTD PLIST 1.0//EN\" \"http://www.apple.com/DTDs/PropertyList-1.0.dtd\">\n<plist version=\"1.0\">\n<dict>\n  <key>NSScreenCaptureUsageDescription</key>\n  <string>OBS 排障助手会展示 macOS 屏幕录制权限的设置步骤（本应用本身不捕获屏幕）。</string>\n  <key>NSMicrophoneUsageDescription</key>\n  <string>OBS 排障助手会展示 macOS 麦克风权限的设置步骤（本应用本身不录音）。</string>\n</dict>\n</plist>"
+    }
   }
 }

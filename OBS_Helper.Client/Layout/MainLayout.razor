@@ -1,0 +1,33 @@
+﻿@inherits LayoutComponentBase
+
+<div class="app-shell">
+    <header class="app-bar">
+        <a class="brand" href="">
+            <span class="brand-logo">OBS</span>
+            <span class="brand-text">直播排障助手</span>
+        </a>
+        <span class="brand-sub">macOS · Windows 通用</span>
+    </header>
+
+    <main class="app-content">
+        @Body
+    </main>
+
+    <nav class="bottom-nav">
+        <NavLink class="nav-tab" href="" Match="NavLinkMatch.All">
+            <span class="tab-icon">🏠</span><span class="tab-label">首页</span>
+        </NavLink>
+        <NavLink class="nav-tab" href="search">
+            <span class="tab-icon">🔍</span><span class="tab-label">搜索</span>
+        </NavLink>
+        <NavLink class="nav-tab" href="assistant">
+            <span class="tab-icon">🤖</span><span class="tab-label">助手</span>
+        </NavLink>
+        <NavLink class="nav-tab" href="diagnostic">
+            <span class="tab-icon">🩺</span><span class="tab-label">诊断</span>
+        </NavLink>
+        <NavLink class="nav-tab" href="setup">
+            <span class="tab-icon">🎬</span><span class="tab-label">搭建</span>
+        </NavLink>
+    </nav>
+</div>

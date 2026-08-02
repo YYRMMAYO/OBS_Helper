@@ -1,0 +1,33 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0-windows10.0.19041.0</TargetFramework>
+    <UseWindowsForms>true</UseWindowsForms>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <AssemblyName>OBS_Helper</AssemblyName>
+    <RootNamespace>OBS_Helper.Win</RootNamespace>
+    <AssemblyTitle>OBS 排障助手</AssemblyTitle>
+    <AssemblyVersion>1.0.0.0</AssemblyVersion>
+    <FileVersion>1.0.0.0</FileVersion>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <ApplicationIcon>appicon.ico</ApplicationIcon>
+    <ApplicationHighDpiMode>PerMonitorV2</ApplicationHighDpiMode>
+    <!-- 站点内容以松散文件形式随包发布，运行时从程序目录读取 -->
+    <PublishSingleFile>false</PublishSingleFile>
+    <!-- 自包含发布，目标机无需安装 .NET -->
+    <SelfContained>true</SelfContained>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- 将 Blazor 静态站点整体作为内容随包发布 -->
+    <!-- 排除历史遗留的嵌套 wwwroot/wwwroot，避免脏数据被带入发布包 -->
+    <Content Include="wwwroot\**\*" Exclude="wwwroot\wwwroot\**\*" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Web.WebView2" Version="1.0.4078.44" />
+  </ItemGroup>
+
+</Project>

@@ -1,0 +1,102 @@
+@page "/setup"
+@inject ProblemService ProblemService
+
+<PageTitle>直播间搭建</PageTitle>
+
+<div class="setup">
+    <h1>🎬 直播间搭建向导</h1>
+    <p class="muted">按阶段一步步搭建，选择平台可直达对应接入指南。</p>
+
+    <h2 class="section-title">🧭 搭建流程</h2>
+    <div class="steps-flow">
+        @foreach (var step in flow)
+        {
+            <a class="flow-card" href="@step.Href">
+                <span class="flow-no">@step.No</span>
+                <span class="flow-body">
+                    <span class="flow-title">@step.Title</span>
+                    <span class="flow-desc">@step.Desc</span>
+                </span>
+                <span class="flow-go">›</span>
+            </a>
+        }
+    </div>
+
+    <h2 class="section-title">📡 选择平台 / 场景</h2>
+    <div class="cat-filter">
+        @foreach (var p in platforms)
+        {
+            <button class="chip @(activePlatform == p.Key ? "active" : "")" style="--cat:@p.Color" @onclick="async () => await SetPlatform(p.Key)">@p.Icon @p.Label</button>
+        }
+    </div>
+
+    <div class="prob-list">
+        @foreach (var p in visibleSetups)
+        {
+            <a class="prob-card" href="@($"problem/{p.Id}")">
+                <div class="prob-main">
+                    <div class="prob-title">@p.Title</div>
+                    <div class="prob-platforms">@string.Join(" · ", p.Platforms)</div>
+                </div>
+                <span class="prob-sev sev-@UIHelper.SevClass(p.Severity)">@p.Severity</span>
+            </a>
+        }
+    </div>
+
+    @if (visibleSetups.Count == 0)
+    {
+        <p class="empty">该平台暂无专门指南，可参考上方「搭建流程」通用步骤。</p>
+    }
+
+    <p class="note">需要同时多平台开播？查看「多平台同时推流」与「竖屏 9:16 直播」。</p>
+</div>
+
+@code {
+    private List<Problem> setupProblems = new();
+    private string activePlatform = "all";
+
+    private static readonly (string No, string Title, string Desc, string Href)[] flow =
+    {
+        ("1", "准备与权限", "更新 OBS、以管理员运行（Win）或授予屏幕录制/麦克风权限（macOS）。", "diagnostic"),
+        ("2", "场景与来源", "新建场景，添加捕获源、摄像头、音频，排好层级。", "problem/st-scene"),
+        ("3", "音频校对", "麦克风/桌面声音电平正常，加降噪，统一 48kHz。", "problem/au-mic"),
+        ("4", "推流设置", "选平台、粘贴密钥，硬件编码 + CBR + 关键帧 2s。", "problem/st-general"),
+        ("5", "开播自检", "看统计面板掉帧，先录一段自测再开播。", "diagnostic"),
+        ("6", "多平台 / 竖屏", "用插件做多路推流或竖屏 9:16 画布。", "problem/st-multi"),
+    };
+
+    private static readonly (string Key, string Label, string Icon, string Color, string Kw)[] platforms =
+    {
+        ("all", "全部", "📋", "#8e44ad", ""),
+        ("bilibili", "B站", "📺", "#fb7299", "B站"),
+        ("douyin", "抖音", "🎵", "#fe2c55", "抖音"),
+        ("kuaishou", "快手", "⚡", "#ff4906", "快手"),
+        ("youtube", "YouTube", "▶️", "#ff0000", "YouTube"),
+        ("twitch", "Twitch", "🟣", "#9146ff", "Twitch"),
+        ("videoaccount", "视频号", "💬", "#07c160", "视频号"),
+        ("xhs", "小红书", "📕", "#ff2442", "小红书"),
+        ("vertical", "竖屏", "📱", "#1abc9c", "竖屏"),
+        ("mac", "macOS", "🍎", "#555555", "macOS"),
+    };
+
+    private List<Problem> visibleSetups => string.IsNullOrEmpty(activePlatform) || activePlatform == "all"
+        ? setupProblems
+        : setupProblems.Where(p =>
+            p.Title.Contains(PlatformKw(activePlatform), StringComparison.OrdinalIgnoreCase) ||
+            p.Id.Contains(PlatformKw(activePlatform), StringComparison.OrdinalIgnoreCase))
+          .ToList();
+
+    private static string PlatformKw(string key) =>
+        (platforms.FirstOrDefault(p => p.Key == key).Kw) ?? "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        setupProblems = await ProblemService.GetByCategoryAsync("setup");
+    }
+
+    private async Task SetPlatform(string key)
+    {
+        activePlatform = key;
+        await Task.CompletedTask;
+    }
+}

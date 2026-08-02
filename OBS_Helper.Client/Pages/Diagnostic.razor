@@ -1,0 +1,84 @@
+@page "/diagnostic"
+
+<PageTitle>配置诊断</PageTitle>
+
+<div class="diag">
+    <h1>🩺 OBS 配置诊断</h1>
+    <p class="muted">按清单逐项排查，多数问题都能定位。</p>
+
+    <section class="diag-card">
+        <h3>① 快速自检清单</h3>
+        <div class="progress"><div class="progress-bar" style="width:@DonePercent%"></div></div>
+        <p class="muted small">已完成 @doneCount / @checks.Count</p>
+        <div class="steps">
+            @for (var i = 0; i < checks.Count; i++)
+            {
+                var idx = i;
+                <label class="step @(checks[idx].Done ? "done" : "")">
+                    <input type="checkbox" checked="@checks[idx].Done" @onchange="e => Toggle(idx, e)" />
+                    <span class="step-no">@(idx + 1)</span>
+                    <span class="step-body">
+                        <span class="step-title">@checks[idx].Text</span>
+                    </span>
+                </label>
+            }
+        </div>
+        <button class="btn btn-ghost small" @onclick="Reset">重置清单</button>
+    </section>
+
+    <section class="diag-card">
+        <h3>② Windows 配置与日志</h3>
+        <ul class="kv">
+            <li><b>配置目录：</b><code>%AppData%\obs-studio</code></li>
+            <li><b>场景备份：</b><code>%AppData%\obs-studio\sceneCollections</code></li>
+            <li><b>日志分析：</b>在 OBS 中 帮助 → 日志文件 → 上传日志，或访问 <a href="https://obsproject.com/analyzer/" target="_blank" rel="noopener">OBS 官方日志分析器</a></li>
+        </ul>
+        <p class="muted">把分析结果（URL 或关键警告）对照本应用的「崩溃 / 兼容性」分类排查。</p>
+    </section>
+
+    <section class="diag-card">
+        <h3>③ 关于 macOS 端</h3>
+        <p>OBS Studio 提供 macOS 版，本应用同样覆盖 macOS 下的常见问题（黑屏、权限、音频设备等）。在 macOS 上首次使用请务必在 <b>系统设置 → 隐私与安全性</b> 中授予 OBS 以下权限：</p>
+        <ul class="kv">
+            <li><b>屏幕录制：</b>否则显示器 / 窗口捕获会黑屏或空白。</li>
+            <li><b>麦克风：</b>否则无法采集麦克风音频。</li>
+            <li><b>摄像头（如使用）：</b>否则视频源不可用。</li>
+            <li><b>辅助功能（部分捕获方式）：</b>提升窗口捕获稳定性。</li>
+        </ul>
+        <p class="muted">macOS 编码建议优先使用 <b>Apple 硬件编码器（Apple H264 / HEVC）</b>；若录制 / 推流异常，可切换为 x264 软件编码排查。</p>
+    </section>
+</div>
+
+@code {
+    private class CheckItem
+    {
+        public string Text { get; set; } = "";
+        public bool Done { get; set; }
+    }
+
+    private List<CheckItem> checks = new()
+    {
+        new CheckItem { Text = "OBS 以管理员身份运行（右键 → 以管理员身份运行）" },
+        new CheckItem { Text = "编码器使用硬件编码（NVENC / AMF / QSV）" },
+        new CheckItem { Text = "视频码率不超过实际上行速度的 75%" },
+        new CheckItem { Text = "捕获方式正确（游戏/窗口/显示器，且双显卡统一 GPU）" },
+        new CheckItem { Text = "音频采样率统一为 48kHz" },
+        new CheckItem { Text = "关闭 Chrome / Discord 等程序的硬件加速" },
+        new CheckItem { Text = "使用有线网络推流（避免 WiFi 2.4G）" },
+        new CheckItem { Text = "推流服务器与串流密钥正确" }
+    };
+
+    private int doneCount => checks.Count(c => c.Done);
+    private int DonePercent => checks.Count == 0 ? 0 : (int)(100.0 * doneCount / checks.Count);
+
+    private void Toggle(int i, ChangeEventArgs e)
+    {
+        var v = e.Value is bool b && b;
+        checks[i].Done = v;
+    }
+
+    private void Reset()
+    {
+        foreach (var c in checks) c.Done = false;
+    }
+}

@@ -1,0 +1,132 @@
+@page "/problem/{id}"
+@inject ProblemService ProblemService
+@inject BookmarkService BookmarkService
+
+@if (problem is not null)
+{
+    <PageTitle>@problem.Title</PageTitle>
+    <div class="detail">
+        <a class="back" href="@($"category/{problem.Category}")">← 返回分类</a>
+        <div class="detail-head">
+            <h1>@problem.Title</h1>
+            <button class="bookmark-btn @(bookmarked ? "active" : "")" @onclick="ToggleBookmark">@(bookmarked ? "★ 已收藏" : "☆ 收藏")</button>
+        </div>
+        <div class="badges">
+            @foreach (var pf in problem.Platforms)
+            {
+                <span class="badge-pf">@pf</span>
+            }
+            <span class="prob-sev sev-@UIHelper.SevClass(problem.Severity)">@problem.Severity</span>
+        </div>
+
+        <section class="block">
+            <h3>🔴 症状表现</h3>
+            <ul class="sym-list">
+                @foreach (var s in problem.Symptoms)
+                {
+                    <li>@s</li>
+                }
+            </ul>
+        </section>
+
+        <section class="block">
+            <h3>🧐 可能原因</h3>
+            <ul class="cause-list">
+                @foreach (var c in problem.Causes)
+                {
+                    <li>@c</li>
+                }
+            </ul>
+        </section>
+
+        <section class="block">
+            <h3>🛠️ 分步解决方案</h3>
+            <div class="steps">
+                @for (var i = 0; i < problem.Steps.Count; i++)
+                {
+                    var idx = i;
+                    var step = problem.Steps[i];
+                    <label class="step @(IsDone(idx) ? "done" : "")">
+                        <input type="checkbox" checked="@IsDone(idx)" @onchange="e => ToggleStep(idx, e)" />
+                        <span class="step-no">@(i + 1)</span>
+                        <span class="step-body">
+                            <span class="step-title">@step.Title <span class="lvl lvl-@UIHelper.LevelClass(step.Level)">@step.Level</span></span>
+                            <span class="step-detail">@step.Detail</span>
+                        </span>
+                    </label>
+                }
+            </div>
+        </section>
+
+        @if (problem.Tips.Length > 0)
+        {
+            <section class="block">
+                <h3>💡 小贴士</h3>
+                <ul class="tip-list">
+                    @foreach (var t in problem.Tips)
+                    {
+                        <li>@t</li>
+                    }
+                </ul>
+            </section>
+        }
+
+        @if (related.Count > 0)
+        {
+            <section class="block">
+                <h3>🔗 相关问题</h3>
+                <div class="prob-list">
+                    @foreach (var r in related)
+                    {
+                        <a class="prob-card" href="@($"problem/{r.Id}")">
+                            <span class="prob-title">@r.Title</span>
+                        </a>
+                    }
+                </div>
+            </section>
+        }
+    </div>
+}
+else
+{
+    <p class="empty">未找到该问题。</p>
+}
+
+@code {
+    [Parameter] public string Id { get; set; } = "";
+    private Problem? problem;
+    private List<Problem> related = new();
+    private bool bookmarked;
+    private HashSet<int> doneSteps = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        problem = await ProblemService.GetByIdAsync(Id);
+        bookmarked = await BookmarkService.IsBookmarkedAsync(Id);
+        doneSteps = new HashSet<int>(await BookmarkService.GetCompletedStepsAsync(Id));
+        if (problem is not null)
+        {
+            var all = await ProblemService.GetProblemsAsync();
+            related = problem.Related
+                .Select(rid => all.FirstOrDefault(p => p.Id == rid))
+                .OfType<Problem>()
+                .ToList();
+        }
+    }
+
+    private bool IsDone(int i) => doneSteps.Contains(i);
+
+    private async Task ToggleStep(int i, ChangeEventArgs e)
+    {
+        var v = e.Value is bool b && b;
+        if (v) doneSteps.Add(i);
+        else doneSteps.Remove(i);
+        await BookmarkService.SetCompletedStepsAsync(Id, doneSteps.ToList());
+    }
+
+    private async Task ToggleBookmark()
+    {
+        await BookmarkService.ToggleAsync(Id);
+        bookmarked = !bookmarked;
+    }
+}

@@ -1,0 +1,60 @@
+@page "/search"
+@inject ProblemService ProblemService
+
+<PageTitle>搜索</PageTitle>
+
+<div class="search-page">
+    <input class="search-input" placeholder="搜索症状或关键词，如：黑屏、推流失败、音画不同步"
+           value="@query" @oninput="async e => { query = e.Value?.ToString() ?? string.Empty; await DoSearch(); }" />
+    <div class="cat-filter">
+        <button class="chip @(activeCat == string.Empty ? "active" : "")" @onclick="async () => await SetAll()">全部</button>
+        @foreach (var c in categories)
+        {
+            <button class="chip @(activeCat == c.Id ? "active" : "")" style="--cat:@c.Color" @onclick="async () => await SetCat(c.Id)">@c.Icon @c.Title</button>
+        }
+    </div>
+
+    <div class="prob-list">
+        @foreach (var p in results)
+        {
+            <a class="prob-card" href="@($"problem/{p.Id}")">
+                <div class="prob-main">
+                    <div class="prob-title">@p.Title</div>
+                    <div class="prob-platforms">@string.Join(" · ", p.Platforms)</div>
+                </div>
+                <span class="prob-sev sev-@UIHelper.SevClass(p.Severity)">@p.Severity</span>
+            </a>
+        }
+        @if (results.Count == 0)
+        {
+            <p class="empty">没有匹配的结果，换个关键词试试。</p>
+        }
+    </div>
+</div>
+
+@code {
+    private List<Models.Category> categories = new();
+    private List<Models.Problem> results = new();
+    private string query = "";
+    private string activeCat = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        categories = await ProblemService.GetCategoriesAsync();
+        await DoSearch();
+    }
+
+    private async Task DoSearch()
+    {
+        var all = await ProblemService.SearchAsync(query);
+        results = string.IsNullOrEmpty(activeCat) ? all : all.Where(p => p.Category == activeCat).ToList();
+    }
+
+    private async Task SetAll() => await SetCat(string.Empty);
+
+    private async Task SetCat(string c)
+    {
+        activeCat = c;
+        await DoSearch();
+    }
+}

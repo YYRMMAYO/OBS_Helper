@@ -1,0 +1,18 @@
+﻿<Router AppAssembly="@typeof(App).Assembly" NotFoundPage="typeof(Pages.NotFound)">
+    <Found Context="routeData">
+        <ErrorBoundary>
+            <ChildContent>
+                <RouteView RouteData="@routeData" DefaultLayout="@typeof(MainLayout)"/>
+                <FocusOnNavigate RouteData="@routeData" Selector="h1" />
+            </ChildContent>
+            <ErrorContent Context="ex">
+                <div class="error-boundary">
+                    <h2>😵 页面出现了一点问题</h2>
+                    <p>当前页面加载出错，但不会影响其他功能。您可以返回首页或刷新重试。</p>
+                    <p class="error-detail">@ex.Message</p>
+                    <a class="btn btn-accent" href="">返回首页</a>
+                </div>
+            </ErrorContent>
+        </ErrorBoundary>
+    </Found>
+</Router>

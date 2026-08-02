@@ -1,0 +1,42 @@
+@page "/category/{id}"
+@inject ProblemService ProblemService
+
+<PageTitle>分类</PageTitle>
+
+@if (category is not null)
+{
+    <div class="cat-header" style="--cat:@category.Color">
+        <a class="back" href="">← 返回首页</a>
+        <h1>@category.Icon @category.Title</h1>
+        <p>@category.Description</p>
+    </div>
+
+    <div class="prob-list">
+        @foreach (var p in problems)
+        {
+            <a class="prob-card" href="@($"problem/{p.Id}")">
+                <div class="prob-main">
+                    <div class="prob-title">@p.Title</div>
+                    <div class="prob-platforms">@string.Join(" · ", p.Platforms)</div>
+                </div>
+                <span class="prob-sev sev-@UIHelper.SevClass(p.Severity)">@p.Severity</span>
+            </a>
+        }
+    </div>
+}
+else
+{
+    <p class="empty">未找到该分类。</p>
+}
+
+@code {
+    [Parameter] public string Id { get; set; } = "";
+    private Models.Category? category;
+    private List<Models.Problem> problems = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        category = await ProblemService.GetCategoryAsync(Id);
+        problems = await ProblemService.GetByCategoryAsync(Id);
+    }
+}

@@ -1,0 +1,56 @@
+@page "/assistant"
+@inject AssistantService AssistantService
+
+<PageTitle>问答助手</PageTitle>
+
+<div class="assistant">
+    <h1>🤖 排障问答助手</h1>
+    <p class="muted">描述你遇到的现象或关键词，自动匹配最可能的解决方案（离线可用，无需联网）。</p>
+
+    <div class="ask-row">
+        <input class="ask-input" placeholder="例如：直播黑屏、音画不同步、推流失败…"
+               value="@query" @oninput="async e => { query = e.Value?.ToString() ?? string.Empty; await Ask(); }" />
+        <button class="btn btn-accent" @onclick="async () => await Ask()">提问</button>
+    </div>
+
+    <div class="chips">
+        @foreach (var s in AssistantService.Suggestions)
+        {
+            <button class="chip" @onclick="async () => { query = s; await Ask(); }">@s</button>
+        }
+    </div>
+
+    @if (asked && matches.Count == 0)
+    {
+        <p class="empty">没找到匹配，试试更具体的描述，或用上方分类浏览。</p>
+    }
+
+    <div class="matches">
+        @foreach (var m in matches)
+        {
+            <a class="match-card" href="@($"problem/{m.Problem.Id}")">
+                <div class="match-head">
+                    <span class="prob-title">@m.Problem.Title</span>
+                    <span class="match-score">匹配 @m.Score</span>
+                </div>
+                @if (!string.IsNullOrEmpty(m.Reason))
+                {
+                    <div class="match-reason">命中：@m.Reason</div>
+                }
+                <div class="prob-platforms">@string.Join(" · ", m.Problem.Platforms)</div>
+            </a>
+        }
+    </div>
+</div>
+
+@code {
+    private string query = "";
+    private bool asked;
+    private List<AssistantMatch> matches = new();
+
+    private async Task Ask()
+    {
+        asked = true;
+        matches = await AssistantService.AskAsync(query);
+    }
+}

@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="OBS_Helper.Client/OBS_Helper.Client.csproj" />
+  <Project Path="OBS_Helper.Win/OBS_Helper.Win.csproj" />
+</Solution>

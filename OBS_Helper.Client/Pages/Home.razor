@@ -1,0 +1,60 @@
+﻿@page "/"
+@inject ProblemService ProblemService
+@inject BookmarkService BookmarkService
+
+<PageTitle>OBS 直播排障助手</PageTitle>
+
+<div class="hero">
+    <h1>OBS 直播排障助手</h1>
+    <p>复杂问题，分步解决。覆盖黑屏、卡顿、音画不同步、推流失败、直播间搭建等高频难题。</p>
+    <div class="hero-actions">
+        <a class="btn btn-accent" href="search">🔍 搜索问题</a>
+        <a class="btn btn-ghost" href="assistant">🤖 问我一下</a>
+    </div>
+</div>
+
+@if (categories is not null)
+{
+    <h2 class="section-title">问题分类</h2>
+    <div class="cat-grid">
+        @foreach (var c in categories)
+        {
+            <a class="cat-card" href="@($"category/{c.Id}")" style="--cat:@c.Color">
+                <span class="cat-icon">@c.Icon</span>
+                <span class="cat-title">@c.Title</span>
+                <span class="cat-desc">@c.Description</span>
+                <span class="cat-count">@GetCount(c.Id) 个方案</span>
+            </a>
+        }
+    </div>
+}
+
+@if (bookmarks.Count > 0)
+{
+    <h2 class="section-title">⭐ 我的收藏</h2>
+    <div class="prob-list">
+        @foreach (var p in bookmarks)
+        {
+            <a class="prob-card" href="@($"problem/{p.Id}")">
+                <span class="prob-title">@p.Title</span>
+                <span class="prob-sev sev-@UIHelper.SevClass(p.Severity)">@p.Severity</span>
+            </a>
+        }
+    </div>
+}
+
+@code {
+    private List<Models.Category>? categories;
+    private List<Models.Problem>? allProblems;
+    private List<Models.Problem> bookmarks = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        categories = await ProblemService.GetCategoriesAsync();
+        allProblems = await ProblemService.GetProblemsAsync();
+        var ids = await BookmarkService.GetAllAsync();
+        bookmarks = allProblems.Where(p => ids.Contains(p.Id)).ToList();
+    }
+
+    private int GetCount(string catId) => allProblems?.Count(p => p.Category == catId) ?? 0;
+}

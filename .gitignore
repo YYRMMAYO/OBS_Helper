@@ -383,6 +383,9 @@ _refapp/
 
 # 安装包 / 打包输出（统一输出到 PAKE，不入库）
 OBS_Helper.Win/installer/
+OBS_Helper.Win/dist/
+OBS_Helper.Win/dist_old/
+OBS_Helper.Win/*.zip
 PAKE/
 
 # Tauri (macOS) 构建产物

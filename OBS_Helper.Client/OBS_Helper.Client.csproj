@@ -5,6 +5,11 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <OverrideHtmlAssetPlaceholders>true</OverrideHtmlAssetPlaceholders>
+    <Copyright>Copyright (c) 2026 OBS Helper</Copyright>
+    <Authors>OBS Helper</Authors>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <RepositoryUrl>https://github.com/YYRMMAYO/OBS_Helper</RepositoryUrl>
+    <PackageProjectUrl>https://github.com/YYRMMAYO/OBS_Helper</PackageProjectUrl>
   </PropertyGroup>
 
   <ItemGroup>

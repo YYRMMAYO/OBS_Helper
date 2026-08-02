@@ -11,6 +11,11 @@
     <AssemblyTitle>OBS 排障助手</AssemblyTitle>
     <AssemblyVersion>1.0.0.0</AssemblyVersion>
     <FileVersion>1.0.0.0</FileVersion>
+    <Copyright>Copyright (c) 2026 OBS Helper</Copyright>
+    <Authors>OBS Helper</Authors>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <RepositoryUrl>https://github.com/YYRMMAYO/OBS_Helper</RepositoryUrl>
+    <PackageProjectUrl>https://github.com/YYRMMAYO/OBS_Helper</PackageProjectUrl>
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <ApplicationIcon>appicon.ico</ApplicationIcon>
     <ApplicationHighDpiMode>PerMonitorV2</ApplicationHighDpiMode>

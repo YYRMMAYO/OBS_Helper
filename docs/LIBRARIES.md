@@ -56,3 +56,17 @@
 
 - 安装包与可运行软件统一输出到仓库根目录 `PAKE/`（`windows/`、`macos/`），该目录已被 `.gitignore` 忽略，不参与源码提交。
 - 若用于商业分发，请注意 **Inno Setup** 与 **WebView2 SDK** 的许可条款；本项目代码本身以 MIT 许可证发布。
+- 安装包/可运行软件应当发布到 **GitHub Releases**（而非源码仓库），因为它们体积较大（`.exe` ≈ 57MB、`.zip` ≈ 77MB），且被 `.gitignore` 排除。
+
+## 七、代码签名（证书）状态
+
+> 本仓库目前**未配置任何代码签名**。下列条目为发布前需补齐的手动步骤（需要你自行购买/申请证书，助手无法代签）。
+
+| 平台 | 状态 | 影响 | 所需证书 / 操作 |
+| --- | --- | --- | --- |
+| Windows 安装包 (`OBS_Helper_Setup_1.0.0.exe`) | ❌ 未签名 | 安装时触发 SmartScreen / “未知发布者” 警告 | Authenticode 代码签名证书（如 Sectigo/DigiCert）；在 Inno Setup 中配置 `SignTool` 对 `setup.exe` 与内含文件签名 |
+| Windows 主程序 (`OBS_Helper.exe`) | ❌ 未签名 | 同上 | 与安装包同证书，构建后签名 |
+| macOS 应用 (`.app` / `.dmg`) | ❌ 未签名 | Gatekeeper 拦截，需用户手动 `xattr -rd com.apple.quarantine` 或“右键-打开” | Apple Developer ID Application 证书 + `notarytool` 公证；在 `tauri.conf.json` 的 `bundle.macOS` 配置 `signingIdentity` 与公证凭据 |
+
+- 许可证文本：仓库根 `LICENSE`（MIT）现已在 Windows 安装向导中展示，并随安装包复制到 `{app}\LICENSE`；macOS/Tauri 通过 `Cargo.toml` 的 `license = "MIT"` 声明。
+- 程序元数据：两端 `.csproj` 已写入 `Copyright` / `Authors` / `PackageLicenseExpression=MIT` / 仓库地址；Inno Setup 已写入 `VersionInfo*` 与 `AppPublisher`。

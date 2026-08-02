@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>NSScreenCaptureUsageDescription</key>
+  <string>OBS 排障助手会展示 macOS 屏幕录制权限的设置步骤（本应用本身不捕获屏幕）。</string>
+  <key>NSMicrophoneUsageDescription</key>
+  <string>OBS 排障助手会展示 macOS 麦克风权限的设置步骤（本应用本身不录音）。</string>
+</dict>
+</plist>

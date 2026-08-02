@@ -11,17 +11,23 @@ OBS 排障助手 — 无头冒烟测试（Chrome DevTools Protocol）
 """
 import json, time, threading, http.server, os, sys, subprocess, urllib.request, argparse
 
+# GitHub Windows runner 控制台默认 cp1252，直接输出中文会抛 UnicodeEncodeError。
+# 在启动时把 stdout/stderr 固定为 UTF-8 + replace，本地与 CI 都不会因编码崩溃。
+try:
+    if hasattr(sys.stdout, "reconfigure"):
+        sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+    if hasattr(sys.stderr, "reconfigure"):
+        sys.stderr.reconfigure(encoding="utf-8", errors="replace")
+except Exception:
+    pass
+
 def _safe_print(*args, **kwargs):
-    """Print that never crashes on a non-UTF-8 console (e.g. GitHub Windows runner cp1252)."""
+    """Print 兜底：极少数无法 reconfigure 的环境，再次出现编码错误时降级输出。"""
     try:
         print(*args, **kwargs)
     except UnicodeEncodeError:
-        enc = (kwargs.pop("encoding", "utf-8") or "utf-8")
         parts = " ".join(str(a) for a in args)
-        try:
-            safe = parts.encode(enc, "replace").decode(enc, "replace")
-        except Exception:
-            safe = parts.encode("ascii", "replace").decode("ascii")
+        safe = parts.encode("utf-8", "replace").decode("utf-8", "replace")
         print(safe, **kwargs)
 
 try:

@@ -21,9 +21,11 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <!-- 将 Blazor 静态站点整体作为内容随包发布 -->
-    <!-- 排除历史遗留的嵌套 wwwroot/wwwroot，避免脏数据被带入发布包 -->
-    <Content Include="wwwroot\**\*" Exclude="wwwroot\wwwroot\**\*" CopyToOutputDirectory="PreserveNewest" />
+    <!-- 将已构建好的 Blazor 静态站点（clientdist）随包发布到输出目录的 wwwroot 下 -->
+    <Content Include="clientdist\**\*">
+      <TargetPath>wwwroot\%(RecursiveDir)%(Filename)%(Extension)</TargetPath>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
 
   <ItemGroup>

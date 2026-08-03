@@ -1,0 +1,11 @@
+# .NET build output
+bin/
+obj/
+
+# Packaging artifacts (installer EXE / portable zip) — pushed separately by hand
+PAKE/
+
+# Transient build dir / logs
+build/
+build_out.txt
+selftest_result.txt

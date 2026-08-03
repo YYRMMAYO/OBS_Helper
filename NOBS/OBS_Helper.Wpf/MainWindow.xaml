@@ -1,0 +1,127 @@
+<Window x:Class="OBS_Helper.Wpf.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:ctl="clr-namespace:OBS_Helper.Wpf.Controls"
+        Title="OBS 排障助手"
+        Height="780" Width="1160"
+        MinHeight="620" MinWidth="920"
+        WindowStartupLocation="CenterScreen"
+        Background="{DynamicResource Surface2Brush}"
+        TextOptions.TextFormattingMode="Ideal"
+        UseLayoutRounding="True"
+        SnapsToDevicePixels="True">
+
+  <Window.InputBindings>
+    <KeyBinding Key="F" Modifiers="Control" Command="{x:Static ApplicationCommands.Find}" />
+    <KeyBinding Key="BrowserBack" Command="NavigationCommands.BrowseBack" />
+    <KeyBinding Key="Left" Modifiers="Alt" Command="NavigationCommands.BrowseBack" />
+  </Window.InputBindings>
+
+  <Window.CommandBindings>
+    <CommandBinding Command="ApplicationCommands.Find" Executed="OnFindExecuted" />
+    <CommandBinding Command="NavigationCommands.BrowseBack" Executed="OnBrowseBackExecuted" />
+  </Window.CommandBindings>
+
+  <Grid>
+    <Grid.ColumnDefinitions>
+      <ColumnDefinition Width="212" />
+      <ColumnDefinition Width="*" />
+    </Grid.ColumnDefinitions>
+
+    <!-- ============================================ 左侧导航 -->
+    <Border Grid.Column="0" Background="{DynamicResource SurfaceBrush}"
+            BorderBrush="{DynamicResource LineBrush}" BorderThickness="0,0,1,0">
+      <DockPanel>
+
+        <!-- 品牌区 -->
+        <StackPanel DockPanel.Dock="Top" Margin="18,20,18,14">
+          <StackPanel Orientation="Horizontal">
+            <Border Width="30" Height="30" CornerRadius="8"
+                    Background="{DynamicResource BrandBrush}" VerticalAlignment="Center">
+              <TextBlock Text="🎬" FontSize="16" HorizontalAlignment="Center" VerticalAlignment="Center" />
+            </Border>
+            <StackPanel Margin="10,0,0,0" VerticalAlignment="Center">
+              <TextBlock Text="OBS 排障助手" FontWeight="Bold"
+                         FontSize="{DynamicResource FontSizeMd}"
+                         Foreground="{DynamicResource TextBrush}" />
+              <TextBlock x:Name="VersionText" Text="v1.0.0"
+                         FontSize="{DynamicResource FontSizeXs}"
+                         Foreground="{DynamicResource MutedBrush}" />
+            </StackPanel>
+          </StackPanel>
+        </StackPanel>
+
+        <!-- 底部：连接状态 -->
+        <Border DockPanel.Dock="Bottom" Margin="12,8,12,14" Padding="10,9"
+                Background="{DynamicResource Surface2Brush}"
+                CornerRadius="{DynamicResource CornerRadiusMd}">
+          <StackPanel>
+            <ctl:ConnectionBadge x:Name="SideBadge" />
+            <TextBlock Text="离线可用 · 数据仅存本机"
+                       Margin="0,7,0,0"
+                       FontSize="{DynamicResource FontSizeXs}"
+                       Foreground="{DynamicResource MutedBrush}"
+                       TextWrapping="Wrap" />
+          </StackPanel>
+        </Border>
+
+        <!-- 导航项 -->
+        <ScrollViewer VerticalScrollBarVisibility="Auto" Style="{StaticResource PageScroll}">
+          <StackPanel x:Name="NavPanel" Margin="0,2,0,8">
+            <RadioButton x:Name="NavHome"       Style="{StaticResource NavTabButton}" Tag="🏠" Content="首页"   Checked="OnNavChecked" />
+            <RadioButton x:Name="NavSearch"     Style="{StaticResource NavTabButton}" Tag="🔍" Content="搜索"   Checked="OnNavChecked" />
+            <RadioButton x:Name="NavAssistant"  Style="{StaticResource NavTabButton}" Tag="🤖" Content="助手"   Checked="OnNavChecked" />
+            <RadioButton x:Name="NavDiagnostic" Style="{StaticResource NavTabButton}" Tag="🩺" Content="诊断"   Checked="OnNavChecked" />
+            <RadioButton x:Name="NavSetup"      Style="{StaticResource NavTabButton}" Tag="🎬" Content="搭建"   Checked="OnNavChecked" />
+            <RadioButton x:Name="NavConsole"    Style="{StaticResource NavTabButton}" Tag="🎛️" Content="控制台" Checked="OnNavChecked" />
+            <RadioButton x:Name="NavGuide"      Style="{StaticResource NavTabButton}" Tag="📖" Content="指引"   Checked="OnNavChecked" />
+            <RadioButton x:Name="NavSettings"   Style="{StaticResource NavTabButton}" Tag="⚙️" Content="设置"   Checked="OnNavChecked" />
+          </StackPanel>
+        </ScrollViewer>
+      </DockPanel>
+    </Border>
+
+    <!-- ============================================ 内容区 -->
+    <Grid Grid.Column="1">
+      <Grid.RowDefinitions>
+        <RowDefinition Height="Auto" />
+        <RowDefinition Height="*" />
+      </Grid.RowDefinitions>
+
+      <!-- 顶栏 -->
+      <Border Grid.Row="0" Background="{DynamicResource SurfaceBrush}"
+              BorderBrush="{DynamicResource LineBrush}" BorderThickness="0,0,0,1"
+              Padding="16,10">
+        <Grid>
+          <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="Auto" />
+            <ColumnDefinition Width="*" />
+            <ColumnDefinition Width="Auto" />
+          </Grid.ColumnDefinitions>
+
+          <Button x:Name="BackButton" Grid.Column="0" Style="{StaticResource IconButton}"
+                  Content="←" ToolTip="返回（Alt + ←）" Click="OnBackClick"
+                  Visibility="Collapsed" Margin="0,0,10,0" />
+
+          <StackPanel Grid.Column="1" VerticalAlignment="Center">
+            <TextBlock x:Name="PageTitle" Text="首页"
+                       FontSize="{DynamicResource FontSizeLg}" FontWeight="SemiBold"
+                       Foreground="{DynamicResource TextBrush}" />
+            <TextBlock x:Name="PageSubtitle" Text="按分类查问题，或直接问助手"
+                       FontSize="{DynamicResource FontSizeXs}"
+                       Foreground="{DynamicResource MutedBrush}" />
+          </StackPanel>
+
+          <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
+            <ctl:ConnectionBadge x:Name="TopBadge" Margin="0,0,10,0" />
+            <Button Style="{StaticResource IconButton}" Content="⚙️" ToolTip="设置"
+                    Click="OnSettingsClick" />
+          </StackPanel>
+        </Grid>
+      </Border>
+
+      <!-- 页面容器 -->
+      <ContentControl x:Name="PageHost" Grid.Row="1" Focusable="False" />
+    </Grid>
+  </Grid>
+</Window>

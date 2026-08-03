@@ -1,0 +1,203 @@
+<UserControl x:Class="OBS_Helper.Wpf.Views.SettingsPage"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+  <ScrollViewer Style="{StaticResource PageScroll}">
+    <StackPanel Margin="22,18,22,26" MaxWidth="760" HorizontalAlignment="Left">
+
+      <!-- ==================================================== AI 诊断引擎 -->
+      <Border Style="{StaticResource Card}" Margin="0,0,0,16">
+        <StackPanel>
+          <TextBlock Text="AI 诊断引擎" Style="{StaticResource SectionTitle}" />
+          <TextBlock Style="{StaticResource MutedText}" Margin="0,0,0,12"
+                     Text="默认使用本地离线引擎（无需联网、不依赖密钥）。也可切换到云端大模型：接口地址与模型名保存在设置文件里，API Key 单独经 Windows DPAPI 加密存储，不写入设置文件、不随日志外泄。" />
+
+          <StackPanel Orientation="Horizontal">
+            <RadioButton x:Name="ModeLocal" GroupName="SettingsEngineMode" Content="本地离线"
+                         Style="{StaticResource SegmentButton}" Checked="OnModeChecked" />
+            <RadioButton x:Name="ModeCloud" GroupName="SettingsEngineMode" Content="云端大模型"
+                         Style="{StaticResource SegmentButton}" Checked="OnModeChecked" />
+          </StackPanel>
+
+          <!-- 只有选「云端」才展开：本地模式下这些字段没有任何意义 -->
+          <StackPanel x:Name="CloudPanel" Visibility="Collapsed" Margin="0,4,0,0">
+
+            <TextBlock Text="接口地址（https）" Style="{StaticResource MutedText}" Margin="0,8,0,5" />
+            <TextBox x:Name="CloudUrlBox" Style="{StaticResource AppTextBox}"
+                     Tag="https://api.example.com/v1/chat/completions" />
+
+            <TextBlock Text="密钥键名" Style="{StaticResource MutedText}" Margin="0,12,0,5" />
+            <TextBox x:Name="CloudKeyNameBox" Style="{StaticResource AppTextBox}" Tag="obs_ai_apikey" />
+            <TextBlock Style="{StaticResource CaptionText}" Margin="2,5,0,0"
+                       Text="API Key 在本机加密存储中的条目名，不是密钥本身。多套配置可用不同键名区分。" />
+
+            <TextBlock Text="模型名" Style="{StaticResource MutedText}" Margin="0,12,0,5" />
+            <TextBox x:Name="CloudModelBox" Style="{StaticResource AppTextBox}" Tag="gpt-4o-mini" />
+
+            <Button Content="保存云端配置" Style="{StaticResource SecondaryButton}"
+                    HorizontalAlignment="Left" Margin="0,14,0,0" Click="OnSaveCloud" />
+
+            <Border Style="{StaticResource HLine}" />
+
+            <TextBlock Text="API Key" Style="{StaticResource MutedText}" Margin="0,0,0,5" />
+            <Grid>
+              <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+              </Grid.ColumnDefinitions>
+              <PasswordBox x:Name="ApiKeyBox" Grid.Column="0" Style="{StaticResource AppPasswordBox}" />
+              <Button x:Name="SaveKeyButton" Grid.Column="1" Content="保存密钥"
+                      Style="{StaticResource PrimaryButton}" Margin="10,0,0,0" Click="OnSaveKey" />
+            </Grid>
+
+            <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
+              <TextBlock Text="本机存储状态" Style="{StaticResource CaptionText}"
+                         VerticalAlignment="Center" Margin="0,0,8,0" />
+              <Border x:Name="KeyStatusPill" Style="{StaticResource Pill}">
+                <TextBlock x:Name="KeyStatusText" Text="未保存"
+                           FontSize="{DynamicResource FontSizeXs}"
+                           Foreground="{DynamicResource MutedBrush}" />
+              </Border>
+              <Button x:Name="ClearKeyButton" Content="清除密钥" Style="{StaticResource GhostButton}"
+                      Foreground="{DynamicResource DangerBrush}" Margin="6,0,0,0" Click="OnClearKey" />
+            </StackPanel>
+            <TextBlock Style="{StaticResource CaptionText}" Margin="2,6,0,0"
+                       Text="出于安全考虑，已保存的密钥不会回显；需要更换时直接粘贴新值再保存即可。" />
+
+            <TextBlock x:Name="CloudWarnText" Style="{StaticResource MutedText}"
+                       Foreground="{DynamicResource WarnBrush}" Margin="0,10,0,0" Visibility="Collapsed"
+                       Text="⚠️ 请填写 https 接口地址与密钥键名，并保存 API Key 后，云端诊断才会启用；未配置完成时诊断会自动回退到本地引擎。" />
+
+            <TextBlock x:Name="AiStatusText" Style="{StaticResource MutedText}"
+                       Margin="0,10,0,0" Visibility="Collapsed" />
+          </StackPanel>
+        </StackPanel>
+      </Border>
+
+      <!-- ==================================================== 外观与无障碍 -->
+      <Border Style="{StaticResource Card}" Margin="0,0,0,16">
+        <StackPanel>
+          <TextBlock Text="外观与无障碍" Style="{StaticResource SectionTitle}" />
+
+          <TextBlock Text="主题" Style="{StaticResource MutedText}" Margin="0,2,0,7" />
+          <WrapPanel>
+            <RadioButton x:Name="ThemeSystem" GroupName="SettingsTheme" Content="跟随系统"
+                         Style="{StaticResource SegmentButton}" Checked="OnThemeChecked" />
+            <RadioButton x:Name="ThemeLight" GroupName="SettingsTheme" Content="浅色"
+                         Style="{StaticResource SegmentButton}" Checked="OnThemeChecked" />
+            <RadioButton x:Name="ThemeDark" GroupName="SettingsTheme" Content="深色"
+                         Style="{StaticResource SegmentButton}" Checked="OnThemeChecked" />
+          </WrapPanel>
+
+          <TextBlock Text="字号" Style="{StaticResource MutedText}" Margin="0,10,0,7" />
+          <WrapPanel>
+            <RadioButton x:Name="FontSm" GroupName="SettingsFontScale" Content="小"
+                         Style="{StaticResource SegmentButton}" Checked="OnFontScaleChecked" />
+            <RadioButton x:Name="FontMd" GroupName="SettingsFontScale" Content="标准"
+                         Style="{StaticResource SegmentButton}" Checked="OnFontScaleChecked" />
+            <RadioButton x:Name="FontLg" GroupName="SettingsFontScale" Content="大"
+                         Style="{StaticResource SegmentButton}" Checked="OnFontScaleChecked" />
+            <RadioButton x:Name="FontXl" GroupName="SettingsFontScale" Content="特大"
+                         Style="{StaticResource SegmentButton}" Checked="OnFontScaleChecked" />
+          </WrapPanel>
+
+          <Border Style="{StaticResource HLine}" />
+
+          <CheckBox x:Name="HighContrastSwitch" Style="{StaticResource AppSwitch}" Content="高对比度"
+                    Checked="OnHighContrastToggled" Unchecked="OnHighContrastToggled" />
+          <TextBlock Style="{StaticResource CaptionText}" Margin="52,5,0,0"
+                     Text="加深文字与边框的对比，弱光环境或视力不佳时更易读。" />
+
+          <CheckBox x:Name="ReduceMotionSwitch" Style="{StaticResource AppSwitch}" Content="减少动画"
+                    Margin="0,14,0,0" Checked="OnReduceMotionToggled" Unchecked="OnReduceMotionToggled" />
+          <TextBlock Style="{StaticResource CaptionText}" Margin="52,5,0,0"
+                     Text="关闭界面过渡动效，适合对动态画面敏感的用户。" />
+        </StackPanel>
+      </Border>
+
+      <!-- ==================================================== 排障指引 -->
+      <Border Style="{StaticResource Card}" Margin="0,0,0,16">
+        <StackPanel>
+          <TextBlock Text="排障指引" Style="{StaticResource SectionTitle}" />
+          <TextBlock Style="{StaticResource MutedText}" Margin="0,0,0,12"
+                     Text="汇总黑屏、编码过载、音画不同步、推流失败等常见问题的排查步骤；日志分析可离线解析 OBS 日志并自动脱敏。" />
+
+          <StackPanel Orientation="Horizontal">
+            <Button Content="📖 打开排障指引" Style="{StaticResource PrimaryButton}"
+                    Margin="0,0,10,0" Click="OnOpenGuide" />
+            <Button Content="📜 打开日志分析" Style="{StaticResource SecondaryButton}" Click="OnOpenLogs" />
+          </StackPanel>
+
+          <Border Style="{StaticResource HLine}" />
+
+          <TextBlock Text="本地数据" Style="{StaticResource MutedText}" Margin="0,0,0,4" />
+          <TextBlock x:Name="DataSummaryText" Style="{StaticResource CaptionText}" Margin="0,0,0,10" />
+
+          <StackPanel Orientation="Horizontal">
+            <Button x:Name="ClearBookmarksButton" Content="清空收藏"
+                    Style="{StaticResource SecondaryButton}"
+                    Foreground="{DynamicResource DangerBrush}"
+                    Margin="0,0,10,0" Click="OnClearBookmarks" />
+            <Button Content="重置步骤进度" Style="{StaticResource SecondaryButton}"
+                    Foreground="{DynamicResource DangerBrush}" Click="OnClearSteps" />
+          </StackPanel>
+
+          <TextBlock x:Name="DataStatusText" Style="{StaticResource MutedText}"
+                     Margin="0,10,0,0" Visibility="Collapsed" />
+        </StackPanel>
+      </Border>
+
+      <!-- ==================================================== 关于 -->
+      <Border Style="{StaticResource Card}">
+        <StackPanel>
+          <TextBlock Text="关于" Style="{StaticResource SectionTitle}" />
+
+          <Grid Margin="0,0,0,12">
+            <Grid.ColumnDefinitions>
+              <ColumnDefinition Width="Auto" />
+              <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+            <Grid.RowDefinitions>
+              <RowDefinition Height="Auto" />
+              <RowDefinition Height="Auto" />
+              <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+
+            <TextBlock Grid.Row="0" Grid.Column="0" Text="应用版本" Style="{StaticResource MutedText}"
+                       Margin="0,0,16,6" />
+            <TextBlock x:Name="AppVersionText" Grid.Row="0" Grid.Column="1" Text="—"
+                       Style="{StaticResource BodyText}" Margin="0,0,0,6" />
+
+            <TextBlock Grid.Row="1" Grid.Column="0" Text="问题库版本" Style="{StaticResource MutedText}"
+                       Margin="0,0,16,6" />
+            <TextBlock x:Name="DataVersionText" Grid.Row="1" Grid.Column="1" Text="—"
+                       Style="{StaticResource BodyText}" Margin="0,0,0,6" />
+
+            <TextBlock Grid.Row="2" Grid.Column="0" Text="问题库更新" Style="{StaticResource MutedText}"
+                       Margin="0,0,16,0" />
+            <TextBlock x:Name="DataUpdatedText" Grid.Row="2" Grid.Column="1" Text="—"
+                       Style="{StaticResource BodyText}" />
+          </Grid>
+
+          <TextBlock Style="{StaticResource MutedText}"
+                     Text="离线优先的本地排障工具：界面与问题库随包发布，默认不发起任何网络请求。仅在上面手动开启「云端大模型」后，才会由本应用直接发起 HTTPS 请求，密钥全程只在本机加密存储与请求头之间流转。" />
+
+          <TextBlock Style="{StaticResource MutedText}" Margin="0,8,0,0"
+                     Text="OBS 日志在分析前会自动脱敏（流密钥、路径、Token、IP 等），可放心用于排查。" />
+
+          <StackPanel Orientation="Horizontal" Margin="0,12,0,0">
+            <Button Content="OBS 官方文档" Style="{StaticResource LinkButton}"
+                    Tag="https://obsproject.com/zh-cn/docs" Margin="0,0,16,0" Click="OnOpenLink" />
+            <Button Content="OBS 日志分析器" Style="{StaticResource LinkButton}"
+                    Tag="https://obsproject.com/analyzer" Click="OnOpenLink" />
+          </StackPanel>
+
+          <Border Style="{StaticResource HLine}" />
+
+          <TextBlock Style="{StaticResource CaptionText}"
+                     Text="Copyright (c) 2026 OBS Helper。第三方组件：System.Security.Cryptography.ProtectedData（MIT 许可）。问题库内容整理自 OBS 官方文档与社区经验。" />
+        </StackPanel>
+      </Border>
+
+    </StackPanel>
+  </ScrollViewer>
+</UserControl>

@@ -1,0 +1,49 @@
+﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:sys="clr-namespace:System;assembly=System.Runtime">
+
+  <!--
+    浅色默认调色板。运行时 AppearanceService.Apply() 会用同名键覆盖 Application.Resources，
+    直接写在 Application.Resources 顶层的条目优先级高于合并字典，因此换肤立即生效。
+    色值与 Blazor 版 wwwroot/css/app.css 的 CSS 变量一一对应。
+  -->
+
+  <SolidColorBrush x:Key="BrandBrush" Color="#7b2ff7" />
+  <SolidColorBrush x:Key="BrandDarkBrush" Color="#5a1fc4" />
+  <SolidColorBrush x:Key="BrandSoftBrush" Color="#efe6ff" />
+
+  <SolidColorBrush x:Key="SurfaceBrush" Color="#ffffff" />
+  <SolidColorBrush x:Key="Surface2Brush" Color="#f4f4fb" />
+  <SolidColorBrush x:Key="Surface3Brush" Color="#ececf6" />
+  <SolidColorBrush x:Key="TextBrush" Color="#1c1d2b" />
+  <SolidColorBrush x:Key="MutedBrush" Color="#6b6c80" />
+  <SolidColorBrush x:Key="LineBrush" Color="#e6e6f0" />
+
+  <SolidColorBrush x:Key="DangerBrush" Color="#d92d20" />
+  <SolidColorBrush x:Key="DangerSoftBrush" Color="#fdeceb" />
+  <SolidColorBrush x:Key="WarnBrush" Color="#b54708" />
+  <SolidColorBrush x:Key="WarnSoftBrush" Color="#fef4e6" />
+  <SolidColorBrush x:Key="OkBrush" Color="#067647" />
+  <SolidColorBrush x:Key="OkSoftBrush" Color="#e7f6ee" />
+  <SolidColorBrush x:Key="InfoBrush" Color="#175cd3" />
+  <SolidColorBrush x:Key="InfoSoftBrush" Color="#e8f0fe" />
+
+  <sys:Double x:Key="ShadowOpacity">0.10</sys:Double>
+
+  <CornerRadius x:Key="CornerRadiusLg">14</CornerRadius>
+  <CornerRadius x:Key="CornerRadiusMd">10</CornerRadius>
+  <CornerRadius x:Key="CornerRadiusSm">6</CornerRadius>
+
+  <sys:Double x:Key="FontScaleFactor">1.0</sys:Double>
+  <sys:Double x:Key="FontSizeXs">11</sys:Double>
+  <sys:Double x:Key="FontSizeSm">12.5</sys:Double>
+  <sys:Double x:Key="FontSizeBase">14</sys:Double>
+  <sys:Double x:Key="FontSizeMd">15.5</sys:Double>
+  <sys:Double x:Key="FontSizeLg">18</sys:Double>
+  <sys:Double x:Key="FontSizeXl">22</sys:Double>
+  <sys:Double x:Key="FontSizeH1">28</sys:Double>
+
+  <Duration x:Key="MotionDuration">0:0:0.16</Duration>
+  <sys:Boolean x:Key="ReduceMotion">False</sys:Boolean>
+
+</ResourceDictionary>

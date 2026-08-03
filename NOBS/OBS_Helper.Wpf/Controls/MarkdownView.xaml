@@ -1,0 +1,6 @@
+<UserControl x:Class="OBS_Helper.Wpf.Controls.MarkdownView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+  <!-- 正文块由 code-behind 逐个生成后塞进 Host，XAML 这里只提供一个纵向容器 -->
+  <StackPanel x:Name="Host" />
+</UserControl>

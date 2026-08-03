@@ -1,0 +1,47 @@
+<UserControl x:Class="OBS_Helper.Wpf.Controls.ProblemCard"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             Margin="0,0,0,10">
+  <Grid>
+    <Button Style="{StaticResource CardButton}" Click="OnOpen">
+      <Grid>
+        <Grid.ColumnDefinitions>
+          <ColumnDefinition Width="*" />
+          <ColumnDefinition Width="Auto" />
+        </Grid.ColumnDefinitions>
+
+        <StackPanel Grid.Column="0" Margin="0,0,34,0">
+          <TextBlock x:Name="TitleText" Text="标题"
+                     FontSize="{DynamicResource FontSizeBase}" FontWeight="SemiBold"
+                     Foreground="{DynamicResource TextBrush}"
+                     TextWrapping="Wrap" />
+
+          <TextBlock x:Name="SymptomText" Margin="0,5,0,0"
+                     FontSize="{DynamicResource FontSizeSm}"
+                     Foreground="{DynamicResource MutedBrush}"
+                     TextWrapping="Wrap" MaxHeight="40" TextTrimming="CharacterEllipsis" />
+
+          <StackPanel Orientation="Horizontal" Margin="0,9,0,0">
+            <Border x:Name="SeverityPill" CornerRadius="999" Padding="7,2" Margin="0,0,7,0">
+              <TextBlock x:Name="SeverityText" FontSize="{DynamicResource FontSizeXs}" />
+            </Border>
+            <Border x:Name="CategoryPill" CornerRadius="999" Padding="7,2" Margin="0,0,7,0"
+                    Background="{DynamicResource Surface3Brush}">
+              <TextBlock x:Name="CategoryText" FontSize="{DynamicResource FontSizeXs}"
+                         Foreground="{DynamicResource MutedBrush}" />
+            </Border>
+            <TextBlock x:Name="PlatformText" VerticalAlignment="Center"
+                       FontSize="{DynamicResource FontSizeXs}"
+                       Foreground="{DynamicResource MutedBrush}" />
+          </StackPanel>
+        </StackPanel>
+      </Grid>
+    </Button>
+
+    <!-- 收藏星标浮在卡片右上，独立于卡片点击 -->
+    <Button x:Name="StarButton" Style="{StaticResource IconButton}"
+            HorizontalAlignment="Right" VerticalAlignment="Top"
+            Margin="0,6,6,0" Content="☆" FontSize="16"
+            ToolTip="收藏" Click="OnToggleBookmark" />
+  </Grid>
+</UserControl>

@@ -1,0 +1,90 @@
+<UserControl x:Class="OBS_Helper.Wpf.Views.LogsPage"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+  <ScrollViewer Style="{StaticResource PageScroll}">
+    <StackPanel Margin="22,18,22,26">
+
+      <TextBlock Style="{StaticResource MutedText}"
+                 Text="自动定位本机 OBS 日志，逐行脱敏后扫描已知故障特征。分析结果可被「AI 诊断」直接引用。" />
+
+      <!-- 没有宿主能力时（例如未来的非桌面壳）只能手动选文件，保留这条降级提示 -->
+      <Border x:Name="NoHostPanel" Style="{StaticResource Card}" Margin="0,14,0,0"
+              Visibility="Collapsed">
+        <StackPanel>
+          <TextBlock Style="{StaticResource SectionTitle}" Text="未在桌面客户端中运行" />
+          <TextBlock Style="{StaticResource MutedText}"
+                     Text="无法自动读取本机日志。你可以直接选择一个 OBS 日志文件（.txt / .log）进行分析。" />
+        </StackPanel>
+      </Border>
+
+      <!-- ============================================ 选择日志来源 -->
+      <Border Style="{StaticResource Card}" Margin="0,14,0,0">
+        <StackPanel>
+          <TextBlock Style="{StaticResource SectionTitle}" Text="① 选择日志来源" />
+
+          <TextBlock x:Name="LogDirText" Style="{StaticResource CaptionText}"
+                     Margin="0,0,0,10" />
+
+          <WrapPanel>
+            <Button x:Name="RefreshButton" Content="刷新列表"
+                    Style="{StaticResource SecondaryButton}"
+                    Margin="0,0,8,8" Click="OnRefreshList" />
+            <Button x:Name="PickButton" Content="选择日志文件"
+                    Style="{StaticResource SecondaryButton}"
+                    Margin="0,0,8,8" Click="OnPickFile" />
+            <Button x:Name="OpenDirButton" Content="打开日志目录"
+                    Style="{StaticResource SecondaryButton}"
+                    Margin="0,0,8,8" Click="OnOpenDir" />
+          </WrapPanel>
+
+          <StackPanel x:Name="FileList" Margin="0,4,0,0" />
+
+          <TextBlock x:Name="ListHintText" Style="{StaticResource MutedText}"
+                     Margin="0,6,0,0" Visibility="Collapsed" />
+        </StackPanel>
+      </Border>
+
+      <!-- ============================================ 分析结果 -->
+      <Border x:Name="ReportPanel" Style="{StaticResource Card}" Margin="0,14,0,0"
+              Visibility="Collapsed">
+        <StackPanel>
+          <Grid>
+            <Grid.ColumnDefinitions>
+              <ColumnDefinition Width="*" />
+              <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+
+            <TextBlock x:Name="ReportTitleText" Grid.Column="0"
+                       Style="{StaticResource SectionTitle}" Margin="0,4,10,10" />
+
+            <Border x:Name="CountPill" Grid.Column="1" Style="{StaticResource Pill}"
+                    Margin="0,0,0,6">
+              <TextBlock x:Name="CountText" FontSize="{DynamicResource FontSizeXs}" />
+            </Border>
+          </Grid>
+
+          <TextBlock x:Name="ReportMetaText" Style="{StaticResource MutedText}" />
+
+          <WrapPanel Margin="0,12,0,0">
+            <Button x:Name="CopyButton" Content="复制脱敏日志"
+                    Style="{StaticResource SecondaryButton}"
+                    Margin="0,0,8,8" Click="OnCopySanitized" />
+            <Button Content="用 AI 诊断这份日志 →"
+                    Style="{StaticResource PrimaryButton}"
+                    Margin="0,0,8,8" Click="OnOpenDiagnostic" />
+            <TextBlock x:Name="CopyHintText" Style="{StaticResource CaptionText}"
+                       VerticalAlignment="Center" Margin="2,0,0,8" Visibility="Collapsed" />
+          </WrapPanel>
+
+          <TextBlock x:Name="NoFindingText" Style="{StaticResource MutedText}"
+                     Margin="0,4,0,0" Visibility="Collapsed"
+                     Text="未从这份日志中发现已知故障特征。可在「诊断」里描述具体现象进一步排查。" />
+
+          <StackPanel x:Name="FindingList" Margin="0,10,0,0" />
+        </StackPanel>
+      </Border>
+
+    </StackPanel>
+  </ScrollViewer>
+</UserControl>

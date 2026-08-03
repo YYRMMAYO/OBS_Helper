@@ -1,0 +1,18 @@
+<UserControl x:Class="OBS_Helper.Wpf.Controls.ConnectionBadge"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+  <Border x:Name="Root" CornerRadius="999" Padding="9,4"
+          Background="{DynamicResource Surface3Brush}"
+          Cursor="Hand"
+          MouseLeftButtonUp="OnClick"
+          ToolTip="点击进入 OBS 控制台">
+    <StackPanel Orientation="Horizontal">
+      <Ellipse x:Name="Dot" Width="8" Height="8" VerticalAlignment="Center"
+               Fill="{DynamicResource MutedBrush}" />
+      <TextBlock x:Name="Label" Margin="6,0,0,0" Text="未连接"
+                 VerticalAlignment="Center"
+                 FontSize="{DynamicResource FontSizeXs}"
+                 Foreground="{DynamicResource TextBrush}" />
+    </StackPanel>
+  </Border>
+</UserControl>

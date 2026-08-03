@@ -1,0 +1,106 @@
+using System.Text.Json.Serialization;
+using OBS_Helper.Wpf.Services.Host;
+
+namespace OBS_Helper.Wpf.Services.Ai;
+
+/// <summary>诊断引擎模式。</summary>
+public enum DiagnosticEngineMode
+{
+    /// <summary>本地离线规则引擎（默认，无需联网、不依赖密钥）。</summary>
+    Local,
+    /// <summary>云端大模型（由宿主转发，密钥仅存于 DPAPI 加密存储）。</summary>
+    Cloud
+}
+
+/// <summary>持久化的 AI 设置（不含任何密钥本身）。</summary>
+public sealed class AiSettings
+{
+    [JsonPropertyName("mode")] public string Mode { get; set; } = "local";
+    [JsonPropertyName("cloudUrl")] public string CloudUrl { get; set; } = "";
+    /// <summary>API Key 在机密存储中的「键名」，不是密钥值。</summary>
+    [JsonPropertyName("cloudSecretKeyName")] public string CloudSecretKeyName { get; set; } = "obs_ai_apikey";
+    [JsonPropertyName("cloudModel")] public string CloudModel { get; set; } = "gpt-4o-mini";
+}
+
+/// <summary>
+/// AI 诊断引擎的运行时设置（可切换的本地 / 云端引擎）。
+///
+/// 设计要点：
+/// <list type="bullet">
+///   <item>默认本地引擎，可一键切到云端大模型；切换状态持久化到 prefs.json。</item>
+///   <item>云端只存「接口地址 + 密钥键名 + 模型名」，真正的 API Key 由 DPAPI 加密保存，
+///         调用时才由宿主取出拼装请求头（见 <see cref="HostBridge.AiChatAsync"/>）。</item>
+///   <item><see cref="IsCloudConfigured"/> 用于在不触碰密钥的前提下判断云端是否「可用」。</item>
+/// </list>
+/// </summary>
+public sealed class AiSettingsService
+{
+    private const string StorageKey = "obshelper.ai";
+
+    private readonly LocalStore _store;
+    private readonly HostBridge _host;
+    private bool _loaded;
+
+    public AiSettingsService(LocalStore store, HostBridge host)
+    {
+        _store = store;
+        _host = host;
+    }
+
+    public AiSettings Settings { get; private set; } = new();
+
+    /// <summary>设置变更时触发，供设置页刷新。</summary>
+    public event Action? Changed;
+
+    public DiagnosticEngineMode Mode => Settings.Mode == "cloud" ? DiagnosticEngineMode.Cloud : DiagnosticEngineMode.Local;
+
+    /// <summary>云端是否「逻辑上可用」：模式为云端、地址为 https、密钥键名非空。</summary>
+    public bool IsCloudConfigured
+        => Mode == DiagnosticEngineMode.Cloud
+           && Uri.TryCreate(Settings.CloudUrl, UriKind.Absolute, out var u)
+           && u.Scheme == "https"
+           && !string.IsNullOrWhiteSpace(Settings.CloudSecretKeyName);
+
+    public Task LoadAsync()
+    {
+        if (_loaded) return Task.CompletedTask;
+        _loaded = true;
+
+        var s = _store.GetObject<AiSettings>(StorageKey);
+        if (s is not null) Settings = s;
+        return Task.CompletedTask;
+    }
+
+    public Task SetModeAsync(DiagnosticEngineMode mode)
+    {
+        Settings.Mode = mode == DiagnosticEngineMode.Cloud ? "cloud" : "local";
+        return SaveAsync();
+    }
+
+    public Task SetCloudAsync(string url, string secretKeyName, string model)
+    {
+        Settings.CloudUrl = (url ?? "").Trim();
+        Settings.CloudSecretKeyName = string.IsNullOrWhiteSpace(secretKeyName) ? "obs_ai_apikey" : secretKeyName.Trim();
+        Settings.CloudModel = (model ?? "").Trim();
+        return SaveAsync();
+    }
+
+    /// <summary>保存 API Key（DPAPI 加密）。传空表示删除。</summary>
+    public Task<bool> SetApiKeyAsync(string? apiKey)
+        => _host.SetSecretAsync(Settings.CloudSecretKeyName, apiKey ?? "");
+
+    /// <summary>是否已保存 API Key（不返回密钥内容，只回布尔）。</summary>
+    public async Task<bool> HasApiKeyAsync()
+        => !string.IsNullOrEmpty(await _host.GetSecretAsync(Settings.CloudSecretKeyName).ConfigureAwait(false));
+
+    /// <summary>清除已保存的 API Key。</summary>
+    public Task<bool> ClearApiKeyAsync()
+        => _host.DeleteSecretAsync(Settings.CloudSecretKeyName);
+
+    private Task SaveAsync()
+    {
+        _store.SetObject(StorageKey, Settings);
+        Changed?.Invoke();
+        return Task.CompletedTask;
+    }
+}

@@ -1,0 +1,15 @@
+﻿<Application x:Class="OBS_Helper.Wpf.App"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             ShutdownMode="OnMainWindowClose">
+  <Application.Resources>
+    <ResourceDictionary>
+      <ResourceDictionary.MergedDictionaries>
+        <!-- 调色板的运行时值由 AppearanceService 写入 Application.Resources，
+             这里提供一份浅色默认值，保证 XAML 设计器与首帧渲染不缺资源。 -->
+        <ResourceDictionary Source="Themes/Palette.xaml" />
+        <ResourceDictionary Source="Themes/Controls.xaml" />
+      </ResourceDictionary.MergedDictionaries>
+    </ResourceDictionary>
+  </Application.Resources>
+</Application>

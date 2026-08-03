@@ -42,7 +42,9 @@
 
 ## 三、macOS 安装指引
 
-1. 从发布页 / CI 制品下载 `OBS 排障助手-1.0.0.dmg`（位于 `PAKE/macos/`）。
+1. 从发布页 / CI 制品下载 `OBS 排障助手_1.0.0_aarch64.dmg`（位于 `PAKE/macos/`，Apple Silicon 芯片）。
+   - 当前 CI（`macos-latest` 为 Apple Silicon runner）默认产出 **aarch64** 包；如需 Intel Mac（x86_64），
+     可在本地 Mac 执行 `build-mac.sh` 加 `CARGO_BUILD_TARGET=x86_64-apple-darwin`，或后续扩展 CI 矩阵。
 2. 打开 `.dmg`，把 `OBS 排障助手.app` 拖到「应用程序」。
 3. 首次打开若被 Gatekeeper 拦截（CI 构建的包未做 Apple 签名）：
    - 右键 App → 「打开」，在弹窗中再次确认；或

@@ -15,7 +15,13 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 cd "$ROOT"
 
 # Tauri 默认产物目录（相对仓库根的 src-tauri 工程下）
-BUNDLE_DIR="$ROOT/OBS_Helper.Mac/src-tauri/target/release/bundle"
+# 若设置了 CARGO_BUILD_TARGET（交叉编译），cargo 会输出到 target/<target>/release
+TARGET="${CARGO_BUILD_TARGET:-}"
+if [ -n "$TARGET" ]; then
+  BUNDLE_DIR="$ROOT/OBS_Helper.Mac/src-tauri/target/$TARGET/release/bundle"
+else
+  BUNDLE_DIR="$ROOT/OBS_Helper.Mac/src-tauri/target/release/bundle"
+fi
 OUT_DIR="$ROOT/PAKE/macos"
 
 # 探测 tauri CLI：优先 npm 安装的 `tauri`，回退 `cargo tauri`

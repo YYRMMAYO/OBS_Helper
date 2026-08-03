@@ -47,8 +47,12 @@ jobs:
 
   # ---------------- macOS：Tauri v2 桌面壳 + dmg/app ----------------
   macos:
-    name: macOS 应用 (Tauri -> PAKE/macos)
+    name: macOS 应用 (Tauri -> PAKE/macos, ${{ matrix.target }})
     runs-on: macos-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        target: [aarch64-apple-darwin, x86_64-apple-darwin]
     steps:
       - uses: actions/checkout@v4
 
@@ -59,13 +63,17 @@ jobs:
 
       - name: Setup Rust toolchain
         uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
 
       - name: Install Tauri CLI
         run: npm install -g @tauri-apps/cli@latest
         shell: bash
 
-      - name: Build & Package to PAKE/macos
-        run: bash OBS_Helper.Mac/src-tauri/build-mac.sh
+      - name: Build & Package to PAKE/macos (${{ matrix.target }})
+        run: |
+          export CARGO_BUILD_TARGET=${{ matrix.target }}
+          bash OBS_Helper.Mac/src-tauri/build-mac.sh
 
       - name: Verify bundle
         run: |
@@ -76,6 +84,6 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: OBS_Helper_macOS
+          name: OBS_Helper_macOS_${{ matrix.target }}
           path: PAKE/macos/*
           if-no-files-found: warn

@@ -42,9 +42,16 @@ cd OBS_Helper.Mac/src-tauri
 $TAURI icon icons/app-icon.png
 
 echo "==> 3/4 $TAURI build"
+# 若设置了 CARGO_BUILD_TARGET（交叉编译），必须把 --target 同时传给 tauri，
+# 否则 Tauri 打包器仍会去 target/release 找主二进制而报 No such file。
+TARGET_ARG=""
+if [ -n "$TARGET" ]; then
+  TARGET_ARG="--target $TARGET"
+fi
+
 if [ -n "${MAC_SIGN_IDENTITY:-}" ]; then
   echo "   使用签名身份: $MAC_SIGN_IDENTITY"
-  $TAURI build
+  $TAURI build $TARGET_ARG
   # 对 .app 做 Developer ID 签名（深度签名，含运行时）
   APP_BUNDLE=$(find "$BUNDLE_DIR" -maxdepth 2 -name "*.app" -type d | head -1 || true)
   if [ -n "$APP_BUNDLE" ]; then
@@ -61,7 +68,7 @@ if [ -n "${MAC_SIGN_IDENTITY:-}" ]; then
   fi
 else
   echo "   未设置 MAC_SIGN_IDENTITY，产出未签名包（自测 / 内部分发用）"
-  $TAURI build
+  $TAURI build $TARGET_ARG
 fi
 
 echo "==> 4/4 复制产物到 $OUT_DIR"

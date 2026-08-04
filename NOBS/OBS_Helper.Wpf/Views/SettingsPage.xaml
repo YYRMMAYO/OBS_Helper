@@ -146,6 +146,21 @@
         </StackPanel>
       </Border>
 
+      <!-- ==================================================== OBS 配置管理 -->
+      <Border Style="{StaticResource Card}" Margin="0,0,0,16">
+        <StackPanel>
+          <TextBlock Text="OBS 配置管理" Style="{StaticResource SectionTitle}" />
+          <TextBlock x:Name="ObsConfigHintText" Style="{StaticResource MutedText}" Margin="0,0,0,12"
+                     Text="正在检测 OBS 配置目录…" />
+
+          <StackPanel Orientation="Horizontal">
+            <Button Content="💾 备份 / 导入导出 / 重置" Style="{StaticResource PrimaryButton}"
+                    Margin="0,0,10,0" Click="OnOpenObsConfig" />
+            <Button Content="🧩 场景模板" Style="{StaticResource SecondaryButton}" Click="OnOpenTemplates" />
+          </StackPanel>
+        </StackPanel>
+      </Border>
+
       <!-- ==================================================== 关于 -->
       <Border Style="{StaticResource Card}">
         <StackPanel>

@@ -2,6 +2,7 @@ using OBS_Helper.Wpf.Services;
 using OBS_Helper.Wpf.Services.Ai;
 using OBS_Helper.Wpf.Services.Host;
 using OBS_Helper.Wpf.Services.Obs;
+using OBS_Helper.Wpf.Services.ObsConfig;
 
 namespace OBS_Helper.Wpf;
 
@@ -24,6 +25,11 @@ public static class AppServices
     private static readonly Lazy<ObsConnectionService> _obs = new(() => new ObsConnectionService(ObsSettings));
     private static readonly Lazy<ObsLogAnalyzer> _analyzer = new(() => new ObsLogAnalyzer());
 
+    private static readonly Lazy<ObsPathService> _obsPaths = new(() => new ObsPathService(Store));
+    private static readonly Lazy<ObsBackupService> _obsBackups = new(() => new ObsBackupService(ObsPaths));
+    private static readonly Lazy<ObsResetService> _obsReset = new(() => new ObsResetService(ObsPaths, ObsBackups, Obs));
+    private static readonly Lazy<SceneTemplateService> _templates = new(() => new SceneTemplateService(Obs, ObsPaths));
+
     private static readonly Lazy<AiSettingsService> _aiSettings = new(() => new AiSettingsService(Store, Host));
     private static readonly Lazy<ObsToolRegistry> _tools = new(() => new ObsToolRegistry(Problems));
     private static readonly Lazy<LocalDiagnosticEngine> _localEngine = new(() => new LocalDiagnosticEngine(Problems, Assistant));
@@ -41,6 +47,11 @@ public static class AppServices
     public static ObsSettingsService ObsSettings => _obsSettings.Value;
     public static ObsConnectionService Obs => _obs.Value;
     public static ObsLogAnalyzer Analyzer => _analyzer.Value;
+
+    public static ObsPathService ObsPaths => _obsPaths.Value;
+    public static ObsBackupService ObsBackups => _obsBackups.Value;
+    public static ObsResetService ObsReset => _obsReset.Value;
+    public static SceneTemplateService Templates => _templates.Value;
 
     public static AiSettingsService AiSettings => _aiSettings.Value;
     public static ObsToolRegistry Tools => _tools.Value;

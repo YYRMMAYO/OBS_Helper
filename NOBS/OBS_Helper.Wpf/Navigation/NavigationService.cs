@@ -29,6 +29,11 @@ public static class Routes
     public const string Problem = "problem";
     /// <summary>日志分析页（从诊断页 / 设置页进入，无独立导航项）。</summary>
     public const string Logs = "logs";
+
+    /// <summary>直播间场景模板页（一级导航）。</summary>
+    public const string Templates = "templates";
+    /// <summary>OBS 配置管理页：备份 / 导入导出 / 重置（从设置页进入，无独立导航项）。</summary>
+    public const string ObsConfig = "obsconfig";
 }
 
 /// <summary>

@@ -8,7 +8,7 @@
 ; 正常由 ..\build.ps1 调用，也可以直接用 ISCC.exe 单独编译。
 
 #define MyAppName "OBS 排障助手"
-#define MyAppVersion "1.0.0"
+#define MyAppVersion "1.2.0"
 #define MyAppPublisher "OBS Helper"
 #define MyAppExeName "OBS_Helper.exe"
 ; AppId 与旧的 Blazor 版不同：两版可以并存安装，升级路径互不干扰

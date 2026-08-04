@@ -37,6 +37,7 @@ public partial class SettingsPage : UserControl, INavigationAware
 
         await RefreshKeyStatusAsync();
         await RefreshAboutAsync();
+        await RefreshObsConfigHintAsync();
     }
 
     // ------------------------------------------------------------ 状态回填
@@ -306,6 +307,34 @@ public partial class SettingsPage : UserControl, INavigationAware
         if (sender is FrameworkElement { Tag: string url })
         {
             await AppServices.Host.OpenExternalAsync(url);
+        }
+    }
+
+    // ------------------------------------------------------------ OBS 配置管理
+
+    private void OnOpenObsConfig(object sender, RoutedEventArgs e)
+        => AppServices.Navigation.Navigate(Routes.ObsConfig);
+
+    private void OnOpenTemplates(object sender, RoutedEventArgs e)
+        => AppServices.Navigation.Navigate(Routes.Templates);
+
+    private async Task RefreshObsConfigHintAsync()
+    {
+        try
+        {
+            var loc = await AppServices.ObsPaths.LocateAsync();
+            if (loc.Exists)
+            {
+                ObsConfigHintText.Text = $"已找到 OBS 配置目录：{loc.ConfigDir}";
+            }
+            else
+            {
+                ObsConfigHintText.Text = "未找到 OBS 配置目录。请确认已安装并至少启动过一次 OBS，再进入本页刷新。";
+            }
+        }
+        catch (Exception ex)
+        {
+            ObsConfigHintText.Text = $"检测 OBS 配置目录时出错：{ex.Message}";
         }
     }
 }

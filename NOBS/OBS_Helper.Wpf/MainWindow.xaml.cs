@@ -35,12 +35,14 @@ public partial class MainWindow : Window
             [Routes.Assistant] = (NavAssistant, "问我一下", "描述你遇到的现象，我来定位"),
             [Routes.Diagnostic] = (NavDiagnostic, "智能诊断", "连上 OBS 后一键体检"),
             [Routes.Setup] = (NavSetup, "直播搭建", "从零到开播的完整流程"),
+            [Routes.Templates] = (NavTemplates, "场景模板", "一键搭好整套场景与来源"),
             [Routes.Console] = (NavConsole, "OBS 控制台", "远程控制场景、录制与推流"),
             [Routes.Guide] = (NavGuide, "排障指引", "通用排查思路与速查手册"),
             [Routes.Settings] = (NavSettings, "设置", "诊断引擎、外观与关于"),
             [Routes.Category] = (null, "分类", ""),
             [Routes.Problem] = (null, "问题详情", ""),
             [Routes.Logs] = (null, "日志分析", "离线解析 OBS 日志，定位异常"),
+            [Routes.ObsConfig] = (null, "OBS 配置管理", "备份、导入导出与重置"),
         };
 
         RegisterRoutes();
@@ -63,12 +65,14 @@ public partial class MainWindow : Window
         _nav.Register(Routes.Assistant, () => new AssistantPage());
         _nav.Register(Routes.Diagnostic, () => new DiagnosticPage());
         _nav.Register(Routes.Setup, () => new SetupPage());
+        _nav.Register(Routes.Templates, () => new TemplatePage());
         _nav.Register(Routes.Console, () => new ConsolePage());
         _nav.Register(Routes.Guide, () => new GuidePage());
         _nav.Register(Routes.Settings, () => new SettingsPage());
         _nav.Register(Routes.Category, () => new CategoryPage());
         _nav.Register(Routes.Problem, () => new ProblemPage());
         _nav.Register(Routes.Logs, () => new LogsPage());
+        _nav.Register(Routes.ObsConfig, () => new ObsConfigPage());
     }
 
     private async void OnLoaded(object sender, RoutedEventArgs e)
@@ -94,7 +98,7 @@ public partial class MainWindow : Window
     }
 
     /// <summary>
-    /// 自动化自检：遍历全部 11 个路由（含带参数的分类页 / 问题详情页），
+    /// 自动化自检：遍历全部 13 个路由（含带参数的分类页 / 问题详情页），
     /// 捕获 XAML 解析、构造函数、OnNavigatedToAsync 各阶段异常，汇总写入 <c>selftest_result.txt</c>。
     /// 这是「编译通过但运行时才炸」类错误（尤其 <c>{Static|Dynamic}Resource</c> 拼错）最有效的拦截手段。
     /// </summary>
@@ -114,12 +118,14 @@ public partial class MainWindow : Window
             (Routes.Assistant, null),
             (Routes.Diagnostic, null),
             (Routes.Setup, null),
+            (Routes.Templates, null),
             (Routes.Console, null),
             (Routes.Guide, null),
             (Routes.Settings, null),
             (Routes.Category, firstCategory),
             (Routes.Problem, firstProblem),
             (Routes.Logs, null),
+            (Routes.ObsConfig, null),
         };
 
         foreach (var (route, param) in cases)

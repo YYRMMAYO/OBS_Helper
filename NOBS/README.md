@@ -26,6 +26,8 @@
 - **日志分析** — 离线解析 OBS 日志，23 条规则 + 3 项量化比值；日志在分析前会先脱敏
 - **直播搭建** — 从零到开播的 6 步流程 + 10 个主流平台的推流配置
 - **OBS 控制台** — 场景切换、元素显隐、音频静音与音量、录制 / 推流 / 虚拟摄像头、实时统计
+- **场景模板** — 6 套内置直播间模板（游戏直播 / 竖屏带货 / 双人连麦 / 教学录屏 / 电台待机 / 开播三件套），连上 OBS 一键落地场景与来源，未连接时可导出为标准场景集合 JSON
+- **OBS 配置管理** — 配置目录检测、备份 / 导出（ZIP，默认脱敏不含推流密钥）、导入（覆盖 / 合并，自动预备份）、轻度重置（新建干净配置集合）与彻底重置（恢复初始状态，强制自动备份）
 - **排障指引** — 通用排查思路速查手册
 - **外观** — 浅色 / 深色 / 跟随系统，4 档字号，高对比与减少动画
 
@@ -37,6 +39,8 @@
 - OBS 密码与 AI API Key → `%LocalAppData%\OBS_Helper\secrets.dat`（DPAPI 加密，绑定当前 Windows 用户，换机 / 换用户无法解开）
 
 只有在你主动开启「云端诊断引擎」并发起诊断时才会联网，且请求前会先对日志脱敏。
+
+OBS 配置备份 / 导出默认不包含推流密钥，密码与 Token 会自动脱敏。如需完整备份可手动勾选「包含推流密钥」。
 
 ## 构建
 
@@ -58,9 +62,9 @@ dotnet run --project OBS_Helper.Wpf
 
 产物落在 `PAKE\windows\`：
 
-- `OBS_Helper_Setup_1.0.0.exe` — 安装包
-- `OBS_Helper_Portable_1.0.0.zip` — 解压即用
-- `OBS_Helper_Portable_1.0.0.exe` — 单文件（需 `-SingleFile`）
+- `OBS_Helper_Setup_1.2.0.exe` — 安装包
+- `OBS_Helper_Portable_1.2.0.zip` — 解压即用
+- `OBS_Helper_Portable_1.2.0.exe` — 单文件（需 `-SingleFile`）
 
 ## 工程结构
 
@@ -70,16 +74,17 @@ OBS_Helper.Wpf/
   MainWindow.xaml(.cs)   左侧导航 + 顶栏 + 页面容器，路由注册在这里
   AppServices.cs         组合根：所有服务的惰性单例，手工装配
   Navigation/            极简路由（路由名 -> 页面工厂，带缓存与后退栈）
-  Views/                 11 个页面
+  Views/                 13 个页面
   Controls/              共享控件与值转换器
   Themes/                Palette.xaml 调色板 + Controls.xaml 样式库
-  Models/                知识库与 obs-websocket 协议的数据模型
+  Models/                知识库、obs-websocket 协议、OBS 配置模型
   Services/
     Host/                HostBridge（DPAPI、日志读取、AI 转发）、LocalStore
     Obs/                 WebSocket 客户端、连接服务、日志分析、脱敏
+    ObsConfig/           OBS 配置定位、备份/导出/导入、重置、场景模板落地
     Ai/                  本地 / 云端诊断引擎与编排
     Markdown/            排障指引的 Markdown 解析
-  Assets/                problems.json、troubleshooting.md（内嵌资源）、图标
+  Assets/                problems.json、troubleshooting.md、scene_templates.json（内嵌资源）、图标
 ```
 
 换肤靠的是把调色板写进 `Application.Resources`，XAML 一律用 `DynamicResource` 引用，所以主题切换是整窗即时生效的。

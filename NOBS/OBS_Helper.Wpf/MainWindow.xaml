@@ -73,6 +73,7 @@
             <RadioButton x:Name="NavAssistant"  Style="{StaticResource NavTabButton}" Tag="🤖" Content="助手"   Checked="OnNavChecked" />
             <RadioButton x:Name="NavDiagnostic" Style="{StaticResource NavTabButton}" Tag="🩺" Content="诊断"   Checked="OnNavChecked" />
             <RadioButton x:Name="NavSetup"      Style="{StaticResource NavTabButton}" Tag="🎬" Content="搭建"   Checked="OnNavChecked" />
+            <RadioButton x:Name="NavTemplates" Style="{StaticResource NavTabButton}" Tag="🧩" Content="模板"   Checked="OnNavChecked" />
             <RadioButton x:Name="NavConsole"    Style="{StaticResource NavTabButton}" Tag="🎛️" Content="控制台" Checked="OnNavChecked" />
             <RadioButton x:Name="NavGuide"      Style="{StaticResource NavTabButton}" Tag="📖" Content="指引"   Checked="OnNavChecked" />
             <RadioButton x:Name="NavSettings"   Style="{StaticResource NavTabButton}" Tag="⚙️" Content="设置"   Checked="OnNavChecked" />

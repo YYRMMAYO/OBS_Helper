@@ -14,9 +14,9 @@
     <ApplicationIcon>Assets\appicon.ico</ApplicationIcon>
     <ApplicationManifest>app.manifest</ApplicationManifest>
 
-    <Version>1.0.0</Version>
-    <FileVersion>1.0.0.0</FileVersion>
-    <AssemblyVersion>1.0.0.0</AssemblyVersion>
+    <Version>1.2.0</Version>
+    <FileVersion>1.2.0.0</FileVersion>
+    <AssemblyVersion>1.2.0.0</AssemblyVersion>
     <AssemblyTitle>OBS 排障助手</AssemblyTitle>
     <Product>OBS 排障助手</Product>
     <Company>OBS Helper</Company>
@@ -41,6 +41,7 @@
     <!-- 离线知识库与排障指引：内嵌进程序集，单文件发布也能读到 -->
     <EmbeddedResource Include="Assets\problems.json" LogicalName="OBS_Helper.Wpf.Assets.problems.json" />
     <EmbeddedResource Include="Assets\troubleshooting.md" LogicalName="OBS_Helper.Wpf.Assets.troubleshooting.md" />
+    <EmbeddedResource Include="Assets\scene_templates.json" LogicalName="OBS_Helper.Wpf.Assets.scene_templates.json" />
   </ItemGroup>
 
   <!--

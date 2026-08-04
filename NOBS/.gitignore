@@ -9,3 +9,5 @@ PAKE/
 build/
 build_out.txt
 selftest_result.txt
+obj2/
+tmp_build/

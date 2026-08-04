@@ -394,6 +394,10 @@ public sealed class ObsConnectionService : IAsyncDisposable
     public Task<ObsRequestResult> RawRequestAsync(string requestType, object? data = null)
         => _client.RequestAsync(requestType, data);
 
+    /// <summary>透传任意请求，并支持中途取消（模板落地 / 重置等长时间操作使用）。</summary>
+    public Task<ObsRequestResult> RawRequestAsync(string requestType, object? data, CancellationToken ct)
+        => _client.RequestAsync(requestType, data, ct);
+
     // ---------------------------------------------------------------- 事件
 
     private void OnObsEvent(ObsEventMessage e)

@@ -10,6 +10,7 @@ namespace OBS_Helper.Wpf.Errors;
 ///   <item>5xx 助手 / 搜索</item>
 ///   <item>6xx OBS 连接</item>
 ///   <item>7xx AI 诊断</item>
+///   <item>8xx OBS 配置管理（备份 / 导入导出 / 重置 / 模板）</item>
 ///   <item>9xx 组件 / 未知</item>
 /// </list>
 /// 编码沿用 Blazor 版，便于历史工单与文档对照；1xx 的文案已按原生 WPF 场景重写。
@@ -49,6 +50,14 @@ public static class ErrorCodes
     public const string AiCloudRequestFailed = "OBS702";
     public const string AiResponseInvalid = "OBS703";
 
+    // 8xx OBS 配置管理
+    public const string ObsConfigNotFound = "OBS801";
+    public const string ObsRunning = "OBS802";
+    public const string BackupFailed = "OBS803";
+    public const string ImportRejected = "OBS804";
+    public const string ResetFailed = "OBS805";
+    public const string TemplateApplyFailed = "OBS806";
+
     /// <summary>返回某报错码的用户可读说明（含解决建议）。</summary>
     public static string Describe(string code) => code switch
     {
@@ -70,6 +79,12 @@ public static class ErrorCodes
         AiCloudNotConfigured => "尚未配置云端 AI：请在「设置」中填写 https 接口地址、模型名并保存 API Key。",
         AiCloudRequestFailed => "云端 AI 请求失败，已自动回退到本地规则引擎。",
         AiResponseInvalid => "云端 AI 返回内容无法解析，已按本地规则给出结论。",
+        ObsConfigNotFound => "未找到 OBS 配置目录，请确认已安装并至少启动过一次 OBS；便携版可在本页手动指定目录。",
+        ObsRunning => "OBS 正在运行，该操作需要先完全退出 OBS（含托盘图标）再重试。",
+        BackupFailed => "备份 / 导出失败，请确认磁盘空间充足且目标目录可写。",
+        ImportRejected => "导入包校验未通过：可能不是本程序导出的备份，或文件已损坏 / 被篡改。",
+        ResetFailed => "重置未能完成，已尝试回滚；原配置的副本保留在备份目录中，可手动还原。",
+        TemplateApplyFailed => "模板落地失败，可能是 OBS 版本不支持某类来源；可改用「导出为场景集合文件」再手动导入。",
         _ => "未定义的错误码。"
     };
 

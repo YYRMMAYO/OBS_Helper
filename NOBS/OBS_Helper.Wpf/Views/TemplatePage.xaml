@@ -1,0 +1,31 @@
+<UserControl x:Class="OBS_Helper.Wpf.Views.TemplatePage"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+  <ScrollViewer Style="{StaticResource PageScroll}">
+    <StackPanel Margin="22,18,22,26">
+
+      <TextBlock Style="{StaticResource MutedText}" Margin="0,0,0,16"
+                 Text="选择一套模板，程序会通过 OBS WebSocket 远程创建场景与来源（需先连上 OBS）。未连接时可将模板导出为标准场景集合 JSON，手动放入 OBS 的 basic/scenes/ 目录使用。" />
+
+      <!-- 状态条 -->
+      <Border x:Name="StatusBar" Margin="0,0,0,14" Visibility="Collapsed"
+              Background="{DynamicResource Surface2Brush}"
+              CornerRadius="{DynamicResource CornerRadiusMd}" Padding="12,9">
+        <StackPanel Orientation="Horizontal">
+          <TextBlock x:Name="StatusIcon" Text="ℹ️" VerticalAlignment="Center"
+                     FontSize="{DynamicResource FontSizeLg}" Margin="0,0,8,0" />
+          <TextBlock x:Name="StatusText" TextWrapping="Wrap" VerticalAlignment="Center"
+                     FontSize="{DynamicResource FontSizeSm}"
+                     Foreground="{DynamicResource TextBrush}" />
+        </StackPanel>
+      </Border>
+
+      <TextBlock x:Name="EmptyText" Style="{StaticResource MutedText}"
+                 Text="模板数据加载中…" Visibility="Visible" />
+
+      <!-- 模板列表（由 code-behind 手工组装卡片） -->
+      <StackPanel x:Name="TemplateList" Visibility="Collapsed" />
+
+    </StackPanel>
+  </ScrollViewer>
+</UserControl>

@@ -116,6 +116,9 @@ def main():
             if rid == 21:
                 holder["text"] = obj.get("result", {}).get("result", {}).get("value")
                 continue
+            if rid == 31:
+                holder["glen"] = obj.get("result", {}).get("result", {}).get("value")
+                continue
             if m in ("Runtime.exceptionThrown", "Runtime.consoleAPICalled", "Log.entryAdded"):
                 events.append(obj)
 
@@ -145,6 +148,20 @@ def main():
                                    "returnByValue": True}}))
     time.sleep(1)
 
+    # 额外验证「排障指引」页 /guide 可打开并渲染 Markdown，且无异常。
+    # 用应用内客户端路由（点击导航链接）而非整页跳转，避免静态服务器无 SPA 回退导致 404。
+    ws.send(json.dumps({"id": 30, "method": "Runtime.evaluate",
+                        "params": {"expression": "var a=document.querySelector('a[href=\"guide\"]'); if(a){a.click();'clicked'}else{'no-link'}",
+                                   "returnByValue": True}}))
+    time.sleep(4)
+    ws.send(json.dumps({"id": 31, "method": "Runtime.evaluate",
+                        "params": {"expression": "document.querySelector('.md')?document.querySelector('.md').innerText.length:0",
+                                   "returnByValue": True}}))
+    time.sleep(1)
+    gv = holder.get("glen")
+    guide_ok = gv is not None and int(gv) > 50
+    _safe_print("=== GUIDE RENDERED:", guide_ok)
+
     _safe_print("=== APP RENDERED:", ok)
     _safe_print("=== EXCEPTIONS / CONSOLE / LOG ===")
     err_count = 0
@@ -171,7 +188,7 @@ def main():
     except Exception:
         pass
 
-    if ok and err_count == 0:
+    if ok and err_count == 0 and guide_ok:
         _safe_print("SMOKE TEST PASSED")
         sys.exit(0)
     _safe_print("SMOKE TEST FAILED")

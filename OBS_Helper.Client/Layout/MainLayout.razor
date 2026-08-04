@@ -1,4 +1,9 @@
 ﻿@inherits LayoutComponentBase
+@inject ObsSettingsService Settings
+@inject AiSettingsService AiSettings
+@inject AppearanceService Appearance
+@using OBS_Helper.Client.Services.Obs
+@using OBS_Helper.Client.Services.Ai
 
 <div class="app-shell">
     <a class="skip-link" href="#main-content">跳到主内容</a>
@@ -8,7 +13,7 @@
             <span class="brand-logo">OBS</span>
             <span class="brand-text">直播排障助手</span>
         </a>
-        <span class="brand-sub">macOS · Windows 通用</span>
+        <a class="gear" href="settings" aria-label="设置" title="设置">⚙️</a>
     </header>
 
     <main id="main-content" class="app-content" tabindex="-1">
@@ -31,5 +36,24 @@
         <NavLink class="nav-tab" href="setup" aria-label="搭建">
             <span class="tab-icon" aria-hidden="true">🎬</span><span class="tab-label">搭建</span>
         </NavLink>
+        <NavLink class="nav-tab" href="console" aria-label="控制台">
+            <span class="tab-icon" aria-hidden="true">🎛️</span><span class="tab-label">控制台</span>
+        </NavLink>
+        <NavLink class="nav-tab" href="guide" aria-label="排障指引">
+            <span class="tab-icon" aria-hidden="true">📖</span><span class="tab-label">指引</span>
+        </NavLink>
+        <NavLink class="nav-tab" href="settings" aria-label="设置">
+            <span class="tab-icon" aria-hidden="true">⚙️</span><span class="tab-label">设置</span>
+        </NavLink>
     </nav>
 </div>
+
+@code {
+    protected override async Task OnInitializedAsync()
+    {
+        // 应用启动即加载连接设置、AI 设置与外观偏好（幂等），供各页面与桌面壳桥接共用。
+        await Settings.LoadAsync();
+        await AiSettings.LoadAsync();
+        await Appearance.InitializeAsync();
+    }
+}

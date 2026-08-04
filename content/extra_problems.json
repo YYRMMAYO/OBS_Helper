@@ -1,0 +1,1156 @@
+[
+  {
+    "id": "bs-hags",
+    "category": "black-screen",
+    "title": "建议关闭硬件加速 GPU 调度（HAGS）",
+    "platforms": [
+      "Windows"
+    ],
+    "severity": "常见",
+    "symptoms": [
+      "捕获源随机变黑或闪烁，重启 OBS 后短暂恢复",
+      "NVENC 编码器初始化失败或频繁报编码过载",
+      "游戏内流畅但直播画面一卡一卡"
+    ],
+    "causes": [
+      "Windows 的“硬件加速 GPU 计划”（HAGS）改变了 GPU 任务调度方式",
+      "HAGS 与 NVENC/AMF 硬件编码器存在已知兼容问题",
+      "显卡驱动版本较旧，对 HAGS 支持不完善"
+    ],
+    "steps": [
+      {
+        "title": "定位 HAGS 开关",
+        "detail": "Windows 设置 → 系统 → 屏幕 → 显示卡（图形设置）→ 更改默认图形设置 → 找到“硬件加速 GPU 计划”。",
+        "level": "基础"
+      },
+      {
+        "title": "关闭并重启系统",
+        "detail": "把“硬件加速 GPU 计划”切换为关闭，必须重启电脑才会生效，仅重启 OBS 无效。",
+        "level": "基础"
+      },
+      {
+        "title": "重启后重测编码器",
+        "detail": "打开 OBS → 设置 → 输出 → 高级模式，重新选择 NVENC/AMF/QSV 编码器，做 2 分钟录制测试观察是否还有掉帧。",
+        "level": "基础"
+      },
+      {
+        "title": "仍异常则更新显卡驱动",
+        "detail": "到 NVIDIA/AMD/Intel 官网下载最新 Studio 或 WHQL 驱动，安装时勾选“执行清洁安装”，再复测。",
+        "level": "进阶"
+      }
+    ],
+    "tips": [
+      "HAGS 对游戏帧数提升极小，但对直播稳定性影响很大，主播建议默认关闭",
+      "关闭后如果发现游戏帧数明显下降，可以再打开，属于个别机型差异"
+    ],
+    "related": [
+      "enc-overload",
+      "enc-nvenc",
+      "cr-driver",
+      "bs-display"
+    ],
+    "links": [
+      {
+        "title": "OBS 官方 · Windows 排障指南（黑屏/编码/音频/崩溃）",
+        "url": "https://obs-studio-app.github.io/obs-studio-troubleshooting-windows.html"
+      },
+      {
+        "title": "OBS 官方 · 日志分析器（自动诊断日志）",
+        "url": "https://obsproject.com/tools/analyzer"
+      }
+    ]
+  },
+  {
+    "id": "enc-gamemode",
+    "category": "encoding",
+    "title": "开启 Windows 游戏模式提升直播稳定性",
+    "platforms": [
+      "Windows"
+    ],
+    "severity": "一般",
+    "symptoms": [
+      "直播中偶发性掉帧，画面出现规律性小卡顿",
+      "后台程序（更新、杀毒扫描）一活动就掉帧",
+      "游戏与 OBS 抢占 CPU/GPU 资源"
+    ],
+    "causes": [
+      "Windows 后台任务在直播时抢占资源",
+      "系统未针对前台游戏做资源优先级调度",
+      "Xbox Game Bar 录制/后台录制功能占用编码器"
+    ],
+    "steps": [
+      {
+        "title": "开启游戏模式",
+        "detail": "Windows 设置 → 游戏 → 游戏模式 → 打开。系统会在检测到全屏游戏时抑制后台更新与通知。",
+        "level": "基础"
+      },
+      {
+        "title": "关闭 Xbox 后台录制",
+        "detail": "设置 → 游戏 → 捕获（Captures）→ 关闭“后台录制/录制我玩过的游戏”，避免与 OBS 争抢 NVENC 编码单元。",
+        "level": "基础"
+      },
+      {
+        "title": "关闭 Game Bar",
+        "detail": "设置 → 游戏 → Xbox Game Bar → 关闭。部分机型上 Game Bar 覆盖层会导致游戏捕获黑屏。",
+        "level": "基础"
+      },
+      {
+        "title": "复测掉帧",
+        "detail": "重启 OBS，做 5 分钟推流测试，观察状态栏的“跳过帧（渲染滞后）”与“遗漏帧（编码滞后）”是否归零。",
+        "level": "基础"
+      }
+    ],
+    "tips": [
+      "游戏模式只在检测到全屏游戏时生效，做桌面演示直播时收益有限",
+      "极少数机型开启游戏模式反而卡顿，若复测变差就关掉"
+    ],
+    "related": [
+      "enc-overload",
+      "enc-cpu",
+      "cf-priority",
+      "lag-skip"
+    ],
+    "links": [
+      {
+        "title": "OBS 官方 · Windows 排障指南（黑屏/编码/音频/崩溃）",
+        "url": "https://obs-studio-app.github.io/obs-studio-troubleshooting-windows.html"
+      }
+    ]
+  },
+  {
+    "id": "rc-mkv-format",
+    "category": "recording",
+    "title": "录制格式优先选 MKV / hybrid MP4，而不是普通 MP4",
+    "platforms": [
+      "Windows",
+      "macOS",
+      "Linux"
+    ],
+    "severity": "常见",
+    "symptoms": [
+      "OBS 崩溃或断电后，录制文件完全打不开",
+      "文件大小几个 GB，但播放器提示“文件损坏 / 无法识别格式”",
+      "录制中途蓝屏后整段素材报废"
+    ],
+    "causes": [
+      "MP4 的索引（moov atom）写在文件末尾，未正常结束录制就没有索引",
+      "OBS 异常退出时 MP4 无法补写文件头",
+      "长时间录制中途断电、硬盘写满等意外中断"
+    ],
+    "steps": [
+      {
+        "title": "把录制格式改成 MKV",
+        "detail": "OBS → 设置 → 输出 → 录像 → 录像格式 选择“Matroska 视频 (.mkv)”。MKV 边录边写索引，中断后仍可播放。",
+        "level": "基础"
+      },
+      {
+        "title": "或选 hybrid MP4",
+        "detail": "OBS 30.2 及以上版本可选“hybrid MP4”，兼具 MP4 兼容性与断电可恢复性，是目前的推荐项。",
+        "level": "基础"
+      },
+      {
+        "title": "开启录制后自动转封装",
+        "detail": "设置 → 高级 → 录像 → 勾选“自动转封装为 mp4”，录完自动生成一份 MP4，剪辑软件可直接导入。",
+        "level": "基础"
+      },
+      {
+        "title": "手动转封装旧文件",
+        "detail": "OBS 菜单 文件 → 转封装录像，选择 MKV 文件转为 MP4，全程不重新编码，几秒完成且无画质损失。",
+        "level": "基础"
+      }
+    ],
+    "tips": [
+      "Premiere/达芬奇对 MKV 支持较差，转封装成 MP4 后再剪辑最省事",
+      "转封装不是转码，不会掉画质，也不吃 CPU"
+    ],
+    "related": [
+      "rc-mkv",
+      "rc-remux",
+      "rc-mp4corrupt",
+      "rc-nofile"
+    ],
+    "links": [
+      {
+        "title": "OBS 官方首页 · 下载与文档",
+        "url": "https://obsproject.com"
+      },
+      {
+        "title": "OBS 中文站 · 入门与基础配置指南",
+        "url": "https://www.obsproject.com.cn/obs/62.html"
+      }
+    ]
+  },
+  {
+    "id": "av-samplerate",
+    "category": "avsync",
+    "title": "全链路音频采样率统一为 48 kHz",
+    "platforms": [
+      "Windows",
+      "macOS"
+    ],
+    "severity": "常见",
+    "symptoms": [
+      "直播开始时音画同步，越播越不同步",
+      "声音偶发爆音、电流声或轻微变调",
+      "录制文件用不同播放器打开，音画偏移量不一样"
+    ],
+    "causes": [
+      "OBS 采样率与 Windows 声音设备采样率不一致，需要实时重采样",
+      "麦克风、耳机、虚拟声卡三者采样率各不相同",
+      "重采样过程累积误差，时间越长偏移越大"
+    ],
+    "steps": [
+      {
+        "title": "把 OBS 采样率设为 48 kHz",
+        "detail": "OBS → 设置 → 音频 → 常规 → 采样率 选择 48 kHz（这是所有直播平台的标准值）。",
+        "level": "基础"
+      },
+      {
+        "title": "统一 Windows 所有设备",
+        "detail": "右键任务栏音量图标 → 声音设置 → 更多声音设置 → 逐个设备 属性 → 高级 → 默认格式 全部改为“2 声道，24 位，48000 Hz”。输入和输出设备都要改。",
+        "level": "基础"
+      },
+      {
+        "title": "macOS 用音频 MIDI 设置",
+        "detail": "打开“音频 MIDI 设置”应用，逐个选中输入/输出设备，把格式改为 48000.0 Hz。",
+        "level": "基础"
+      },
+      {
+        "title": "重启 OBS 验证",
+        "detail": "改完必须重启 OBS 才会重新初始化音频引擎。录制 10 分钟测试片段，检查片尾是否仍然同步。",
+        "level": "基础"
+      }
+    ],
+    "tips": [
+      "44.1 kHz 是音乐 CD 标准，直播场景一律用 48 kHz",
+      "声卡/调音台（如 GoXLR、UMC202）也要在其驱动面板里改成 48 kHz"
+    ],
+    "related": [
+      "av-sample",
+      "au-sample-mismatch",
+      "av-drift2",
+      "av-desync"
+    ],
+    "links": [
+      {
+        "title": "OBS 官方 · Windows 排障指南（黑屏/编码/音频/崩溃）",
+        "url": "https://obs-studio-app.github.io/obs-studio-troubleshooting-windows.html"
+      },
+      {
+        "title": "OBS 官方 · 日志分析器（自动诊断日志）",
+        "url": "https://obsproject.com/tools/analyzer"
+      }
+    ]
+  },
+  {
+    "id": "lag-dynamicbitrate",
+    "category": "lag",
+    "title": "开启动态码率（Dynamic Bitrate）自动应对网络抖动",
+    "platforms": [
+      "Windows",
+      "macOS",
+      "Linux"
+    ],
+    "severity": "常见",
+    "symptoms": [
+      "网络一波动就大量丢帧，状态栏红点常亮",
+      "观众端频繁转圈缓冲，甚至短暂断流",
+      "家里有人下载/看视频时直播立刻卡"
+    ],
+    "causes": [
+      "固定码率超过了当前实际可用上行带宽",
+      "网络瞬时拥塞导致 RTMP 发送缓冲堆积",
+      "无线网络或共享宽带带宽波动大"
+    ],
+    "steps": [
+      {
+        "title": "开启动态码率",
+        "detail": "OBS → 设置 → 高级 → 网络 → 勾选“动态改变码率以管理拥塞（Beta）”。网络变差时 OBS 会自动降码率而不是丢帧。",
+        "level": "基础"
+      },
+      {
+        "title": "确认使用 CBR",
+        "detail": "设置 → 输出 → 高级模式 → 串流 → 码率控制选 CBR。动态码率只在 CBR 下工作。",
+        "level": "基础"
+      },
+      {
+        "title": "设定合理的基准码率",
+        "detail": "把码率设为实测上行带宽的 70%~75%，给动态码率留出上下调节空间，不要一上来就顶满。",
+        "level": "基础"
+      },
+      {
+        "title": "观察日志验证",
+        "detail": "直播结束后 帮助 → 日志文件 → 查看当前日志，搜索“bitrate”可看到自动调整记录；频繁下调说明带宽本身不够。",
+        "level": "进阶"
+      }
+    ],
+    "tips": [
+      "动态码率降码率时画质会临时变糊，但比丢帧卡成幻灯片好得多",
+      "它只能救瞬时抖动，救不了长期带宽不足，根本还是要把基准码率调低"
+    ],
+    "related": [
+      "lag-network",
+      "lag-bandwidth",
+      "lag-upload",
+      "sf-drops"
+    ],
+    "links": [
+      {
+        "title": "OBS 官方 · 日志分析器（自动诊断日志）",
+        "url": "https://obsproject.com/tools/analyzer"
+      },
+      {
+        "title": "OBS 官方 · Windows 排障指南（黑屏/编码/音频/崩溃）",
+        "url": "https://obs-studio-app.github.io/obs-studio-troubleshooting-windows.html"
+      }
+    ]
+  },
+  {
+    "id": "sf-server-pick",
+    "category": "streamfail",
+    "title": "选择就近的推流服务器节点",
+    "platforms": [
+      "Windows",
+      "macOS",
+      "Linux"
+    ],
+    "severity": "常见",
+    "symptoms": [
+      "连接推流服务器超时或反复重连",
+      "网络测速正常，但推流丢帧率居高不下",
+      "换个时间段推流表现差异很大"
+    ],
+    "causes": [
+      "选择了地理位置远的服务器节点，RTT 高、丢包多",
+      "默认的“自动/Auto”节点选的不是最优线路",
+      "运营商到该节点的跨网路由质量差"
+    ],
+    "steps": [
+      {
+        "title": "手动选择就近节点",
+        "detail": "OBS → 设置 → 直播 → 服务器，从下拉列表里选择物理距离最近的城市节点，而不是“Auto”。国内平台优先选本省或相邻省节点。",
+        "level": "基础"
+      },
+      {
+        "title": "用带宽测试工具比对",
+        "detail": "Twitch 用户可用 TwitchTest 工具批量测试各节点质量；国内平台可用平台自带的推流诊断工具。",
+        "level": "进阶"
+      },
+      {
+        "title": "ping 与丢包排查",
+        "detail": "命令行运行 ping <服务器域名> -t 观察延迟与丢包；再用 tracert 看是哪一跳开始劣化。RTT 持续 >100ms 或丢包 >1% 就该换节点。",
+        "level": "进阶"
+      },
+      {
+        "title": "换节点后重新获取推流码",
+        "detail": "部分平台不同节点的推流码不通用，换服务器后回平台后台复制新的串流密钥再开播。",
+        "level": "基础"
+      }
+    ],
+    "tips": [
+      "最近的节点不一定最快，实测比理论距离更靠谱，多测几个再定",
+      "固定用一个稳定节点，别每次开播都改，方便对比历史表现"
+    ],
+    "related": [
+      "sf-server",
+      "sf-timeout",
+      "sf-drops",
+      "lag-network"
+    ],
+    "links": [
+      {
+        "title": "OBS 官方 · 日志分析器（自动诊断日志）",
+        "url": "https://obsproject.com/tools/analyzer"
+      },
+      {
+        "title": "OBS 官方首页 · 下载与文档",
+        "url": "https://obsproject.com"
+      }
+    ]
+  },
+  {
+    "id": "bs-gpu-pref",
+    "category": "black-screen",
+    "title": "双显卡笔记本用 Windows 图形设置统一 GPU",
+    "platforms": [
+      "Windows"
+    ],
+    "severity": "常见",
+    "symptoms": [
+      "游戏捕获黑屏，但窗口捕获正常（或反之）",
+      "显示器捕获黑屏，鼠标指针却能显示",
+      "OBS 日志出现“Loading up D3D11 on adapter Intel(R) UHD Graphics”而游戏跑在独显上"
+    ],
+    "causes": [
+      "OBS 运行在核显，游戏运行在独显，跨 GPU 无法读取纹理",
+      "Windows 图形性能首选项默认把 OBS 分配给了节能 GPU",
+      "厂商控制面板（NVIDIA/AMD）与 Windows 设置冲突"
+    ],
+    "steps": [
+      {
+        "title": "打开 Windows 图形设置",
+        "detail": "设置 → 系统 → 屏幕 → 显示卡（或搜索“图形设置”）→ 添加桌面应用 → 浏览到 obs64.exe（默认 C:\\Program Files\\obs-studio\\bin\\64bit\\obs64.exe）。",
+        "level": "基础"
+      },
+      {
+        "title": "为 OBS 指定 GPU",
+        "detail": "选中 OBS → 选项 → 做显示器捕获时选“节能”（核显），做游戏捕获时选“高性能”（独显）。原则是与被捕获的画面在同一块 GPU 上。",
+        "level": "基础"
+      },
+      {
+        "title": "同步 NVIDIA 控制面板",
+        "detail": "NVIDIA 控制面板 → 管理 3D 设置 → 程序设置 → 添加 obs64.exe → 首选图形处理器 设为与上一步一致，避免两处冲突。",
+        "level": "进阶"
+      },
+      {
+        "title": "查日志确认生效",
+        "detail": "重启 OBS 后 帮助 → 日志文件 → 查看当前日志，搜索“adapter”确认加载的显卡名称已变更。",
+        "level": "进阶"
+      },
+      {
+        "title": "外接显示器接独显口",
+        "detail": "若机器支持，用 BIOS 关闭核显或把外接显示器接到独显直出接口（MUX Switch / 独显直连），从根本上消除双 GPU 问题。",
+        "level": "进阶"
+      }
+    ],
+    "tips": [
+      "改完必须完全退出 OBS 再启动，托盘里残留进程会让设置不生效",
+      "记住口诀：捕获桌面跟核显，捕获游戏跟独显"
+    ],
+    "related": [
+      "bs-dualgpu",
+      "bs-game",
+      "bs-display",
+      "enc-nvenc"
+    ],
+    "links": [
+      {
+        "title": "OBS 官方 · Windows 排障指南（黑屏/编码/音频/崩溃）",
+        "url": "https://obs-studio-app.github.io/obs-studio-troubleshooting-windows.html"
+      },
+      {
+        "title": "OBS Versions · 黑屏与编码问题修复教程",
+        "url": "https://obs-versions.com/blog/fix-obs-black-screen"
+      }
+    ]
+  },
+  {
+    "id": "bs-hwaccel",
+    "category": "black-screen",
+    "title": "关闭浏览器 / Discord 的硬件加速解决捕获黑屏",
+    "platforms": [
+      "Windows",
+      "macOS"
+    ],
+    "severity": "常见",
+    "symptoms": [
+      "窗口捕获 Chrome/Edge 时只有白色或黑色空白框",
+      "捕获 Discord 窗口黑屏，但能看到窗口边框",
+      "网页视频区域是黑的，其他 UI 元素正常显示"
+    ],
+    "causes": [
+      "浏览器/Discord 用 GPU 直接合成画面，绕过了 OBS 的窗口捕获路径",
+      "视频区域使用了硬件叠加层（overlay），普通截屏 API 读不到",
+      "OBS 与目标程序运行在不同 GPU 上"
+    ],
+    "steps": [
+      {
+        "title": "关闭 Chrome/Edge 硬件加速",
+        "detail": "浏览器 设置 → 系统 →关闭“可用时使用图形加速/硬件加速”，然后完全退出浏览器（检查托盘）再重开。",
+        "level": "基础"
+      },
+      {
+        "title": "关闭 Discord 硬件加速",
+        "detail": "Discord 用户设置 → 高级 → 关闭“硬件加速”；同时在 语音和视频 → 关闭“OpenH264 视频编解码器硬件加速”。",
+        "level": "基础"
+      },
+      {
+        "title": "改用 Windows 图形捕获",
+        "detail": "不想关硬件加速的话，把窗口捕获源的“捕获方式”改为“Windows 图形捕获(WGC)”，Win10 1903+ 支持，能捕获硬件加速窗口。",
+        "level": "基础"
+      },
+      {
+        "title": "用浏览器源替代",
+        "detail": "如果只是要显示某个网页，直接用 OBS 的“浏览器”源输入网址，比窗口捕获更稳定、更省资源。",
+        "level": "基础"
+      }
+    ],
+    "tips": [
+      "关闭浏览器硬件加速会增加 CPU 负担，播完可以再打开",
+      "OBS 30+ 的 WGC 捕获已相当成熟，优先试它而不是关硬件加速"
+    ],
+    "related": [
+      "bs-window",
+      "bs-display",
+      "cr-hwaccel",
+      "lag-browser"
+    ],
+    "links": [
+      {
+        "title": "OBS Versions · 黑屏与编码问题修复教程",
+        "url": "https://obs-versions.com/blog/fix-obs-black-screen"
+      },
+      {
+        "title": "OBS 官方 · Windows 排障指南（黑屏/编码/音频/崩溃）",
+        "url": "https://obs-studio-app.github.io/obs-studio-troubleshooting-windows.html"
+      }
+    ]
+  },
+  {
+    "id": "lag-bandwidth",
+    "category": "lag",
+    "title": "先测上行带宽，码率不超过上行的 75%",
+    "platforms": [
+      "Windows",
+      "macOS",
+      "Linux"
+    ],
+    "severity": "常见",
+    "symptoms": [
+      "状态栏丢帧（网络）持续上涨，红点常亮",
+      "观众反馈画面卡顿、掉线，本地却毫无感觉",
+      "刚开播正常，几分钟后开始严重卡"
+    ],
+    "causes": [
+      "码率设置超过实际可用上行带宽",
+      "只看了下行速度，忽略了上行（家宽上行通常只有下行的 1/10）",
+      "同一网络下有其他设备在上传/备份，挤占带宽"
+    ],
+    "steps": [
+      {
+        "title": "测出真实上行带宽",
+        "detail": "用 Speedtest 或运营商测速工具，重点看“上传/Upload”那一栏，单位 Mbps。测 3 次取最低值。",
+        "level": "基础"
+      },
+      {
+        "title": "按 75% 换算码率",
+        "detail": "可用码率(Kbps) ≈ 上行(Mbps) × 1000 × 0.75。例如上行 10 Mbps → 码率不超过 7500 Kbps。留 25% 余量给音频、系统与突发流量。",
+        "level": "基础"
+      },
+      {
+        "title": "填入 OBS",
+        "detail": "设置 → 输出 → 高级模式 → 串流 → 码率控制 CBR，视频码率填算出的值；音频码率单独占 128~160 Kbps，也要算进总量。",
+        "level": "基础"
+      },
+      {
+        "title": "匹配分辨率与帧率",
+        "detail": "码率不够就降规格：1080p60 建议 6000 Kbps，1080p30 约 4500，720p60 约 4500，720p30 约 3000。宁可降分辨率也不要硬撑高码率。",
+        "level": "基础"
+      },
+      {
+        "title": "排除同网设备占用",
+        "detail": "直播时暂停云盘同步、系统更新、种子下载；路由器上给主播机开 QoS 上行优先。",
+        "level": "进阶"
+      }
+    ],
+    "tips": [
+      "上行是共享的，家里有人开视频会议就要再往下调 20%",
+      "宁可码率保守一点稳定输出，也不要高码率带着丢帧推"
+    ],
+    "related": [
+      "lag-upload",
+      "lag-network",
+      "lag-dynamicbitrate",
+      "lag-wired"
+    ],
+    "links": [
+      {
+        "title": "OBS 官方 · 日志分析器（自动诊断日志）",
+        "url": "https://obsproject.com/tools/analyzer"
+      },
+      {
+        "title": "OBS 中文站 · 入门与基础配置指南",
+        "url": "https://www.obsproject.com.cn/obs/62.html"
+      }
+    ]
+  },
+  {
+    "id": "cr-update",
+    "category": "crash",
+    "title": "把 OBS 更新到最新稳定版",
+    "platforms": [
+      "Windows",
+      "macOS",
+      "Linux"
+    ],
+    "severity": "一般",
+    "symptoms": [
+      "启动即闪退，或添加某类源时必定崩溃",
+      "新显卡/新系统上编码器不可用",
+      "遇到的问题在网上被描述为“某版本已修复”"
+    ],
+    "causes": [
+      "使用的是数年前的老版本，已知 Bug 未修复",
+      "新系统/新驱动与旧版 OBS 不兼容",
+      "旧版不支持新的编码器（AV1、HEVC）或新平台协议"
+    ],
+    "steps": [
+      {
+        "title": "确认当前版本",
+        "detail": "OBS 菜单 帮助 → 关于，记录版本号；或看标题栏。低于 30.x 的版本建议直接升级。",
+        "level": "基础"
+      },
+      {
+        "title": "备份配置",
+        "detail": "升级前先 配置文件 → 导出、场景集合 → 导出，各存一份到桌面，升级出问题可随时回滚。",
+        "level": "基础"
+      },
+      {
+        "title": "从官网下载安装",
+        "detail": "只从 obsproject.com 下载安装包，不要用第三方站点。安装时覆盖原目录即可，配置会自动保留。",
+        "level": "基础"
+      },
+      {
+        "title": "升级后检查插件",
+        "detail": "大版本升级后旧插件可能不兼容导致崩溃。先用 安全模式 启动确认 OBS 本体正常，再逐个更新插件。",
+        "level": "进阶"
+      }
+    ],
+    "tips": [
+      "不要用 Beta/RC 版本做正式直播，稳定版才是主力",
+      "升级前后各做一次 5 分钟录制测试，确认编码器与音频设备都正常"
+    ],
+    "related": [
+      "cr-plugin",
+      "cr-safe-mode",
+      "cr-downgrade",
+      "cf-profiles"
+    ],
+    "links": [
+      {
+        "title": "OBS 官方首页 · 下载与文档",
+        "url": "https://obsproject.com"
+      },
+      {
+        "title": "OBS 官方 · 日志分析器（自动诊断日志）",
+        "url": "https://obsproject.com/tools/analyzer"
+      }
+    ]
+  },
+  {
+    "id": "enc-vsync",
+    "category": "encoding",
+    "title": "游戏内开启垂直同步或限帧，避免 GPU 100% 占用",
+    "platforms": [
+      "Windows"
+    ],
+    "severity": "常见",
+    "symptoms": [
+      "游戏帧数很高但直播画面一顿一顿",
+      "OBS 状态栏“跳过帧（渲染滞后）”持续增加",
+      "任务管理器显示 GPU 占用长期 99%~100%"
+    ],
+    "causes": [
+      "游戏无限制地吃满 GPU，OBS 抢不到渲染/编码资源",
+      "OBS 的合成与编码需要少量 GPU 余量，GPU 满载时被饿死",
+      "游戏帧率远超直播帧率，多余的帧只是白白消耗 GPU"
+    ],
+    "steps": [
+      {
+        "title": "游戏内开启垂直同步",
+        "detail": "进入游戏 图形/显示 设置 → 垂直同步 打开，把帧率锁在显示器刷新率上，立刻释放出 GPU 余量。",
+        "level": "基础"
+      },
+      {
+        "title": "或直接限帧",
+        "detail": "不想开 V-Sync 就用限帧：游戏内“最大帧率”设为显示器刷新率减 2~3（如 144Hz 设 141），输入延迟比 V-Sync 更低。",
+        "level": "基础"
+      },
+      {
+        "title": "驱动层全局限帧",
+        "detail": "NVIDIA 控制面板 → 管理 3D 设置 → 程序设置 → 选游戏 → “最大帧速率”设定；AMD 用 Radeon 软件的 Chill / FRTC。",
+        "level": "进阶"
+      },
+      {
+        "title": "确认 GPU 占用回落",
+        "detail": "边玩边看任务管理器，GPU 占用降到 90% 以下即为健康。再看 OBS 状态栏跳过帧是否停止增长。",
+        "level": "基础"
+      },
+      {
+        "title": "仍不够就降游戏画质",
+        "detail": "把游戏画质从“极高”降到“高”，或分辨率从 4K 降到 1440p，给编码器让出足够 GPU。",
+        "level": "基础"
+      }
+    ],
+    "tips": [
+      "“跳过帧（渲染滞后）”几乎总是 GPU 不够，而不是网络问题，别去调码率",
+      "直播 60fps 时游戏跑 300fps 毫无意义，纯属浪费在编码上"
+    ],
+    "related": [
+      "enc-overload",
+      "lag-skip",
+      "enc-nvenc",
+      "enc-multipass"
+    ],
+    "links": [
+      {
+        "title": "OBS 官方 · Windows 排障指南（黑屏/编码/音频/崩溃）",
+        "url": "https://obs-studio-app.github.io/obs-studio-troubleshooting-windows.html"
+      },
+      {
+        "title": "OBS 官方 · 日志分析器（自动诊断日志）",
+        "url": "https://obsproject.com/tools/analyzer"
+      }
+    ]
+  },
+  {
+    "id": "bs-multigame",
+    "category": "black-screen",
+    "title": "同一场景不要放多个游戏捕获源",
+    "platforms": [
+      "Windows"
+    ],
+    "severity": "一般",
+    "symptoms": [
+      "以前能用的游戏捕获突然全部黑屏",
+      "场景里有好几个游戏捕获源，只有一个偶尔出画面",
+      "切换场景后捕获随机失效，重启 OBS 才恢复"
+    ],
+    "causes": [
+      "多个游戏捕获源同时向游戏进程注入钩子，互相冲突",
+      "OBS 无法确定该由哪个源接管画面",
+      "隐藏但未删除的旧捕获源仍在后台尝试挂钩"
+    ],
+    "steps": [
+      {
+        "title": "清点所有游戏捕获源",
+        "detail": "逐个场景检查来源列表，把所有“游戏捕获/Game Capture”类型的源找出来，包括被折叠在场景嵌套里的。",
+        "level": "基础"
+      },
+      {
+        "title": "只保留一个",
+        "detail": "删除多余的游戏捕获源，全场景只留一个，模式设为“捕获任何全屏应用程序”，就能自动跟随不同游戏。",
+        "level": "基础"
+      },
+      {
+        "title": "多游戏需求用场景切换",
+        "detail": "如果确实要为不同游戏做不同布局，把每个游戏捕获放在各自独立的场景里，靠切换场景而不是叠在同一场景。",
+        "level": "基础"
+      },
+      {
+        "title": "隐藏不等于停用",
+        "detail": "注意：把源的眼睛图标关掉不一定完全释放钩子。彻底解决要删除源，或在源属性里取消“可见时才捕获”之外的常驻选项。",
+        "level": "进阶"
+      }
+    ],
+    "tips": [
+      "一个游戏捕获源 + 自动模式，能覆盖 90% 的单人主播需求",
+      "同理，也不要同时开多个显示器捕获捕同一块屏幕"
+    ],
+    "related": [
+      "bs-game",
+      "bs-window",
+      "st-scene",
+      "bs-display"
+    ],
+    "links": [
+      {
+        "title": "OBS 官方 · Windows 排障指南（黑屏/编码/音频/崩溃）",
+        "url": "https://obs-studio-app.github.io/obs-studio-troubleshooting-windows.html"
+      },
+      {
+        "title": "OBS Versions · 黑屏与编码问题修复教程",
+        "url": "https://obs-versions.com/blog/fix-obs-black-screen"
+      }
+    ]
+  },
+  {
+    "id": "enc-multipass",
+    "category": "encoding",
+    "title": "NVENC 多遍模式（Multipass）改为单遍降低 GPU 负载",
+    "platforms": [
+      "Windows",
+      "Linux"
+    ],
+    "severity": "一般",
+    "symptoms": [
+      "开播即报“编码过载 / Encoding overloaded”",
+      "GPU 占用被 OBS 推高，游戏帧数明显下降",
+      "1440p 或 4K 推流时遗漏帧持续增加"
+    ],
+    "causes": [
+      "NVENC 预设里的“两遍（Two passes）”会让编码器工作量翻倍",
+      "高分辨率高帧率下 NVENC 编码单元吃紧",
+      "同时在录制 + 推流，两路编码叠加"
+    ],
+    "steps": [
+      {
+        "title": "找到 Multipass 设置",
+        "detail": "OBS → 设置 → 输出 → 输出模式选“高级” → 串流 → 编码器 NVIDIA NVENC → 找到“多遍模式 / Multipass Mode”。",
+        "level": "基础"
+      },
+      {
+        "title": "改为单遍",
+        "detail": "从“两遍（四分之一分辨率）”或“两遍（全分辨率）”改为“单遍（Single Pass）”，GPU 编码负载可下降约 20%~30%。",
+        "level": "基础"
+      },
+      {
+        "title": "配合调整预设",
+        "detail": "把“预设”从 P6/P7（Slower/Slowest）降到 P4/P5（Medium/Quality），画质损失很小但负载明显下降。",
+        "level": "基础"
+      },
+      {
+        "title": "调优先级与 Look-ahead",
+        "detail": "关闭“Look-ahead（前瞻）”和“Psycho Visual Tuning（心理视觉调整）”可进一步减负；显卡宽裕再逐项开回来。",
+        "level": "进阶"
+      },
+      {
+        "title": "复测编码过载",
+        "detail": "做 5 分钟推流测试，看 OBS 状态栏“遗漏帧（编码滞后）”是否停止增长；日志里搜索“skipped frames”核对比例应低于 1%。",
+        "level": "基础"
+      }
+    ],
+    "tips": [
+      "两遍模式的画质提升在直播码率下几乎看不出来，性价比很低",
+      "RTX 40 系及以上的 NVENC 很强，可以先试 P5 单遍，通常兼顾画质与负载"
+    ],
+    "related": [
+      "enc-nvenc",
+      "enc-overload",
+      "enc-vsync",
+      "enc-drop"
+    ],
+    "links": [
+      {
+        "title": "OBS 官方 · 日志分析器（自动诊断日志）",
+        "url": "https://obsproject.com/tools/analyzer"
+      },
+      {
+        "title": "OBS 官方 · Windows 排障指南（黑屏/编码/音频/崩溃）",
+        "url": "https://obs-studio-app.github.io/obs-studio-troubleshooting-windows.html"
+      }
+    ]
+  },
+  {
+    "id": "rc-mp4corrupt",
+    "category": "recording",
+    "title": "MP4 录制中断后文件损坏的抢救办法",
+    "platforms": [
+      "Windows",
+      "macOS"
+    ],
+    "severity": "严重",
+    "symptoms": [
+      "录了两小时的 MP4 双击打不开，播放器报错",
+      "文件体积正常但时长显示 00:00",
+      "OBS 崩溃/断电后录制文件变成不可读"
+    ],
+    "causes": [
+      "MP4 的 moov atom（索引）在停止录制时才写入，异常中断则缺失",
+      "OBS 进程被强制结束（任务管理器结束进程、蓝屏、断电）",
+      "录制过程中磁盘写满或移动硬盘被拔出"
+    ],
+    "steps": [
+      {
+        "title": "先复制一份原始文件",
+        "detail": "任何修复操作前，先把损坏文件复制备份，避免修复工具把原文件写坏导致彻底无法挽回。",
+        "level": "基础"
+      },
+      {
+        "title": "用 untrunc 修复",
+        "detail": "下载 untrunc 工具，准备一个用同样 OBS 设置录制的正常小文件作为“参考文件”，命令：untrunc 参考文件.mp4 损坏文件.mp4，会生成 _fixed.mp4。",
+        "level": "进阶"
+      },
+      {
+        "title": "或用 ffmpeg 尝试提取",
+        "detail": "命令行执行 ffmpeg -i 损坏文件.mp4 -c copy 输出.mp4，部分场景下能救回前半段内容；不行再试加 -err_detect ignore_err。",
+        "level": "进阶"
+      },
+      {
+        "title": "从根本上杜绝",
+        "detail": "以后一律用 MKV 或 hybrid MP4 录制，录完用 文件 → 转封装录像 转成 MP4。这是唯一 100% 可靠的做法。",
+        "level": "基础"
+      }
+    ],
+    "tips": [
+      "参考文件必须与损坏文件同一套编码参数（同编码器、同分辨率、同帧率），否则修复会失败",
+      "长录制建议在 设置 → 输出 → 录像 里开启“自动分段”，把风险摊到每个分段上"
+    ],
+    "related": [
+      "rc-mkv-format",
+      "rc-mkv",
+      "rc-remux",
+      "rc-nofile"
+    ],
+    "links": [
+      {
+        "title": "OBS 官方首页 · 下载与文档",
+        "url": "https://obsproject.com"
+      },
+      {
+        "title": "OBS 中文站 · 入门与基础配置指南",
+        "url": "https://www.obsproject.com.cn/obs/62.html"
+      }
+    ]
+  },
+  {
+    "id": "av-drift2",
+    "category": "avsync",
+    "title": "多音频设备采样率不一致导致的渐进式音画漂移",
+    "platforms": [
+      "Windows",
+      "macOS"
+    ],
+    "severity": "常见",
+    "symptoms": [
+      "麦克风声音随时间越来越超前或滞后于画面",
+      "桌面音频同步正常，唯独麦克风轨漂移",
+      "录制 1 小时后偏移达到数百毫秒"
+    ],
+    "causes": [
+      "麦克风/声卡与 OBS 采样率不同，重采样时钟误差逐帧累积",
+      "USB 麦克风与主板声卡各跑各的时钟，没有共同时基",
+      "使用了虚拟声卡（VB-Cable、BlackHole）中转但未对齐采样率"
+    ],
+    "steps": [
+      {
+        "title": "统一所有设备到 48 kHz",
+        "detail": "OBS 采样率、Windows 每个输入输出设备的“默认格式”、虚拟声卡控制面板，全部改成 48000 Hz，一个都不能漏。",
+        "level": "基础"
+      },
+      {
+        "title": "禁用独占模式",
+        "detail": "声音设置 → 设备属性 → 高级 → 取消勾选“允许应用程序独占控制此设备”，防止其他程序偷偷改采样率。",
+        "level": "基础"
+      },
+      {
+        "title": "减少中转层",
+        "detail": "能直连就不要经过虚拟声卡；能用 OBS 原生“音频输入采集”就不要绕 VoiceMeeter。每多一层中转就多一份时钟误差。",
+        "level": "进阶"
+      },
+      {
+        "title": "用同步偏移临时补偿",
+        "detail": "如果一时无法根治，在 混音器 → 齿轮 → 高级音频属性 里给麦克风设置“同步偏移(ms)”。注意这只能补固定偏移，补不了持续漂移。",
+        "level": "进阶"
+      },
+      {
+        "title": "长播定期重启",
+        "detail": "确实存在硬件时钟漂移的机器，建议每 2~3 小时重启一次 OBS 音频引擎（改一次采样率再改回来即可触发重置）。",
+        "level": "进阶"
+      }
+    ],
+    "tips": [
+      "固定偏移用“同步偏移”解决；越来越大的偏移一定是采样率问题，别浪费时间调偏移",
+      "换掉廉价 USB 声卡通常能一劳永逸，时钟精度是硬件素质问题"
+    ],
+    "related": [
+      "av-drift",
+      "av-samplerate",
+      "au-sample-mismatch",
+      "av-offset"
+    ],
+    "links": [
+      {
+        "title": "OBS 官方 · Windows 排障指南（黑屏/编码/音频/崩溃）",
+        "url": "https://obs-studio-app.github.io/obs-studio-troubleshooting-windows.html"
+      },
+      {
+        "title": "OBS 官方 · 日志分析器（自动诊断日志）",
+        "url": "https://obsproject.com/tools/analyzer"
+      }
+    ]
+  },
+  {
+    "id": "lag-wired",
+    "category": "lag",
+    "title": "推流务必使用有线网络，避免 WiFi",
+    "platforms": [
+      "Windows",
+      "macOS",
+      "Linux"
+    ],
+    "severity": "常见",
+    "symptoms": [
+      "丢帧率忽高忽低，毫无规律",
+      "有人经过房间或用微波炉时直播就卡",
+      "测速显示带宽充足，推流却持续掉帧"
+    ],
+    "causes": [
+      "WiFi 是共享半双工介质，存在重传与随机延迟抖动",
+      "2.4 GHz 频段受邻居路由器、蓝牙、微波炉干扰",
+      "信号强度随位置与遮挡波动，瞬时丢包直接体现为丢帧"
+    ],
+    "steps": [
+      {
+        "title": "接网线（首选）",
+        "detail": "用 Cat5e 及以上网线把主播机直连路由器 LAN 口。这是解决网络丢帧最有效、最便宜的一步。",
+        "level": "基础"
+      },
+      {
+        "title": "无法布线时用电力猫/Mesh 回程",
+        "detail": "退而求其次用电力线适配器（PLC）或带有线回程的 Mesh 节点，稳定性远好于纯 WiFi。",
+        "level": "基础"
+      },
+      {
+        "title": "必须用 WiFi 时改 5 GHz",
+        "detail": "连接 5 GHz 频段（SSID 通常带 -5G），信道选 149/153/157 等高信道；主播机尽量与路由器同房间、无遮挡。",
+        "level": "基础"
+      },
+      {
+        "title": "关闭 WiFi 省电与漫游",
+        "detail": "设备管理器 → 网络适配器 → 无线网卡 属性 → 电源管理 → 取消“允许计算机关闭此设备以节约电源”；高级里把“漫游积极性”调到最低。",
+        "level": "进阶"
+      },
+      {
+        "title": "验证丢包",
+        "detail": "开播前命令行 ping 网关 -t 跑 2 分钟，丢包应为 0、延迟抖动小于 5ms。有丢包就说明链路本身有问题。",
+        "level": "进阶"
+      }
+    ],
+    "tips": [
+      "千兆网口 + Cat5e 就足够，不需要买昂贵的 Cat7/Cat8",
+      "笔记本用 USB 转千兆网卡也比 WiFi 稳，几十块钱解决大问题"
+    ],
+    "related": [
+      "lag-wifi",
+      "lag-network",
+      "lag-bandwidth",
+      "sf-drops"
+    ],
+    "links": [
+      {
+        "title": "OBS 官方 · 日志分析器（自动诊断日志）",
+        "url": "https://obsproject.com/tools/analyzer"
+      },
+      {
+        "title": "OBS 中文站 · 入门与基础配置指南",
+        "url": "https://www.obsproject.com.cn/obs/62.html"
+      }
+    ]
+  },
+  {
+    "id": "bs-mac-perm-reset",
+    "category": "black-screen",
+    "title": "macOS 屏幕录制权限缺失或更新后失效导致黑屏",
+    "platforms": [
+      "macOS"
+    ],
+    "severity": "常见",
+    "symptoms": [
+      "macOS 上显示器/窗口捕获全黑，只有壁纸或纯黑",
+      "系统更新（如升级到新版 macOS）之后原本正常的捕获突然变黑",
+      "OBS 没有弹出任何权限请求对话框"
+    ],
+    "causes": [
+      "未授予 OBS“屏幕录制”权限，或系统更新后权限被重置",
+      "权限列表里存在旧版本 OBS 的残留条目，指向已删除的路径",
+      "OBS 未完全重启，权限变更未生效"
+    ],
+    "steps": [
+      {
+        "title": "打开隐私与安全性设置",
+        "detail": "系统设置 → 隐私与安全性 → 屏幕录制（macOS 15 为“屏幕与系统音频录制”），找到 OBS。",
+        "level": "基础"
+      },
+      {
+        "title": "移除后重新添加",
+        "detail": "先用“－”把 OBS 移除，再用“＋”重新添加 /Applications/OBS.app。仅仅关掉开关再打开往往不生效，必须先删后加。",
+        "level": "基础"
+      },
+      {
+        "title": "彻底退出并重启 OBS",
+        "detail": "Command+Q 完全退出（不是关窗口），或在活动监视器里确认 OBS 进程已结束，再重新打开。系统会提示重新启动应用。",
+        "level": "基础"
+      },
+      {
+        "title": "顺带检查麦克风与辅助功能",
+        "detail": "在同一页面的“麦克风”和“辅助功能”里也确保 OBS 已勾选，否则会出现有画面无声或热键失效。",
+        "level": "基础"
+      },
+      {
+        "title": "终端重置权限数据库",
+        "detail": "仍然不行时终端执行 tccutil reset ScreenCapture 清空全局屏幕录制授权，然后重启 Mac，重新打开 OBS 触发授权弹窗。",
+        "level": "进阶"
+      }
+    ],
+    "tips": [
+      "每次大版本 macOS 升级后都建议主动复查一遍这三项权限",
+      "Apple Silicon 上确认运行的是原生 arm64 版 OBS，Rosetta 运行会有额外权限与性能问题"
+    ],
+    "related": [
+      "bs-mac-perm",
+      "bs-mac-rosetta",
+      "au-mac-desktop",
+      "st-mac"
+    ],
+    "links": [
+      {
+        "title": "OBS 官方 · macOS 屏幕录制/麦克风/辅助功能权限指南",
+        "url": "https://obsproject.com/kb/macos-permissions-guide"
+      },
+      {
+        "title": "OBS 官方首页 · 下载与文档",
+        "url": "https://obsproject.com"
+      }
+    ]
+  },
+  {
+    "id": "rc-diskspace",
+    "category": "recording",
+    "title": "录制中磁盘空间不足或写入速度跟不上",
+    "platforms": [
+      "Windows",
+      "macOS",
+      "Linux"
+    ],
+    "severity": "严重",
+    "symptoms": [
+      "录制自动停止，日志出现“Disk Full / 磁盘空间不足”",
+      "录制过程中 OBS 无响应，状态栏出现红色警告",
+      "边录边卡，画面渲染正常但录制帧数掉得厉害"
+    ],
+    "causes": [
+      "录制路径所在磁盘剩余空间不足",
+      "机械硬盘或老旧 U 盘写入速度跟不上高码率",
+      "录制到网络盘/移动硬盘，传输不稳定或被断开",
+      "同时进行推流与高码率录制，I/O 叠加"
+    ],
+    "steps": [
+      {
+        "title": "估算所需空间",
+        "detail": "所需空间(GB) ≈ 码率(Mbps) × 时长(分钟) × 0.0075。例如 50 Mbps 录 60 分钟约需 22 GB。开播前确保剩余空间是估算值的 2 倍。",
+        "level": "基础"
+      },
+      {
+        "title": "换到 SSD 并设专用目录",
+        "detail": "设置 → 输出 → 录像 → 录像路径，指向本地 SSD 上的独立文件夹（如 D:\\OBS-Rec），不要用系统盘、不要用网络盘或 U 盘。",
+        "level": "基础"
+      },
+      {
+        "title": "开启自动分段",
+        "detail": "设置 → 输出 → 录像 → 勾选“自动分段录像”，按 30 分钟或 4 GB 切分。既降低单文件损坏风险，也便于中途清理。",
+        "level": "基础"
+      },
+      {
+        "title": "降低录制码率",
+        "detail": "本地录制不需要极高码率。1080p60 用 CQP 20~23（NVENC）或 20000~25000 Kbps CBR 已足够，可大幅减少磁盘压力。",
+        "level": "基础"
+      },
+      {
+        "title": "验证磁盘写入速度",
+        "detail": "用 CrystalDiskMark 测顺序写入，要求持续写入速度大于 码率(Mbps)/8 的 3 倍。机械硬盘录 4K 高码率基本必然掉帧。",
+        "level": "进阶"
+      }
+    ],
+    "tips": [
+      "别把录制盘和游戏盘设成同一块机械硬盘，磁头争抢会同时拖垮两边",
+      "OBS 状态栏右下角会显示剩余磁盘空间，开播前扫一眼养成习惯"
+    ],
+    "related": [
+      "rc-nofile",
+      "rc-mkv-format",
+      "rc-4k",
+      "rc-local"
+    ],
+    "links": [
+      {
+        "title": "OBS 官方 · 日志分析器（自动诊断日志）",
+        "url": "https://obsproject.com/tools/analyzer"
+      },
+      {
+        "title": "OBS 官方 · Windows 排障指南（黑屏/编码/音频/崩溃）",
+        "url": "https://obs-studio-app.github.io/obs-studio-troubleshooting-windows.html"
+      }
+    ]
+  }
+]

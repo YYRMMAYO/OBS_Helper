@@ -12,7 +12,6 @@
     <title>OBS 直播排障助手</title>
     <base href="/" />
     <link rel="preload" id="webassembly" />
-    <link rel="stylesheet" href="lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="css/app.css" />
     <link rel="icon" type="image/png" href="obs-icon-512.png" />
     <link rel="apple-touch-icon" href="obs-icon-192.png" />
@@ -35,6 +34,23 @@
         <a href="." class="reload">重新加载</a>
         <span class="dismiss">🗙</span>
     </div>
+    <!-- 桌面壳桥接层：必须在 Blazor 启动前就绪，C# 侧一上来就会探测 window.obsHelperHost -->
+    <script src="js/hostbridge.js"></script>
+    <!-- 首屏就套用已保存的外观设置，避免 Blazor 加载完成后主题闪一下（FOUC） -->
+    <script>
+        (function () {
+            try {
+                var raw = localStorage.getItem('obshelper.appearance');
+                if (!raw) return;
+                var a = JSON.parse(raw);
+                var el = document.documentElement;
+                el.setAttribute('data-theme', a.theme || 'system');
+                el.setAttribute('data-font-scale', a.fontScale || 'md');
+                if (a.highContrast) el.setAttribute('data-contrast', 'high');
+                if (a.reduceMotion) el.setAttribute('data-motion', 'reduce');
+            } catch (e) { /* 设置损坏时用默认外观 */ }
+        })();
+    </script>
     <script src="_framework/blazor.webassembly#[.{fingerprint}].js"></script>
     <script>
         if ('serviceWorker' in navigator) {

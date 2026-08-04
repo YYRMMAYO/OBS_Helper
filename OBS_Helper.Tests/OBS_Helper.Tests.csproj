@@ -1,0 +1,28 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.12.0" />
+    <PackageReference Include="xunit" Version="2.9.2" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="2.8.2" />
+  </ItemGroup>
+
+  <!-- 直接链接纯逻辑源文件（不引用整个 BlazorWASM 项目，避免 RID/SDK 冲突）。
+       这些类只依赖 BCL，可在普通 net10.0 测试运行时中编译与执行。 -->
+  <ItemGroup>
+    <Compile Include="..\OBS_Helper.Client\Services\Obs\LogSanitizer.cs" Link="Linked\LogSanitizer.cs" />
+    <Compile Include="..\OBS_Helper.Client\Services\Obs\ObsAuth.cs" Link="Linked\ObsAuth.cs" />
+    <Compile Include="..\OBS_Helper.Client\Services\Obs\ObsReconnectPolicy.cs" Link="Linked\ObsReconnectPolicy.cs" />
+    <Compile Include="..\OBS_Helper.Client\Services\Obs\ObsLogAnalyzer.cs" Link="Linked\ObsLogAnalyzer.cs" />
+    <Compile Include="..\OBS_Helper.Client\Services\Ai\DiagnosticSeverity.cs" Link="Linked\DiagnosticSeverity.cs" />
+    <Compile Include="..\OBS_Helper.Client\Services\Ai\DiagnosticSeverityMapper.cs" Link="Linked\DiagnosticSeverityMapper.cs" />
+    <Compile Include="..\OBS_Helper.Client\Services\Markdown\MarkdownRenderer.cs" Link="Linked\MarkdownRenderer.cs" />
+  </ItemGroup>
+
+</Project>

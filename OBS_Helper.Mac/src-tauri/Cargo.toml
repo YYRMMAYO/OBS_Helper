@@ -1,6 +1,6 @@
 [package]
 name = "obs-helper-mac"
-version = "1.0.0"
+version = "1.1.0"
 description = "OBS 排障助手 macOS 宿主 (Tauri v2)"
 authors = ["OBS Helper"]
 license = "MIT"
@@ -14,6 +14,10 @@ tauri-build = { version = "2", features = [] }
 tauri = { version = "2" }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
+# 机密加密落盘：macOS 走系统钥匙串（等价于 Windows 侧的 DPAPI）。
+# 只启用 apple-native；在非 Apple 平台上 keyring 会退化为内存 mock 存储，
+# 因此在 Windows/Linux 上做 `cargo check` 依然能编译通过。
+keyring = { version = "3", features = ["apple-native"] }
 
 [profile.release]
 panic = "abort"

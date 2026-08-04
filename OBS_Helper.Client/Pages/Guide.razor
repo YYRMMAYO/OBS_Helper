@@ -1,0 +1,51 @@
+@page "/guide"
+@inject HttpClient Http
+@using OBS_Helper.Client.Services.Markdown
+
+<PageTitle>排障指引</PageTitle>
+
+<div class="guide">
+    <div class="guide-bar">
+        <a class="btn btn-ghost small" href="" aria-label="返回首页">← 首页</a>
+        <h1>📖 排障指引</h1>
+    </div>
+
+    @if (loading)
+    {
+        <p class="muted">正在加载指引…</p>
+    }
+    else if (!string.IsNullOrEmpty(error))
+    {
+        <div class="block warn-block">
+            <p>⚠️ 无法加载排障指引：@error</p>
+            <p class="muted small">请确认应用已完整安装，或到「设置」中排查。</p>
+        </div>
+    }
+    else
+    {
+        <article class="md">@((MarkupString)html)</article>
+    }
+</div>
+
+@code {
+    private bool loading = true;
+    private string html = "";
+    private string error = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var md = await Http.GetStringAsync("docs/troubleshooting.md");
+            html = MarkdownRenderer.RenderToHtml(md);
+        }
+        catch (Exception ex)
+        {
+            error = ex.Message;
+        }
+        finally
+        {
+            loading = false;
+        }
+    }
+}

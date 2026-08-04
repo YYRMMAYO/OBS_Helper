@@ -1,0 +1,141 @@
+@page "/settings"
+@inject AiSettingsService AiSettings
+@inject HostBridge Host
+@inject AppearanceService Appearance
+@using OBS_Helper.Client.Services.Host
+@using OBS_Helper.Client.Services.Ai
+
+<PageTitle>设置</PageTitle>
+
+<div class="settings">
+    <h1>⚙️ 设置</h1>
+
+    <section class="block">
+        <h3>AI 诊断引擎</h3>
+        <p class="muted small">默认使用本地离线引擎（无需联网、不依赖密钥）。企业/个人可切换到云端大模型，密钥由桌面壳加密保存，不进入应用内存。</p>
+
+        <div class="seg">
+            <button class="seg-btn @(AiSettings.Mode == DiagnosticEngineMode.Local ? "active" : "")" type="button" @onclick="() => SetMode(DiagnosticEngineMode.Local)">本地离线</button>
+            <button class="seg-btn @(AiSettings.Mode == DiagnosticEngineMode.Cloud ? "active" : "")" type="button" @onclick="() => SetMode(DiagnosticEngineMode.Cloud)">云端大模型</button>
+        </div>
+
+        @if (AiSettings.Mode == DiagnosticEngineMode.Cloud)
+        {
+            <label class="field">
+                <span>接口地址（https）</span>
+                <input class="search-input" @bind="cloudUrl" placeholder="https://api.example.com/v1/chat/completions" />
+            </label>
+            <label class="field">
+                <span>密钥键名</span>
+                <input class="search-input" @bind="cloudKeyName" placeholder="obs_ai_apikey" />
+            </label>
+            <label class="field">
+                <span>模型名</span>
+                <input class="search-input" @bind="cloudModel" placeholder="gpt-4o-mini" />
+            </label>
+
+            <div class="field">
+                <span>API Key（仅保存到桌面壳，不显示）</span>
+                <div class="apikey-row">
+                    <input class="search-input" type="password" @bind="apiKeyValue" placeholder="粘贴 API Key 后点保存" />
+                    <button class="btn btn-accent small" type="button" @onclick="SaveApiKey" disabled="@savingKey">保存密钥</button>
+                </div>
+                @if (!Host.IsAvailable)
+                {
+                    <p class="warn-text">⚠️ 当前没有桌面宿主，密钥无法加密保存。请在桌面客户端中打开本应用。</p>
+                }
+                @if (!string.IsNullOrEmpty(keyStatus)) { <p class="muted small">@keyStatus</p> }
+            </div>
+
+            <button class="btn btn-ghost small" type="button" @onclick="SaveCloud">保存云端配置</button>
+            @if (!AiSettings.IsCloudConfigured)
+            {
+                <p class="warn-text">请填写 https 接口地址与密钥键名，并保存 API Key 后才能启用云端诊断。</p>
+            }
+        }
+    </section>
+
+    <section class="block">
+        <h3>外观与无障碍</h3>
+
+        <div class="set-row">
+            <span class="set-label">主题</span>
+            <div class="seg">
+                <button class="seg-btn @(Appearance.Theme == AppTheme.System ? "active" : "")" type="button" @onclick="() => Appearance.SetThemeAsync(AppTheme.System)">跟随系统</button>
+                <button class="seg-btn @(Appearance.Theme == AppTheme.Light ? "active" : "")" type="button" @onclick="() => Appearance.SetThemeAsync(AppTheme.Light)">浅色</button>
+                <button class="seg-btn @(Appearance.Theme == AppTheme.Dark ? "active" : "")" type="button" @onclick="() => Appearance.SetThemeAsync(AppTheme.Dark)">深色</button>
+            </div>
+        </div>
+
+        <div class="set-row">
+            <span class="set-label">字号</span>
+            <div class="seg">
+                <button class="seg-btn @(Appearance.FontScale == AppFontScale.Sm ? "active" : "")" type="button" @onclick="() => Appearance.SetFontScaleAsync(AppFontScale.Sm)">小</button>
+                <button class="seg-btn @(Appearance.FontScale == AppFontScale.Md ? "active" : "")" type="button" @onclick="() => Appearance.SetFontScaleAsync(AppFontScale.Md)">标准</button>
+                <button class="seg-btn @(Appearance.FontScale == AppFontScale.Lg ? "active" : "")" type="button" @onclick="() => Appearance.SetFontScaleAsync(AppFontScale.Lg)">大</button>
+                <button class="seg-btn @(Appearance.FontScale == AppFontScale.Xl ? "active" : "")" type="button" @onclick="() => Appearance.SetFontScaleAsync(AppFontScale.Xl)">特大</button>
+            </div>
+        </div>
+
+        <label class="set-row toggle-row">
+            <span class="set-label">高对比度</span>
+            <input type="checkbox" checked="@Appearance.Settings.HighContrast" @onchange="e => Appearance.SetHighContrastAsync(AsBool(e))" />
+        </label>
+
+        <label class="set-row toggle-row">
+            <span class="set-label">减少动画</span>
+            <input type="checkbox" checked="@Appearance.Settings.ReduceMotion" @onchange="e => Appearance.SetReduceMotionAsync(AsBool(e))" />
+        </label>
+    </section>
+
+    <section class="block">
+        <h3>排障指引</h3>
+        <p class="muted small">汇总黑屏、编码过载、音画不同步、推流失败等常见问题的排查步骤。</p>
+        <a class="btn btn-accent" href="guide" role="button">📖 打开排障指引</a>
+    </section>
+
+    <section class="block">
+        <h3>关于</h3>
+        <p class="muted small">OBS 直播排障助手 · 版本 1.1.0</p>
+        <p class="muted small">离线优先的本地排障工具：UI 与数据随包发布，默认不发起任何网络请求。仅在「AI 诊断引擎」中手动开启云端大模型后，才会由桌面壳代发 HTTPS 请求，密钥经系统密钥库加密保存。</p>
+        <p class="muted small">官方文档：<a href="https://obsproject.com/zh-cn/docs" target="_blank" rel="noopener noreferrer">obsproject.com/zh-cn/docs</a></p>
+    </section>
+</div>
+
+@code {
+    private string cloudUrl = "";
+    private string cloudKeyName = "";
+    private string cloudModel = "";
+    private string apiKeyValue = "";
+    private bool savingKey;
+    private string keyStatus = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        await AiSettings.LoadAsync();
+        await Appearance.InitializeAsync();
+        cloudUrl = AiSettings.Settings.CloudUrl;
+        cloudKeyName = AiSettings.Settings.CloudSecretKeyName;
+        cloudModel = AiSettings.Settings.CloudModel;
+    }
+
+    private Task SetMode(DiagnosticEngineMode mode) => AiSettings.SetModeAsync(mode);
+
+    private async Task SaveCloud()
+    {
+        await AiSettings.SetCloudAsync(cloudUrl, cloudKeyName, cloudModel);
+        keyStatus = "云端配置已保存。";
+    }
+
+    private async Task SaveApiKey()
+    {
+        if (string.IsNullOrWhiteSpace(cloudKeyName)) cloudKeyName = "obs_ai_apikey";
+        savingKey = true;
+        var ok = await Host.SetSecretAsync(cloudKeyName, apiKeyValue);
+        savingKey = false;
+        keyStatus = ok ? "API Key 已加密保存到桌面壳。" : "保存失败：请确认在桌面客户端中运行。";
+        if (ok) apiKeyValue = "";
+    }
+
+    private static bool AsBool(ChangeEventArgs e) => e.Value is bool b && b;
+}

@@ -1,0 +1,39 @@
+@using OBS_Helper.Client.Models.Obs
+@using OBS_Helper.Client.Services.Obs
+@inject ObsConnectionService Conn
+@implements IDisposable
+
+<span class="conn-badge conn-@StateClass" title="@Title">
+    <span class="conn-dot" aria-hidden="true"></span>
+    <span class="conn-text">@Label</span>
+</span>
+
+@code {
+    private string StateClass => Conn.State switch
+    {
+        ObsConnectionState.Connected => "ok",
+        ObsConnectionState.Connecting or ObsConnectionState.Authenticating or ObsConnectionState.Reconnecting => "busy",
+        ObsConnectionState.Failed => "fail",
+        _ => "off"
+    };
+
+    private string Label => Conn.State switch
+    {
+        ObsConnectionState.Connected => "已连接",
+        ObsConnectionState.Connecting => "连接中…",
+        ObsConnectionState.Authenticating => "鉴权中…",
+        ObsConnectionState.Reconnecting => "重连中…",
+        ObsConnectionState.Failed => "连接失败",
+        _ => "未连接"
+    };
+
+    private string Title => Conn.State == ObsConnectionState.Failed && !string.IsNullOrEmpty(Conn.LastError)
+        ? Conn.LastError
+        : Label;
+
+    protected override void OnInitialized() => Conn.StateChanged += OnChange;
+
+    private void OnChange() => InvokeAsync(StateHasChanged);
+
+    public void Dispose() => Conn.StateChanged -= OnChange;
+}

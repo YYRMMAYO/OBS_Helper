@@ -1,0 +1,26 @@
+@if (Visible)
+{
+    <div class="modal-overlay" @onclick="OnCancel">
+        <div class="modal" role="alertdialog" aria-modal="true" aria-label="@Title" @onclick:stopPropagation>
+            <h3 class="modal-title">@Title</h3>
+            <p class="modal-msg">@Message</p>
+            <div class="modal-actions">
+                <button class="btn btn-cancel" type="button" @onclick="OnCancel">@CancelText</button>
+                <button class="btn btn-danger" type="button" @onclick="OnConfirm">@ConfirmText</button>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public bool Visible { get; set; }
+    [Parameter] public string Title { get; set; } = "请确认";
+    [Parameter] public string Message { get; set; } = "确定要执行此操作吗？";
+    [Parameter] public string ConfirmText { get; set; } = "确认";
+    [Parameter] public string CancelText { get; set; } = "取消";
+    [Parameter] public EventCallback OnConfirm { get; set; }
+    [Parameter] public EventCallback OnCancel { get; set; }
+
+    private Task OnConfirmClick() => OnConfirm.InvokeAsync();
+    private Task OnCancelClick() => OnCancel.InvokeAsync();
+}

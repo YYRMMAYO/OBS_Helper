@@ -9,8 +9,8 @@
     <AssemblyName>OBS_Helper</AssemblyName>
     <RootNamespace>OBS_Helper.Win</RootNamespace>
     <AssemblyTitle>OBS 排障助手</AssemblyTitle>
-    <AssemblyVersion>1.0.0.0</AssemblyVersion>
-    <FileVersion>1.0.0.0</FileVersion>
+    <AssemblyVersion>1.1.0.0</AssemblyVersion>
+    <FileVersion>1.1.0.0</FileVersion>
     <Copyright>Copyright (c) 2026 OBS Helper</Copyright>
     <Authors>OBS Helper</Authors>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>

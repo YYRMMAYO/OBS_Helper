@@ -1,0 +1,169 @@
+@page "/logs"
+@inject HostBridge Host
+@inject ObsLogAnalyzer Analyzer
+@inject DiagnosticOrchestrator Orchestrator
+@inject IJSRuntime JSRuntime
+@using OBS_Helper.Client.Services.Host
+@using OBS_Helper.Client.Services.Obs
+@using OBS_Helper.Client.Services.Ai
+
+<PageTitle>日志分析</PageTitle>
+
+<div class="logs">
+    <h1>📄 OBS 日志分析</h1>
+    <p class="muted">自动定位本机 OBS 日志，逐行脱敏后扫描已知故障特征。分析结果可被「AI 诊断」直接引用。</p>
+
+    @if (!Host.IsAvailable)
+    {
+        <section class="block warn-block">
+            <h3>未在桌面客户端中运行</h3>
+            <p class="muted">无法自动读取本机日志。你可以直接选择一个 OBS 日志文件（<code>.txt</code> / <code>.log</code>）进行分析。</p>
+        </section>
+    }
+
+    <section class="block">
+        <h3>① 选择日志来源</h3>
+        <div class="log-source-row">
+            @if (Host.IsAvailable)
+            {
+                <button class="btn btn-ghost small" type="button" @onclick="ReloadList" disabled="@loadingList">刷新列表</button>
+            }
+            <label class="btn btn-ghost small file-label">
+                选择日志文件
+                <InputFile OnChange="OnFile" accept=".txt,.log" />
+            </label>
+        </div>
+
+        @if (Host.IsAvailable && logFiles.Count > 0)
+        {
+            <ul class="log-list">
+                @foreach (var f in logFiles)
+                {
+                    <li>
+                        <button class="log-item @(f.Path == selectedPath ? "sel" : "")" type="button" @onclick="() => ReadAndAnalyze(f)">
+                            <span class="log-name">@f.Name</span>
+                            <span class="log-meta">@f.SizeText · @f.ModifiedText</span>
+                        </button>
+                    </li>
+                }
+            </ul>
+        }
+        @if (Host.IsAvailable && loadingList)
+        {
+            <p class="muted small">正在读取日志目录…</p>
+        }
+    </section>
+
+    @if (report is not null)
+    {
+        <section class="block">
+            <div class="report-head">
+                <h3>② 分析结果：@report.SourceName</h3>
+                <span class="report-count @(report.HasIssues ? "has" : "ok")">@(report.HasIssues ? $"{report.Findings.Count} 项发现" : "未发现明显问题")</span>
+            </div>
+            <p class="muted small">
+                OBS @report.Summary.ObsVersion · @report.Summary.Platform ·
+                渲染滞后 @(report.Summary.RenderLagRatio * 100).ToString("0.##")% ·
+                编码滞后 @(report.Summary.EncodingLagRatio * 100).ToString("0.##")% ·
+                网络丢帧 @(report.Summary.NetworkDropRatio * 100).ToString("0.##")%
+            </p>
+
+            <div class="report-actions">
+                <button class="btn btn-ghost small" type="button" @onclick="CopySanitized">复制脱敏日志</button>
+                <a class="btn btn-accent small" href="diagnostic">用 AI 诊断这份日志 →</a>
+            </div>
+
+            @if (report.Findings.Count == 0)
+            {
+                <p class="empty">未从这份日志中发现已知故障特征。可在「诊断」里描述具体现象进一步排查。</p>
+            }
+            else
+            {
+                <div class="find-list">
+                    @foreach (var f in report.Findings)
+                    {
+                        <article class="find-card find-@SeverityClass(f.Severity)">
+                            <div class="find-head">
+                                <span class="find-sev">@f.SeverityText</span>
+                                <span class="find-title">@f.Title</span>
+                                @if (f.Occurrences > 1) { <span class="find-occ">×@f.Occurrences</span> }
+                            </div>
+                            @if (!string.IsNullOrEmpty(f.Evidence))
+                            {
+                                <pre class="find-evidence">@f.Evidence</pre>
+                            }
+                            <p class="find-suggest">💡 @f.Suggestion</p>
+                            @if (!string.IsNullOrEmpty(f.ProblemId))
+                            {
+                                <a class="find-link" href="@($"problem/{f.ProblemId}")">查看分步方案 →</a>
+                            }
+                        </article>
+                    }
+                </div>
+            }
+        </section>
+    }
+</div>
+
+@code {
+    private List<HostLogFile> logFiles = new();
+    private bool loadingList;
+    private string? selectedPath;
+    private ObsLogReport? report;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (Host.IsAvailable) await ReloadList();
+    }
+
+    private async Task ReloadList()
+    {
+        loadingList = true;
+        logFiles = await Host.ListObsLogsAsync();
+        loadingList = false;
+    }
+
+    private async Task OnFile(InputFileChangeEventArgs e)
+    {
+        var file = e.File;
+        if (file is null) return;
+        using var ms = new MemoryStream();
+        await file.OpenReadStream(maxAllowedSize: 8 * 1024 * 1024).CopyToAsync(ms);
+        var text = System.Text.Encoding.UTF8.GetString(ms.ToArray());
+        await AnalyzeText(text, file.Name);
+    }
+
+    private async Task ReadAndAnalyze(HostLogFile f)
+    {
+        selectedPath = f.Path;
+        var text = await Host.ReadObsLogAsync(f.Path);
+        if (string.IsNullOrEmpty(text))
+        {
+            report = new ObsLogReport { SourceName = f.Name };
+            return;
+        }
+        await AnalyzeText(text, f.Name);
+    }
+
+    private Task AnalyzeText(string text, string name)
+    {
+        report = Analyzer.Analyze(text, name);
+        Orchestrator.LatestReport = report;
+        return Task.CompletedTask;
+    }
+
+    private async Task CopySanitized()
+    {
+        if (report is null) return;
+        try { await JSRuntime.InvokeVoidAsync("navigator.clipboard.writeText", report.SanitizedText); }
+        catch (Exception) { /* 剪贴板不可用时静默 */ }
+    }
+
+    private static string SeverityClass(LogSeverity s) => s switch
+    {
+        LogSeverity.Critical => "crit",
+        LogSeverity.Error => "err",
+        LogSeverity.Warning => "warn",
+        _ => "info"
+    };
+}

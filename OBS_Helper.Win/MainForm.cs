@@ -78,8 +78,14 @@ namespace OBS_Helper.Win
                 // 关闭后即使内容被篡改，也无法借助远程调试协议逃逸到宿主机。
                 _webView.CoreWebView2.Settings.AreDevToolsEnabled = false;
                 _webView.CoreWebView2.Settings.AreDefaultContextMenusEnabled = false;
-                _webView.CoreWebView2.Settings.IsWebMessageEnabled = false;
                 _webView.CoreWebView2.Settings.IsScriptEnabled = true; // 站点本身是可信的本地内容
+
+                // WebMessage 是站点访问宿主原生能力（DPAPI 加密保存密码 / 读取 OBS 日志）的唯一通道。
+                // 必须开启，但受两道约束：
+                //   ① 只接受来自本地虚拟主机 app.obshelper.local 的消息（下方 Source 校验）；
+                //   ② 宿主侧仅认识固定命令白名单，且对文件路径做目录限定（HostBridgeHandler）。
+                _webView.CoreWebView2.Settings.IsWebMessageEnabled = true;
+                _webView.CoreWebView2.WebMessageReceived += OnWebMessageReceived;
 
                 // 渲染进程异常时自动重载，而非直接白屏
                 _webView.CoreWebView2.ProcessFailed += (s, args) =>
@@ -113,6 +119,35 @@ namespace OBS_Helper.Win
                 MessageBox.Show(
                     Errors.AppError.Format(Errors.AppError.WebViewInitFailed, ex.Message),
                     "启动失败 " + Errors.AppError.WebViewInitFailed, MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        /// <summary>
+        /// 处理站点发来的宿主命令。只接受本地虚拟主机来源，其余一律丢弃。
+        /// 处理结果通过 PostWebMessageAsString 原路回传（前端按消息里的 id 关联）。
+        /// </summary>
+        private async void OnWebMessageReceived(object? sender, CoreWebView2WebMessageReceivedEventArgs args)
+        {
+            try
+            {
+                // 来源校验：只信任映射出来的本地虚拟主机，避免站点被导航到外部页面后仍能调用宿主。
+                if (!Uri.TryCreate(args.Source, UriKind.Absolute, out var src) ||
+                    !string.Equals(src.Host, "app.obshelper.local", StringComparison.OrdinalIgnoreCase))
+                {
+                    return;
+                }
+
+                string raw = args.TryGetWebMessageAsString();
+                if (string.IsNullOrEmpty(raw)) return;
+
+                // 宿主命令可能包含网络请求（云端 AI 转发），必须异步执行以免卡住 UI 线程。
+                string reply = await Host.HostBridgeHandler.HandleAsync(raw).ConfigureAwait(true);
+                if (IsDisposed || _webView.IsDisposed) return;
+                _webView.CoreWebView2.PostWebMessageAsString(reply);
+            }
+            catch (Exception)
+            {
+                // 宿主命令通道出问题不应影响主界面：前端会因超时自行降级。
             }
         }
 

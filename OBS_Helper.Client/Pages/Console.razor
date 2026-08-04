@@ -1,0 +1,306 @@
+@page "/console"
+@implements IDisposable
+@inject ObsConnectionService Conn
+@inject ObsSettingsService Settings
+@inject LiveMonitorService Monitor
+@using OBS_Helper.Client.Models.Obs
+@using OBS_Helper.Client.Services.Obs
+
+<PageTitle>控制台</PageTitle>
+
+<div class="console">
+    <div class="console-head">
+        <h1>🎛️ OBS 控制台</h1>
+        <ConnectionBadge />
+    </div>
+    <p class="muted">连接本机 OBS 后，可在这里查看状态、切换场景、管理音量与录制/推流。所有写操作都需你手动点击确认。</p>
+
+    @if (!Conn.IsConnected)
+    {
+        <section class="block conn-form">
+            <h3>连接 OBS</h3>
+            <p class="muted small">在 OBS 中打开「工具 → obs-websocket 设置」，确认已启用 WebSocket 服务器，并使用相同的端口与密码。</p>
+            <label class="field">
+                <span>主机</span>
+                <input class="search-input" @bind="host" placeholder="127.0.0.1" />
+            </label>
+            <label class="field">
+                <span>端口</span>
+                <input class="search-input" type="number" @bind="port" />
+            </label>
+            <label class="field">
+                <span>密码</span>
+                <input class="search-input" type="password" @bind="password" placeholder="obs-websocket 密码（可留空）" />
+            </label>
+            <label class="check-row">
+                <input type="checkbox" @bind="remember" /> <span>记住密码（由桌面壳加密保存）</span>
+            </label>
+            <label class="check-row">
+                <input type="checkbox" @bind="autoConnect" /> <span>启动时自动连接</span>
+            </label>
+            <button class="btn btn-accent" type="button" @onclick="Connect" disabled="@connecting">@(connecting ? "连接中…" : "连接")</button>
+            @if (!string.IsNullOrEmpty(Conn.LastError) && Conn.State == ObsConnectionState.Failed)
+            {
+                <p class="err-text">@Conn.LastError</p>
+            }
+        </section>
+    }
+    else
+    {
+        <div class="console-actions">
+            <button class="btn btn-ghost small" type="button" @onclick="Refresh">刷新</button>
+            <button class="btn btn-ghost small" type="button" @onclick="RequestDisconnect">断开</button>
+        </div>
+
+        <section class="block">
+            <div class="block-head">
+                <h3>实时性能</h3>
+                <label class="monitor-toggle">
+                    <input type="checkbox" checked="@Monitor.Enabled" @onchange="ToggleMonitor" />
+                    <span>自动监控@(Monitor.IsRunning ? "（运行中）" : "")</span>
+                </label>
+            </div>
+            <div class="stat-grid">
+                <div class="stat"><div class="stat-val">@Conn.Stats.CpuUsage.ToString("0.0")%</div><div class="stat-label">CPU</div></div>
+                <div class="stat"><div class="stat-val">@Conn.Stats.ActiveFps.ToString("0.0")</div><div class="stat-label">FPS</div></div>
+                <div class="stat">
+                    <div class="stat-val @RatioClass(Live?.RenderSkipRatio)">@Pct(Live?.RenderSkipRatio ?? Conn.Stats.RenderSkipRatio)</div>
+                    <div class="stat-label">渲染丢帧@(Live is null ? "（累计）" : "（当前）")</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-val @RatioClass(Live?.OutputSkipRatio)">@Pct(Live?.OutputSkipRatio ?? Conn.Stats.OutputSkipRatio)</div>
+                    <div class="stat-label">编码丢帧@(Live is null ? "（累计）" : "（当前）")</div>
+                </div>
+                <div class="stat"><div class="stat-val">@((Conn.Stats.AvailableDiskSpaceMb / 1024.0).ToString("0.0"))G</div><div class="stat-label">剩余磁盘</div></div>
+            </div>
+            @if (Live is not null)
+            {
+                <p class="muted small">
+                    「当前」为最近一次采样窗口内的新增丢帧比例——直播几小时后，累计比例会被历史稀释，
+                    只有窗口值才反映此刻的真实状态。
+                </p>
+            }
+        </section>
+
+        @if (Monitor.Alerts.Count > 0)
+        {
+            <section class="block alert-block">
+                <div class="block-head">
+                    <h3>⚠️ 实时告警（@Monitor.Alerts.Count）</h3>
+                    <button class="btn btn-ghost small" type="button" @onclick="() => Monitor.ClearAlerts()">清空</button>
+                </div>
+                <div class="alert-list">
+                    @foreach (var a in Monitor.Alerts.Take(8))
+                    {
+                        <article class="alert-row alert-@AlertClass(a.Severity)">
+                            <span class="alert-time">@a.At.ToString("HH:mm:ss")</span>
+                            <div class="alert-body">
+                                <div class="alert-title">
+                                    <span class="alert-sev">@a.SeverityText</span>
+                                    @a.Title
+                                </div>
+                                <p class="alert-detail">@a.Detail</p>
+                                <p class="alert-suggest">💡 @a.Suggestion</p>
+                                @if (!string.IsNullOrEmpty(a.ProblemId))
+                                {
+                                    <a class="find-link" href="@($"problem/{a.ProblemId}")">查看分步方案 →</a>
+                                }
+                            </div>
+                        </article>
+                    }
+                </div>
+                @if (Monitor.Alerts.Count > 8)
+                {
+                    <p class="muted small">仅显示最近 8 条。</p>
+                }
+            </section>
+        }
+
+        <section class="block">
+            <h3>场景</h3>
+            <div class="scene-list">
+                @foreach (var s in Conn.Scenes)
+                {
+                    <button class="scene-btn @(s.IsCurrent ? "current" : "")" type="button" @onclick="() => SwitchScene(s.Name)">
+                        <span class="scene-name">@s.Name</span>
+                        @if (s.IsCurrent) { <span class="scene-flag">当前</span> }
+                    </button>
+                }
+            </div>
+        </section>
+
+        <section class="block">
+            <h3>音频输入</h3>
+            <div class="audio-list">
+                @foreach (var a in Conn.AudioInputs)
+                {
+                    <div class="audio-row">
+                        <button class="mute-btn @(a.Muted ? "muted" : "")" type="button" @onclick="() => ToggleMute(a)" aria-label="静音切换">@(a.Muted ? "🔇" : "🔊")</button>
+                        <span class="audio-name">@a.Name</span>
+                        <input class="vol-slider" type="range" min="-100" max="0" step="1" value="@a.VolumeDb"
+                               @onchange="e => SetVolume(a, e)" aria-label="音量" />
+                        <span class="vol-val">@a.VolumeDb.ToString("0")</span>
+                    </div>
+                }
+                @if (Conn.AudioInputs.Count == 0)
+                {
+                    <p class="muted small">未检测到音频输入源。</p>
+                }
+            </div>
+        </section>
+
+        <section class="block">
+            <h3>输出</h3>
+            <div class="output-grid">
+                <button class="out-btn @(Conn.RecordStatus.Active ? "on" : "")" type="button" @onclick="() => ToggleRecord()">
+                    🔴 录制：@(Conn.RecordStatus.Active ? (Conn.RecordStatus.Paused ? "已暂停" : "进行中") : "未开始")
+                </button>
+                <button class="out-btn @(Conn.StreamStatus.Active ? "on" : "")" type="button" @onclick="() => ToggleStream()">
+                    📡 推流：@(Conn.StreamStatus.Active ? "进行中" : "未开始")
+                </button>
+                <button class="out-btn @(Conn.VirtualCamStatus.Active ? "on" : "")" type="button" @onclick="() => ToggleVCam()">
+                    🎥 虚拟摄像头：@(Conn.VirtualCamStatus.Active ? "开启" : "关闭")
+                </button>
+            </div>
+        </section>
+    }
+</div>
+
+<ConfirmDialog Visible="@showConfirm" Title="@confirmTitle" Message="@confirmMsg"
+                ConfirmText="确认" CancelText="取消"
+                OnConfirm="DoConfirm" OnCancel="CancelConfirm" />
+
+@code {
+    private string host = "127.0.0.1";
+    private int port = 4455;
+    private string password = "";
+    private bool remember;
+    private bool autoConnect;
+    private bool connecting;
+
+    private bool showConfirm;
+    private string confirmTitle = "";
+    private string confirmMsg = "";
+    private Func<Task>? confirmAction;
+
+    /// <summary>最近一次监控采样；未开启监控时为 null，此时界面回退显示累计值。</summary>
+    private LiveSample? Live => Monitor.Latest;
+
+    protected override async Task OnInitializedAsync()
+    {
+        // 监控在后台线程推送数据，必须通过 InvokeAsync 回到 Blazor 的渲染上下文。
+        Monitor.Changed += OnMonitorChanged;
+        Conn.StateChanged += OnMonitorChanged;
+
+        await Settings.LoadAsync();
+        host = Settings.Current.Host;
+        port = Settings.Current.Port;
+        remember = Settings.Current.RememberPassword;
+        autoConnect = Settings.Current.AutoConnect;
+        await Conn.RefreshAllAsync();
+        if (autoConnect && !Conn.IsConnected) await Connect();
+    }
+
+    private void OnMonitorChanged() => _ = InvokeAsync(StateHasChanged);
+
+    public void Dispose()
+    {
+        Monitor.Changed -= OnMonitorChanged;
+        Conn.StateChanged -= OnMonitorChanged;
+    }
+
+    private void ToggleMonitor(ChangeEventArgs e)
+        => Monitor.SetEnabled(e.Value is bool b && b);
+
+    private static string Pct(double ratio) => (ratio * 100).ToString("0.##") + "%";
+
+    /// <summary>丢帧率超阈值时给数字染色，让用户一眼看到「现在有问题」。</summary>
+    private static string RatioClass(double? ratio) => ratio switch
+    {
+        null => "",
+        >= 0.10 => "stat-crit",
+        >= 0.02 => "stat-warn",
+        _ => ""
+    };
+
+    private static string AlertClass(LogSeverity s) => s switch
+    {
+        LogSeverity.Critical => "crit",
+        LogSeverity.Error => "err",
+        LogSeverity.Warning => "warn",
+        _ => "info"
+    };
+
+    private async Task Connect()
+    {
+        connecting = true;
+        var s = new ObsConnectionSettings
+        {
+            Host = host,
+            Port = port,
+            AutoConnect = autoConnect,
+            AutoReconnect = Settings.Current.AutoReconnect,
+            RememberPassword = remember
+        };
+        await Settings.SaveAsync(s);
+        await Settings.SetPasswordAsync(password, remember);
+        await Conn.ConnectAsync(password);
+        connecting = false;
+    }
+
+    private Task Refresh() => Conn.RefreshAllAsync();
+
+    private Task Disconnect() => Conn.DisconnectAsync();
+
+    private void RequestDisconnect()
+        => RequestConfirm("断开连接", "确定要断开与 OBS 的连接吗？", Disconnect);
+
+    private Task SwitchScene(string name) => Conn.SetSceneAsync(name);
+    private Task ToggleMute(ObsInputInfo a) => Conn.SetMuteAsync(a.Name, !a.Muted);
+
+    private async Task SetVolume(ObsInputInfo a, ChangeEventArgs e)
+    {
+        if (double.TryParse(e.Value?.ToString(), out var db))
+            await Conn.SetVolumeDbAsync(a.Name, db);
+    }
+
+    private void ToggleRecord()
+    {
+        if (Conn.RecordStatus.Active)
+            RequestConfirm("停止录制", "确定要停止当前录制吗？", () => Conn.StopRecordAsync());
+        else
+            _ = Conn.StartRecordAsync();
+    }
+
+    private void ToggleStream()
+    {
+        if (Conn.StreamStatus.Active)
+            RequestConfirm("停止推流", "确定要停止当前推流吗？观众将立即断开。", () => Conn.StopStreamAsync());
+        else
+            _ = Conn.StartStreamAsync();
+    }
+
+    private void ToggleVCam()
+    {
+        if (Conn.VirtualCamStatus.Active)
+            _ = Conn.StopVirtualCamAsync();
+        else
+            _ = Conn.StartVirtualCamAsync();
+    }
+
+    private void RequestConfirm(string title, string msg, Func<Task> action)
+    {
+        confirmTitle = title;
+        confirmMsg = msg;
+        confirmAction = action;
+        showConfirm = true;
+    }
+
+    private async Task DoConfirm()
+    {
+        showConfirm = false;
+        if (confirmAction is not null) await confirmAction();
+    }
+
+    private void CancelConfirm() => showConfirm = false;
+}

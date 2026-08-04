@@ -1,10 +1,207 @@
 @page "/diagnostic"
+@inject DiagnosticOrchestrator Orchestrator
+@inject AiSettingsService AiSettings
+@inject HostBridge Host
+@inject IJSRuntime JSRuntime
+@using OBS_Helper.Client.Services.Ai
+@using OBS_Helper.Client.Services.Host
+@using OBS_Helper.Client.Services.Obs
 
 <PageTitle>配置诊断</PageTitle>
 
 <div class="diag">
     <h1>🩺 OBS 配置诊断</h1>
-    <p class="muted">按清单逐项排查，多数问题都能定位。</p>
+    <p class="muted">本地离线规则 + 可选云端大模型，按清单与日志逐项排查。</p>
+
+    <!-- 系统体检：打开页面就自动跑一遍，用户不用先描述问题 -->
+    <section class="diag-card health-card">
+        <div class="health-head">
+            <h3>🔍 一键系统体检</h3>
+            <div class="health-actions">
+                <button class="btn btn-ghost small" type="button" @onclick="RunHealthCheck" disabled="@scanning">
+                    @(scanning ? "体检中…" : "重新体检")
+                </button>
+                @if (sys is { Available: true })
+                {
+                    <button class="btn btn-ghost small" type="button" @onclick="CopyHealthReport">
+                        @(copied ? "已复制 ✓" : "复制报告")
+                    </button>
+                }
+            </div>
+        </div>
+
+        @if (!Host.IsAvailable)
+        {
+            <p class="muted small">
+                当前不在桌面应用中运行，无法读取本机系统信息。请使用 OBS 排障助手桌面版以启用系统体检。
+            </p>
+        }
+        else if (scanning && sys is null)
+        {
+            <p class="muted small">正在读取系统信息与 OBS 配置…</p>
+        }
+        else if (sys is { Available: true })
+        {
+            var info = sys.Info!;
+            <div class="health-grid">
+                <div class="health-cell">
+                    <span class="hc-label">操作系统</span>
+                    <span class="hc-value">@PlatformText(info.Platform) @info.OsVersion</span>
+                </div>
+                <div class="health-cell">
+                    <span class="hc-label">显卡</span>
+                    <span class="hc-value">@(string.IsNullOrWhiteSpace(info.PrimaryGpu) ? "未识别" : info.PrimaryGpu)</span>
+                </div>
+                <div class="health-cell">
+                    <span class="hc-label">OBS 进程</span>
+                    <span class="hc-value">
+                        @if (info.Obs.Running)
+                        {
+                            <span class="hc-ok">运行中</span>
+                            @if (!string.IsNullOrWhiteSpace(info.Obs.Version)) { <text> · v@info.Obs.Version</text> }
+                            @if (info.Obs.Elevated) { <text> · 管理员</text> }
+                            @if (info.Obs.MemoryMb > 0) { <text> · @info.Obs.MemoryMb.ToString("0") MB</text> }
+                        }
+                        else
+                        {
+                            <span class="hc-off">未运行</span>
+                        }
+                    </span>
+                </div>
+                @if (info.Platform == "windows")
+                {
+                    <div class="health-cell">
+                        <span class="hc-label">硬件加速 GPU 计划</span>
+                        <span class="hc-value">
+                            @if (info.HagsEnabled) { <span class="hc-warn">已开启（建议关闭）</span> }
+                            else { <span class="hc-ok">已关闭</span> }
+                        </span>
+                    </div>
+                    <div class="health-cell">
+                        <span class="hc-label">游戏模式</span>
+                        <span class="hc-value">@(info.GameModeEnabled ? "已开启" : "已关闭")</span>
+                    </div>
+                }
+                @if (info.RecordingDiskTotalGb > 0)
+                {
+                    <div class="health-cell">
+                        <span class="hc-label">录制盘剩余</span>
+                        <span class="hc-value">
+                            <span class="@DiskClass(info.RecordingDiskFreeGb)">@info.RecordingDiskFreeGb.ToString("0.#") GB</span>
+                            <text> / @info.RecordingDiskTotalGb.ToString("0.#") GB</text>
+                        </span>
+                    </div>
+                }
+                @if (!string.IsNullOrWhiteSpace(sys.LatestObsVersion))
+                {
+                    <div class="health-cell">
+                        <span class="hc-label">OBS 最新版</span>
+                        <span class="hc-value">@sys.LatestObsVersion</span>
+                    </div>
+                }
+            </div>
+
+            var allFindings = HealthFindings();
+            @if (allFindings.Count == 0)
+            {
+                <p class="health-clean">✅ 系统与 OBS 配置未发现明显隐患。</p>
+            }
+            else
+            {
+                <p class="muted small">共 @allFindings.Count 项待关注（配置体检@(cfg is { Available: true } ? "已完成" : "不可用")）：</p>
+                <div class="find-list">
+                    @foreach (var f in allFindings)
+                    {
+                        <article class="find-card find-@SevClass(f.Severity)">
+                            <div class="find-head">
+                                <span class="find-sev">@SevText(f.Severity)</span>
+                                <span class="find-title">@f.Title</span>
+                                <span class="find-src">@f.Source</span>
+                            </div>
+                            @if (!string.IsNullOrEmpty(f.Detail)) { <p class="find-detail muted small">@f.Detail</p> }
+                            <p class="find-suggest">💡 @f.Suggestion</p>
+                            @if (!string.IsNullOrEmpty(f.ProblemId))
+                            {
+                                <a class="find-link" href="@($"problem/{f.ProblemId}")">查看分步方案 →</a>
+                            }
+                        </article>
+                    }
+                </div>
+            }
+        }
+        else if (sys is not null)
+        {
+            <p class="muted small">未能读取系统信息（宿主可能为旧版本）。其余功能不受影响。</p>
+        }
+    </section>
+
+    <!-- 智能诊断：保留原有「快速自检」模块的基础上新增 -->
+    <section class="diag-card ai-card">
+        <h3>🤖 智能诊断</h3>
+        <p class="muted small">
+            当前引擎：<b>@(AiSettings.Mode == DiagnosticEngineMode.Cloud ? "云端大模型" : "本地离线")</b>
+            @if (Orchestrator.LatestReport is { HasIssues: true })
+            {
+                <span class="ai-log-hint">· 已载入日志分析报告（@Orchestrator.LatestReport.Findings.Count 项发现）</span>
+            }
+        </p>
+        <div class="ask-row">
+            <label class="visually-hidden" for="diag-input">描述你遇到的现象</label>
+            <input id="diag-input" class="ask-input" type="search" autocomplete="off"
+                   placeholder="例如：推流一直重连、编码过载掉帧…"
+                   @bind="query" @bind:event="oninput" />
+            <button class="btn btn-accent" type="button" @onclick="Diagnose" disabled="@diagnosing">@(diagnosing ? "分析中…" : "诊断")</button>
+        </div>
+
+        @if (result is not null)
+        {
+            @if (!result.Success)
+            {
+                <p class="err-text">@result.Error</p>
+                @if (result.FellBackToLocal)
+                {
+                    <p class="muted small">已自动回退到本地离线引擎。</p>
+                }
+            }
+            else
+            {
+                <div class="ai-result">
+                    <pre class="ai-summary">@result.Summary</pre>
+                    @if (result.Items.Count > 0)
+                    {
+                        <div class="find-list">
+                            @foreach (var it in result.Items)
+                            {
+                                <article class="find-card find-@ItemClass(it.Severity)">
+                                    <div class="find-head">
+                                        <span class="find-sev">@it.SeverityText</span>
+                                        <span class="find-title">@it.Title</span>
+                                        <span class="find-src">@it.Source</span>
+                                    </div>
+                                    @if (!string.IsNullOrEmpty(it.Reason)) { <p class="find-suggest">🔎 @it.Reason</p> }
+                                    @if (it.Steps.Count > 0)
+                                    {
+                                        <ol class="find-steps">
+                                            @foreach (var st in it.Steps) { <li>@st</li> }
+                                        </ol>
+                                    }
+                                    @if (!string.IsNullOrEmpty(it.ProblemId))
+                                    {
+                                        <a class="find-link" href="@($"problem/{it.ProblemId}")">查看分步方案 →</a>
+                                    }
+                                </article>
+                            }
+                        </div>
+                    }
+                </div>
+            }
+        }
+
+        <div class="ai-foot">
+            <a class="link-mini" href="logs">打开日志分析 →</a>
+            <a class="link-mini" href="settings">AI 设置 →</a>
+        </div>
+    </section>
 
     <section class="diag-card">
         <h3>① 快速自检清单</h3>
@@ -68,6 +265,155 @@
         new CheckItem { Text = "推流服务器与串流密钥正确" }
     };
 
+    private string query = "";
+    private bool diagnosing;
+    private DiagnosticResult? result;
+
+    // —— 系统 / 配置体检 ——
+    private SystemHealthReport? sys;
+    private ObsConfigReport? cfg;
+    private bool scanning;
+    private bool copied;
+
+    /// <summary>把系统体检与配置体检的发现统一成一份列表，UI 只需渲染一种形状。</summary>
+    private sealed record HealthRow(
+        LogSeverity Severity, string Title, string Detail, string Suggestion, string? ProblemId, string Source);
+
+    private List<HealthRow> HealthFindings()
+    {
+        var rows = new List<HealthRow>();
+
+        if (sys is not null)
+        {
+            rows.AddRange(sys.Findings.Select(f =>
+                new HealthRow(f.Severity, f.Title, f.Detail, f.Suggestion, f.ProblemId, "系统")));
+        }
+        if (cfg is not null)
+        {
+            rows.AddRange(cfg.Findings.Select(f =>
+                new HealthRow(f.Severity, f.Title, f.Detail, f.Suggestion, f.ProblemId, "配置")));
+        }
+
+        // 严重的排前面，同级按标题稳定排序，避免每次刷新顺序乱跳
+        return rows
+            .OrderByDescending(r => (int)r.Severity)
+            .ThenBy(r => r.Title, StringComparer.Ordinal)
+            .ToList();
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        // 进页面就自动体检一次：用户不必先想清楚「我该问什么」。
+        if (Host.IsAvailable) await RunHealthCheck();
+    }
+
+    private async Task RunHealthCheck()
+    {
+        if (scanning) return;
+        scanning = true;
+        copied = false;
+        try
+        {
+            var (s, c) = await Orchestrator.ScanEnvironmentAsync();
+            sys = s;
+            cfg = c;
+        }
+        catch
+        {
+            // 体检失败不该让整页崩掉，保持已有结果即可。
+            sys ??= new SystemHealthReport();
+        }
+        finally
+        {
+            scanning = false;
+        }
+    }
+
+    /// <summary>导出一份纯文本体检报告，方便用户贴到论坛/群里求助。</summary>
+    private async Task CopyHealthReport()
+    {
+        var sb = new System.Text.StringBuilder();
+        sb.AppendLine("OBS 排障助手 · 系统体检报告");
+        sb.AppendLine($"生成时间：{DateTime.Now:yyyy-MM-dd HH:mm}");
+        sb.AppendLine();
+
+        if (sys?.Info is { } info)
+        {
+            sb.AppendLine("【环境】");
+            sb.AppendLine($"系统：{PlatformText(info.Platform)} {info.OsVersion} {info.OsBuild}".TrimEnd());
+            sb.AppendLine($"显卡：{(info.Gpus.Count > 0 ? string.Join(" / ", info.Gpus.Select(g => g.Name)) : info.PrimaryGpu)}");
+            if (info.Platform == "windows")
+            {
+                sb.AppendLine($"HAGS：{(info.HagsEnabled ? "开启" : "关闭")}；游戏模式：{(info.GameModeEnabled ? "开启" : "关闭")}");
+            }
+            sb.AppendLine(info.Obs.Running
+                ? $"OBS：运行中 v{info.Obs.Version}{(info.Obs.Elevated ? "（管理员）" : "")}，内存 {info.Obs.MemoryMb:0} MB"
+                : "OBS：未运行");
+            if (info.RecordingDiskTotalGb > 0)
+                sb.AppendLine($"录制盘：剩余 {info.RecordingDiskFreeGb:0.#} GB / 共 {info.RecordingDiskTotalGb:0.#} GB");
+            if (!string.IsNullOrWhiteSpace(sys.LatestObsVersion))
+                sb.AppendLine($"OBS 最新版：{sys.LatestObsVersion}");
+            sb.AppendLine();
+        }
+
+        var rows = HealthFindings();
+        sb.AppendLine($"【发现 {rows.Count} 项】");
+        if (rows.Count == 0)
+        {
+            sb.AppendLine("未发现明显隐患。");
+        }
+        else
+        {
+            int n = 1;
+            foreach (var r in rows)
+            {
+                sb.AppendLine($"{n++}. [{SevText(r.Severity)}·{r.Source}] {r.Title}");
+                if (!string.IsNullOrEmpty(r.Detail)) sb.AppendLine($"   现状：{r.Detail}");
+                sb.AppendLine($"   建议：{r.Suggestion}");
+            }
+        }
+
+        try
+        {
+            await JSRuntime.InvokeVoidAsync("navigator.clipboard.writeText", sb.ToString());
+            copied = true;
+        }
+        catch
+        {
+            // 剪贴板在某些环境下不可用（无 HTTPS / 权限被拒），静默失败即可。
+        }
+    }
+
+    private static string PlatformText(string p) => p switch
+    {
+        "windows" => "Windows",
+        "macos" => "macOS",
+        _ => string.IsNullOrWhiteSpace(p) ? "未知系统" : p
+    };
+
+    private static string DiskClass(double freeGb) => freeGb switch
+    {
+        < 5 => "hc-crit",
+        < 20 => "hc-warn",
+        _ => "hc-ok"
+    };
+
+    private static string SevClass(LogSeverity s) => s switch
+    {
+        LogSeverity.Critical => "crit",
+        LogSeverity.Error => "err",
+        LogSeverity.Warning => "warn",
+        _ => "info"
+    };
+
+    private static string SevText(LogSeverity s) => s switch
+    {
+        LogSeverity.Critical => "严重",
+        LogSeverity.Error => "错误",
+        LogSeverity.Warning => "警告",
+        _ => "提示"
+    };
+
     private int doneCount => checks.Count(c => c.Done);
     private int DonePercent => checks.Count == 0 ? 0 : (int)(100.0 * doneCount / checks.Count);
 
@@ -81,4 +427,19 @@
     {
         foreach (var c in checks) c.Done = false;
     }
+
+    private async Task Diagnose()
+    {
+        diagnosing = true;
+        try { result = await Orchestrator.DiagnoseAsync(query); }
+        finally { diagnosing = false; }
+    }
+
+    private static string ItemClass(DiagnosticSeverity s) => s switch
+    {
+        DiagnosticSeverity.Critical => "crit",
+        DiagnosticSeverity.Error => "err",
+        DiagnosticSeverity.Warning => "warn",
+        _ => "info"
+    };
 }

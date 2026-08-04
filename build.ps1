@@ -66,7 +66,7 @@ if ($LASTEXITCODE -ne 0) { throw "Inno Setup 构建失败。" }
 
 # 5) 便携压缩包 -> PAKE\windows
 Step "生成便携压缩包 -> PAKE\windows"
-$ver = "1.0.0"
+$ver = "1.1.0"
 $zip = Join-Path $pakeWin "OBS_Helper_Portable_$ver.zip"
 # 仅当旧包存在时才删除（避免对不存在的文件执行删除），随后重新打包。
 if (Test-Path $zip) { Remove-Item $zip -Force }

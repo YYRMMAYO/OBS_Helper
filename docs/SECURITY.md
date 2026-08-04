@@ -11,8 +11,13 @@
 | 问题数据 `problems.json` | 打包内容，非运行时远程拉取，不受外部篡改 |
 | 用户本地存储 | 收藏 / 步骤进度写入 `localStorage`，仅在用户本机 |
 | 外链（官方文档） | 用户点击才打开，指向 `obsproject.com` 等公开文档站 |
+| 云端 AI 端点（用户配置） | 仅在「设置」显式开启云端模式后，由**宿主进程**代发 HTTPS 请求；密钥不进前端 |
+| API Key（云端 AI） | 经桌面壳加密落盘（Windows DPAPI / macOS Keychain），运行时仅宿主进程可解密 |
 
-**不在范围内**：账号体系、远程后端、付费、遥测、屏幕/麦克风采集（App 仅展示设置步骤）。
+**不在范围内**：账号体系、内置远程后端、付费、遥测、屏幕/麦克风采集（App 仅展示设置步骤）。
+
+> 注：云端 AI 诊断属**可选功能**——默认关闭，需用户在「设置」中自行填写 https 端点与密钥名；
+> 请求由宿主进程代发（密钥不进前端），不纳入上述“内置远程后端”范畴，安全约束见 §2.5。
 
 ## 2. 关键安全措施（已落地）
 
@@ -48,6 +53,15 @@ base-uri 'self'; form-action 'none'; frame-ancestors 'none'
 - 全站 `<meta name="referrer" content="no-referrer">`，外链跳转不携带来源信息。
 - `localStorage` 不可用时静默降级，不阻断浏览。
 
+### 2.5 云 AI 密钥与安全转发（可选功能）
+- **密钥不进前端**：API Key 仅存于桌面壳进程。WebView/Blazor 永远拿不到明文密钥；`AiSettingsService` 只持久化「密钥名」（指向壳内密钥库），不持久化密钥值。
+- **加密落盘**：密钥经桌面壳写入系统密钥库——Windows 用 DPAPI、macOS 用 Keychain；明文不写文件、不写 `localStorage`。
+- **宿主中转 + 协议约束**：`HostBridge.AiChatAsync` 由宿主实现，强制 **仅 https** 目标；非 https 直接拒绝，天然抑制明文外泄与对内网明文服务的 SSRF。
+- **SSRF 防护**：宿主侧对目标地址做阻断（loopback / 私网 / link-local / 云元数据 `169.254.169.254` 等），避免把请求打到内网或云元数据服务。
+- **PII 脱敏**：日志 / 连接快照送 AI 前必经 `LogSanitizer` 掩码（密钥、URL、邮箱、MAC、IP、Token），降低泄露面。
+- **失败回退**：云端不可用（未配置 / 网络 / 解析异常）时 `DiagnosticOrchestrator` 自动回退本地规则引擎，保证离线可用。
+- **本地模型零网络**：默认 Local 模式完全离线，不发起任何请求。
+
 ## 3. 自审发现与处置
 
 | # | 位置 | 风险 | 处置 |
@@ -58,6 +72,9 @@ base-uri 'self'; form-action 'none'; frame-ancestors 'none'
 | 4 | `ProblemDetail.razor` | 外链未校验协议 | 已加 `IsSafeUrl` 仅放行 http/https |
 | 5 | `BookmarkService.cs` | 加载缓存条件会导致“收藏丢失”错觉；`catch {}` 吞异常 | 改为 `_loaded` 标志；`catch (Exception)` 注释说明 |
 | 6 | `MainLayout` / 输入控件 | 缺少无障碍语义（landmark / label / 跳过链接） | 已补 `<header>`/`<main>`/`<nav>` 角色、skip-link、visually-hidden 标签、`type="search"`、`focus-visible` |
+| 7 | 云端 AI（`CloudDiagnosticEngine` / `HostBridge.AiChatAsync`） | 引入外发网络与密钥面 | 密钥仅存宿主、强制 https、SSRF 阻断、PII 脱敏、失败回退本地（§2.5） |
+| 8 | `LogSanitizer` | 日志/快照含敏感信息（密钥 / 路径 / Token） | 展示与送 AI 前统一 `LogSanitizer` 掩码 |
+| 9 | `ObsAuth` / obs-websocket | 密码明文传输/落盘风险 | 采用 obs-websocket 5.x 挑战应答（SHA256 摘要），密码不落盘 |
 
 ## 4. 残余风险与建议
 
@@ -67,5 +84,7 @@ base-uri 'self'; form-action 'none'; frame-ancestors 'none'
   建议配置 Developer ID 证书 + `notarytool` 公证后再分发。
 - **WebView2 未设 `AdditionalBrowserArguments` 禁用远程调试端口**：当前已通过禁用 DevTools +
   关闭 WebMessage 收敛，仍建议在 CI 内置固定运行时时附加 `--disable-remote-debugging`。
+- **云端 AI 端点由用户自配**：默认关闭且无内置端点；建议用户仅填写可信 https 地址。宿主侧 SSRF 阻断列表需随依赖/部署环境持续维护。
+- **obs-websocket 连接**：仅在用户于「控制台」显式填写地址/端口/密码后建立；密码经挑战应答不落盘，建议仅在可信局域网内启用。
 - **`problems.json` 体积（约 160KB）随包发布**：可接受；若后续引入运行时远程更新，
   必须加签名校验，否则会成为篡改入口。

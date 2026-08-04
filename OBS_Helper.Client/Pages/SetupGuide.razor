@@ -26,20 +26,49 @@
     <div class="cat-filter">
         @foreach (var p in platforms)
         {
-            <button class="chip @(activePlatform == p.Key ? "active" : "")" style="--cat:@p.Color" @onclick="async () => await SetPlatform(p.Key)">@p.Icon @p.Label</button>
+            <button class="chip @(activePlatform == p.Key ? "active" : "")" style="--cat:@p.Color" @onclick="() => SetPlatform(p.Key)">@p.Icon @p.Label</button>
         }
     </div>
 
-    <div class="prob-list">
-        @foreach (var p in visibleSetups)
-        {
-            <ProblemCard Problem="p" ShowPlatforms="true" />
-        }
-    </div>
-
-    @if (visibleSetups.Count == 0)
+    @if (IsAll)
     {
-        <p class="empty">该平台暂无专门指南，可参考上方「搭建流程」通用步骤。</p>
+        <div class="prob-list">
+            @foreach (var p in setupProblems)
+            {
+                <ProblemCard Problem="p" ShowPlatforms="true" />
+            }
+        </div>
+    }
+    else
+    {
+        var match = Matched;
+        var common = CommonFallback(match);
+
+        <h3 class="setup-sub">@CurrentLabel 专属指南 <span class="setup-count">@match.Count</span></h3>
+        @if (match.Count == 0)
+        {
+            <p class="empty">该平台暂无专门指南，可直接参考下方通用步骤。</p>
+        }
+        else
+        {
+            <div class="prob-list">
+                @foreach (var p in match)
+                {
+                    <ProblemCard Problem="p" ShowPlatforms="true" />
+                }
+            </div>
+        }
+
+        @if (common.Count > 0)
+        {
+            <h3 class="setup-sub">通用步骤（同样适用） <span class="setup-count">@common.Count</span></h3>
+            <div class="prob-list">
+                @foreach (var p in common)
+                {
+                    <ProblemCard Problem="p" ShowPlatforms="true" />
+                }
+            </div>
+        }
     }
 
     <p class="note">需要同时多平台开播？查看「多平台同时推流」与「竖屏 9:16 直播」。</p>
@@ -59,38 +88,92 @@
         ("6", "多平台 / 竖屏", "用插件做多路推流或竖屏 9:16 画布。", "problem/st-multi"),
     };
 
-    private static readonly (string Key, string Label, string Icon, string Color, string Kw)[] platforms =
+    /// <summary>
+    /// 平台筛选项。<c>Kws</c> 是该平台的多个别名关键词（含英文写法），
+    /// <c>OsFilter</c> 为非空时还会按 <see cref="Problem.Platforms"/> 做操作系统级过滤。
+    /// </summary>
+    private static readonly (string Key, string Label, string Icon, string Color, string[] Kws, string OsFilter)[] platforms =
     {
-        ("all", "全部", "📋", "#8e44ad", ""),
-        ("bilibili", "B站", "📺", "#fb7299", "B站"),
-        ("douyin", "抖音", "🎵", "#fe2c55", "抖音"),
-        ("kuaishou", "快手", "⚡", "#ff4906", "快手"),
-        ("youtube", "YouTube", "▶️", "#ff0000", "YouTube"),
-        ("twitch", "Twitch", "🟣", "#9146ff", "Twitch"),
-        ("videoaccount", "视频号", "💬", "#07c160", "视频号"),
-        ("xhs", "小红书", "📕", "#ff2442", "小红书"),
-        ("vertical", "竖屏", "📱", "#1abc9c", "竖屏"),
-        ("mac", "macOS", "🍎", "#555555", "macOS"),
+        ("all",          "全部",      "📋", "#8e44ad", new string[0], ""),
+        ("bilibili",     "B站",       "📺", "#fb7299", new[] { "B站", "哔哩", "bilibili" }, ""),
+        ("douyin",       "抖音",      "🎵", "#fe2c55", new[] { "抖音", "douyin", "tiktok" }, ""),
+        ("kuaishou",     "快手",      "⚡", "#ff4906", new[] { "快手", "kuaishou" }, ""),
+        ("youtube",      "YouTube",   "▶️", "#ff0000", new[] { "youtube", "油管" }, ""),
+        ("twitch",       "Twitch",    "🟣", "#9146ff", new[] { "twitch" }, ""),
+        ("videoaccount", "视频号",    "💬", "#07c160", new[] { "视频号", "微信" }, ""),
+        ("xhs",          "小红书",    "📕", "#ff2442", new[] { "小红书", "xhs" }, ""),
+        ("vertical",     "竖屏",      "📱", "#1abc9c", new[] { "竖屏", "9:16", "vertical" }, ""),
+        ("mac",          "macOS",     "🍎", "#555555", new[] { "macos", "mac" }, "macOS"),
     };
 
-    private List<Problem> visibleSetups => string.IsNullOrEmpty(activePlatform) || activePlatform == "all"
-        ? setupProblems
-        : setupProblems.Where(p =>
-            p.Title.Contains(PlatformKw(activePlatform), StringComparison.OrdinalIgnoreCase) ||
-            p.Id.Contains(PlatformKw(activePlatform), StringComparison.OrdinalIgnoreCase))
-          .ToList();
+    private bool IsAll => string.IsNullOrEmpty(activePlatform) || activePlatform == "all";
 
-    private static string PlatformKw(string key) =>
-        (platforms.FirstOrDefault(p => p.Key == key).Kw) ?? "";
+    private string CurrentLabel =>
+        platforms.FirstOrDefault(p => p.Key == activePlatform).Label ?? "该平台";
+
+    /// <summary>
+    /// 平台专属条目：在标题 / id / 症状 / 步骤标题里命中任一关键词，
+    /// 且（若该平台声明了 OsFilter）适用平台包含对应系统。
+    /// </summary>
+    private List<Problem> Matched
+    {
+        get
+        {
+            var cur = platforms.FirstOrDefault(p => p.Key == activePlatform);
+            var kws = cur.Kws ?? System.Array.Empty<string>();
+            if (kws.Length == 0) return setupProblems;
+
+            return setupProblems
+                .Where(p => MatchesOs(p, cur.OsFilter) && HitsKeyword(p, kws))
+                .ToList();
+        }
+    }
+
+    /// <summary>
+    /// 通用条目：不专属于任何具体平台（未命中任何平台关键词）的搭建指南，
+    /// 例如「从零搭建直播间」「场景与来源布局」，选了平台后仍然应该看得到。
+    /// </summary>
+    private List<Problem> CommonFallback(List<Problem> already)
+    {
+        var cur = platforms.FirstOrDefault(p => p.Key == activePlatform);
+        var allKws = platforms
+            .Where(p => p.Key != "all")
+            .SelectMany(p => p.Kws)
+            .ToArray();
+
+        var taken = already.Select(p => p.Id).ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+        return setupProblems
+            .Where(p => !taken.Contains(p.Id))
+            .Where(p => MatchesOs(p, cur.OsFilter))
+            .Where(p => !HitsKeyword(p, allKws))
+            .ToList();
+    }
+
+    private static bool MatchesOs(Problem p, string os)
+    {
+        if (string.IsNullOrEmpty(os)) return true;
+        if (p.Platforms is null || p.Platforms.Length == 0) return true;
+        return p.Platforms.Any(x => x.Contains(os, StringComparison.OrdinalIgnoreCase));
+    }
+
+    private static bool HitsKeyword(Problem p, string[] kws)
+    {
+        foreach (var kw in kws)
+        {
+            if (string.IsNullOrWhiteSpace(kw)) continue;
+            if (p.Title.Contains(kw, StringComparison.OrdinalIgnoreCase)) return true;
+            if (p.Id.Contains(kw, StringComparison.OrdinalIgnoreCase)) return true;
+            if (p.Symptoms.Any(s => s.Contains(kw, StringComparison.OrdinalIgnoreCase))) return true;
+            if (p.Steps.Any(s => s.Title.Contains(kw, StringComparison.OrdinalIgnoreCase))) return true;
+        }
+        return false;
+    }
 
     protected override async Task OnInitializedAsync()
     {
         setupProblems = await ProblemService.GetByCategoryAsync("setup");
     }
 
-    private async Task SetPlatform(string key)
-    {
-        activePlatform = key;
-        await Task.CompletedTask;
-    }
+    private void SetPlatform(string key) => activePlatform = key;
 }

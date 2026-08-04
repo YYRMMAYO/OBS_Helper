@@ -6,7 +6,7 @@
 ; 说明：脚本内路径相对本 .iss 所在目录（OBS_Helper.Win），因此可在任意机器上构建。
 
 #define MyAppName "OBS 排障助手"
-#define MyAppVersion "1.0.0"
+#define MyAppVersion "1.1.0"
 #define MyAppPublisher "OBS Helper"
 #define MyAppExeName "OBS_Helper.exe"
 #define MyAppId "{{8E3A1B2C-7D44-4F2A-9C10-2B5E6F7A8D01}"

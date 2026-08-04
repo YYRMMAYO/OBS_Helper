@@ -193,8 +193,15 @@
                        Style="{StaticResource BodyText}" />
           </Grid>
 
+          <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
+            <Button x:Name="CheckUpdateButton" Content="检查更新" Style="{StaticResource SecondaryButton}"
+                    Margin="0,0,10,0" Click="OnCheckUpdate" />
+            <TextBlock x:Name="UpdateStatusText" Style="{StaticResource CaptionText}"
+                       VerticalAlignment="Center" Text="尚未检查" />
+          </StackPanel>
+
           <TextBlock Style="{StaticResource MutedText}"
-                     Text="离线优先的本地排障工具：界面与问题库随包发布，默认不发起任何网络请求。仅在上面手动开启「云端大模型」后，才会由本应用直接发起 HTTPS 请求，密钥全程只在本机加密存储与请求头之间流转。" />
+                     Text="离线优先的本地排障工具：界面与问题库随包发布，默认不发起任何网络请求。仅在进行更新检查（启动时自动静默检查一次，或点击上方按钮手动检查）或手动开启「云端大模型」后，才会由本应用直接发起 HTTPS 请求，密钥全程只在本机加密存储与请求头之间流转。" />
 
           <TextBlock Style="{StaticResource MutedText}" Margin="0,8,0,0"
                      Text="OBS 日志在分析前会自动脱敏（流密钥、路径、Token、IP 等），可放心用于排查。" />

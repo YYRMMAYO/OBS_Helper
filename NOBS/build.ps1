@@ -90,7 +90,8 @@ if ($SkipInstaller) {
         Warn "找不到 Inno Setup 6（ISCC.exe），跳过安装包。下载：https://jrsoftware.org/isdl.php"
         $setupPath = $null
     } else {
-        & $iscc (Join-Path $projDir "OBS_Helper_Setup.iss") | Out-Host
+        # 用 csproj 的 <Version> 覆盖 iss 里的版本号，保证安装包命名/版本与代码一致
+        & $iscc "/DMyAppVersion=$ver" (Join-Path $projDir "OBS_Helper_Setup.iss") | Out-Host
         if ($LASTEXITCODE -ne 0) { throw "Inno Setup 构建失败。" }
     }
 }

@@ -3,7 +3,9 @@ using System.Text;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using OBS_Helper.Wpf.Controls;
 using OBS_Helper.Wpf.Navigation;
+using OBS_Helper.Wpf.Services;
 using OBS_Helper.Wpf.Views;
 
 namespace OBS_Helper.Wpf;
@@ -95,6 +97,29 @@ public partial class MainWindow : Window
         }
 
         await _nav.NavigateAsync(Routes.Home, pushHistory: false);
+
+        // 启动后静默检查一次更新：有新版才弹窗，失败/无更新一律不打扰。
+        _ = RunStartupUpdateCheckAsync();
+    }
+
+    /// <summary>
+    /// 启动自动更新检查（fire-and-forget）。只在新版本可用时弹窗；
+    /// 网络不可达、GitHub 异常等失败场景静默跳过，不影响启动与正常使用。
+    /// </summary>
+    private static async Task RunStartupUpdateCheckAsync()
+    {
+        try
+        {
+            var result = await AppServices.Updates.CheckAsync();
+            if (result.Status == UpdateCheckStatus.UpdateAvailable)
+            {
+                UpdateDialog.Show(result.CurrentVersion, result.LatestVersion);
+            }
+        }
+        catch (Exception)
+        {
+            // 更新检查属于锦上添花，任何异常都不得打断主流程
+        }
     }
 
     /// <summary>

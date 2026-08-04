@@ -30,6 +30,8 @@ public static class AppServices
     private static readonly Lazy<ObsResetService> _obsReset = new(() => new ObsResetService(ObsPaths, ObsBackups, Obs));
     private static readonly Lazy<SceneTemplateService> _templates = new(() => new SceneTemplateService(Obs, ObsPaths));
 
+    private static readonly Lazy<UpdateService> _updates = new(() => new UpdateService());
+
     private static readonly Lazy<AiSettingsService> _aiSettings = new(() => new AiSettingsService(Store, Host));
     private static readonly Lazy<ObsToolRegistry> _tools = new(() => new ObsToolRegistry(Problems));
     private static readonly Lazy<LocalDiagnosticEngine> _localEngine = new(() => new LocalDiagnosticEngine(Problems, Assistant));
@@ -54,6 +56,7 @@ public static class AppServices
     public static SceneTemplateService Templates => _templates.Value;
 
     public static AiSettingsService AiSettings => _aiSettings.Value;
+    public static UpdateService Updates => _updates.Value;
     public static ObsToolRegistry Tools => _tools.Value;
     public static LocalDiagnosticEngine LocalEngine => _localEngine.Value;
     public static CloudDiagnosticEngine CloudEngine => _cloudEngine.Value;

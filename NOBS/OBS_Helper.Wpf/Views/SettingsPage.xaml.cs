@@ -38,6 +38,7 @@ public partial class SettingsPage : UserControl, INavigationAware
         await RefreshKeyStatusAsync();
         await RefreshAboutAsync();
         await RefreshObsConfigHintAsync();
+        RefreshUpdateStatus();
     }
 
     // ------------------------------------------------------------ 状态回填
@@ -307,6 +308,53 @@ public partial class SettingsPage : UserControl, INavigationAware
         if (sender is FrameworkElement { Tag: string url })
         {
             await AppServices.Host.OpenExternalAsync(url);
+        }
+    }
+
+    /// <summary>把最近一次更新检查结果回填到状态文本（启动检查或手动检查后调用）。</summary>
+    private void RefreshUpdateStatus()
+    {
+        var last = AppServices.Updates.LastResult;
+        if (last is null)
+        {
+            UpdateStatusText.Text = "尚未检查";
+            UpdateStatusText.SetResourceReference(TextBlock.ForegroundProperty, "MutedBrush");
+            return;
+        }
+
+        switch (last.Status)
+        {
+            case UpdateCheckStatus.UpToDate:
+                UpdateStatusText.Text = $"已是最新版本 V{CurrentVersionText(last.CurrentVersion)}";
+                UpdateStatusText.SetResourceReference(TextBlock.ForegroundProperty, "OkBrush");
+                break;
+            case UpdateCheckStatus.UpdateAvailable:
+                UpdateStatusText.Text = $"发现新版本 V{CurrentVersionText(last.LatestVersion)}，可下载更新";
+                UpdateStatusText.SetResourceReference(TextBlock.ForegroundProperty, "OkBrush");
+                break;
+            default:
+                UpdateStatusText.Text = "检查失败，请稍后重试";
+                UpdateStatusText.SetResourceReference(TextBlock.ForegroundProperty, "WarnBrush");
+                break;
+        }
+    }
+
+    private static string CurrentVersionText(Version? v)
+        => v is null ? "—" : $"{v.Major}.{v.Minor}.{v.Build}";
+
+    private async void OnCheckUpdate(object sender, RoutedEventArgs e)
+    {
+        CheckUpdateButton.IsEnabled = false;
+        UpdateStatusText.Text = "正在检查更新…";
+        UpdateStatusText.SetResourceReference(TextBlock.ForegroundProperty, "MutedBrush");
+
+        var result = await AppServices.Updates.CheckAsync();
+        CheckUpdateButton.IsEnabled = true;
+
+        RefreshUpdateStatus();
+        if (result.Status == UpdateCheckStatus.UpdateAvailable)
+        {
+            UpdateDialog.Show(result.CurrentVersion, result.LatestVersion);
         }
     }
 

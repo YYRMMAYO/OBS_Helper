@@ -40,6 +40,8 @@
 
 只有在你主动开启「云端诊断引擎」并发起诊断时才会联网，且请求前会先对日志脱敏。
 
+应用内「检查更新」会对比 GitHub 仓库的最新 tag（仅当有更高版本时才提示），下载走蓝奏云网盘，提取码为 `YYKWY`；检查失败不影响正常使用。
+
 OBS 配置备份 / 导出默认不包含推流密钥，密码与 Token 会自动脱敏。如需完整备份可手动勾选「包含推流密钥」。
 
 ## 构建
@@ -50,7 +52,7 @@ OBS 配置备份 / 导出默认不包含推流密钥，密码与 Token 会自动
 # 跑起来看看
 dotnet run --project OBS_Helper.Wpf
 
-# 出安装包 + 便携 zip -> PAKE\windows\
+# 出安装包 + 便携 zip -> PAKE\windows\（版本号取自 csproj 的 <Version>，并自动覆盖 Inno 脚本里的版本）
 .\build.ps1
 
 # 额外出一个单文件 exe
@@ -62,9 +64,9 @@ dotnet run --project OBS_Helper.Wpf
 
 产物落在 `PAKE\windows\`：
 
-- `OBS_Helper_Setup_1.2.0.exe` — 安装包
-- `OBS_Helper_Portable_1.2.0.zip` — 解压即用
-- `OBS_Helper_Portable_1.2.0.exe` — 单文件（需 `-SingleFile`）
+- `OBS_Helper_Setup_1.3.0.exe` — 安装包
+- `OBS_Helper_Portable_1.3.0.zip` — 解压即用
+- `OBS_Helper_Portable_1.3.0.exe` — 单文件（需 `-SingleFile`）
 
 ## 工程结构
 

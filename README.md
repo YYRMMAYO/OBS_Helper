@@ -1,120 +1,119 @@
-# OBS 排障助手 (OBS Helper)
+# OBS 排障助手 · WPF 版（Windows）
 
-复杂问题，分步解决。一个覆盖 **黑屏、卡顿、音画不同步、推流失败、直播间搭建** 等 OBS 高频难题的
-跨平台桌面助手，支持 Windows 与 macOS。
+面向直播新手的 OBS Studio 排障工具。**纯离线可用**：85 条问题的知识库、排障指引、日志分析规则全部内嵌在程序里，不联网也能查。连上 OBS 之后还能远程控制场景、录制与推流，并做一键体检。
 
-- 一份 **Blazor WebAssembly** 站点承载全部排障内容与交互
-- **Windows** 用 WebView2 桌面壳，**macOS** 用 Tauri v2 桌面壳
-- 每个问题都给出「症状 → 原因 → 分步解决 → 官方文档跳转」，并可勾选完成进度、收藏
-- 内置统一 **报错码** 体系（见 `docs/ERROR_CODES.md`）
+这是原 Blazor WebAssembly + WebView2 版本的**原生 WPF 重构**（源码在 `NOBS/`），功能一比一对齐，但去掉了浏览器内核这一层，并在此基础上增加了后台遥控能力。
 
----
+## 与旧版的差别
 
-## 一、功能概览
+| | 旧版（Blazor + WebView2） | 本版（WPF） |
+|---|---|---|
+| 界面技术 | Blazor WASM 站点，跑在 WebView2 里 | 原生 WPF |
+| 运行前提 | 目标机需要 WebView2 Runtime | 无（自包含发布已含 .NET 运行时） |
+| 安装体积 | 站点 + 运行时 + WebView2 | 单一自包含目录 |
+| 冷启动 | 需初始化 WebView2 + 下载 WASM | 直接起窗口 |
+| 知识库读取 | HTTP 拉 `wwwroot/problems.json` | 程序集内嵌资源 |
+| 偏好存储 | 浏览器 localStorage | `%LocalAppData%\OBS_Helper\prefs.json` |
+| 密码 / API Key | 经 JS 桥转发给宿主 DPAPI | 进程内直接 DPAPI 加密 |
+| 平台 | Windows + macOS | 仅 Windows |
 
-- 10 大分类、**103 条**排障方案，覆盖黑屏 / 编码过载 / 卡顿掉帧 / 音画不同步 / 音频 / 推流失败 / 直播间搭建 / 录制 / 基础配置 / 崩溃兼容
-- 每个方案附 **官方文档 / 参考链接**（OBS 官网、日志分析器、macOS 权限指南、黑屏修复教程等），一键跳转
-- 分步勾选 + 收藏，进度本地保存
-- 搜索、分类浏览、智能助手（离线问答，IDF 加权检索 + 口语同义词映射）
-- 🩺 **一键系统体检**：自动读取显卡 / HAGS / 游戏模式 / 磁盘余量 / OBS 进程状态与版本，
-  直接指出「硬件加速 GPU 计划已开启」「双显卡易黑屏」「录制盘剩余不足」等环境隐患并给修复建议
-- 🤖 **智能诊断（可切换本地 / 云端）**：默认离线规则引擎即时给建议；可选接入云端 LLM 深度分析，密钥由桌面壳加密保管，云端失败自动回退本地（详见 `docs/SECURITY.md` §2.5）
-- 🎛️ **obs-websocket 控制台**：连接 OBS 实时切换场景、调音量、启停录制 / 推流 / 虚拟摄像头（写操作二次确认）
-- 📈 **实时监控与阈值告警**：开播时按 2 秒采样，用**窗口增量**（而非 OBS 的累计值）计算渲染 / 编码 /
-  推流丢帧率，超阈值即时弹出告警并关联对应排障方案
-- 📜 **离线日志分析 + 配置体检**：读取 / 拖入 OBS 日志自动定位异常，同时扫描 `obs-studio` 配置目录
-  校验编码器、码率、关键帧、采样率等设置，结论统一并入智能诊断
-- 🎨 **外观与无障碍**：深色模式、字号缩放、高对比、减少动效，设置即时生效并记忆
-- 双端原生桌面体验，离线可用（联网仅用于可选的版本检查与云端诊断，可完全关闭）
+## 功能
 
----
+- **知识库** — 10 个分类、85 条问题，含现象 / 成因 / 分步解决 / 小贴士 / 相关问题，步骤可勾选且进度会记住
+- **搜索** — 边打边搜，跨标题、现象、成因匹配
+- **问我一下** — 用大白话描述现象，自动匹配最可能的问题
+- **智能诊断** — 连上 OBS 后一键体检；可切换本地规则引擎或云端大模型（OpenAI 兼容接口 + function calling，云端失败自动回退本地）
+- **日志分析** — 离线解析 OBS 日志，23 条规则 + 3 项量化比值；日志在分析前会先脱敏
+- **直播搭建** — 从零到开播的 6 步流程 + 10 个主流平台的推流配置
+- **OBS 控制台** — 场景切换、元素显隐、音频静音与音量、录制 / 推流 / 虚拟摄像头、实时统计、**定时停止录制/推流**、**一键打开录制目录**
+- **系统托盘 + 通知** — 关闭窗口最小化到托盘，托盘菜单直接控制录制 / 推流 / 虚拟摄像头；录制 / 推流状态变化弹系统通知（可关）
+- **全局热键** — 系统级快捷键（默认 Ctrl+Alt+R 录制 / Ctrl+Alt+S 推流 / Ctrl+Alt+C 虚拟摄像头 / Ctrl+Alt+O 显示隐藏窗口，全部可在设置页改键或停用）
+- **场景自动切换** — 按前台窗口标题自动切换场景，支持关键词 / 正则规则，规则表在设置页管理
+- **系统监控** — CPU / 内存 / 网络上下行 / 磁盘空间实时曲线（近 2 分钟），与 OBS 渲染帧率、丢帧数据联动，磁盘空间不足时预警
+- **场景模板** — 6 套内置直播间模板（游戏直播 / 竖屏带货 / 双人连麦 / 教学录屏 / 电台待机 / 开播三件套），连上 OBS 一键落地场景与来源，未连接时可导出为标准场景集合 JSON
+- **OBS 配置管理** — 配置目录检测、备份 / 导出（ZIP，默认脱敏不含推流密钥）、导入（覆盖 / 合并，自动预备份）、轻度重置（新建干净配置集合）与彻底重置（恢复初始状态，强制自动备份）
+- **排障指引** — 通用排查思路速查手册
+- **外观** — 浅色 / 深色 / 跟随系统，4 档字号，高对比与减少动画
 
-## 二、Windows 安装指引
+## 隐私
 
-### 方式 A：安装包（推荐）
-1. 从发布页 / CI 制品下载 `OBS_Helper_Setup_1.1.0.exe`（位于 `PAKE/windows/`）。
-2. 双击运行，按向导安装到 `C:\Program Files\OBS 排障助手`。
-3. 首次启动若提示「WebView2 初始化失败 (OBS101)」：
-   - 大多数 Win10/11 已自带 WebView2；如缺失，到微软官网安装
-     [Microsoft Edge WebView2 Runtime](https://developer.microsoft.com/microsoft-edge/webview2/) 后重试。
+所有数据只存在本机：
 
-### 方式 B：便携版
-- 解压 `OBS_Helper_Portable_1.1.0.zip`，直接运行其中的 `OBS_Helper.exe`。
-- 注意：`OBS_Helper.exe` 必须与 `wwwroot` 文件夹放在同一目录（否则报 `OBS102`）。
+- 偏好（外观、收藏、步骤进度、连接设置、**热键键位、自动切换规则、托盘行为**）→ `%LocalAppData%\OBS_Helper\prefs.json`（明文 JSON，均不含任何凭据）
+- OBS 密码与 AI API Key → `%LocalAppData%\OBS_Helper\secrets.dat`（DPAPI 加密，绑定当前 Windows 用户，换机 / 换用户无法解开）
 
-### 系统要求
-- Windows 10 / 11（64 位）
-- 已安装或可接受自动获取 WebView2 Runtime
-- 安装包为自包含发布，无需预先安装 .NET
+只有在你主动开启「云端诊断引擎」并发起诊断时才会联网，且请求前会先对日志脱敏。
 
----
+应用内「检查更新」会对比 GitHub 仓库的最新 tag（仅当有更高版本时才提示），下载走蓝奏云网盘，提取码为 `YYKWY`；检查失败不影响正常使用。
 
-## 三、macOS 安装指引
+OBS 配置备份 / 导出默认不包含推流密钥，密码与 Token 会自动脱敏。如需完整备份可手动勾选「包含推流密钥」。
 
-1. 从发布页 / CI 制品下载对应架构的 `.dmg`（位于 `PAKE/macos/`）：
-   - Apple Silicon（M 系列）：`PAKE/macos/aarch64/OBS 排障助手_1.1.0_aarch64.dmg`
-   - Intel Mac：`PAKE/macos/x86_64/OBS 排障助手_1.1.0_x64.dmg`
-   - CI 通过矩阵同时产出两种架构；本地构建默认产出当前机器的架构。
-2. 打开 `.dmg`，把 `OBS 排障助手.app` 拖到「应用程序」。
-3. 首次打开若被 Gatekeeper 拦截（CI 构建的包未做 Apple 签名）：
-   - 右键 App → 「打开」，在弹窗中再次确认；或
-   - 系统设置 → 隐私与安全性 → 允许该开发者 App。
-4. 若使用屏幕录制 / 麦克风相关功能，按 App 内指引到
-   **系统设置 → 隐私与安全性** 授予 OBS 相应权限（App 本身不采集屏幕/麦克风，仅展示设置步骤）。
+## 构建
 
-### 系统要求
-- macOS 10.15 (Catalina) 及以上
-- 需自行签名/公证后才能无损分发（仓库 CI 产出为未签名包，适合自测与内部分发）
+需要 [.NET 10 SDK](https://dotnet.microsoft.com/download)。打安装包还需要 [Inno Setup 6](https://jrsoftware.org/isdl.php)。
 
----
-
-## 四、从源码构建
-
-### 准备
-- [.NET 10 SDK](https://dotnet.microsoft.com/download)
-- Windows 端：Inno Setup 6（生成安装包）
-- macOS 端：[Rust 工具链](https://www.rust-lang.org/) + `@tauri-apps/cli`（`npm i -g @tauri-apps/cli`）
-
-### Windows
 ```powershell
-pwsh ./build.ps1 -Configuration Release -Runtime win-x64
-# 产物：PAKE/windows/OBS_Helper_Setup_1.1.0.exe 与 OBS_Helper_Portable_1.1.0.zip
+# 进到 WPF 工程目录（本仓库的 Windows 版代码都在 NOBS/ 下）
+cd NOBS
+
+# 跑起来看看
+dotnet run --project OBS_Helper.Wpf
+
+# 出安装包 + 便携 zip -> NOBS\PAKE\windows\（版本号取自 csproj 的 <Version>，并自动覆盖 Inno 脚本里的版本）
+.\build.ps1
+
+# 额外出一个单文件 exe
+.\build.ps1 -SingleFile
+
+# 没装 Inno Setup 时只出便携包
+.\build.ps1 -SkipInstaller
 ```
 
-### macOS（需在 Mac 上执行）
-```bash
-bash OBS_Helper.Mac/src-tauri/build-mac.sh
-# 产物：PAKE/macos/*.dmg 与 *.app
+产物落在 `NOBS\PAKE\windows\`：
+
+- `OBS_Helper_Setup_1.4.0.exe` — 安装包
+- `OBS_Helper_Portable_1.4.0.zip` — 解压即用
+- `OBS_Helper_Portable_1.4.0.exe` — 单文件（需 `-SingleFile`）
+
+## 工程结构
+
 ```
-> 可选代码签名 / 公证：设置环境变量 `MAC_SIGN_IDENTITY`（Developer ID Application）与
-> `MAC_NOTARY_KEYCHAIN_PROFILE`（notarytool 钥匙串配置文件）后脚本会自动深度签名并提交公证；
-> 未设置则产出未签名包（适合自测 / 内部分发）。
-
-### 验证运行（无头冒烟测试）
-```bash
-pip install websocket-client
-python scripts/cdp_smoke.py --root "OBS_Helper.Win/bin/Release/net10.0-windows10.0.19041.0/win-x64/publish/wwwroot"
-# 通过条件：#app 成功渲染且无未捕获异常
+NOBS/
+  OBS_Helper.Wpf/
+    App.xaml(.cs)          应用入口、全局异常 -> 报错码弹窗
+    MainWindow.xaml(.cs)   左侧导航 + 顶栏 + 页面容器，路由注册在这里
+    AppServices.cs         组合根：所有服务的惰性单例，手工装配
+    Navigation/            极简路由（路由名 -> 页面工厂，带缓存与后退栈）
+    Views/                 13 个页面
+    Controls/              共享控件与值转换器
+    Themes/                Palette.xaml 调色板 + Controls.xaml 样式库
+    Models/
+      Obs/                 obs-websocket 协议模型
+      ObsConfig/           OBS 配置模型
+      Shell/               热键 / 自动切换 / 托盘行为设置模型
+    Services/
+      Host/                HostBridge（DPAPI、日志读取、AI 转发）、LocalStore
+      Obs/                 WebSocket 客户端、连接服务、日志分析、脱敏
+      ObsConfig/           OBS 配置定位、备份/导出/导入、重置、场景模板落地
+      Ai/                  本地 / 云端诊断引擎与编排
+      Shell/               系统托盘、全局热键、场景自动切换、定时器、系统监控
+      Markdown/            排障指引的 Markdown 解析
+    Assets/                problems.json、troubleshooting.md、scene_templates.json（内嵌资源）、图标
+  build.ps1                Windows 构建与打包脚本
 ```
 
----
+换肤靠的是把调色板写进 `Application.Resources`，XAML 一律用 `DynamicResource` 引用，所以主题切换是整窗即时生效的。
 
-## 五、目录与文档
+## 仓库结构
 
-| 路径 | 说明 |
+| 目录 | 说明 |
 | --- | --- |
-| `OBS_Helper.Client/` | 共享前端（Blazor WASM），全部排障逻辑 |
-| `OBS_Helper.Win/` | Windows 桌面壳（WebView2）+ Inno 安装脚本 |
-| `OBS_Helper.Mac/src-tauri/` | macOS 桌面壳（Tauri v2） |
-| `content/problems.json` | 主数据源（问题 + 官方链接） |
-| `docs/ERROR_CODES.md` | 报错码 → 现象 → 解决方案 对照表 |
-| `docs/LIBRARIES.md` | 依赖 / 第三方库清单（版本 + 许可证） |
-| `docs/ARCHITECTURE.md` | 架构与构建说明（含 AI 诊断引擎、obs-websocket 控制台、外观系统） |
-| `PAKE/` | 统一打包输出目录（git 忽略） |
+| `NOBS/` | **当前维护中的 Windows 原生 WPF 版**（本文档介绍的就是它） |
+| `OBS_Helper.Client/` | 旧版共享前端（Blazor WASM），仅存档 |
+| `OBS_Helper.Win/` | 旧版 Windows 桌面壳（WebView2），仅存档 |
+| `OBS_Helper.Mac/` | macOS 桌面壳（Tauri v2），仅存档 |
+| `docs/` | 旧版架构 / 报错码 / 依赖清单等文档，仅存档 |
 
----
+## 许可
 
-## 六、许可证
-
-本项目以 **MIT 许可证** 发布，详见 `LICENSE`。
-第三方运行库与工具的许可证见 `docs/LIBRARIES.md`；OBS 相关文档版权归 OBS Project 所有。
+MIT，见 [LICENSE](LICENSE)。

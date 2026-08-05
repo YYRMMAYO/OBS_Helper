@@ -36,11 +36,10 @@
         <!-- 品牌区 -->
         <StackPanel DockPanel.Dock="Top" Margin="18,20,18,14">
           <StackPanel Orientation="Horizontal">
-            <Border Width="30" Height="30" CornerRadius="8"
-                    Background="{DynamicResource BrandBrush}" VerticalAlignment="Center">
-              <TextBlock Text="OB" FontSize="11" FontWeight="Bold" Foreground="White"
-                         HorizontalAlignment="Center" VerticalAlignment="Center" />
-            </Border>
+            <!-- 左上角品牌图标：与应用 / 任务栏 / 托盘同一枚 appicon.ico（含圆角与徽章） -->
+            <Image Width="30" Height="30" Stretch="Uniform"
+                   Source="pack://application:,,,/Assets/appicon.ico"
+                   VerticalAlignment="Center" RenderOptions.BitmapScalingMode="HighQuality" />
             <StackPanel Margin="10,0,0,0" VerticalAlignment="Center">
               <TextBlock Text="OBS 排障助手" FontWeight="Bold"
                          FontSize="{DynamicResource FontSizeMd}"

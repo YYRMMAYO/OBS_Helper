@@ -44,7 +44,7 @@
 
 只有在你主动开启「云端诊断引擎」并发起诊断时才会联网，且请求前会先对日志脱敏。
 
-应用内「检查更新」会对比 GitHub 仓库的最新 tag（仅当有更高版本时才提示），下载走蓝奏云网盘，提取码为 `YYKWY`；检查失败不影响正常使用。
+应用内「检查更新」会对比 GitHub 仓库的最新 tag（仅当有更高版本时才提示），提供两种下载方式：蓝奏云网盘（提取码 `YYKWY`）与应用内加载 GitHub 直接下载安装包；检查失败不影响正常使用。
 
 OBS 配置备份 / 导出默认不包含推流密钥，密码与 Token 会自动脱敏。如需完整备份可手动勾选「包含推流密钥」。
 
@@ -68,9 +68,9 @@ dotnet run --project OBS_Helper.Wpf
 
 产物落在 `PAKE\windows\`：
 
-- `OBS_Helper_Setup_1.4.7.exe` — 安装包
-- `OBS_Helper_Portable_1.4.7.zip` — 解压即用
-- `OBS_Helper_Portable_1.4.7.exe` — 单文件（需 `-SingleFile`）
+- `OBS_Helper_Setup_1.4.8.exe` — 安装包
+- `OBS_Helper_Portable_1.4.8.zip` — 解压即用
+- `OBS_Helper_Portable_1.4.8.exe` — 单文件（需 `-SingleFile`）
 
 ## 工程结构
 

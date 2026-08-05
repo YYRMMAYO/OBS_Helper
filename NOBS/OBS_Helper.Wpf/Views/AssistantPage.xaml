@@ -6,7 +6,7 @@
     <StackPanel Margin="22,18,22,26">
 
       <TextBlock Style="{StaticResource MutedText}"
-                 Text="描述你遇到的现象或关键词，自动匹配最可能的解决方案（离线可用，无需联网）。" />
+                 Text="描述你遇到的现象或关键词，本地的搜索助手会自动匹配最可能的解决方案（离线可用，无需联网）。" />
 
       <!-- 提问行：边打边匹配，「提问」按钮只是再触发一次，行为与 Blazor 版一致 -->
       <Grid Margin="0,14,0,0">

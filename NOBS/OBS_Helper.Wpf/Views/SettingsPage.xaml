@@ -9,10 +9,10 @@
         <StackPanel>
           <TextBlock Text="AI 诊断引擎" Style="{StaticResource SectionTitle}" />
           <TextBlock Style="{StaticResource MutedText}" Margin="0,0,0,12"
-                     Text="默认使用本地离线引擎（无需联网、不依赖密钥）。也可切换到云端大模型：接口地址与模型名保存在设置文件里，API Key 单独经 Windows DPAPI 加密存储，不写入设置文件、不随日志外泄。" />
+                     Text="默认使用本地的搜索助手（无需联网、不依赖密钥，只在本机问题库中匹配）。也可切换到云端大模型：接口地址与模型名保存在设置文件里，API Key 单独经 Windows DPAPI 加密存储，不写入设置文件、不随日志外泄。" />
 
           <StackPanel Orientation="Horizontal">
-            <RadioButton x:Name="ModeLocal" GroupName="SettingsEngineMode" Content="本地离线"
+            <RadioButton x:Name="ModeLocal" GroupName="SettingsEngineMode" Content="本地的搜索助手"
                          Style="{StaticResource SegmentButton}" Checked="OnModeChecked" />
             <RadioButton x:Name="ModeCloud" GroupName="SettingsEngineMode" Content="云端大模型"
                          Style="{StaticResource SegmentButton}" Checked="OnModeChecked" />

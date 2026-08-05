@@ -1,3 +1,5 @@
+using System.Diagnostics;
+using System.Threading;
 using System.Windows;
 using System.Windows.Threading;
 using OBS_Helper.Wpf.Errors;
@@ -14,6 +16,122 @@ public partial class App : Application
 
     /// <summary>自检测试期间收集到的错误文本（仅 <see cref="HeadlessTest"/> 为 true 时填充）。</summary>
     public static List<string> HeadlessErrors { get; } = new();
+
+    // ------------------------------------------------------------ 单实例
+    // 桌面快捷方式 / 安装完成后启动 / 托盘常驻都可能重复拉起进程。
+    // 用「会话级命名 Mutex」做唯一判定：第二个实例直接退出，并通知第一个实例把窗口带回前台。
+    // 拿到锁的实例再顺带清理历史版本 / 崩溃残留的同名进程，保证同一时刻只留一个。
+
+    /// <summary>会话级单实例锁（Local\ 前缀：同一登录会话内唯一，不跨用户）。</summary>
+    private const string SingleInstanceMutex = @"Local\OBS_Helper.SingleInstance";
+
+    /// <summary>第一个实例创建、后续实例用来「唤起主窗口」的命名事件。</summary>
+    private const string SingleInstanceShowEvent = @"Local\OBS_Helper.ShowMainWindow";
+
+    private Mutex? _singleMutex;
+    private EventWaitHandle? _showEvent;
+    private Thread? _showListener;
+    private bool _ownsSingleInstance;
+
+    /// <summary>
+    /// 尝试获取单实例锁。返回 true 表示本进程是当前唯一实例，可继续启动；
+    /// 返回 false 表示已有实例在运行（本进程应立即退出）。
+    /// </summary>
+    private bool TryAcquireSingleInstance()
+    {
+        _singleMutex = new Mutex(initiallyOwned: true, SingleInstanceMutex, out var createdNew);
+        if (createdNew)
+        {
+            _ownsSingleInstance = true;
+            StartShowListener();
+            return true;
+        }
+
+        // 锁已存在但可能被占用（AbandonedMutex 时 createdNew 仍为 false 但异常抛出）。
+        // 这里直接视为「已有实例」，进入唤起 + 退出流程即可。
+        _ownsSingleInstance = false;
+        return false;
+    }
+
+    /// <summary>通知正在运行的实例把主窗口带到前台（本实例随即退出）。</summary>
+    private static void SignalExistingInstance()
+    {
+        try
+        {
+            using var evt = EventWaitHandle.OpenExisting(SingleInstanceShowEvent);
+            evt.Set();
+        }
+        catch (Exception)
+        {
+            // 已有实例连命名事件都创建不了（极端情况）：忽略，反正本实例要退出，
+            // 不会出现两个窗口并存。
+        }
+    }
+
+    /// <summary>清理同名残留进程，只留当前这一个（含旧版本无单实例保护的僵尸进程）。</summary>
+    private static void KillStrayInstances()
+    {
+        var currentId = Environment.ProcessId;
+        try
+        {
+            foreach (var p in Process.GetProcessesByName("OBS_Helper"))
+            {
+                if (p.Id == currentId) continue;
+                try
+                {
+                    p.Kill();
+                    p.WaitForExit(3000);
+                }
+                catch (Exception)
+                {
+                    // 权限不足或进程已退出：跳过，不影响主流程
+                }
+            }
+        }
+        catch (Exception)
+        {
+            // 进程枚举失败（权限 / 系统限制）：不做清理，也不阻塞启动
+        }
+    }
+
+    /// <summary>后台线程监听「唤起主窗口」事件，收到信号就把窗口显示并激活。</summary>
+    private void StartShowListener()
+    {
+        try
+        {
+            _showEvent = new EventWaitHandle(false, EventResetMode.AutoReset, SingleInstanceShowEvent);
+        }
+        catch (Exception)
+        {
+            _showEvent = null; // 创建失败则退化为纯 Mutex 防双开，不做窗口唤起
+            return;
+        }
+
+        _showListener = new Thread(() =>
+        {
+            while (_showEvent.WaitOne())
+            {
+                Dispatcher.BeginInvoke(new Action(() =>
+                {
+                    if (MainWindow is not { } w) return;
+
+                    if (!w.IsVisible || w.WindowState == WindowState.Minimized)
+                    {
+                        w.Show();
+                        if (w.WindowState == WindowState.Minimized) w.WindowState = WindowState.Normal;
+                    }
+                    w.Activate();
+                    // 用 Topmost 翻转把窗口强行带到最前（Activate 有时会被其他窗口盖住）
+                    w.Topmost = true;
+                    w.Topmost = false;
+                }));
+            }
+        })
+        {
+            IsBackground = true
+        };
+        _showListener.Start();
+    }
 
     /// <summary>兜底错误提示。所有未捕获异常都在这里转成「报错码 + 人话」展示。</summary>
     public static void ReportError(string code, Exception? ex = null)
@@ -50,6 +168,18 @@ public partial class App : Application
 
     protected override void OnStartup(StartupEventArgs e)
     {
+        // 单实例守卫：已有实例在运行则唤起其窗口并退出本进程，杜绝多开。
+        // 必须在创建任何窗口之前判断，否则闪一个窗口再关掉会很难看。
+        if (!TryAcquireSingleInstance())
+        {
+            SignalExistingInstance();
+            Shutdown();
+            return;
+        }
+
+        // 本进程持有单实例锁：顺带清理历史版本 / 崩溃残留的同名进程，同一时刻只保留一个。
+        KillStrayInstances();
+
         // 未处理异常：提示报错码而不是直接闪退
         DispatcherUnhandledException += OnDispatcherUnhandledException;
         AppDomain.CurrentDomain.UnhandledException += (_, args) =>
@@ -69,6 +199,24 @@ public partial class App : Application
         var window = new MainWindow();
         MainWindow = window;
         window.Show();
+    }
+
+    protected override void OnExit(ExitEventArgs e)
+    {
+        try
+        {
+            if (_ownsSingleInstance)
+            {
+                _singleMutex?.ReleaseMutex();
+            }
+        }
+        catch (Exception)
+        {
+            // 释放失败（非所有者等极端情况）：进程退出时系统会自动回收
+        }
+        _singleMutex?.Dispose();
+        _showEvent?.Dispose();
+        base.OnExit(e);
     }
 
     private void OnDispatcherUnhandledException(object sender, DispatcherUnhandledExceptionEventArgs e)

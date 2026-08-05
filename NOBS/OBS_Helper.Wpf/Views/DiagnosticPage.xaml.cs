@@ -59,7 +59,7 @@ public partial class DiagnosticPage : UserControl, INavigationAware
 
         EngineText.Inlines.Clear();
         EngineText.Inlines.Add(new Run("当前引擎："));
-        EngineText.Inlines.Add(new Run(cloud ? "云端大模型" : "本地离线") { FontWeight = FontWeights.SemiBold });
+        EngineText.Inlines.Add(new Run(cloud ? "云端大模型" : "本地的搜索助手") { FontWeight = FontWeights.SemiBold });
 
         var report = AppServices.Orchestrator.LatestReport;
         if (report is { HasIssues: true })
@@ -67,7 +67,7 @@ public partial class DiagnosticPage : UserControl, INavigationAware
 
         // 选了云端但配置不完整：直接告诉用户会走本地，并给出配置入口
         var cloudReady = AppServices.Orchestrator.CanUseCloud;
-        CloudHintText.Text = "云端引擎尚未配置完整（需 https 接口地址 + 已保存的 API Key），本次诊断将使用本地离线引擎。";
+        CloudHintText.Text = "云端引擎尚未配置完整（需 https 接口地址 + 已保存的 API Key），本次诊断将使用本地的搜索助手。";
         CloudHintPanel.Visibility = cloud && !cloudReady ? Visibility.Visible : Visibility.Collapsed;
 
         ObsHintPanel.Visibility = AppServices.Obs.IsConnected ? Visibility.Collapsed : Visibility.Visible;

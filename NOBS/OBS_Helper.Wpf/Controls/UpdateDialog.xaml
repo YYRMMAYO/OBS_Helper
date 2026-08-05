@@ -42,9 +42,11 @@
           <TextBlock Text="下载方式"
                      FontSize="{DynamicResource FontSizeXs}"
                      Foreground="{DynamicResource MutedBrush}" Margin="0,0,0,4" />
+
+          <!-- 方式一：蓝奏云网盘（浏览器打开） -->
           <TextBlock TextWrapping="Wrap" FontSize="{DynamicResource FontSizeBase}"
                      Foreground="{DynamicResource TextBrush}" LineHeight="21">
-            <Run Text="蓝奏云网盘：" />&#x0a;<Hyperlink x:Name="DownloadLink"
+            <Run Text="方式一 · 蓝奏云网盘：" />&#x0a;<Hyperlink x:Name="DownloadLink"
              NavigateUri="{x:Static services:UpdateService.DownloadUrl}"
              Foreground="{DynamicResource OkBrush}">https://wwbpq.lanzouu.com/b01d7578be</Hyperlink>
           </TextBlock>
@@ -60,6 +62,29 @@
                          Foreground="{DynamicResource OkBrush}"
                          TextAlignment="Center" MinWidth="64" />
             </Border>
+          </StackPanel>
+
+          <Border Style="{StaticResource HLine}" Margin="0,12,0,10" />
+
+          <!-- 方式二：应用内加载 GitHub（应用内直接下载最新版并启动安装） -->
+          <TextBlock Text="方式二 · 应用内加载 GitHub"
+                     FontSize="{DynamicResource FontSizeBase}" FontWeight="SemiBold"
+                     Foreground="{DynamicResource TextBrush}" />
+          <TextBlock TextWrapping="Wrap" FontSize="{DynamicResource FontSizeSm}"
+                     Foreground="{DynamicResource MutedBrush}" Margin="0,4,0,8" LineHeight="20">
+            在应用内直接从 GitHub 仓库下载最新版安装包（不用开浏览器），下载完成后自动启动安装程序。
+          </TextBlock>
+
+          <Button x:Name="GithubDownloadButton" Style="{StaticResource SecondaryButton}"
+                  Content="应用内加载 GitHub 下载" HorizontalAlignment="Left"
+                  MinWidth="180" Click="OnDownloadGithub" />
+
+          <StackPanel x:Name="GithubProgressPanel" Visibility="Collapsed" Margin="0,10,0,0">
+            <ProgressBar x:Name="GithubProgressBar" Style="{StaticResource AppProgressBar}"
+                         Minimum="0" Maximum="100" Value="0" />
+            <TextBlock x:Name="GithubStatusText" TextWrapping="Wrap"
+                       FontSize="{DynamicResource FontSizeSm}"
+                       Foreground="{DynamicResource MutedBrush}" Margin="0,6,0,0" />
           </StackPanel>
         </StackPanel>
       </Border>

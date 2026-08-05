@@ -4,6 +4,8 @@ using System.Text;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using System.Windows.Media;
+using System.Windows.Media.Animation;
 using OBS_Helper.Wpf.Controls;
 using OBS_Helper.Wpf.Navigation;
 using OBS_Helper.Wpf.Services;
@@ -265,8 +267,18 @@ public partial class MainWindow : Window
 
     // ------------------------------------------------------------ 导航联动
 
+    /// <summary>
+    /// 页面过渡时长（毫秒）。模块间切换用「淡入 + 轻微上移」的组合动效，
+    /// 时长比界面默认动效（MotionDuration 160ms）更长，过渡更明显、更顺滑。
+    /// 「减少动画」开启时直接显示，不播任何动效。
+    /// </summary>
+    private static readonly TimeSpan PageFadeDuration = TimeSpan.FromMilliseconds(220);
+    private static readonly TimeSpan PageSlideDuration = TimeSpan.FromMilliseconds(300);
+    private const double PageSlideOffset = 16;
+
     private void OnNavigated(string route, UserControl view)
     {
+        AnimatePageIn(view);
         PageHost.Content = view;
 
         if (_meta.TryGetValue(route, out var meta))
@@ -287,6 +299,39 @@ public partial class MainWindow : Window
         }
 
         SyncBackButton();
+    }
+
+    /// <summary>
+    /// 页面入场动效：透明度 0→1 + 从下方 16px 上移归位，用两次缓动曲线叠加出「浮上来」的感觉。
+    /// 页面实例被导航缓存复用，重复入场时属性会从上次的终值重新开始动画，不会残留异常状态。
+    /// </summary>
+    private static void AnimatePageIn(FrameworkElement view)
+    {
+        if (AppServices.Appearance.Settings.ReduceMotion)
+        {
+            // 无障碍「减少动画」：直接以终态显示；先清掉可能残留的旧动画（属性被动画持有期间直赋值无效）
+            view.BeginAnimation(UIElement.OpacityProperty, null);
+            view.Opacity = 1;
+            view.RenderTransform = Transform.Identity;
+            view.RenderTransformOrigin = new Point(0.5, 0.5);
+            return;
+        }
+
+        var slide = new TranslateTransform(0, PageSlideOffset);
+        view.RenderTransformOrigin = new Point(0.5, 0.5);
+        view.RenderTransform = slide;
+
+        var fade = new DoubleAnimation(0, 1, PageFadeDuration)
+        {
+            EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
+        };
+        view.BeginAnimation(UIElement.OpacityProperty, fade);
+
+        var y = new DoubleAnimation(PageSlideOffset, 0, PageSlideDuration)
+        {
+            EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
+        };
+        slide.BeginAnimation(TranslateTransform.YProperty, y);
     }
 
     /// <summary>供页面在加载完数据后改写顶栏标题（分类页 / 问题详情页用）。</summary>

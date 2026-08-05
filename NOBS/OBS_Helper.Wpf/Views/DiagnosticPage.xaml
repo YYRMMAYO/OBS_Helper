@@ -6,7 +6,7 @@
     <StackPanel Margin="22,18,22,26">
 
       <TextBlock Style="{StaticResource MutedText}"
-                 Text="本地离线规则 + 可选云端大模型，按清单与日志逐项排查。" />
+                 Text="本地的搜索助手规则 + 可选云端大模型，按清单与日志逐项排查。" />
 
       <!-- ============================================ 智能诊断 -->
       <Border Style="{StaticResource Card}" Margin="0,14,0,0">
@@ -26,7 +26,7 @@
 
           <WrapPanel x:Name="ObsHintPanel" Margin="0,6,0,0" Visibility="Collapsed">
             <TextBlock Style="{StaticResource MutedText}" VerticalAlignment="Center"
-                       Text="未连接 OBS：本地规则依然可用，连上后可一并检查实时运行状态。" />
+                       Text="未连接 OBS：本地的搜索助手依然可用，连上后可一并检查实时运行状态。" />
             <Button Content="打开控制台 →" Style="{StaticResource LinkButton}"
                     Margin="8,0,0,0" VerticalAlignment="Center" Click="OnOpenConsole" />
           </WrapPanel>

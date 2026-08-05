@@ -1,4 +1,4 @@
-name: Build & Package (Windows + macOS)
+name: Build & Package (Windows WPF)
 
 on:
   push:
@@ -12,9 +12,11 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  # ---------------- Windows：WebView2 桌面壳 + Inno Setup 安装包 ----------------
+  # ---------------- Windows：WPF 版（NOBS/）自包含发布 + Inno Setup 安装包 ----------------
+  # 注：旧版 Blazor+WebView2 壳（OBS_Helper.Client / OBS_Helper.Win）与 Tauri（OBS_Helper.Mac）
+  #     已归档，本 workflow 只构建当前维护中的 WPF 版。
   windows:
-    name: Windows 安装包 (-> PAKE/windows)
+    name: Windows 安装包 (WPF -> NOBS/PAKE/windows)
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
@@ -28,62 +30,18 @@ jobs:
         run: choco install innosetup -y
         shell: bash
 
-      - name: Build & Package to PAKE/windows
-        run: pwsh ./build.ps1 -Configuration Release -Runtime win-x64
+      - name: Build & Package (installer + portable zip)
+        run: ./NOBS/build.ps1 -Configuration Release -Runtime win-x64
+        shell: pwsh
 
-      - name: Smoke test (headless Edge CDP)
-        run: |
-          python -m pip install --quiet websocket-client
-          python scripts/cdp_smoke.py --root "OBS_Helper.Win/bin/Release/net10.0-windows10.0.19041.0/win-x64/publish/wwwroot"
-        shell: bash
+      - name: XAML 资源引用体检
+        run: python NOBS/scripts/check_resources.py
+        shell: pwsh
 
-      - name: Upload PAKE/windows
+      - name: Upload NOBS/PAKE/windows
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: OBS_Helper_Windows
-          path: PAKE/windows/*
-          if-no-files-found: warn
-
-  # ---------------- macOS：Tauri v2 桌面壳 + dmg/app ----------------
-  macos:
-    name: macOS 应用 (Tauri -> PAKE/macos, ${{ matrix.target }})
-    runs-on: macos-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        target: [aarch64-apple-darwin, x86_64-apple-darwin]
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Setup .NET 10 SDK
-        uses: actions/setup-dotnet@v4
-        with:
-          dotnet-version: '10.0.x'
-
-      - name: Setup Rust toolchain
-        uses: dtolnay/rust-toolchain@stable
-        with:
-          targets: ${{ matrix.target }}
-
-      - name: Install Tauri CLI
-        run: npm install -g @tauri-apps/cli@latest
-        shell: bash
-
-      - name: Build & Package to PAKE/macos (${{ matrix.target }})
-        run: |
-          export CARGO_BUILD_TARGET=${{ matrix.target }}
-          bash OBS_Helper.Mac/src-tauri/build-mac.sh
-
-      - name: Verify bundle
-        run: |
-          test -d PAKE/macos || { echo "PAKE/macos missing"; exit 1; }
-          ls -la PAKE/macos
-
-      - name: Upload PAKE/macos
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: OBS_Helper_macOS_${{ matrix.target }}
-          path: PAKE/macos/*
+          path: NOBS/PAKE/windows/*
           if-no-files-found: warn

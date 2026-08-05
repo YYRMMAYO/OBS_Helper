@@ -51,7 +51,8 @@ public sealed class GlobalHotkeyService : IDisposable
     private readonly ObsConnectionService _obs;
     private readonly HwndSource? _source;
 
-    private DateTime _lastFire = DateTime.MinValue;
+    /// <summary>防抖基线：每个热键独立计时（同一热键按住连发 250ms 内只触发一次，不同热键互不干扰）。</summary>
+    private readonly Dictionary<int, DateTime> _lastFireByBinding = new();
 
     [DllImport("user32.dll", SetLastError = true)]
     private static extern bool RegisterHotKey(IntPtr hWnd, int id, uint fsModifiers, uint vk);
@@ -161,10 +162,10 @@ public sealed class GlobalHotkeyService : IDisposable
         var id = wParam.ToInt32();
         var action = Bindings.FirstOrDefault(b => b.Id == id).Action;
 
-        // 按住热键会连续触发 WM_HOTKEY，250ms 防抖
+        // 按住热键会连续触发 WM_HOTKEY，250ms 防抖（按热键 Id 各自独立计时）
         var now = DateTime.UtcNow;
-        if ((now - _lastFire).TotalMilliseconds < 250) { handled = true; return IntPtr.Zero; }
-        _lastFire = now;
+        if (_lastFireByBinding.TryGetValue(id, out var last) && (now - last).TotalMilliseconds < 250) { handled = true; return IntPtr.Zero; }
+        _lastFireByBinding[id] = now;
 
         handled = true;
         _ = ExecuteAsync(action);

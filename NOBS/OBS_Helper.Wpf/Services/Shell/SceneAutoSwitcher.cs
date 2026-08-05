@@ -26,6 +26,9 @@ public sealed class SceneAutoSwitcher : IDisposable
     private const int MinSwitchGapMs = 3000;
     private const int MaxTitleLength = 512;
 
+    /// <summary>用户自定义正则的匹配超时：防 ReDoS（病态正则卡死整个自动切换轮询）。</summary>
+    private static readonly TimeSpan RegexTimeout = TimeSpan.FromMilliseconds(250);
+
     private readonly LocalStore _store;
     private readonly ObsConnectionService _obs;
 
@@ -142,12 +145,18 @@ public sealed class SceneAutoSwitcher : IDisposable
             {
                 try
                 {
-                    if (Regex.IsMatch(title, rule.Pattern, RegexOptions.IgnoreCase | RegexOptions.CultureInvariant))
+                    // 加 250ms 匹配超时：病态正则（ReDoS）命中时跳过该条，不拖死整个自动切换轮询
+                    if (Regex.IsMatch(title, rule.Pattern,
+                            RegexOptions.IgnoreCase | RegexOptions.CultureInvariant, RegexTimeout))
                         return rule;
                 }
                 catch (ArgumentException)
                 {
                     // 用户写的正则不合法：跳过该条，不影响其它规则
+                }
+                catch (RegexMatchTimeoutException)
+                {
+                    // 匹配超时：跳过该条，继续匹配下一条规则
                 }
             }
             else

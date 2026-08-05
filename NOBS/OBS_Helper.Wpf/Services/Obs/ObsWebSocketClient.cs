@@ -83,6 +83,7 @@ public sealed class ObsWebSocketClient : IAsyncDisposable
         var completed = await Task.WhenAny(identified, Task.Delay(Timeout.Infinite, linked.Token));
         if (completed != identified)
         {
+            if (ct.IsCancellationRequested) throw new OperationCanceledException(ct);
             throw new TimeoutException("OBS 握手超时：已建立 TCP 连接但未收到 Identified 响应。");
         }
         await identified; // 传播握手失败异常（如密码错误）
@@ -124,6 +125,9 @@ public sealed class ObsWebSocketClient : IAsyncDisposable
         if (done != tcs.Task)
         {
             _pending.TryRemove(requestId, out _);
+            // 调用方主动取消要如实抛 OperationCanceledException（重置/导入等上层按「已取消」处理），
+            // 不能吞成「请求超时」——超时文案会误导用户以为是网络问题。
+            if (ct.IsCancellationRequested) throw new OperationCanceledException(ct);
             return ObsRequestResult.Fail(0, $"请求 {requestType} 超时（>{RequestTimeout.TotalSeconds:0}s）。");
         }
         return await tcs.Task;
@@ -171,7 +175,15 @@ public sealed class ObsWebSocketClient : IAsyncDisposable
                 } while (!result.EndOfMessage);
 
                 message.Position = 0;
-                await HandleMessageAsync(message, password, subs, ct);
+                try
+                {
+                    await HandleMessageAsync(message, password, subs, ct);
+                }
+                catch (Exception)
+                {
+                    // 单条消息解析失败（畸形 JSON / 未知 op 等）不应断开整个连接：
+                    // 跳过这条继续收下一条，避免被一条坏消息打掉连接触发重连。
+                }
             }
         }
         catch (OperationCanceledException)
@@ -194,7 +206,12 @@ public sealed class ObsWebSocketClient : IAsyncDisposable
                 tcs.TrySetResult(ObsRequestResult.Fail(0, closeReason));
         }
         _identifyTcs?.TrySetException(new InvalidOperationException(closeReason));
-        Closed?.Invoke(closeReason);
+
+        // 仅当这个接收循环仍是「当前」连接时才广播 Closed：
+        // 手动重连（DisposeSocketAsync → 新 ConnectAsync）会取消旧循环并换掉 _loopCts，
+        // 旧循环的善后若照常广播，ObsConnectionService 会把它当成意外断开 → 刚连上又被拆掉重连。
+        if (_loopCts is { } cts && cts.Token == ct)
+            Closed?.Invoke(closeReason);
     }
 
     private async Task HandleMessageAsync(Stream json, string? password, ObsEventSubscription subs, CancellationToken ct)
@@ -304,7 +321,11 @@ public sealed class ObsWebSocketClient : IAsyncDisposable
 
     private async Task DisposeSocketAsync()
     {
-        try { _loopCts?.Cancel(); } catch (Exception) { /* 已释放，忽略 */ }
+        // 先摘掉当前循环标记再取消：旧接收循环善后时会比对 _loopCts 是否还是自己，
+        // 已被替换（手动重连拆旧连接）就不广播 Closed，避免触发上层的多余自动重连。
+        var oldLoopCts = _loopCts;
+        _loopCts = null;
+        try { oldLoopCts?.Cancel(); } catch (Exception) { /* 已释放，忽略 */ }
 
         if (_receiveLoop is not null)
         {

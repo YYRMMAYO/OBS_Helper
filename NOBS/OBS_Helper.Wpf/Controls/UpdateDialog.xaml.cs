@@ -20,12 +20,13 @@ public partial class UpdateDialog : Window
     private UpdateDialog()
     {
         InitializeComponent();
-        DownloadLink.RequestNavigate += (_, e) =>
+        DownloadLink.RequestNavigate += async (_, e) =>
         {
             // Hyperlink 默认会用自己的导航逻辑，这里改为统一走系统浏览器。
             // 注意不能用 e.Uri：未显式设置 NavigateUri 时它为 null，直接 ToString() 会抛异常。
             e.Handled = true;
-            _ = AppServices.Host.OpenExternalAsync(UpdateService.DownloadUrl);
+            var opened = await AppServices.Host.OpenExternalAsync(UpdateService.DownloadUrl);
+            if (!opened) SetGithubStatus("打开浏览器失败，请复制链接手动访问：" + UpdateService.DownloadUrl);
         };
     }
 
@@ -66,9 +67,15 @@ public partial class UpdateDialog : Window
 
     private async void OnDownload(object sender, RoutedEventArgs e)
     {
-        _result = UpdateDialogResult.Download;
         // 「去下载」直接打开蓝奏云链接（弹窗关闭前触发，避免被调用方忽略返回值导致点了没反应）
-        await AppServices.Host.OpenExternalAsync(UpdateService.DownloadUrl);
+        var opened = await AppServices.Host.OpenExternalAsync(UpdateService.DownloadUrl);
+        if (!opened)
+        {
+            // 浏览器打开失败时别直接关窗：留在弹窗里给用户明确提示 + 可复制链接
+            SetGithubStatus("打开浏览器失败，请复制链接手动访问：" + UpdateService.DownloadUrl);
+            return;
+        }
+        _result = UpdateDialogResult.Download;
         Close();
     }
 
@@ -80,8 +87,13 @@ public partial class UpdateDialog : Window
 
     private async void OnOpenRepo(object sender, RoutedEventArgs e)
     {
+        var opened = await AppServices.Host.OpenExternalAsync(UpdateService.RepoUrl);
+        if (!opened)
+        {
+            SetGithubStatus("打开浏览器失败，请复制链接手动访问：" + UpdateService.RepoUrl);
+            return;
+        }
         _result = UpdateDialogResult.Repo;
-        await AppServices.Host.OpenExternalAsync(UpdateService.RepoUrl);
         Close();
     }
 

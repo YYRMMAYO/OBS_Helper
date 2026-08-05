@@ -54,8 +54,13 @@ public sealed class UpdateService
 
     private const string TagsApi = "https://api.github.com/repos/YYRMMAYO/OBS_Helper/tags";
 
-    /// <summary>GitHub 最新 Release 接口（应用内下载用，取 assets 里的安装包）。</summary>
-    private const string LatestReleaseApi = "https://api.github.com/repos/YYRMMAYO/OBS_Helper/releases/latest";
+    /// <summary>
+    /// GitHub Releases 列表接口（应用内下载用）。
+    /// 不用 /releases/latest：它只按「发布时间」取最新的一条，若某版本只推了 tag 没建 Release，
+    /// latest 会一直指向旧版，导致检查更新（tags）提示有新版本、应用内下载却拿到旧包的自相矛盾。
+    /// 这里遍历全部 Releases，取「版本号最高且带安装包资产」的一条，与检查更新口径一致。
+    /// </summary>
+    private const string ReleasesApi = "https://api.github.com/repos/YYRMMAYO/OBS_Helper/releases?per_page=100";
 
     /// <summary>应用内下载安装包时的容量上限（自包含安装包一般不到 300MB，1GB 是安全兜底）。</summary>
     private const long MaxInstallerBytes = 1L * 1024 * 1024 * 1024;
@@ -222,6 +227,9 @@ public sealed class UpdateService
 
     /// <summary>
     /// 查询 GitHub 最新 Release，从中找出安装包资产（OBS_Helper_Setup_*.exe）的下载地址。
+    ///
+    /// 与 <see cref="CheckAsync"/> 同口径：遍历全部 Release，取「版本号最高且带安装包资产」的一条。
+    /// 这样即使某个版本只推了 tag 没建 Release，也不会让 /releases/latest 一直指向旧包。
     /// 永不抛异常：任何失败都放进 <see cref="GitHubReleaseInfo.Error"/>。
     /// </summary>
     public async Task<GitHubReleaseInfo> GetLatestReleaseAsync()
@@ -229,43 +237,60 @@ public sealed class UpdateService
         try
         {
             using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(15));
-            using var resp = await Http.GetAsync(LatestReleaseApi, cts.Token).ConfigureAwait(false);
+            using var resp = await Http.GetAsync(ReleasesApi, cts.Token).ConfigureAwait(false);
             resp.EnsureSuccessStatusCode();
 
             var body = await resp.Content.ReadAsStringAsync(cts.Token).ConfigureAwait(false);
             using var doc = JsonDocument.Parse(body);
             var root = doc.RootElement;
 
-            var tag = root.TryGetProperty("tag_name", out var tagProp) ? tagProp.GetString() : null;
-            if (string.IsNullOrWhiteSpace(tag))
-            {
-                return new GitHubReleaseInfo(null, null, "GitHub 返回的发布信息中缺少版本号。");
-            }
+            // 遍历全部 Release，取版本号最高且确实带安装包资产的那条
+            Version? best = null;
+            string? bestTag = null;
+            string? bestAssetUrl = null;
 
-            string? assetUrl = null;
-            if (root.TryGetProperty("assets", out var assets) && assets.ValueKind == JsonValueKind.Array)
+            foreach (var rel in root.EnumerateArray())
             {
-                foreach (var asset in assets.EnumerateArray())
+                var tag = rel.TryGetProperty("tag_name", out var tagProp) ? tagProp.GetString() : null;
+                if (string.IsNullOrWhiteSpace(tag)) continue;
+                var v = ParseVersion(tag);
+                if (v is null) continue; // 跳过无法解析出版本号的 Release
+
+                string? assetUrl = null;
+                if (rel.TryGetProperty("assets", out var assets) && assets.ValueKind == JsonValueKind.Array)
                 {
-                    var name = asset.TryGetProperty("name", out var n) ? n.GetString() : "";
-                    if (string.IsNullOrEmpty(name)) continue;
-                    if (!name.StartsWith("OBS_Helper_Setup_", StringComparison.OrdinalIgnoreCase)) continue;
-                    if (!name.EndsWith(".exe", StringComparison.OrdinalIgnoreCase)) continue;
-
-                    if (asset.TryGetProperty("browser_download_url", out var u))
+                    foreach (var asset in assets.EnumerateArray())
                     {
-                        assetUrl = u.GetString();
+                        var name = asset.TryGetProperty("name", out var n) ? n.GetString() : "";
+                        if (string.IsNullOrEmpty(name)) continue;
+                        if (!name.StartsWith("OBS_Helper_Setup_", StringComparison.OrdinalIgnoreCase)) continue;
+                        if (!name.EndsWith(".exe", StringComparison.OrdinalIgnoreCase)) continue;
+
+                        if (asset.TryGetProperty("browser_download_url", out var u))
+                        {
+                            assetUrl = u.GetString();
+                        }
+                        if (!string.IsNullOrEmpty(assetUrl)) break;
                     }
-                    if (!string.IsNullOrEmpty(assetUrl)) break;
+                }
+
+                // 该版本没带安装包资产，跳过（例如纯说明性质的 Release）
+                if (string.IsNullOrEmpty(assetUrl)) continue;
+
+                if (best is null || v > best)
+                {
+                    best = v;
+                    bestTag = tag;
+                    bestAssetUrl = assetUrl;
                 }
             }
 
-            if (string.IsNullOrEmpty(assetUrl))
+            if (bestTag is null || string.IsNullOrEmpty(bestAssetUrl))
             {
-                return new GitHubReleaseInfo(tag, null, $"最新版本 {tag} 的发布中没有找到安装包（OBS_Helper_Setup_*.exe）。");
+                return new GitHubReleaseInfo(null, null, "GitHub 上还没有发布过带安装包的版本。");
             }
 
-            return new GitHubReleaseInfo(tag, assetUrl, null);
+            return new GitHubReleaseInfo(bestTag, bestAssetUrl, null);
         }
         catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException or JsonException)
         {

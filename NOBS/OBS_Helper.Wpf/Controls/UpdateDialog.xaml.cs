@@ -17,9 +17,10 @@ public partial class UpdateDialog : Window
         InitializeComponent();
         DownloadLink.RequestNavigate += (_, e) =>
         {
-            // Hyperlink 默认会用自己的导航逻辑，这里改为统一走系统浏览器
+            // Hyperlink 默认会用自己的导航逻辑，这里改为统一走系统浏览器。
+            // 注意不能用 e.Uri：未显式设置 NavigateUri 时它为 null，直接 ToString() 会抛异常。
             e.Handled = true;
-            _ = AppServices.Host.OpenExternalAsync(e.Uri.ToString());
+            _ = AppServices.Host.OpenExternalAsync(UpdateService.DownloadUrl);
         };
     }
 
@@ -52,9 +53,11 @@ public partial class UpdateDialog : Window
 
     private UpdateDialogResult _result = UpdateDialogResult.Later;
 
-    private void OnDownload(object sender, RoutedEventArgs e)
+    private async void OnDownload(object sender, RoutedEventArgs e)
     {
         _result = UpdateDialogResult.Download;
+        // 「去下载」直接打开蓝奏云链接（弹窗关闭前触发，避免被调用方忽略返回值导致点了没反应）
+        await AppServices.Host.OpenExternalAsync(UpdateService.DownloadUrl);
         Close();
     }
 

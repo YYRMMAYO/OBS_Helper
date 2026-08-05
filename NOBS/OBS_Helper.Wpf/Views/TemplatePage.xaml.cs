@@ -145,6 +145,20 @@ public partial class TemplatePage : UserControl, INavigationAware
             counts.Children.Add(BuildPill($"待补 ×{placeholders}", "WarnBrush"));
         stack.Children.Add(counts);
 
+        // --- 场景设置：过渡 + 快捷键
+        var hotkeys = t.Scenes.Where(s => !string.IsNullOrWhiteSpace(s.Hotkey)).Select(s => $"{s.Hotkey} {s.Name}").ToList();
+        var transitionInfo = $"{t.Transition} {t.TransitionDurationMs}ms";
+        if (hotkeys.Count > 0)
+            transitionInfo += $" · 快捷键 {string.Join(" / ", hotkeys)}";
+        var sceneSettings = new TextBlock
+        {
+            Text = $"场景切换：{transitionInfo}",
+            Margin = new Thickness(0, 0, 0, 6)
+        };
+        sceneSettings.SetResourceReference(TextBlock.FontSizeProperty, "FontSizeXs");
+        sceneSettings.SetResourceReference(TextBlock.ForegroundProperty, "MutedBrush");
+        stack.Children.Add(sceneSettings);
+
         // --- 竖屏警告
         var isPortrait = t.Canvas.BaseWidth < t.Canvas.BaseHeight;
         if (isPortrait)

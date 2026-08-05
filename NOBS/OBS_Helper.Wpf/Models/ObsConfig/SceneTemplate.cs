@@ -13,6 +13,10 @@ public sealed class SceneTemplate
     public bool Portrait { get; set; }
     public string Notes { get; set; } = "";
     public CanvasSpec Canvas { get; set; } = new();
+    /// <summary>默认场景切换过渡名称（如「淡入淡出」），落地时设置为当前过渡。</summary>
+    public string Transition { get; set; } = "淡入淡出";
+    /// <summary>默认场景切换过渡时长（毫秒）。</summary>
+    public int TransitionDurationMs { get; set; } = 300;
     public List<TemplateScene> Scenes { get; set; } = new();
 }
 
@@ -29,6 +33,12 @@ public sealed class CanvasSpec
 public sealed class TemplateScene
 {
     public string Name { get; set; } = "";
+    /// <summary>可选：本场景的过渡覆盖名称（如「淡入淡出」）；为空时用模板默认过渡。</summary>
+    public string? Transition { get; set; }
+    /// <summary>可选：本场景的过渡覆盖时长（毫秒）；为空时用模板默认时长。</summary>
+    public int? TransitionDurationMs { get; set; }
+    /// <summary>可选：切换本场景的快捷键，如「Ctrl+1」；落地时写入 OBS 快捷键，离线导出写入 hotkeys。</summary>
+    public string? Hotkey { get; set; }
     public List<TemplateSource> Sources { get; set; } = new();
 }
 

@@ -91,6 +91,9 @@ public sealed class SceneTemplateService
                 foreach (var e in arr.EnumerateArray())
                     if (e.ValueKind == JsonValueKind.String) available.Add(e.GetString()!);
 
+            // 读取可用过渡，落地时把模板默认过渡设为当前过渡
+            var transitionNames = await LoadTransitionNamesAsync(ct);
+
             p.Report("正在新建模板专属配置集合…");
             var collectionName = await EnsureSceneCollectionAsync(ct, $"模板 · {tpl.Title}");
 
@@ -108,6 +111,22 @@ public sealed class SceneTemplateService
                 }, ct);
             }
 
+            var transitionNotes = new List<string>();
+            if (transitionNames.Count > 0)
+            {
+                // 当前过渡 + 时长
+                var cur = PickTransitionName(tpl.Transition, transitionNames);
+                if (cur is not null)
+                {
+                    await _obs.RawRequestAsync("SetCurrentSceneTransition", new { transitionName = cur }, ct);
+                    await _obs.RawRequestAsync("SetCurrentSceneTransitionDuration", new { transitionDuration = tpl.TransitionDurationMs }, ct);
+                }
+                else
+                {
+                    transitionNotes.Add($"模板默认过渡「{tpl.Transition}」在 OBS 中不可用，已保持 OBS 原过渡。");
+                }
+            }
+
             int created = 0, skipped = 0;
             var placeholders = new List<string>();
             var createdInputs = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
@@ -118,6 +137,21 @@ public sealed class SceneTemplateService
                 var cs = await _obs.RawRequestAsync("CreateScene", new { sceneName = scene.Name }, ct);
                 if (!cs.Ok) { skipped++; continue; }
                 created++;
+
+                // 场景级过渡覆盖（仅当该场景单独设置了过渡 / 时长时下发）
+                if (transitionNames.Count > 0 && (scene.Transition is not null || scene.TransitionDurationMs is not null))
+                {
+                    var ovName = PickTransitionName(scene.Transition ?? tpl.Transition, transitionNames);
+                    var ovDur = scene.TransitionDurationMs ?? tpl.TransitionDurationMs;
+                    var ovOk = await _obs.RawRequestAsync("SetSceneTransitionOverride", new
+                    {
+                        sceneName = scene.Name,
+                        transitionName = ovName ?? (object?)null,
+                        transitionDuration = ovDur
+                    }, ct);
+                    if (!ovOk.Ok && ovName is null)
+                        transitionNotes.Add($"场景「{scene.Name}」的过渡覆盖未生效（{Describe(ovOk)}）。");
+                }
 
                 var ordered = scene.Sources.OrderBy(s => s.ZOrder).ToList();
                 foreach (var src in ordered)
@@ -140,6 +174,14 @@ public sealed class SceneTemplateService
 
             p.Report("正在刷新状态…");
             await _obs.RefreshAllAsync();
+
+            // 快捷键：obs-websocket 无设置场景快捷键的 API，落地后提示用户
+            var hotkeyScenes = tpl.Scenes.Where(s => !string.IsNullOrWhiteSpace(s.Hotkey)).ToList();
+            if (hotkeyScenes.Count > 0)
+                transitionNotes.Add("场景切换快捷键（" + string.Join(" / ", hotkeyScenes.Select(s => $"{s.Hotkey} → {s.Name}")) + "）需在 OBS 中手动绑定，或改用「导出场景集合 JSON」方式导入后自动生效。");
+
+            if (transitionNotes.Count > 0)
+                placeholders.InsertRange(0, transitionNotes);
 
             return new ApplyResult(true, created, skipped, placeholders,
                 skipped > 0 ? $"已落地，但有 {skipped} 个来源未能创建（多为本地设备 / 文件需在 OBS 中补齐）。" : null);
@@ -299,28 +341,28 @@ public sealed class SceneTemplateService
         return string.IsNullOrEmpty(desktop) ? Path.GetTempPath() : desktop;
     }
 
-    // ------------------------------------------------------------ 场景集合 JSON 生成（版本化陷阱）
+    // ------------------------------------------------------------ 场景集合 JSON 生成（标准 OBS 格式，version 2）
 
     /// <summary>
     /// 生成标准 OBS 场景集合 JSON（一个集合含模板全部场景）。
-    /// 关键点：<c>id</c> 是无版本 id，<c>versioned_id</c> 才带后缀；每个 item 的 <c>source_uuid</c>
-    /// 必须与 sources 里对应 input 的 <c>uuid</c> 完全一致；<c>bounds_type</c> 在文件里是数字。
+    /// 采用 OBS 28+ 的 <c>version: 2</c> 格式：场景本身就是 sources 里的一个 source（id=scene），
+    /// 场景内容放在该 source 的 <c>settings.items</c>，每个 item 通过 <c>source_uuid</c> 引用输入源；
+    /// 顶层带 <c>current_transition / transition_duration / quick_transitions</c> 过渡设置，
+    /// 场景 source 的 <c>hotkeys</c> 写入切换快捷键（OBSBasic.SelectScene）与显隐快捷键。
     /// </summary>
     private static JsonObject BuildSceneCollectionJson(SceneTemplate tpl, string collectionName)
     {
         var sources = new JsonArray();
-        var scenes = new JsonArray();
         var sceneOrder = new JsonArray();
         var uuidByName = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-        int idCounter = 1;
+        var canvasW = Math.Max(1, tpl.Canvas.BaseWidth);
+        var canvasH = Math.Max(1, tpl.Canvas.BaseHeight);
+        var canvasUuid = "6c69626f-6273-4c00-9d88-c5136d61696e"; // OBS 默认主画布 uuid（libobs 固定值）
 
+        // 先收集输入源，再生成场景 source（场景依赖 source_uuid）
         foreach (var scene in tpl.Scenes)
         {
             sceneOrder.Add(new JsonObject { ["name"] = scene.Name });
-            var items = new JsonArray();
-            int sceneItemId = 1;
-            var sceneUuid = Guid.NewGuid().ToString("D").ToLowerInvariant();
-
             foreach (var src in scene.Sources.OrderBy(s => s.ZOrder))
             {
                 if (!uuidByName.TryGetValue(src.Name, out var srcUuid))
@@ -328,78 +370,292 @@ public sealed class SceneTemplateService
                     srcUuid = Guid.NewGuid().ToString("D").ToLowerInvariant();
                     uuidByName[src.Name] = srcUuid;
                     var (id, versionedId) = ResolveSourceId(src.InputKind);
-                    sources.Add(new JsonObject
-                    {
-                        ["id"] = id,
-                        ["versioned_id"] = versionedId,
-                        ["name"] = src.Name,
-                        ["uuid"] = srcUuid,
-                        ["type"] = "input",
-                        ["settings"] = src.Settings ?? new JsonObject()
-                    });
+                    var isAudio = IsAudioInput(src.InputKind);
+                    sources.Add(BuildSourceJson(src, id, versionedId, srcUuid, isAudio));
                 }
+            }
+        }
 
-                items.Add(new JsonObject
-                {
-                    ["scene_item_id"] = sceneItemId,
-                    ["source_uuid"] = srcUuid,
-                    ["transform"] = BuildFileTransform(src.Transform)
-                });
+        // 场景 source（id=scene），items 引用上面的 source_uuid
+        int sceneItemId = 1;
+        foreach (var scene in tpl.Scenes)
+        {
+            var sceneUuid = Guid.NewGuid().ToString("D").ToLowerInvariant();
+            var items = new JsonArray();
+            var itemIds = new List<int>();
+
+            foreach (var src in scene.Sources.OrderBy(s => s.ZOrder))
+            {
+                var srcUuid = uuidByName[src.Name];
+                items.Add(BuildFileItem(src, srcUuid, sceneItemId, canvasW, canvasH));
+                itemIds.Add(sceneItemId);
                 sceneItemId++;
             }
 
-            scenes.Add(new JsonObject
+            // 场景级过渡覆盖：transition_override + transition_override_duration
+            var sceneSettings = new JsonObject
             {
+                ["id_counter"] = sceneItemId,
+                ["custom_size"] = false,
+                ["items"] = items
+            };
+            if (!string.IsNullOrWhiteSpace(scene.Transition))
+                sceneSettings["transition_override"] = scene.Transition;
+            if (scene.TransitionDurationMs is > 0)
+                sceneSettings["transition_override_duration"] = scene.TransitionDurationMs.Value;
+
+            var sceneHotkeys = new JsonObject
+            {
+                ["OBSBasic.SelectScene"] = BuildHotkeyBindings(scene.Hotkey)
+            };
+            foreach (var id in itemIds)
+            {
+                sceneHotkeys[$"libobs.show_scene_item.{id}"] = new JsonArray();
+                sceneHotkeys[$"libobs.hide_scene_item.{id}"] = new JsonArray();
+            }
+
+            sources.Add(new JsonObject
+            {
+                ["prev_ver"] = 537001985,
                 ["name"] = scene.Name,
                 ["uuid"] = sceneUuid,
-                ["items"] = items
+                ["id"] = "scene",
+                ["versioned_id"] = "scene",
+                ["settings"] = sceneSettings,
+                ["mixers"] = 0,
+                ["sync"] = 0,
+                ["flags"] = 0,
+                ["volume"] = 1.0,
+                ["balance"] = 0.5,
+                ["enabled"] = true,
+                ["muted"] = false,
+                ["push-to-mute"] = false,
+                ["push-to-mute-delay"] = 0,
+                ["push-to-talk"] = false,
+                ["push-to-talk-delay"] = 0,
+                ["hotkeys"] = sceneHotkeys,
+                ["deinterlace_mode"] = 0,
+                ["deinterlace_field_order"] = 0,
+                ["monitoring_type"] = 0,
+                ["canvas_uuid"] = canvasUuid,
+                ["private_settings"] = new JsonObject()
             });
-            idCounter = Math.Max(idCounter, sceneItemId);
         }
 
         var root = new JsonObject
         {
-            ["type"] = "scene_collection",
             ["name"] = collectionName,
             ["sources"] = sources,
+            ["groups"] = new JsonArray(),
             ["scene_order"] = sceneOrder,
-            ["scenes"] = scenes,
-            ["id_counter"] = idCounter,
-            ["source_types"] = new JsonArray(),
             ["current_scene"] = tpl.Scenes.Count > 0 ? tpl.Scenes[0].Name : "",
             ["current_program_scene"] = tpl.Scenes.Count > 0 ? tpl.Scenes[0].Name : "",
-            ["current_preview_scene"] = tpl.Scenes.Count > 0 ? tpl.Scenes[0].Name : ""
+            ["canvases"] = new JsonArray(),
+            ["current_transition"] = string.IsNullOrWhiteSpace(tpl.Transition) ? "淡入淡出" : tpl.Transition,
+            ["transition_duration"] = tpl.TransitionDurationMs > 0 ? tpl.TransitionDurationMs : 300,
+            ["transitions"] = new JsonArray(),
+            ["quick_transitions"] = BuildQuickTransitions(),
+            ["saved_projectors"] = new JsonArray(),
+            ["preview_locked"] = false,
+            ["scaling_enabled"] = false,
+            ["scaling_level"] = -19,
+            ["scaling_off_x"] = 0.0,
+            ["scaling_off_y"] = 0.0,
+            ["virtual-camera"] = new JsonObject { ["type2"] = 3 },
+            ["modules"] = new JsonObject
+            {
+                ["output-timer"] = new JsonObject
+                {
+                    ["streamTimerHours"] = 0, ["streamTimerMinutes"] = 0, ["streamTimerSeconds"] = 0,
+                    ["recordTimerHours"] = 0, ["recordTimerMinutes"] = 0, ["recordTimerSeconds"] = 0,
+                    ["autoStartStreamTimer"] = false, ["autoStartRecordTimer"] = false, ["pauseRecordTimer"] = false
+                },
+                ["auto-scene-switcher"] = new JsonObject
+                {
+                    ["interval"] = 300, ["non_matching_scene"] = "", ["switch_if_not_matching"] = false,
+                    ["active"] = false, ["switches"] = new JsonArray()
+                },
+                ["captions"] = new JsonObject { ["source"] = "", ["enabled"] = false, ["lang_id"] = 2052, ["provider"] = "mssapi" }
+            },
+            ["resolution"] = new JsonObject { ["x"] = canvasW, ["y"] = canvasH },
+            ["version"] = 2
         };
         return root;
     }
 
-    private static JsonObject BuildFileTransform(TransformSpec? t)
+    /// <summary>构建标准输入源 source 对象（含音频混音等 OBS 必需字段）。</summary>
+    private static JsonObject BuildSourceJson(TemplateSource src, string id, string versionedId, string uuid, bool isAudio)
     {
-        var tf = new JsonObject
+        var obj = new JsonObject
         {
-            ["pos"] = new JsonObject { ["x"] = t?.PosX ?? 0, ["y"] = t?.PosY ?? 0 },
-            ["scale"] = new JsonObject { ["x"] = t?.ScaleX ?? 1, ["y"] = t?.ScaleY ?? 1 },
-            ["crop"] = new JsonObject { ["top"] = 0, ["bottom"] = 0, ["left"] = 0, ["right"] = 0 },
-            ["alignment"] = t?.Alignment ?? 0
+            ["prev_ver"] = 537001985,
+            ["name"] = src.Name,
+            ["uuid"] = uuid,
+            ["id"] = id,
+            ["versioned_id"] = versionedId,
+            ["settings"] = src.Settings ?? new JsonObject(),
+            ["mixers"] = isAudio ? 255 : 0,
+            ["sync"] = 0,
+            ["flags"] = 0,
+            ["volume"] = 1.0,
+            ["balance"] = 0.5,
+            ["enabled"] = true,
+            ["muted"] = false,
+            ["push-to-mute"] = false,
+            ["push-to-mute-delay"] = 0,
+            ["push-to-talk"] = false,
+            ["push-to-talk-delay"] = 0,
+            ["hotkeys"] = isAudio ? BuildAudioHotkeys() : new JsonObject(),
+            ["deinterlace_mode"] = 0,
+            ["deinterlace_field_order"] = 0,
+            ["monitoring_type"] = 0,
+            ["private_settings"] = new JsonObject()
         };
+        return obj;
+    }
 
+    /// <summary>构建场景内 item（标准 OBS 字段，transform 用 pos/scale/bounds 驱动）。</summary>
+    private static JsonObject BuildFileItem(TemplateSource src, string srcUuid, int itemId, int canvasW, int canvasH)
+    {
+        var t = src.Transform;
         var boundsNone = t is null || string.IsNullOrEmpty(t.BoundsType) ||
                          string.Equals(t.BoundsType, "OBS_BOUNDS_NONE", StringComparison.OrdinalIgnoreCase);
-        if (boundsNone)
+        var align = t?.Alignment ?? 5;
+
+        return new JsonObject
         {
-            tf["bounds"] = new JsonObject { ["type"] = 0, ["x"] = 0, ["y"] = 0 };
-        }
-        else
-        {
-            tf["bounds"] = new JsonObject
-            {
-                ["type"] = BoundsTypeToNumber(t!.BoundsType!),
-                ["x"] = t.BoundsWidth ?? 0,
-                ["y"] = t.BoundsHeight ?? 0
-            };
-        }
-        return tf;
+            ["name"] = src.Name,
+            ["source_uuid"] = srcUuid,
+            ["visible"] = src.Enabled,
+            ["locked"] = false,
+            ["rot"] = 0.0,
+            ["scale_ref"] = new JsonObject { ["x"] = canvasW, ["y"] = canvasH },
+            ["align"] = align,
+            ["bounds_type"] = boundsNone ? 0 : BoundsTypeToNumber(t!.BoundsType!),
+            ["bounds_align"] = 0,
+            ["bounds_crop"] = false,
+            ["crop_left"] = 0,
+            ["crop_top"] = 0,
+            ["crop_right"] = 0,
+            ["crop_bottom"] = 0,
+            ["id"] = itemId,
+            ["group_item_backup"] = false,
+            ["pos"] = new JsonObject { ["x"] = t?.PosX ?? 0, ["y"] = t?.PosY ?? 0 },
+            ["pos_rel"] = new JsonObject { ["x"] = (t?.PosX ?? 0) / (double)canvasW, ["y"] = (t?.PosY ?? 0) / (double)canvasH },
+            ["scale"] = new JsonObject { ["x"] = t?.ScaleX ?? 1, ["y"] = t?.ScaleY ?? 1 },
+            ["scale_rel"] = new JsonObject { ["x"] = t?.ScaleX ?? 1, ["y"] = t?.ScaleY ?? 1 },
+            ["bounds"] = boundsNone
+                ? new JsonObject { ["x"] = 0.0, ["y"] = 0.0 }
+                : new JsonObject { ["x"] = t!.BoundsWidth ?? 0, ["y"] = t.BoundsHeight ?? 0 },
+            ["bounds_rel"] = new JsonObject { ["x"] = 0.0, ["y"] = 0.0 },
+            ["scale_filter"] = "disable",
+            ["blend_method"] = "default",
+            ["blend_type"] = "normal",
+            ["show_transition"] = new JsonObject { ["duration"] = 0 },
+            ["hide_transition"] = new JsonObject { ["duration"] = 0 },
+            ["private_settings"] = new JsonObject()
+        };
     }
+
+    /// <summary>把模板快捷键（如「Ctrl+1」）解析成 OBS hotkey 绑定数组；空则返回空数组。</summary>
+    private static JsonArray BuildHotkeyBindings(string? hotkey)
+    {
+        var arr = new JsonArray();
+        if (string.IsNullOrWhiteSpace(hotkey)) return arr;
+        var binding = ParseHotkey(hotkey);
+        if (binding is not null) arr.Add(binding);
+        return arr;
+    }
+
+    /// <summary>解析「Ctrl+Shift+1」风格的快捷键为 OBS hotkey 对象（key + modifiers）。</summary>
+    private static JsonObject? ParseHotkey(string spec)
+    {
+        var parts = spec.Split('+', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        if (parts.Length == 0) return null;
+
+        var shift = false; var alt = false; var control = false; var command = false;
+        var keyPart = "";
+        foreach (var p in parts)
+        {
+            if (string.Equals(p, "Ctrl", StringComparison.OrdinalIgnoreCase) || string.Equals(p, "Control", StringComparison.OrdinalIgnoreCase)) control = true;
+            else if (string.Equals(p, "Shift", StringComparison.OrdinalIgnoreCase)) shift = true;
+            else if (string.Equals(p, "Alt", StringComparison.OrdinalIgnoreCase)) alt = true;
+            else if (string.Equals(p, "Win", StringComparison.OrdinalIgnoreCase) || string.Equals(p, "Cmd", StringComparison.OrdinalIgnoreCase) || string.Equals(p, "Meta", StringComparison.OrdinalIgnoreCase)) command = true;
+            else keyPart = p;
+        }
+        var key = MapObsKey(keyPart);
+        if (key is null) return null;
+
+        return new JsonObject
+        {
+            ["key"] = key,
+            ["modifiers"] = new JsonObject
+            {
+                ["shift"] = shift,
+                ["alt"] = alt,
+                ["control"] = control,
+                ["command"] = command
+            }
+        };
+    }
+
+    /// <summary>把「1 / A / F5」等映射为 OBS 键名（OBS_KEY_1 / OBS_KEY_A / OBS_KEY_F5）。</summary>
+    private static string? MapObsKey(string part)
+    {
+        if (part.Length == 1 && char.IsLetter(part[0]))
+            return $"OBS_KEY_{char.ToUpperInvariant(part[0])}";
+        if (part.Length == 1 && char.IsDigit(part[0]))
+            return $"OBS_KEY_{part[0]}";
+        if (part.StartsWith("F", StringComparison.OrdinalIgnoreCase) && part.Length > 1 && int.TryParse(part[1..], out var fn) && fn is >= 1 and <= 24)
+            return $"OBS_KEY_F{fn}";
+        return part.ToUpperInvariant() switch
+        {
+            "SPACE" => "OBS_KEY_SPACE",
+            "ENTER" or "RETURN" => "OBS_KEY_RETURN",
+            "TAB" => "OBS_KEY_TAB",
+            "ESC" or "ESCAPE" => "OBS_KEY_ESCAPE",
+            "BACKSPACE" => "OBS_KEY_BACKSPACE",
+            "DELETE" => "OBS_KEY_DELETE",
+            "HOME" => "OBS_KEY_HOME",
+            "END" => "OBS_KEY_END",
+            "PAGEUP" => "OBS_KEY_PAGEUP",
+            "PAGEDOWN" => "OBS_KEY_PAGEDOWN",
+            "UP" => "OBS_KEY_UP",
+            "DOWN" => "OBS_KEY_DOWN",
+            "LEFT" => "OBS_KEY_LEFT",
+            "RIGHT" => "OBS_KEY_RIGHT",
+            "INSERT" => "OBS_KEY_INSERT",
+            "PRINTSCREEN" => "OBS_KEY_PRINTSCREEN",
+            "PAUSE" => "OBS_KEY_PAUSE",
+            _ => null
+        };
+    }
+
+    /// <summary>音频源的静音 / 按键说话 hotkeys（空绑定占位）。</summary>
+    private static JsonObject BuildAudioHotkeys() => new()
+    {
+        ["libobs.mute"] = new JsonArray(),
+        ["libobs.unmute"] = new JsonArray(),
+        ["libobs.push-to-mute"] = new JsonArray(),
+        ["libobs.push-to-talk"] = new JsonArray()
+    };
+
+    /// <summary>标准快捷过渡三件套（直接切换 / 淡入淡出 / 淡入淡出到黑）。</summary>
+    private static JsonArray BuildQuickTransitions()
+    {
+        var arr = new JsonArray();
+        arr.Add(new JsonObject { ["name"] = "直接切换", ["duration"] = 300, ["hotkeys"] = new JsonArray(), ["id"] = 1, ["fade_to_black"] = false });
+        arr.Add(new JsonObject { ["name"] = "淡入淡出", ["duration"] = 300, ["hotkeys"] = new JsonArray(), ["id"] = 2, ["fade_to_black"] = false });
+        arr.Add(new JsonObject { ["name"] = "淡入淡出", ["duration"] = 300, ["hotkeys"] = new JsonArray(), ["id"] = 3, ["fade_to_black"] = true });
+        return arr;
+    }
+
+    private static bool IsAudioInput(string kind) => kind switch
+    {
+        "wasapi_input_capture" or "wasapi_output_capture" or "coreaudio_input_capture" or "coreaudio_output_capture"
+            or "pulse_input_capture" or "pulse_output_capture" or "ffmpeg_source" or "vlc_source" => true,
+        _ => false
+    };
 
     /// <summary>反推 source id：text_gdiplus_v3 → id=text_gdiplus, versioned_id=text_gdiplus_v3。</summary>
     private static (string id, string versioned) ResolveSourceId(string kind)
@@ -421,7 +677,7 @@ public sealed class SceneTemplateService
             _ => 0
         };
 
-    /// <summary>离线 JSON 自校验：能解析，且每个 source_uuid 都能在 sources 中找到对应 uuid。</summary>
+    /// <summary>离线 JSON 自校验：能解析，且每个场景 item 的 source_uuid 都能在 sources 中找到对应 uuid。</summary>
     private static void SelfCheckCollection(JsonObject root)
     {
         using var doc = JsonDocument.Parse(root.ToJsonString());
@@ -430,11 +686,18 @@ public sealed class SceneTemplateService
             foreach (var s in ss.EnumerateArray())
                 if (s.TryGetProperty("uuid", out var u) && u.ValueKind == JsonValueKind.String) uuids.Add(u.GetString() ?? "");
 
-        if (doc.RootElement.TryGetProperty("scenes", out var sc) && sc.ValueKind == JsonValueKind.Array)
+        if (doc.RootElement.TryGetProperty("sources", out var sc) && sc.ValueKind == JsonValueKind.Array)
         {
-            foreach (var scene in sc.EnumerateArray())
+            // 标准 OBS 格式：场景也是 source（id=scene），items 在 settings 里
+            foreach (var sceneSrc in sc.EnumerateArray())
             {
-                if (!scene.TryGetProperty("items", out var items) || items.ValueKind != JsonValueKind.Array) continue;
+                if (sceneSrc.ValueKind != JsonValueKind.Object) continue;
+                var isScene = sceneSrc.TryGetProperty("id", out var sid) && sid.ValueKind == JsonValueKind.String
+                              && string.Equals(sid.GetString(), "scene", StringComparison.OrdinalIgnoreCase);
+                if (!isScene) continue;
+                if (!sceneSrc.TryGetProperty("settings", out var settings) || settings.ValueKind != JsonValueKind.Object) continue;
+                if (!settings.TryGetProperty("items", out var items) || items.ValueKind != JsonValueKind.Array) continue;
+
                 foreach (var item in items.EnumerateArray())
                 {
                     if (item.TryGetProperty("source_uuid", out var su) && su.ValueKind == JsonValueKind.String)
@@ -449,6 +712,46 @@ public sealed class SceneTemplateService
     }
 
     // ------------------------------------------------------------ 通用辅助
+
+    /// <summary>读取 OBS 当前可用的过渡名称列表（优先本地化的「淡入淡出 / Fade」）。</summary>
+    private async Task<List<string>> LoadTransitionNamesAsync(CancellationToken ct)
+    {
+        var names = new List<string>();
+        var r = await _obs.RawRequestAsync("GetSceneTransitionList", null, ct);
+        if (r.Ok && r.Data is JsonElement d && d.TryGetProperty("transitions", out var arr) && arr.ValueKind == JsonValueKind.Array)
+        {
+            foreach (var e in arr.EnumerateArray())
+            {
+                if (e.ValueKind == JsonValueKind.Object && e.TryGetProperty("transitionName", out var n) && n.ValueKind == JsonValueKind.String)
+                {
+                    var s = n.GetString();
+                    if (!string.IsNullOrWhiteSpace(s)) names.Add(s);
+                }
+            }
+        }
+        return names;
+    }
+
+    /// <summary>从可用过渡中挑选匹配项：优先精确匹配，其次不区分大小写，再尝试 Fade/淡入淡出 别名。</summary>
+    private static string? PickTransitionName(string? preferred, List<string> available)
+    {
+        if (string.IsNullOrWhiteSpace(preferred)) return available.FirstOrDefault();
+        var p = preferred.Trim();
+        if (available.Contains(p, StringComparer.Ordinal)) return p;
+        if (available.Contains(p, StringComparer.OrdinalIgnoreCase)) return available.First(a => string.Equals(a, p, StringComparison.OrdinalIgnoreCase));
+
+        // 别名兜底：淡入淡出 ↔ Fade / 直接切换 ↔ Cut
+        var alias = p.Contains("淡入淡出") || p.Equals("Fade", StringComparison.OrdinalIgnoreCase) ? new[] { "Fade", "淡入淡出" }
+            : p.Contains("直接切换") || p.Equals("Cut", StringComparison.OrdinalIgnoreCase) ? new[] { "Cut", "直接切换" }
+            : null;
+        if (alias is not null)
+            foreach (var a in alias)
+            {
+                var hit = available.FirstOrDefault(x => string.Equals(x, a, StringComparison.OrdinalIgnoreCase));
+                if (hit is not null) return hit;
+            }
+        return null;
+    }
 
     private static string? PickKind(TemplateSource src, HashSet<string> available)
     {

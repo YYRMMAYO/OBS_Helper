@@ -7,9 +7,13 @@
     "portrait": false,
     "notes": "游戏源默认按窗口 / 显示器捕获回退；摄像头与麦克风需你在 OBS 里选设备。",
     "canvas": { "baseWidth": 1920, "baseHeight": 1080, "outputWidth": 1920, "outputHeight": 1080, "fpsNumerator": 60, "fpsDenominator": 1 },
+    "transition": "淡入淡出",
+    "transitionDurationMs": 300,
     "scenes": [
       {
         "name": "游戏直播中",
+        "transitionDurationMs": 300,
+        "hotkey": "Ctrl+1",
         "sources": [
           { "name": "背景色", "inputKind": "color_source_v3", "zOrder": 0, "enabled": true,
             "settings": { "color": 4278190080 },
@@ -34,6 +38,8 @@
       },
       {
         "name": "暂停一下",
+        "transitionDurationMs": 500,
+        "hotkey": "Ctrl+2",
         "sources": [
           { "name": "背景色", "inputKind": "color_source_v3", "zOrder": 0, "enabled": true,
             "settings": { "color": 4278650880 },
@@ -60,9 +66,13 @@
     "portrait": true,
     "notes": "注意：本模板会把 OBS 全局画布改成 1080×1920（竖屏）。切回横屏直播时，请在 OBS「设置 → 视频」里把画布改回 1920×1080。",
     "canvas": { "baseWidth": 1080, "baseHeight": 1920, "outputWidth": 1080, "outputHeight": 1920, "fpsNumerator": 30, "fpsDenominator": 1 },
+    "transition": "淡入淡出",
+    "transitionDurationMs": 300,
     "scenes": [
       {
         "name": "口播主画面",
+        "transitionDurationMs": 300,
+        "hotkey": "Ctrl+1",
         "sources": [
           { "name": "背景色", "inputKind": "color_source_v3", "zOrder": 0, "enabled": true,
             "settings": { "color": 4292935679 },
@@ -93,6 +103,8 @@
       },
       {
         "name": "等待开播",
+        "transitionDurationMs": 500,
+        "hotkey": "Ctrl+2",
         "sources": [
           { "name": "背景色", "inputKind": "color_source_v3", "zOrder": 0, "enabled": true,
             "settings": { "color": 4278650880 },
@@ -119,9 +131,13 @@
     "portrait": false,
     "notes": "嘉宾画面默认用窗口捕获（WGC）；若抓取不到，可在 OBS 里改用显示器捕获。",
     "canvas": { "baseWidth": 1920, "baseHeight": 1080, "outputWidth": 1920, "outputHeight": 1080, "fpsNumerator": 30, "fpsDenominator": 1 },
+    "transition": "淡入淡出",
+    "transitionDurationMs": 300,
     "scenes": [
       {
         "name": "双人对话",
+        "transitionDurationMs": 300,
+        "hotkey": "Ctrl+1",
         "sources": [
           { "name": "背景色", "inputKind": "color_source_v3", "zOrder": 0, "enabled": true,
             "settings": { "color": 4278650880 },
@@ -155,6 +171,8 @@
       },
       {
         "name": "单人特写",
+        "transitionDurationMs": 300,
+        "hotkey": "Ctrl+2",
         "sources": [
           { "name": "背景色", "inputKind": "color_source_v3", "zOrder": 0, "enabled": true,
             "settings": { "color": 4278190080 },
@@ -181,9 +199,13 @@
     "portrait": false,
     "notes": "默认捕获主显示器；多显示器时请在 OBS 里切换显示器索引。",
     "canvas": { "baseWidth": 1920, "baseHeight": 1080, "outputWidth": 1920, "outputHeight": 1080, "fpsNumerator": 30, "fpsDenominator": 1 },
+    "transition": "淡入淡出",
+    "transitionDurationMs": 300,
     "scenes": [
       {
         "name": "屏幕讲解",
+        "transitionDurationMs": 300,
+        "hotkey": "Ctrl+1",
         "sources": [
           { "name": "屏幕", "inputKind": "monitor_capture", "zOrder": 0, "enabled": true,
             "placeholder": { "kind": "window", "hint": "选择要捕获的显示器" },
@@ -204,6 +226,8 @@
       },
       {
         "name": "课件全屏",
+        "transitionDurationMs": 300,
+        "hotkey": "Ctrl+2",
         "sources": [
           { "name": "屏幕", "inputKind": "monitor_capture", "zOrder": 0, "enabled": true, "shared": true,
             "placeholder": { "kind": "window", "hint": "选择要捕获的显示器" },
@@ -216,6 +240,8 @@
       },
       {
         "name": "休息中",
+        "transitionDurationMs": 500,
+        "hotkey": "Ctrl+3",
         "sources": [
           { "name": "背景色", "inputKind": "color_source_v3", "zOrder": 0, "enabled": true,
             "settings": { "color": 4278650880 },
@@ -238,9 +264,13 @@
     "portrait": false,
     "notes": "背景音乐用 ffmpeg 循环播放本地音频；「正在播放」支持读取文本文件（OBS 文本源 read_from_file）。",
     "canvas": { "baseWidth": 1920, "baseHeight": 1080, "outputWidth": 1920, "outputHeight": 1080, "fpsNumerator": 30, "fpsDenominator": 1 },
+    "transition": "淡入淡出",
+    "transitionDurationMs": 500,
     "scenes": [
       {
         "name": "电台待机",
+        "transitionDurationMs": 500,
+        "hotkey": "Ctrl+1",
         "sources": [
           { "name": "底图", "inputKind": "image_source", "zOrder": 0, "enabled": true,
             "settings": { "file": "" },
@@ -267,6 +297,8 @@
       },
       {
         "name": "主播开麦",
+        "transitionDurationMs": 300,
+        "hotkey": "Ctrl+2",
         "sources": [
           { "name": "底图", "inputKind": "image_source", "zOrder": 0, "enabled": true, "shared": true,
             "settings": { "file": "" },
@@ -299,9 +331,13 @@
     "portrait": false,
     "notes": "倒计时网页源默认隐藏，需要时取消隐藏并填入你的倒计时页面 URL 即可。",
     "canvas": { "baseWidth": 1920, "baseHeight": 1080, "outputWidth": 1920, "outputHeight": 1080, "fpsNumerator": 30, "fpsDenominator": 1 },
+    "transition": "淡入淡出",
+    "transitionDurationMs": 300,
     "scenes": [
       {
         "name": "开播倒计时",
+        "transitionDurationMs": 500,
+        "hotkey": "Ctrl+1",
         "sources": [
           { "name": "底色", "inputKind": "color_source_v3", "zOrder": 0, "enabled": true,
             "settings": { "color": 4279257088 },
@@ -323,6 +359,8 @@
       },
       {
         "name": "马上回来 BRB",
+        "transitionDurationMs": 300,
+        "hotkey": "Ctrl+2",
         "sources": [
           { "name": "底色", "inputKind": "color_source_v3", "zOrder": 0, "enabled": true,
             "settings": { "color": 4279257088 },
@@ -337,6 +375,8 @@
       },
       {
         "name": "今天到这里",
+        "transitionDurationMs": 500,
+        "hotkey": "Ctrl+3",
         "sources": [
           { "name": "底色", "inputKind": "color_source_v3", "zOrder": 0, "enabled": true,
             "settings": { "color": 4279257088 },

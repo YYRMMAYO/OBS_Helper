@@ -127,11 +127,22 @@ public sealed class HostBridge
         var encrypted = ProtectedData.Protect(plain, Entropy, DataProtectionScope.CurrentUser);
         Array.Clear(plain, 0, plain.Length);
 
-        // 先写临时文件再替换，避免写入过程中断电导致存储文件损坏
+        // 先写临时文件再原子替换（File.Replace 在目标已存在时是原子操作，
+        // 不存在时退化为 Move；避免 File.Copy+Delete 中间的窗口因崩溃丢失数据）
         var tmp = SecretsFile + ".tmp";
         File.WriteAllBytes(tmp, encrypted);
-        File.Copy(tmp, SecretsFile, overwrite: true);
-        File.Delete(tmp);
+        try
+        {
+            if (File.Exists(SecretsFile))
+                File.Replace(tmp, SecretsFile, null);
+            else
+                File.Move(tmp, SecretsFile);
+        }
+        catch
+        {
+            try { File.Delete(tmp); } catch { /* 清理失败无妨 */ }
+            throw;
+        }
     }
 
     private static void ValidateSecretKey(string key)
@@ -522,6 +533,12 @@ public sealed class HostBridge
             Content = new StringContent(body, Encoding.UTF8, "application/json")
         };
         req.Headers.Authorization = new AuthenticationHeaderValue("Bearer", apiKey);
+
+        // Authorization 头已拼装完毕，显式释放 apiKey 引用以缩小密钥在托管内存中的窗口。
+        // 注意：AuthenticationHeaderValue 构造时会内部分配一份副本，apiKey 设为 null
+        // 不影响请求发送；真正的限制在于 .NET 字符串不可变性——GC 回收之前密钥无法从堆上
+        // 擦除，这是托管语言共有的局限。
+        apiKey = null!;
 
         using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(120));
         using var resp = await Http.SendAsync(req, HttpCompletionOption.ResponseHeadersRead, cts.Token)

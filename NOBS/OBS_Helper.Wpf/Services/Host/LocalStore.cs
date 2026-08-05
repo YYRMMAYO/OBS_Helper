@@ -22,7 +22,7 @@ public sealed class LocalStore
     private static readonly JsonSerializerOptions JsonOpts = new()
     {
         WriteIndented = true,
-        Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping
+        Encoder = System.Text.Encodings.Web.JavaScriptEncoder.Default
     };
 
     private readonly string _file;
@@ -57,12 +57,24 @@ public sealed class LocalStore
             var json = JsonSerializer.Serialize(_items, JsonOpts);
             var tmp = _file + ".tmp";
             File.WriteAllText(tmp, json, new UTF8Encoding(false));
-            File.Copy(tmp, _file, overwrite: true);
-            File.Delete(tmp);
+            try
+            {
+                if (File.Exists(_file))
+                    File.Replace(tmp, _file, null);
+                else
+                    File.Move(tmp, _file);
+            }
+            catch
+            {
+                try { File.Delete(tmp); } catch { /* 清理失败无妨 */ }
+                throw; // 本次 Flush 失败，内存值仍然有效，下次写入会重试
+            }
         }
         catch (Exception)
         {
             // 磁盘满 / 只读目录：本次会话内的内存值仍然生效。
+            // 注意：由于上方 throw 已重新抛出 File.Replace/Move 异常，
+            // 此 catch 主要捕获序列化 / 临时文件写入阶段的异常。
         }
     }
 

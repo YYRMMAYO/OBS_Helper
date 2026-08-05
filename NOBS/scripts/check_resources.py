@@ -17,6 +17,12 @@ import re
 import sys
 from pathlib import Path
 
+# CI（GitHub Actions windows runner）默认 stdout 编码为 cp1252，
+# 打印中文会抛 UnicodeEncodeError；统一强制 UTF-8 输出。
+for _stream in (sys.stdout, sys.stderr):
+    if hasattr(_stream, "reconfigure"):
+        _stream.reconfigure(encoding="utf-8", errors="replace")
+
 ROOT = Path(__file__).resolve().parent.parent / "OBS_Helper.Wpf"
 
 KEY_RE = re.compile(r'x:Key="([^"]+)"')

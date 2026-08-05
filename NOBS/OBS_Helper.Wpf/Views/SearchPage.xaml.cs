@@ -4,6 +4,7 @@ using System.Windows.Threading;
 using OBS_Helper.Wpf.Controls;
 using OBS_Helper.Wpf.Models;
 using OBS_Helper.Wpf.Navigation;
+using OBS_Helper.Wpf.Services;
 
 namespace OBS_Helper.Wpf.Views;
 
@@ -34,6 +35,9 @@ public partial class SearchPage : UserControl, INavigationAware
 
     /// <summary>搜索序号：输入很快时丢弃过期的异步结果，避免旧结果覆盖新结果。</summary>
     private int _searchSeq;
+
+    /// <summary>输入防抖：停止输入 300ms 后才发起搜索，避免逐击穿发（P1-2）。</summary>
+    private readonly Debouncer _debouncer = new(TimeSpan.FromMilliseconds(300));
 
     private bool _chipsBuilt;
 
@@ -66,6 +70,13 @@ public partial class SearchPage : UserControl, INavigationAware
             QueryBox.Focus();
             QueryBox.SelectAll();
         }), DispatcherPriority.Input);
+    }
+
+    public Task OnNavigatedFromAsync()
+    {
+        // 离开页面：取消尚未执行的防抖搜索，避免回来后还触发一次 UI 更新
+        _debouncer.Cancel();
+        return Task.CompletedTask;
     }
 
     private async Task BuildChipsAsync()
@@ -133,16 +144,10 @@ public partial class SearchPage : UserControl, INavigationAware
         }
     }
 
-    private async void OnQueryChanged(object sender, TextChangedEventArgs e)
+    private void OnQueryChanged(object sender, TextChangedEventArgs e)
     {
-        try
-        {
-            await RunSearchAsync();
-        }
-        catch (Exception ex)
-        {
-            App.ReportError(Errors.ErrorCodes.DataLoadFailed, ex);
-        }
+        // 防抖：连续输入只在停顿后触发一次搜索（P1-2），RunSearchAsync 内部有 _searchSeq 二次防竞态
+        _debouncer.DebounceAsync(RunSearchAsync);
     }
 
     private async void OnChipChecked(object sender, RoutedEventArgs e)

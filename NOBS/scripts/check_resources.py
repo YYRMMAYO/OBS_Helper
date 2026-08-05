@@ -32,6 +32,11 @@ REF_RE = re.compile(r"\{(?:Static|Dynamic)Resource\s+([^\}\s,]+)\s*\}")
 # WPF 自带的资源键，不在我们的字典里也能解析出来
 BUILTIN_PREFIXES = ("System", "{x:Static", "ToolBar.", "Menu", "GridView")
 
+# problems.json 分类语义色键白名单（P2-1）：与 Palette.xaml 的 Semantic{key}Brush 一一对应
+VALID_SEMANTIC = {
+    "red", "orange", "yellow", "purple", "blue", "teal", "green", "azure", "violet", "crimson",
+}
+
 
 def collect_keys(path: Path) -> set[str]:
     return set(KEY_RE.findall(path.read_text(encoding="utf-8-sig")))
@@ -76,6 +81,25 @@ def main() -> int:
         for f, key in problems:
             print(f"  {f}: {key}")
         return 1
+
+    # ---- problems.json 分类语义色校验（P2-1）：semantic 必须在白名单内，且主题资源存在对应画刷
+    problems_json = ROOT / "Assets" / "problems.json"
+    if problems_json.exists():
+        import json
+        data = json.loads(problems_json.read_text(encoding="utf-8-sig"))
+        bad = []
+        for c in data.get("categories", []):
+            sem = (c.get("semantic") or "").strip()
+            if sem not in VALID_SEMANTIC:
+                bad.append(f"{c.get('id')}: semantic={sem or '(缺失)'}")
+            elif f"Semantic{sem.capitalize()}Brush" not in global_keys:
+                bad.append(f"{c.get('id')}: 主题缺少 Semantic{sem.capitalize()}Brush")
+        if bad:
+            print(f"\nproblems.json 分类语义色校验失败（{len(bad)} 处）：")
+            for line in bad:
+                print("  " + line)
+            return 1
+        print(f"problems.json 分类语义色 {len(data.get('categories', []))} 个全部合法。")
 
     print("全部资源引用均可解析。")
     return 0

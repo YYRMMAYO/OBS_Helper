@@ -158,7 +158,7 @@ public sealed class ObsConnectionService : IAsyncDisposable
         var delay = _policy.DelayFor(_attempt);
 
         SetState(ObsConnectionState.Reconnecting);
-        _ = Task.Run(async () =>
+        Task.Run(async () =>
         {
             try
             {
@@ -178,7 +178,12 @@ public sealed class ObsConnectionService : IAsyncDisposable
             {
                 // 用户手动重连 / 断开时取消倒计时，属正常路径。
             }
-        }, token);
+            catch (Exception ex)
+            {
+                // P3-2：重连链路异常不能静默丢失，落盘留痕（不弹窗，重连失败本就有状态提示）
+                FileLogger.Error("ObsReconnect", ex);
+            }
+        }, token).FireAndForget("ObsReconnect", "自动重连任务");
     }
 
     private void CancelReconnect()

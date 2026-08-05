@@ -1,5 +1,6 @@
 ﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:PresentationOptions="http://schemas.microsoft.com/winfx/2006/xaml/presentation/options"
                     xmlns:sys="clr-namespace:System;assembly=System.Runtime">
 
   <!--
@@ -16,26 +17,41 @@
     深浅色通用，中性色不随主题切换。
   -->
 
-  <SolidColorBrush x:Key="BrandBrush" Color="#7b2ff7" />
-  <SolidColorBrush x:Key="BrandDarkBrush" Color="#5a1fc4" />
-  <SolidColorBrush x:Key="BrandSoftBrush" Color="#efe6ff" />
+  <SolidColorBrush PresentationOptions:Freeze="True" x:Key="BrandBrush" Color="#7b2ff7" />
+  <SolidColorBrush PresentationOptions:Freeze="True" x:Key="BrandDarkBrush" Color="#5a1fc4" />
+  <SolidColorBrush PresentationOptions:Freeze="True" x:Key="BrandSoftBrush" Color="#efe6ff" />
 
-  <SolidColorBrush x:Key="SurfaceBrush" Color="#ffffff" />
-  <SolidColorBrush x:Key="Surface2Brush" Color="#f4f4fb" />
-  <SolidColorBrush x:Key="Surface3Brush" Color="#ececf6" />
-  <SolidColorBrush x:Key="TextBrush" Color="#1c1d2b" />
-  <SolidColorBrush x:Key="MutedBrush" Color="#5c5d70" />
-  <SolidColorBrush x:Key="LineBrush" Color="#e6e6f0" />
-  <SolidColorBrush x:Key="OverlayBrush" Color="#80000000" />
+  <SolidColorBrush PresentationOptions:Freeze="True" x:Key="SurfaceBrush" Color="#ffffff" />
+  <SolidColorBrush PresentationOptions:Freeze="True" x:Key="Surface2Brush" Color="#f4f4fb" />
+  <SolidColorBrush PresentationOptions:Freeze="True" x:Key="Surface3Brush" Color="#ececf6" />
+  <SolidColorBrush PresentationOptions:Freeze="True" x:Key="TextBrush" Color="#1c1d2b" />
+  <SolidColorBrush PresentationOptions:Freeze="True" x:Key="MutedBrush" Color="#5c5d70" />
+  <SolidColorBrush PresentationOptions:Freeze="True" x:Key="LineBrush" Color="#e6e6f0" />
+  <SolidColorBrush PresentationOptions:Freeze="True" x:Key="OverlayBrush" Color="#80000000" />
 
-  <SolidColorBrush x:Key="DangerBrush" Color="#d92d20" />
-  <SolidColorBrush x:Key="DangerSoftBrush" Color="#fdeceb" />
-  <SolidColorBrush x:Key="WarnBrush" Color="#b54708" />
-  <SolidColorBrush x:Key="WarnSoftBrush" Color="#fef4e6" />
-  <SolidColorBrush x:Key="OkBrush" Color="#067647" />
-  <SolidColorBrush x:Key="OkSoftBrush" Color="#e7f6ee" />
-  <SolidColorBrush x:Key="InfoBrush" Color="#175cd3" />
-  <SolidColorBrush x:Key="InfoSoftBrush" Color="#e8f0fe" />
+  <SolidColorBrush PresentationOptions:Freeze="True" x:Key="DangerBrush" Color="#c62828" />
+  <SolidColorBrush PresentationOptions:Freeze="True" x:Key="DangerSoftBrush" Color="#fdeceb" />
+  <SolidColorBrush PresentationOptions:Freeze="True" x:Key="WarnBrush" Color="#b54708" />
+  <SolidColorBrush PresentationOptions:Freeze="True" x:Key="WarnSoftBrush" Color="#fef4e6" />
+  <SolidColorBrush PresentationOptions:Freeze="True" x:Key="OkBrush" Color="#067647" />
+  <SolidColorBrush PresentationOptions:Freeze="True" x:Key="OkSoftBrush" Color="#e7f6ee" />
+  <SolidColorBrush PresentationOptions:Freeze="True" x:Key="InfoBrush" Color="#175cd3" />
+  <SolidColorBrush PresentationOptions:Freeze="True" x:Key="InfoSoftBrush" Color="#e8f0fe" />
+
+  <!--
+    分类语义色（P2-1）：problems.json 的 category.semantic 键 → 这里的 Semantic{key}Brush。
+    浅色值 = 原 problems.json 里的硬编码 hex，外观不变；深色模式由 AppearanceService 覆盖为柔和值。
+  -->
+  <SolidColorBrush PresentationOptions:Freeze="True" x:Key="SemanticRedBrush" Color="#e74c3c" />
+  <SolidColorBrush PresentationOptions:Freeze="True" x:Key="SemanticOrangeBrush" Color="#e67e22" />
+  <SolidColorBrush PresentationOptions:Freeze="True" x:Key="SemanticYellowBrush" Color="#f1c40f" />
+  <SolidColorBrush PresentationOptions:Freeze="True" x:Key="SemanticPurpleBrush" Color="#9b59b6" />
+  <SolidColorBrush PresentationOptions:Freeze="True" x:Key="SemanticBlueBrush" Color="#3498db" />
+  <SolidColorBrush PresentationOptions:Freeze="True" x:Key="SemanticTealBrush" Color="#1abc9c" />
+  <SolidColorBrush PresentationOptions:Freeze="True" x:Key="SemanticGreenBrush" Color="#16a085" />
+  <SolidColorBrush PresentationOptions:Freeze="True" x:Key="SemanticAzureBrush" Color="#2980b9" />
+  <SolidColorBrush PresentationOptions:Freeze="True" x:Key="SemanticVioletBrush" Color="#8e44ad" />
+  <SolidColorBrush PresentationOptions:Freeze="True" x:Key="SemanticCrimsonBrush" Color="#c0392b" />
 
   <sys:Double x:Key="ShadowOpacity">0.10</sys:Double>
 

@@ -3,12 +3,28 @@ using System.Windows.Controls;
 namespace OBS_Helper.Wpf.Navigation;
 
 /// <summary>
-/// 页面在被导航到时的回调。页面若需要按参数加载数据（分类页、问题详情页），实现本接口。
+/// 页面在被导航到 / 离开时的回调。页面若需要按参数加载数据（分类页、问题详情页），实现本接口。
+///
+/// <see cref="OnNavigatedFromAsync"/> 与 <see cref="CanReleaseOnLeave"/> 是默认接口实现（C# 8+），
+/// 现有页面无需改动；需要管理计时器 / 事件订阅 / 大资源的页面按需覆写即可。
 /// </summary>
 public interface INavigationAware
 {
     /// <summary>导航到本页时调用。<paramref name="parameter"/> 为路由参数，可能为 null。</summary>
     Task OnNavigatedToAsync(object? parameter);
+
+    /// <summary>
+    /// 导航离开本页时调用（切换前触发）。页面在此对称退订事件 / 停止计时器，
+    /// 从根上消除「离开页面后后台任务常驻」这类泄漏。
+    /// </summary>
+    Task OnNavigatedFromAsync() => Task.CompletedTask;
+
+    /// <summary>
+    /// 离开本页后是否允许从导航缓存释放页面实例（下次进入重新创建）。
+    /// 默认 false 保持全缓存（保滚动位置 / 避免重建）；页面无有价值状态时可声明 true。
+    /// 不写死 LRU 上限，由页面自己决定是否可逐出（P1-3）。
+    /// </summary>
+    bool CanReleaseOnLeave => false;
 }
 
 /// <summary>应用内路由名。集中定义，避免各页面拼字符串拼错。</summary>
@@ -86,10 +102,28 @@ public sealed class NavigationService
             return;
         }
 
+        // 离开当前页：先让旧页面对称收尾（退订事件 / 停计时器），再切换
+        UserControl? currentView = null;
+        if (!string.IsNullOrEmpty(CurrentRoute) && _cache.TryGetValue(CurrentRoute, out var oldView))
+        {
+            currentView = oldView;
+            if (oldView is INavigationAware leavingAware)
+            {
+                await leavingAware.OnNavigatedFromAsync().ConfigureAwait(true);
+            }
+        }
+
         if (!_cache.TryGetValue(route, out var view))
         {
             view = factory();
             _cache[route] = view;
+        }
+
+        // 页面自声明「离开后可释放」且目标是另一页面时，从缓存逐出（下次进入重建）
+        if (currentView is not null && !ReferenceEquals(currentView, view)
+            && currentView is INavigationAware { CanReleaseOnLeave: true })
+        {
+            _cache.Remove(CurrentRoute);
         }
 
         if (pushHistory && !string.IsNullOrEmpty(CurrentRoute))

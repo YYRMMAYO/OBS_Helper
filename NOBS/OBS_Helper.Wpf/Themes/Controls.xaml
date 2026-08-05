@@ -23,6 +23,7 @@
   <conv:SeverityToBrushConverter x:Key="SeverityBrush" />
   <conv:SeverityToSoftBrushConverter x:Key="SeveritySoftBrush" />
   <conv:HexToBrushConverter x:Key="HexBrush" />
+  <conv:SemanticToBrushConverter x:Key="SemanticBrush" />
   <conv:JoinConverter x:Key="Join" />
   <conv:IndexToNumberConverter x:Key="IndexNumber" />
 

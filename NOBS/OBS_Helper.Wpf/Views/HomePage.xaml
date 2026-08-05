@@ -71,9 +71,9 @@
                   <ColumnDefinition Width="*" />
                 </Grid.ColumnDefinitions>
 
-                <!-- 分类色竖条，对应原版 .cat-card 的 border-left -->
+                <!-- 分类色竖条，对应原版 .cat-card 的 border-left；语义色随主题深浅自动切换（P2-1） -->
                 <Border Grid.Column="0" Width="4" CornerRadius="2" Margin="0,0,12,0"
-                        Background="{Binding Color, Converter={StaticResource HexBrush}}" />
+                        Background="{Binding Semantic, Converter={StaticResource SemanticBrush}}" />
 
                 <StackPanel Grid.Column="1">
                   <TextBlock Text="{Binding Icon}" FontSize="24" />
@@ -87,7 +87,7 @@
                   <TextBlock Text="{Binding CountText}" Margin="0,8,0,0"
                              FontWeight="SemiBold"
                              FontSize="{DynamicResource FontSizeXs}"
-                             Foreground="{Binding Color, Converter={StaticResource HexBrush}}" />
+                             Foreground="{Binding Semantic, Converter={StaticResource SemanticBrush}}" />
                 </StackPanel>
               </Grid>
             </Button>

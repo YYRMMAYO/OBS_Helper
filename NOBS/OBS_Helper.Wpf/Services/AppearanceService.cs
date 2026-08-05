@@ -233,7 +233,9 @@ public sealed class AppearanceService : IDisposable
         res["LineBrush"] = Frozen(hc ? (dark ? "#ffffff" : "#000000") : (dark ? "#2c2d3a" : "#e6e6f0"));
 
         // ---- 语义色（严重度 / 状态）
-        res["DangerBrush"] = Frozen(dark ? "#ff6b6b" : "#d92d20");
+        // 浅色 Danger 由 #d92d20 加深为 #c62828（P2-3）：保证 Danger 文字放在 DangerSoft 底
+        // 上的对比度 ≥4.5:1（原 4.23:1 不达标），白底 / Surface2 上同步达标。
+        res["DangerBrush"] = Frozen(dark ? "#ff6b6b" : "#c62828");
         res["DangerSoftBrush"] = Frozen(dark ? "#3a1e1e" : "#fdeceb");
         res["WarnBrush"] = Frozen(dark ? "#f5a524" : "#b54708");
         res["WarnSoftBrush"] = Frozen(dark ? "#3a2e14" : "#fef4e6");
@@ -241,6 +243,18 @@ public sealed class AppearanceService : IDisposable
         res["OkSoftBrush"] = Frozen(dark ? "#12301f" : "#e7f6ee");
         res["InfoBrush"] = Frozen(dark ? "#63a8ff" : "#175cd3");
         res["InfoSoftBrush"] = Frozen(dark ? "#152740" : "#e8f0fe");
+
+        // ---- 分类语义色（P2-1）：浅色与原 problems.json 硬编码一致，深色换柔和值避免刺眼
+        res["SemanticRedBrush"] = Frozen(dark ? "#e56a5c" : "#e74c3c");
+        res["SemanticOrangeBrush"] = Frozen(dark ? "#f0a35e" : "#e67e22");
+        res["SemanticYellowBrush"] = Frozen(dark ? "#e8cf6f" : "#f1c40f");
+        res["SemanticPurpleBrush"] = Frozen(dark ? "#c39bd3" : "#9b59b6");
+        res["SemanticBlueBrush"] = Frozen(dark ? "#7fb8e8" : "#3498db");
+        res["SemanticTealBrush"] = Frozen(dark ? "#63c9b5" : "#1abc9c");
+        res["SemanticGreenBrush"] = Frozen(dark ? "#4fbfa4" : "#16a085");
+        res["SemanticAzureBrush"] = Frozen(dark ? "#6fa8dc" : "#2980b9");
+        res["SemanticVioletBrush"] = Frozen(dark ? "#b08cd6" : "#8e44ad");
+        res["SemanticCrimsonBrush"] = Frozen(dark ? "#d96a63" : "#c0392b");
 
         // ---- 阴影强度（用不透明度模拟 CSS 的 shadow-sm / md）
         res["ShadowOpacity"] = dark ? 0.45 : 0.10;

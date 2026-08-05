@@ -24,7 +24,7 @@ public partial class HomePage : UserControl, INavigationAware
         public string Icon { get; init; } = "";
         public string Title { get; init; } = "";
         public string Description { get; init; } = "";
-        public string Color { get; init; } = "";
+        public string Semantic { get; init; } = "";
         public string CountText { get; init; } = "";
     }
 
@@ -53,7 +53,7 @@ public partial class HomePage : UserControl, INavigationAware
                 Icon = c.Icon,
                 Title = c.Title,
                 Description = c.Description,
-                Color = c.Color,
+                Semantic = c.Semantic,
                 CountText = $"{counts.GetValueOrDefault(c.Id, 0)} 个方案"
             }).ToList();
 

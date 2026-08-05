@@ -1,5 +1,4 @@
 using System.Diagnostics;
-using System.IO;
 using System.Net.NetworkInformation;
 using System.Runtime.InteropServices;
 using System.Windows.Threading;
@@ -38,18 +37,18 @@ public sealed class DiskSample
 ///   <item>CPU 用 <see cref="PerformanceCounter"/>（% Processor Time _Total）；</item>
 ///   <item>内存用 GlobalMemoryStatusEx（总量 / 可用）；</item>
 ///   <item>网络用 <see cref="NetworkInterface"/> 计数器差值算实时速率；</item>
-///   <item>磁盘用 <see cref="DriveInfo"/> 枚举固定盘。</item>
+///   <item>磁盘用 <see cref="DiskProbe"/> 枚举固定盘。</item>
 /// </list>
 /// 任一指标读取失败（权限 / 无计数器）自动降级为 0，不影响其它指标与整体功能。
+///
+/// 磁盘预警不在此服务内做（避免 Stop 时连带停掉预警），由 <see cref="TrayService"/>
+/// 用独立低频定时器承担，见 <see cref="TrayService.StartDiskWarning"/>。
 /// </summary>
 public sealed class SystemMonitorService : IDisposable
 {
-    /// <summary>磁盘剩余空间低于该值（GB）时触发预警通知。</summary>
-    private const double DiskWarnGb = 10;
     private const int MaxHistory = 120;          // 1s × 120 = 2 分钟曲线
     private const int NetworkRefreshEvery = 10;  // 每 10 次采样刷新一次网卡列表
 
-    private readonly TrayService _tray;
     private readonly DispatcherTimer _timer;
     private readonly List<SystemSample> _history = new();
 
@@ -58,11 +57,8 @@ public sealed class SystemMonitorService : IDisposable
     private List<NetworkInterface> _netInterfaces = new();
     private int _tick;
 
-    private DateTime _lastDiskNotify = DateTime.MinValue;
-
-    public SystemMonitorService(TrayService tray)
+    public SystemMonitorService()
     {
-        _tray = tray;
         _timer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(1) };
         _timer.Tick += OnTick;
     }
@@ -105,7 +101,7 @@ public sealed class SystemMonitorService : IDisposable
 
     private void OnTick(object? sender, EventArgs e)
     {
-        var disks = SampleDisks();
+        var disks = DiskProbe.Sample();
         var sample = new SystemSample
         {
             CpuPercent = SampleCpu(),
@@ -119,8 +115,6 @@ public sealed class SystemMonitorService : IDisposable
         Latest = sample;
         _history.Add(sample);
         if (_history.Count > MaxHistory) _history.RemoveAt(0);
-
-        MaybeWarnLowDisk(disks);
 
         _tick++;
         SampleReady?.Invoke();
@@ -182,42 +176,6 @@ public sealed class SystemMonitorService : IDisposable
         {
             return 0;
         }
-    }
-
-    private static IReadOnlyList<DiskSample> SampleDisks()
-    {
-        var list = new List<DiskSample>();
-        try
-        {
-            foreach (var d in DriveInfo.GetDrives())
-            {
-                if (d.DriveType != DriveType.Fixed) continue;
-                try
-                {
-                    if (!d.IsReady) continue;
-                    list.Add(new DiskSample
-                    {
-                        Name = d.Name.TrimEnd('\\'),
-                        TotalGb = d.TotalSize / 1024.0 / 1024.0 / 1024.0,
-                        FreeGb = d.AvailableFreeSpace / 1024.0 / 1024.0 / 1024.0
-                    });
-                }
-                catch (Exception) { /* 单个盘读取失败跳过 */ }
-            }
-        }
-        catch (Exception) { }
-        return list;
-    }
-
-    /// <summary>任一磁盘剩余低于阈值时，每 30 分钟最多弹一次通知。</summary>
-    private void MaybeWarnLowDisk(IReadOnlyList<DiskSample> disks)
-    {
-        var lowest = disks.OrderBy(d => d.FreeGb).FirstOrDefault();
-        if (lowest is null || lowest.FreeGb >= DiskWarnGb) return;
-        if ((DateTime.UtcNow - _lastDiskNotify).TotalMinutes < 30) return;
-
-        _lastDiskNotify = DateTime.UtcNow;
-        _tray.Notify("磁盘空间不足", $"{lowest.Name} 盘剩余仅 {lowest.FreeGb:0.0} GB，录制文件可能中断，请及时清理。");
     }
 
     // ------------------------------------------------------------ 内存

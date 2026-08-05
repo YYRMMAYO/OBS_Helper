@@ -42,7 +42,7 @@ public partial class CategoryPage : UserControl, INavigationAware
             SetHeader($"{category.Icon} {category.Title}", category.Description);
 
             HeaderPanel.Visibility = Visibility.Visible;
-            AccentBar.Background = AccentBrush(category.Color);
+            AccentBar.Background = AccentBrush(category.Semantic);
             DescriptionText.Text = category.Description;
 
             var problems = await AppServices.Problems.GetByCategoryAsync(id);
@@ -72,13 +72,13 @@ public partial class CategoryPage : UserControl, INavigationAware
         => (Application.Current.MainWindow as MainWindow)?.SetHeader(title, subtitle);
 
     /// <summary>
-    /// 复用已注册的 HexBrush 转换器解析 problems.json 里的分类色，
-    /// 免得在页面里再写一份十六进制解析与兜底逻辑。
+    /// 把分类语义键（red/orange/...）映射到主题资源画刷，深浅色自动生效（P2-1）。
+    /// 找不到时回退品牌色。
     /// </summary>
-    private Brush AccentBrush(string hex)
+    private Brush AccentBrush(string semantic)
     {
-        var brush = (TryFindResource("HexBrush") as IValueConverter)?
-            .Convert(hex, typeof(Brush), null, CultureInfo.InvariantCulture) as Brush;
+        var brush = (TryFindResource("SemanticBrush") as IValueConverter)?
+            .Convert(semantic, typeof(Brush), null, CultureInfo.InvariantCulture) as Brush;
         return brush ?? TryFindResource("BrandBrush") as Brush ?? Brushes.MediumPurple;
     }
 }

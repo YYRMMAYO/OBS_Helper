@@ -27,8 +27,7 @@ public partial class ObsConfigPage : UserControl, INavigationAware
     }
 
     public async Task OnNavigatedToAsync(object? parameter)
-    {
-        await RefreshLocationAsync();
+    {        await RefreshLocationAsync();
         await RefreshBackupListAsync();
     }
 
@@ -136,7 +135,7 @@ public partial class ObsConfigPage : UserControl, INavigationAware
     private async void OnCreateBackup(object sender, RoutedEventArgs e)
     {
         if (_busy) return;
-        SetBusy(true);
+        SetBusy(true, "正在创建备份…");
         try
         {
             var includeKey = IncludeKeyCheck.IsChecked == true;
@@ -167,7 +166,7 @@ public partial class ObsConfigPage : UserControl, INavigationAware
 
         if (dialog.ShowDialog() != true) return;
 
-        SetBusy(true);
+        SetBusy(true, "正在导出配置…");
         try
         {
             var includeKey = IncludeKeyCheck.IsChecked == true;
@@ -211,7 +210,7 @@ public partial class ObsConfigPage : UserControl, INavigationAware
             return;
         }
 
-        SetBusy(true);
+        SetBusy(true, "正在导入配置…");
         try
         {
             var progress = new Progress<string>(msg =>
@@ -269,7 +268,7 @@ public partial class ObsConfigPage : UserControl, INavigationAware
             return;
         }
 
-        SetBusy(true);
+        SetBusy(true, "正在轻度重置…");
         try
         {
             var progress = new Progress<string>(msg =>
@@ -341,7 +340,7 @@ public partial class ObsConfigPage : UserControl, INavigationAware
             return;
         }
 
-        SetBusy(true);
+        SetBusy(true, "正在彻底重置…");
         try
         {
             var progress = new Progress<string>(msg =>
@@ -386,7 +385,11 @@ public partial class ObsConfigPage : UserControl, INavigationAware
 
     // -------------------------------------------------------------- 辅助
 
-    private void SetBusy(bool busy)
+    /// <summary>
+    /// 整页阻塞操作统一加载态（P2-2）：按钮禁用防重入 + 全局 BusyOverlay 遮罩提供视觉反馈，
+    /// 与诊断 / 控制台 / 日志页的加载体验一致。必须 try/finally 配对调用。
+    /// </summary>
+    private void SetBusy(bool busy, string? message = null)
     {
         _busy = busy;
         BackupButton.IsEnabled = !busy;
@@ -395,6 +398,9 @@ public partial class ObsConfigPage : UserControl, INavigationAware
         ImportMergeButton.IsEnabled = !busy;
         LightResetButton.IsEnabled = !busy;
         FullResetButton.IsEnabled = !busy;
+
+        if (busy) AppServices.Busy.Show(message ?? "处理中…");
+        else AppServices.Busy.Hide();
     }
 
     private void ShowResult(string icon, string text)

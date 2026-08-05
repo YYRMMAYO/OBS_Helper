@@ -27,6 +27,12 @@ public sealed class TrayService : IDisposable
     private const string IconResource = "OBS_Helper.Wpf.Assets.appicon.ico";
     private const string SettingsKey = "obshelper.shell";
 
+    /// <summary>磁盘剩余空间低于该值（GB）时触发预警通知。</summary>
+    private const double DiskWarnGb = 10;
+
+    /// <summary>磁盘预警检查间隔（原挂在监控页每秒采样上，现下沉为托盘独立低频检查）。</summary>
+    private static readonly TimeSpan DiskWarnInterval = TimeSpan.FromMinutes(30);
+
     private readonly ObsConnectionService _obs;
     private readonly LocalStore _store;
     private readonly object _gate = new();
@@ -37,6 +43,7 @@ public sealed class TrayService : IDisposable
     private ToolStripMenuItem? _streamItem;
     private ToolStripMenuItem? _virtualCamItem;
     private SynchronizationContext? _traySync;
+    private System.Threading.Timer? _diskWarnTimer;
 
     // 上一次看到的状态（用于翻转检测 → 通知）
     private bool _lastRecActive;
@@ -88,7 +95,39 @@ public sealed class TrayService : IDisposable
             };
             _thread.SetApartmentState(ApartmentState.STA);
             _thread.Start();
+
+            StartDiskWarning();
         }
+    }
+
+    /// <summary>
+    /// 磁盘空间低频预警：独立于监控页采样的 30 分钟定时器。
+    /// 托盘常驻应用生命周期，即使监控页从未打开或已离开，预警依然生效。
+    /// 回调在 ThreadPool 线程执行，<see cref="Notify"/> 内部会投递到托盘线程，线程安全。
+    /// </summary>
+    private void StartDiskWarning()
+    {
+        if (_diskWarnTimer is not null) return;
+        _diskWarnTimer = new System.Threading.Timer(_ =>
+        {
+            try
+            {
+                var lowest = DiskProbe.Sample().OrderBy(d => d.FreeGb).FirstOrDefault();
+                if (lowest is null || lowest.FreeGb >= DiskWarnGb) return;
+                Notify("磁盘空间不足", $"{lowest.Name} 盘剩余仅 {lowest.FreeGb:0.0} GB，录制文件可能中断，请及时清理。");
+            }
+            catch (Exception)
+            {
+                // 采样或通知失败：低频任务，静默跳过等下一个周期
+            }
+        }, null, DiskWarnInterval, DiskWarnInterval);
+    }
+
+    private void StopDiskWarning()
+    {
+        var t = _diskWarnTimer;
+        _diskWarnTimer = null;
+        try { t?.Dispose(); } catch (Exception) { }
     }
 
     /// <summary>托盘通知（录制/推流状态变化、定时到点等）。可在任意线程调用。</summary>
@@ -176,6 +215,8 @@ public sealed class TrayService : IDisposable
     {
         lock (_gate)
         {
+            StopDiskWarning();
+
             _obs.StateChanged -= OnObsStateChanged;
             Post(() =>
             {

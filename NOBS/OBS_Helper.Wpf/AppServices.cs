@@ -38,7 +38,7 @@ public static class AppServices
     private static readonly Lazy<GlobalHotkeyService> _hotkeys = new(() => new GlobalHotkeyService(Store, Obs));
     private static readonly Lazy<SceneAutoSwitcher> _autoSwitcher = new(() => new SceneAutoSwitcher(Store, Obs));
     private static readonly Lazy<ControlTimerService> _timer = new(() => new ControlTimerService(Obs, Tray));
-    private static readonly Lazy<SystemMonitorService> _systemMonitor = new(() => new SystemMonitorService(Tray));
+    private static readonly Lazy<SystemMonitorService> _systemMonitor = new(() => new SystemMonitorService());
 
     private static readonly Lazy<AiSettingsService> _aiSettings = new(() => new AiSettingsService(Store, Host));
     private static readonly Lazy<ObsToolRegistry> _tools = new(() => new ObsToolRegistry(Problems));
@@ -90,8 +90,10 @@ public static class AppServices
     public static async Task InitializeAsync()
     {
         Appearance.Initialize();
-        await ObsSettings.LoadAsync().ConfigureAwait(false);
-        await AiSettings.LoadAsync().ConfigureAwait(false);
+        // P3-1 启动加速：两份设置加载互相独立，串行 await 改为并行，冷启动可省一次 IO 往返
+        await Task.WhenAll(
+            ObsSettings.LoadAsync(),
+            AiSettings.LoadAsync()).ConfigureAwait(false);
 
         // 后台能力：托盘、全局热键、场景自动切换（默认按各自配置启动）
         Tray.LoadSettings();
@@ -105,10 +107,10 @@ public static class AppServices
     /// <summary>应用退出时的清理（MainWindow.OnClosed 调用）。</summary>
     public static void ShutdownServices()
     {
-        try { AutoSwitcher.Stop(); } catch (Exception) { }
-        try { Hotkeys.Dispose(); } catch (Exception) { }
-        try { SystemMonitor.Dispose(); } catch (Exception) { }
-        try { Timer.Dispose(); } catch (Exception) { }
-        try { Tray.Stop(); } catch (Exception) { }
+        try { AutoSwitcher.Stop(); } catch (Exception ex) { FileLogger.Warn("Shutdown", $"AutoSwitcher.Stop 失败: {ex.Message}"); }
+        try { Hotkeys.Dispose(); } catch (Exception ex) { FileLogger.Warn("Shutdown", $"Hotkeys.Dispose 失败: {ex.Message}"); }
+        try { SystemMonitor.Dispose(); } catch (Exception ex) { FileLogger.Warn("Shutdown", $"SystemMonitor.Dispose 失败: {ex.Message}"); }
+        try { Timer.Dispose(); } catch (Exception ex) { FileLogger.Warn("Shutdown", $"Timer.Dispose 失败: {ex.Message}"); }
+        try { Tray.Stop(); } catch (Exception ex) { FileLogger.Warn("Shutdown", $"Tray.Stop 失败: {ex.Message}"); }
     }
 }

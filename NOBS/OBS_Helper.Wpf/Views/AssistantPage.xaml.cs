@@ -12,14 +12,15 @@ namespace OBS_Helper.Wpf.Views;
 /// </summary>
 public partial class AssistantPage : UserControl
 {
-    /// <summary>
-    /// 提问序号。边打边搜时先发的请求可能后返回，用序号丢弃过期结果，
-    /// 避免列表被上一个关键词的结果覆盖。
-    /// </summary>
+    /// <summary>提问序号。边打边搜时先发的请求可能后返回，用序号丢弃过期结果，
+    /// 避免列表被上一个关键词的结果覆盖。</summary>
     private int _askSeq;
 
     /// <summary>是否已经问过。没问过时不显示「没找到匹配」，否则一进页面就是空状态。</summary>
     private bool _asked;
+
+    /// <summary>输入防抖：停止输入 300ms 后才匹配，避免逐击穿发（P1-2）。</summary>
+    private readonly Debouncer _debouncer = new(TimeSpan.FromMilliseconds(300));
 
     public AssistantPage()
     {
@@ -60,9 +61,13 @@ public partial class AssistantPage : UserControl
         }
     }
 
-    private async void OnQueryChanged(object sender, TextChangedEventArgs e) => await AskAsync();
+    private void OnQueryChanged(object sender, TextChangedEventArgs e)
+    {
+        // 防抖：连续输入只在停顿后触发一次匹配（P1-2）；AskAsync 内部有 _askSeq 二次防竞态
+        _debouncer.DebounceAsync(AskAsync);
+    }
 
-    private async void OnAskClick(object sender, RoutedEventArgs e) => await AskAsync();
+    private void OnAskClick(object sender, RoutedEventArgs e) => _debouncer.DebounceAsync(AskAsync);
 
     private async Task AskAsync()
     {

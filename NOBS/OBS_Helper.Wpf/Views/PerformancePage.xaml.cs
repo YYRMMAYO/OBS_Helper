@@ -25,31 +25,33 @@ public partial class PerformancePage : UserControl, INavigationAware
     public PerformancePage()
     {
         InitializeComponent();
-        Loaded += OnLoaded;
-        Unloaded += OnUnloaded;
     }
 
-    private void OnLoaded(object sender, RoutedEventArgs e)
+    /// <summary>
+    /// 页面生命周期统一由导航回调驱动（P1-1）：进入订阅 + 启动采样，离开退订 + 停止。
+    /// 不再用手工 Loaded/Unloaded——那是 P0-1 泄漏（OnUnloaded 忘 Stop）的根源模式。
+    /// </summary>
+    public async Task OnNavigatedToAsync(object? parameter)
     {
         AppServices.SystemMonitor.SampleReady += OnSampleReady;
         AppServices.Obs.StateChanged += OnObsStateChanged;
         AppServices.SystemMonitor.Start();
         Render(AppServices.SystemMonitor);
         OnObsStateChanged();
+        await Task.CompletedTask;
     }
 
-    private void OnUnloaded(object sender, RoutedEventArgs e)
+    /// <summary>离开页面：退订事件并停掉每秒采样定时器（Start 有幂等保护，再次进入会安全重启）。</summary>
+    public Task OnNavigatedFromAsync()
     {
         AppServices.SystemMonitor.SampleReady -= OnSampleReady;
         AppServices.Obs.StateChanged -= OnObsStateChanged;
-    }
-
-    public Task OnNavigatedToAsync(object? parameter)
-    {
-        Render(AppServices.SystemMonitor);
-        OnObsStateChanged();
+        AppServices.SystemMonitor.Stop();
         return Task.CompletedTask;
     }
+
+    /// <summary>监控页无可保留状态（曲线数据在 SystemMonitorService 单例里），离开后可释放实例减少常驻（P1-3）。</summary>
+    public bool CanReleaseOnLeave => true;
 
     private void OnSampleReady() => Dispatcher.BeginInvoke(new Action(() => Render(AppServices.SystemMonitor)));
 

@@ -3,6 +3,7 @@ using System.Threading;
 using System.Windows;
 using System.Windows.Threading;
 using OBS_Helper.Wpf.Errors;
+using OBS_Helper.Wpf.Services;
 
 namespace OBS_Helper.Wpf;
 
@@ -16,6 +17,11 @@ public partial class App : Application
 
     /// <summary>自检测试期间收集到的错误文本（仅 <see cref="HeadlessTest"/> 为 true 时填充）。</summary>
     public static List<string> HeadlessErrors { get; } = new();
+
+    /// <summary>同一报错码弹窗节流：5 秒内不重复弹，避免连环异常刷屏（日志照常记录）。</summary>
+    private static readonly TimeSpan ErrorDialogThrottle = TimeSpan.FromSeconds(5);
+    private static readonly Dictionary<string, DateTime> LastDialogAt = new();
+    private static readonly object DialogThrottleLock = new();
 
     // ------------------------------------------------------------ 单实例
     // 桌面快捷方式 / 安装完成后启动 / 托盘常驻都可能重复拉起进程。
@@ -133,16 +139,27 @@ public partial class App : Application
         _showListener.Start();
     }
 
-    /// <summary>兜底错误提示。所有未捕获异常都在这里转成「报错码 + 人话」展示。</summary>
+    /// <summary>兜底错误提示。所有未捕获异常都在这里转成「报错码 + 人话」展示，并先落盘日志。</summary>
     public static void ReportError(string code, Exception? ex = null)
     {
         var detail = ex is null ? null : ex.Message;
         var text = ErrorCodes.Format(code, detail);
 
+        // 先写日志：任何异常都可追溯（弹窗被节流 / Headless 下不弹也不丢记录）
+        FileLogger.Error("ReportError", $"{code} {detail}");
+
         if (HeadlessTest)
         {
             HeadlessErrors.Add(text + (ex is null ? "" : $"\n{ex}"));
             return;
+        }
+
+        // 同类错误节流：5 秒内只弹一次窗，防止连环异常刷屏
+        lock (DialogThrottleLock)
+        {
+            var now = DateTime.UtcNow;
+            if (LastDialogAt.TryGetValue(code, out var last) && now - last < ErrorDialogThrottle) return;
+            LastDialogAt[code] = now;
         }
 
         // 可能在后台线程抛出，切回 UI 线程再弹窗
@@ -178,18 +195,33 @@ public partial class App : Application
         }
 
         // 本进程持有单实例锁：顺带清理历史版本 / 崩溃残留的同名进程，同一时刻只保留一个。
-        KillStrayInstances();
+        // 清理是后台杂活（可能等待被杀进程退出最多 3 秒），后台执行不阻塞首屏（P3-1）。
+        Task.Run(() => KillStrayInstances()).FireAndForget("Startup", "清理残留实例");
 
-        // 未处理异常：提示报错码而不是直接闪退
+        // 未处理异常：先写日志、再提示报错码，而不是直接闪退
         DispatcherUnhandledException += OnDispatcherUnhandledException;
         AppDomain.CurrentDomain.UnhandledException += (_, args) =>
         {
-            if (args.ExceptionObject is Exception ex) ReportError(ErrorCodes.Unknown, ex);
+            if (args.ExceptionObject is Exception ex)
+            {
+                FileLogger.Error("AppDomain", ex);
+                ReportError(ErrorCodes.Unknown, ex);
+            }
         };
         TaskScheduler.UnobservedTaskException += (_, args) =>
         {
+            // 之前只 SetObserved 不记录，异常信息直接丢失；现在先落盘再标记已观察
+            if (args.Exception is { } ex)
+                FileLogger.Error("TaskScheduler", ex);
             args.SetObserved();
         };
+
+#if DEBUG
+        // P2-4 绑定错误追踪：WPF 绑定失败（属性名/类型不匹配）默认只在调试输出打一行且常被吞掉，
+        // 这里把绑定错误源挂到 FileLogger，开发构建下可落盘排查；Release 构建零开销。
+        PresentationTraceSources.DataBindingSource.Listeners.Add(new TraceLoggerListener("Binding"));
+        PresentationTraceSources.Refresh();
+#endif
 
         base.OnStartup(e);
 
@@ -216,11 +248,14 @@ public partial class App : Application
         }
         _singleMutex?.Dispose();
         _showEvent?.Dispose();
+        // 退出前把日志队列写盘（最多等 2 秒），保证本次会话的异常记录不丢
+        FileLogger.Flush();
         base.OnExit(e);
     }
 
     private void OnDispatcherUnhandledException(object sender, DispatcherUnhandledExceptionEventArgs e)
     {
+        FileLogger.Error("Dispatcher", e.Exception);
         ReportError(ErrorCodes.Unknown, e.Exception);
         e.Handled = true;
     }

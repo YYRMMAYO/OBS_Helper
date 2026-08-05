@@ -1,5 +1,6 @@
 <ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:PresentationOptions="http://schemas.microsoft.com/winfx/2006/xaml/presentation/options">
 
   <!--
     品牌矢量图标（P3「品牌标识仅 OB」）。
@@ -8,7 +9,7 @@
   -->
 
   <!-- 录制状态：危险红实心圆（icon-record.svg） -->
-  <DrawingImage x:Key="IconRecord">
+  <DrawingImage x:Key="IconRecord" PresentationOptions:Freeze="True">
     <DrawingImage.Drawing>
       <GeometryDrawing Brush="#d92d20">
         <GeometryDrawing.Geometry>
@@ -19,7 +20,7 @@
   </DrawingImage>
 
   <!-- 推流状态：品牌紫信号弧（icon-stream.svg） -->
-  <DrawingImage x:Key="IconStream">
+  <DrawingImage x:Key="IconStream" PresentationOptions:Freeze="True">
     <DrawingImage.Drawing>
       <DrawingGroup>
         <GeometryDrawing Brush="#7b2ff7">
@@ -37,7 +38,7 @@
   </DrawingImage>
 
   <!-- 已连接 OBS：正常绿插头（icon-connect.svg） -->
-  <DrawingImage x:Key="IconConnect">
+  <DrawingImage x:Key="IconConnect" PresentationOptions:Freeze="True">
     <DrawingImage.Drawing>
       <GeometryDrawing Geometry="M 9,12 a 3,3 0 0 1 3,-3 h 2 a 3,3 0 0 1 0,6 h -2 a 3,3 0 0 1 -3,-3 z">
         <GeometryDrawing.Pen>

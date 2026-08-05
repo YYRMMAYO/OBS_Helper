@@ -117,6 +117,28 @@ public sealed class SeverityToSoftBrushConverter : IValueConverter
         => Binding.DoNothing;
 }
 
+/// <summary>
+/// 把语义色键（problems.json 里 category.semantic：red/orange/yellow/purple/blue/teal/green/azure/violet/crimson）
+/// 映射到主题资源里的 <c>Semantic{key}Brush</c>。主题切换时深浅两套值自动生效（P2-1）。
+/// 未知键回退品牌色。
+/// </summary>
+public sealed class SemanticToBrushConverter : IValueConverter
+{
+    public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
+    {
+        var key = (value?.ToString() ?? "").Trim();
+        if (!string.IsNullOrWhiteSpace(key))
+        {
+            var brush = Application.Current?.TryFindResource($"Semantic{key}Brush");
+            if (brush is not null) return brush;
+        }
+        return Application.Current?.TryFindResource("BrandBrush")!;
+    }
+
+    public object ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)
+        => Binding.DoNothing;
+}
+
 /// <summary>把十六进制色串（problems.json 里的 category.color）转成画刷；无效值回退品牌色。</summary>
 public sealed class HexToBrushConverter : IValueConverter
 {

@@ -34,6 +34,11 @@ jobs:
         run: ./NOBS/build.ps1 -Configuration Release -Runtime win-x64
         shell: pwsh
 
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
       - name: XAML 资源引用体检
         run: python NOBS/scripts/check_resources.py
         shell: pwsh

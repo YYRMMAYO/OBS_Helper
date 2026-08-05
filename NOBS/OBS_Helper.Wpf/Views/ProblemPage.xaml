@@ -27,7 +27,7 @@
 
           <StackPanel Grid.Column="1" Orientation="Horizontal" Margin="10,0,0,0">
             <Button x:Name="CopyButton" Style="{StaticResource SecondaryButton}"
-                    Content="📋 复制全文" Margin="0,0,8,0"
+                    Content="复制全文" Margin="0,0,8,0"
                     ToolTip="把这条方案的全部文字复制到剪贴板"
                     Click="OnCopyAll" />
             <Button x:Name="BookmarkButton" Style="{StaticResource SecondaryButton}"
@@ -41,7 +41,7 @@
         <!-- 症状表现 -->
         <Border Style="{StaticResource Card}" Margin="0,14,0,0">
           <StackPanel>
-            <TextBlock Text="🔴 症状表现" Style="{StaticResource SectionTitle}" Margin="0,0,0,8" />
+            <TextBlock Text="症状表现" Style="{StaticResource SectionTitle}" Margin="0,0,0,8" />
             <StackPanel x:Name="SymptomList" />
           </StackPanel>
         </Border>
@@ -49,7 +49,7 @@
         <!-- 可能原因 -->
         <Border Style="{StaticResource Card}" Margin="0,12,0,0">
           <StackPanel>
-            <TextBlock Text="🧐 可能原因" Style="{StaticResource SectionTitle}" Margin="0,0,0,8" />
+            <TextBlock Text="可能原因" Style="{StaticResource SectionTitle}" Margin="0,0,0,8" />
             <StackPanel x:Name="CauseList" />
           </StackPanel>
         </Border>
@@ -62,7 +62,7 @@
                 <ColumnDefinition Width="*" />
                 <ColumnDefinition Width="Auto" />
               </Grid.ColumnDefinitions>
-              <TextBlock Grid.Column="0" Text="🛠️ 分步解决方案"
+              <TextBlock Grid.Column="0" Text="分步解决方案"
                          Style="{StaticResource SectionTitle}" Margin="0" />
               <TextBlock x:Name="ProgressText" Grid.Column="1"
                          Style="{StaticResource CaptionText}" VerticalAlignment="Center" />
@@ -77,7 +77,7 @@
         <Border x:Name="TipsBlock" Style="{StaticResource Card}" Margin="0,12,0,0"
                 Visibility="Collapsed">
           <StackPanel>
-            <TextBlock Text="💡 小贴士" Style="{StaticResource SectionTitle}" Margin="0,0,0,8" />
+            <TextBlock Text="小贴士" Style="{StaticResource SectionTitle}" Margin="0,0,0,8" />
             <StackPanel x:Name="TipList" />
           </StackPanel>
         </Border>
@@ -86,14 +86,14 @@
         <Border x:Name="LinksBlock" Style="{StaticResource Card}" Margin="0,12,0,0"
                 Visibility="Collapsed">
           <StackPanel>
-            <TextBlock Text="🔗 官方文档 / 参考链接" Style="{StaticResource SectionTitle}" Margin="0,0,0,8" />
+            <TextBlock Text="官方文档 / 参考链接" Style="{StaticResource SectionTitle}" Margin="0,0,0,8" />
             <StackPanel x:Name="LinkList" />
           </StackPanel>
         </Border>
 
         <!-- 相关问题 -->
         <StackPanel x:Name="RelatedBlock" Margin="0,12,0,0" Visibility="Collapsed">
-          <TextBlock Text="🔗 相关问题" Style="{StaticResource SectionTitle}" Margin="0,4,0,8" />
+          <TextBlock Text="相关问题" Style="{StaticResource SectionTitle}" Margin="0,4,0,8" />
           <StackPanel x:Name="RelatedList" />
         </StackPanel>
 

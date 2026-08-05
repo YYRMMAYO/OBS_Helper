@@ -1,7 +1,11 @@
 ﻿<Application x:Class="OBS_Helper.Wpf.App"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             ShutdownMode="OnMainWindowClose">
+             ShutdownMode="OnExplicitShutdown">
+  <!--
+    不用 OnMainWindowClose：主窗口关闭时默认最小化到托盘（可关），
+    只有托盘菜单「退出」（或进程正常结束）才真正 Shutdown。
+  -->
   <Application.Resources>
     <ResourceDictionary>
       <ResourceDictionary.MergedDictionaries>

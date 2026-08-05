@@ -8,8 +8,11 @@
 ; 正常由 ..\build.ps1 调用，也可以直接用 ISCC.exe 单独编译。
 
 #define MyAppName "OBS 排障助手"
-; 版本号默认与 csproj 对齐；build.ps1 会用 /DMyAppVersion=<ver> 覆盖此值
+; 版本号默认与 csproj 对齐；build.ps1 会用 /DMyAppVersion=<ver> 覆盖此值。
+; 用 #ifndef：ISPP 中命令行 /D 定义过的符号在脚本里不应再 #define 覆盖。
+#ifndef MyAppVersion
 #define MyAppVersion "1.3.0"
+#endif
 #define MyAppPublisher "OBS Helper"
 #define MyAppExeName "OBS_Helper.exe"
 ; AppId 与旧的 Blazor 版不同：两版可以并存安装，升级路径互不干扰

@@ -2,6 +2,7 @@ using System.Windows;
 using System.Windows.Controls;
 using OBS_Helper.Wpf.Controls;
 using OBS_Helper.Wpf.Errors;
+using OBS_Helper.Wpf.Models.Shell;
 using OBS_Helper.Wpf.Navigation;
 using OBS_Helper.Wpf.Services;
 using OBS_Helper.Wpf.Services.Ai;
@@ -31,6 +32,16 @@ public partial class SettingsPage : UserControl, INavigationAware
     {
         await AppServices.AiSettings.LoadAsync();
         AppServices.Appearance.Initialize();
+        AppServices.Hotkeys.Load();
+        AppServices.AutoSwitcher.Load();
+        AppServices.Tray.LoadSettings();
+
+        // 已连接 OBS 时刷新一次场景列表，让「自动切换规则」能选到目标场景
+        if (AppServices.Obs.IsConnected)
+        {
+            try { await AppServices.Obs.RefreshScenesAsync(); }
+            catch (Exception) { /* 刷新失败不阻塞设置页 */ }
+        }
 
         SyncControls();
         RefreshDataSummary();
@@ -76,6 +87,7 @@ public partial class SettingsPage : UserControl, INavigationAware
             _syncing = false;
         }
 
+        ShellSync();
         RefreshCloudWarning();
     }
 
@@ -104,6 +116,266 @@ public partial class SettingsPage : UserControl, INavigationAware
         KeyStatusText.SetResourceReference(TextBlock.ForegroundProperty, has ? "OkBrush" : "MutedBrush");
         KeyStatusPill.SetResourceReference(Border.BackgroundProperty, has ? "OkSoftBrush" : "Surface3Brush");
         ClearKeyButton.IsEnabled = has;
+    }
+
+    // ------------------------------------------------------------ 后台与遥控（托盘 / 热键）
+
+    private void ShellSync()
+    {
+        _syncing = true;
+        try
+        {
+            var tray = AppServices.Tray.Settings;
+            CloseToTraySwitch.IsChecked = tray.CloseToTray;
+            NotifyStateSwitch.IsChecked = tray.NotifyStateChange;
+
+            var h = AppServices.Hotkeys.Settings;
+            RecHotkeyEnabled.IsChecked = h.RecordEnabled;
+            RecHotkeyCtrl.IsChecked = h.Record.Ctrl;
+            RecHotkeyAlt.IsChecked = h.Record.Alt;
+            RecHotkeyShift.IsChecked = h.Record.Shift;
+            RecHotkeyWin.IsChecked = h.Record.Win;
+            RecHotkeyKey.Text = h.Record.Key;
+
+            StreamHotkeyEnabled.IsChecked = h.StreamEnabled;
+            StreamHotkeyCtrl.IsChecked = h.Stream.Ctrl;
+            StreamHotkeyAlt.IsChecked = h.Stream.Alt;
+            StreamHotkeyShift.IsChecked = h.Stream.Shift;
+            StreamHotkeyWin.IsChecked = h.Stream.Win;
+            StreamHotkeyKey.Text = h.Stream.Key;
+
+            VcamHotkeyEnabled.IsChecked = h.VirtualCamEnabled;
+            VcamHotkeyCtrl.IsChecked = h.VirtualCam.Ctrl;
+            VcamHotkeyAlt.IsChecked = h.VirtualCam.Alt;
+            VcamHotkeyShift.IsChecked = h.VirtualCam.Shift;
+            VcamHotkeyWin.IsChecked = h.VirtualCam.Win;
+            VcamHotkeyKey.Text = h.VirtualCam.Key;
+
+            WinHotkeyEnabled.IsChecked = h.ToggleWindowEnabled;
+            WinHotkeyCtrl.IsChecked = h.ToggleWindow.Ctrl;
+            WinHotkeyAlt.IsChecked = h.ToggleWindow.Alt;
+            WinHotkeyShift.IsChecked = h.ToggleWindow.Shift;
+            WinHotkeyWin.IsChecked = h.ToggleWindow.Win;
+            WinHotkeyKey.Text = h.ToggleWindow.Key;
+
+            AutoSwitchEnabled.IsChecked = AppServices.AutoSwitcher.Settings.Enabled;
+        }
+        finally
+        {
+            _syncing = false;
+        }
+
+        RefreshHotkeyDisplays();
+        RefreshHotkeyStatus();
+        RefreshAutoSwitchRules();
+    }
+
+    private void OnShellSettingToggled(object sender, RoutedEventArgs e)
+    {
+        if (_syncing) return;
+        var s = AppServices.Tray.Settings;
+        s.CloseToTray = CloseToTraySwitch.IsChecked == true;
+        s.NotifyStateChange = NotifyStateSwitch.IsChecked == true;
+        AppServices.Tray.SaveSettings();
+    }
+
+    /// <summary>热键任一修饰键 / 主键 / 启用勾选变化：只刷新预览文本，注册在「保存」时统一做。</summary>
+    private void OnHotkeyToggled(object sender, RoutedEventArgs e)
+    {
+        if (_syncing) return;
+        RefreshHotkeyDisplays();
+    }
+
+    private void OnHotkeyChanged(object sender, TextChangedEventArgs e)
+    {
+        if (_syncing) return;
+        RefreshHotkeyDisplays();
+    }
+
+    private void RefreshHotkeyDisplays()
+    {
+        RecHotkeyDisplay.Text = HotkeyDisplay(RecHotkeyCtrl, RecHotkeyAlt, RecHotkeyShift, RecHotkeyWin, RecHotkeyKey);
+        StreamHotkeyDisplay.Text = HotkeyDisplay(StreamHotkeyCtrl, StreamHotkeyAlt, StreamHotkeyShift, StreamHotkeyWin, StreamHotkeyKey);
+        VcamHotkeyDisplay.Text = HotkeyDisplay(VcamHotkeyCtrl, VcamHotkeyAlt, VcamHotkeyShift, VcamHotkeyWin, VcamHotkeyKey);
+        WinHotkeyDisplay.Text = HotkeyDisplay(WinHotkeyCtrl, WinHotkeyAlt, WinHotkeyShift, WinHotkeyWin, WinHotkeyKey);
+    }
+
+    private static string HotkeyDisplay(CheckBox ctrl, CheckBox alt, CheckBox shift, CheckBox win, TextBox key)
+        => ReadBinding(ctrl, alt, shift, win, key).DisplayName;
+
+    private static HotkeyBinding ReadBinding(CheckBox ctrl, CheckBox alt, CheckBox shift, CheckBox win, TextBox key)
+        => new()
+        {
+            Ctrl = ctrl.IsChecked == true,
+            Alt = alt.IsChecked == true,
+            Shift = shift.IsChecked == true,
+            Win = win.IsChecked == true,
+            Key = key.Text.Trim()
+        };
+
+    private void OnSaveHotkeys(object sender, RoutedEventArgs e)
+    {
+        var h = AppServices.Hotkeys.Settings;
+        h.RecordEnabled = RecHotkeyEnabled.IsChecked == true;
+        h.Record = ReadBinding(RecHotkeyCtrl, RecHotkeyAlt, RecHotkeyShift, RecHotkeyWin, RecHotkeyKey);
+        h.StreamEnabled = StreamHotkeyEnabled.IsChecked == true;
+        h.Stream = ReadBinding(StreamHotkeyCtrl, StreamHotkeyAlt, StreamHotkeyShift, StreamHotkeyWin, StreamHotkeyKey);
+        h.VirtualCamEnabled = VcamHotkeyEnabled.IsChecked == true;
+        h.VirtualCam = ReadBinding(VcamHotkeyCtrl, VcamHotkeyAlt, VcamHotkeyShift, VcamHotkeyWin, VcamHotkeyKey);
+        h.ToggleWindowEnabled = WinHotkeyEnabled.IsChecked == true;
+        h.ToggleWindow = ReadBinding(WinHotkeyCtrl, WinHotkeyAlt, WinHotkeyShift, WinHotkeyWin, WinHotkeyKey);
+
+        AppServices.Hotkeys.SaveAndReapply();
+        RefreshHotkeyStatus();
+    }
+
+    private void RefreshHotkeyStatus()
+    {
+        var errs = AppServices.Hotkeys.RegistrationErrors;
+        HotkeyStatusText.Text = errs.Count == 0
+            ? "热键已保存并生效。"
+            : "注意：" + string.Join("；", errs);
+        HotkeyStatusText.SetResourceReference(TextBlock.ForegroundProperty, errs.Count == 0 ? "OkBrush" : "WarnBrush");
+    }
+
+    // ------------------------------------------------------------ 场景自动切换
+
+    private void OnAutoSwitchToggled(object sender, RoutedEventArgs e)
+    {
+        if (_syncing) return;
+        AppServices.AutoSwitcher.Settings.Enabled = AutoSwitchEnabled.IsChecked == true;
+        AppServices.AutoSwitcher.Save();
+    }
+
+    private void OnAddAutoSwitchRule(object sender, RoutedEventArgs e)
+    {
+        AppServices.AutoSwitcher.Settings.Rules.Add(new AutoSwitchRule
+        {
+            Pattern = "",
+            SceneName = AppServices.Obs.Scenes.FirstOrDefault()?.Name ?? ""
+        });
+        AppServices.AutoSwitcher.Save();
+        RefreshAutoSwitchRules();
+    }
+
+    private void RefreshAutoSwitchRules()
+    {
+        _syncing = true;
+        try
+        {
+            AutoSwitchRulesPanel.Children.Clear();
+            var settings = AppServices.AutoSwitcher.Settings;
+            if (settings.Rules.Count == 0)
+            {
+                AutoSwitchRulesPanel.Children.Add(new TextBlock
+                {
+                    Text = "还没有规则。点「＋ 添加规则」开始，比如：窗口标题含「游戏名」→ 切到「游戏」场景。",
+                    Style = (Style)FindResource("MutedText")
+                });
+                return;
+            }
+
+            var sceneNames = AppServices.Obs.Scenes.Select(s => s.Name).ToList();
+            foreach (var rule in settings.Rules)
+                AutoSwitchRulesPanel.Children.Add(BuildRuleRow(rule, sceneNames));
+        }
+        finally
+        {
+            _syncing = false;
+        }
+    }
+
+    private FrameworkElement BuildRuleRow(AutoSwitchRule rule, IReadOnlyList<string> sceneNames)
+    {
+        var grid = new Grid { Margin = new Thickness(0, 0, 0, 8) };
+        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+
+        var enabled = new CheckBox
+        {
+            Style = (Style)FindResource("AppCheckBox"),
+            IsChecked = rule.Enabled,
+            VerticalAlignment = VerticalAlignment.Center,
+            ToolTip = "启用该规则"
+        };
+        enabled.Checked += (_, _) => { rule.Enabled = true; AppServices.AutoSwitcher.Save(); };
+        enabled.Unchecked += (_, _) => { rule.Enabled = false; AppServices.AutoSwitcher.Save(); };
+        Grid.SetColumn(enabled, 0);
+
+        var pattern = new TextBox
+        {
+            Style = (Style)FindResource("AppTextBox"),
+            Text = rule.Pattern,
+            Tag = rule,
+            MaxLength = 80,
+            MinWidth = 150,
+            Margin = new Thickness(10, 0, 0, 0),
+            VerticalContentAlignment = VerticalAlignment.Center
+        };
+        pattern.TextChanged += (_, _) => { rule.Pattern = pattern.Text; AppServices.AutoSwitcher.Save(); };
+        Grid.SetColumn(pattern, 1);
+
+        var regex = new CheckBox
+        {
+            Content = "正则",
+            Style = (Style)FindResource("AppCheckBox"),
+            IsChecked = rule.UseRegex,
+            VerticalAlignment = VerticalAlignment.Center,
+            Margin = new Thickness(10, 0, 0, 0),
+            ToolTip = "按正则表达式匹配窗口标题"
+        };
+        regex.Checked += (_, _) => { rule.UseRegex = true; AppServices.AutoSwitcher.Save(); };
+        regex.Unchecked += (_, _) => { rule.UseRegex = false; AppServices.AutoSwitcher.Save(); };
+        Grid.SetColumn(regex, 2);
+
+        var scene = new ComboBox
+        {
+            Style = (Style)FindResource("AppComboBox"),
+            Width = 170,
+            Margin = new Thickness(10, 0, 0, 0),
+            VerticalAlignment = VerticalAlignment.Center,
+            IsEnabled = sceneNames.Count > 0
+        };
+        scene.ItemsSource = sceneNames;
+        scene.SelectedItem = sceneNames.FirstOrDefault(n => string.Equals(n, rule.SceneName, StringComparison.OrdinalIgnoreCase));
+        scene.SelectionChanged += (_, _) =>
+        {
+            if (_syncing) return;
+            rule.SceneName = scene.SelectedItem as string ?? "";
+            AppServices.AutoSwitcher.Save();
+        };
+        scene.ToolTip = sceneNames.Count > 0 ? "目标场景" : "请先连接 OBS 获取场景列表";
+        Grid.SetColumn(scene, 3);
+
+        var delete = new Button
+        {
+            Content = "✕",
+            Style = (Style)FindResource("GhostButton"),
+            Width = 32,
+            Height = 32,
+            Padding = new Thickness(0),
+            Margin = new Thickness(10, 0, 0, 0),
+            VerticalAlignment = VerticalAlignment.Center,
+            ToolTip = "删除规则",
+            Tag = rule
+        };
+        delete.Click += (_, _) =>
+        {
+            AppServices.AutoSwitcher.Settings.Rules.Remove(rule);
+            AppServices.AutoSwitcher.Save();
+            RefreshAutoSwitchRules();
+        };
+        Grid.SetColumn(delete, 4);
+
+        grid.Children.Add(enabled);
+        grid.Children.Add(pattern);
+        grid.Children.Add(regex);
+        grid.Children.Add(scene);
+        grid.Children.Add(delete);
+        return grid;
     }
 
     private void RefreshDataSummary()
@@ -141,7 +413,16 @@ public partial class SettingsPage : UserControl, INavigationAware
 
     private async void OnSaveCloud(object sender, RoutedEventArgs e)
     {
-        await AppServices.AiSettings.SetCloudAsync(CloudUrlBox.Text, CloudKeyNameBox.Text, CloudModelBox.Text);
+        try
+        {
+            await AppServices.AiSettings.SetCloudAsync(CloudUrlBox.Text, CloudKeyNameBox.Text, CloudModelBox.Text);
+        }
+        catch (ArgumentException ex)
+        {
+            // URL 不合规（非 https / 内网地址）：就地提示，不落盘
+            SetAiStatus(ex.Message);
+            return;
+        }
 
         // 服务会把空键名回填成默认值，同步回输入框，免得用户以为没生效
         CloudKeyNameBox.Text = AppServices.AiSettings.Settings.CloudSecretKeyName;

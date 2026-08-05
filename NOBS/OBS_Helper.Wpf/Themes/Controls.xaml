@@ -322,7 +322,8 @@
           <Border x:Name="Bd" Background="Transparent" CornerRadius="{DynamicResource CornerRadiusMd}"
                   Padding="10,9">
             <StackPanel Orientation="Horizontal">
-              <TextBlock x:Name="Icon" Text="{TemplateBinding Tag}" FontSize="17" Width="26"
+              <!-- 导航项不再使用 emoji 图标，Tag 留空时此 TextBlock 宽度为 0，不占位 -->
+              <TextBlock x:Name="Icon" Text="{TemplateBinding Tag}" FontSize="17" Width="Auto"
                          VerticalAlignment="Center" />
               <TextBlock x:Name="Label" Text="{TemplateBinding Content}"
                          VerticalAlignment="Center"

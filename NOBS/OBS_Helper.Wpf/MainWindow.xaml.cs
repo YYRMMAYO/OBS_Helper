@@ -1,3 +1,4 @@
+using System.ComponentModel;
 using System.IO;
 using System.Text;
 using System.Windows;
@@ -39,6 +40,7 @@ public partial class MainWindow : Window
             [Routes.Setup] = (NavSetup, "直播搭建", "从零到开播的完整流程"),
             [Routes.Templates] = (NavTemplates, "场景模板", "一键搭好整套场景与来源"),
             [Routes.Console] = (NavConsole, "OBS 控制台", "远程控制场景、录制与推流"),
+            [Routes.Performance] = (NavPerformance, "系统监控", "CPU / 内存 / 网络 / 磁盘实时曲线"),
             [Routes.Guide] = (NavGuide, "排障指引", "通用排查思路与速查手册"),
             [Routes.Settings] = (NavSettings, "设置", "诊断引擎、外观与关于"),
             [Routes.Category] = (null, "分类", ""),
@@ -58,6 +60,7 @@ public partial class MainWindow : Window
 
         Loaded += OnLoaded;
         Closed += OnClosed;
+        Closing += OnClosing;
     }
 
     private void RegisterRoutes()
@@ -69,6 +72,7 @@ public partial class MainWindow : Window
         _nav.Register(Routes.Setup, () => new SetupPage());
         _nav.Register(Routes.Templates, () => new TemplatePage());
         _nav.Register(Routes.Console, () => new ConsolePage());
+        _nav.Register(Routes.Performance, () => new PerformancePage());
         _nav.Register(Routes.Guide, () => new GuidePage());
         _nav.Register(Routes.Settings, () => new SettingsPage());
         _nav.Register(Routes.Category, () => new CategoryPage());
@@ -87,6 +91,11 @@ public partial class MainWindow : Window
         {
             App.ReportError(Errors.ErrorCodes.StartupFailed, ex);
         }
+
+        // 后台能力的事件接线（托盘 / 全局热键）
+        AppServices.Tray.ShowRequested += OnTrayShowRequested;
+        AppServices.Tray.ExitRequested += OnTrayExitRequested;
+        AppServices.Hotkeys.ToggleWindowRequested += OnToggleWindowRequested;
 
         // 自检测试：逐个导航所有路由，把异常写到 selftest_result.txt 后退出。
         // 用环境变量触发，避免影响正常启动。
@@ -145,6 +154,7 @@ public partial class MainWindow : Window
             (Routes.Setup, null),
             (Routes.Templates, null),
             (Routes.Console, null),
+            (Routes.Performance, null),
             (Routes.Guide, null),
             (Routes.Settings, null),
             (Routes.Category, firstCategory),
@@ -196,7 +206,58 @@ public partial class MainWindow : Window
         // 退出时断开 OBS，避免 WebSocket 线程拖住进程
         try { await AppServices.Obs.DisposeAsync(); } catch { /* 退出路径，忽略 */ }
         AppServices.Appearance.Dispose();
+        AppServices.ShutdownServices();
     }
+
+    // ------------------------------------------------------------ 托盘 / 关闭行为
+
+    /// <summary>托盘「退出」已触发：允许真正关闭窗口并退出进程。</summary>
+    private bool _allowExit;
+
+    /// <summary>关闭窗口时若开启了「最小化到托盘」，改为隐藏而不是退出。</summary>
+    private void OnClosing(object? sender, CancelEventArgs e)
+    {
+        if (!App.HeadlessTest && !_allowExit && AppServices.Tray.Settings.CloseToTray)
+        {
+            e.Cancel = true;
+            Hide();
+            AppServices.Tray.Notify("已最小化到托盘",
+                "OBS 排障助手仍在后台运行，双击托盘图标或从托盘菜单可恢复窗口。");
+        }
+    }
+
+    /// <summary>托盘菜单「显示主窗口」/ 双击图标。</summary>
+    private void OnTrayShowRequested()
+        => Dispatcher.BeginInvoke(new Action(() =>
+        {
+            Show();
+            if (WindowState == WindowState.Minimized) WindowState = WindowState.Normal;
+            Activate();
+        }));
+
+    /// <summary>托盘菜单「退出」。</summary>
+    private void OnTrayExitRequested()
+        => Dispatcher.BeginInvoke(new Action(() =>
+        {
+            _allowExit = true;
+            Application.Current.Shutdown();
+        }));
+
+    /// <summary>全局热键「显示 / 隐藏主窗口」。</summary>
+    private void OnToggleWindowRequested()
+        => Dispatcher.BeginInvoke(new Action(() =>
+        {
+            if (IsVisible && WindowState != WindowState.Minimized)
+            {
+                Hide();
+            }
+            else
+            {
+                Show();
+                if (WindowState == WindowState.Minimized) WindowState = WindowState.Normal;
+                Activate();
+            }
+        }));
 
     // ------------------------------------------------------------ 导航联动
 

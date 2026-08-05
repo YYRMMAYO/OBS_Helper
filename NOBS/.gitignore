@@ -1,6 +1,7 @@
 # .NET build output
 bin/
 obj/
+*_wpftmp.csproj
 
 # Packaging artifacts (installer EXE / portable zip) — pushed separately by hand
 PAKE/
@@ -11,3 +12,7 @@ build_out.txt
 selftest_result.txt
 obj2/
 tmp_build/
+
+# Agent workspace metadata (local only)
+.reasonix/
+reasonix.toml

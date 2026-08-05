@@ -12,9 +12,9 @@
                      Text="正在检测…" />
 
           <StackPanel Orientation="Horizontal">
-            <Button x:Name="DetectButton" Content="🔍 自动检测" Style="{StaticResource SecondaryButton}"
+            <Button x:Name="DetectButton" Content="自动检测" Style="{StaticResource SecondaryButton}"
                     Margin="0,0,10,0" Click="OnDetectClick" />
-            <Button Content="📂 手动指定" Style="{StaticResource GhostButton}" Click="OnManualPathClick" />
+            <Button Content="手动指定" Style="{StaticResource GhostButton}" Click="OnManualPathClick" />
           </StackPanel>
 
           <TextBlock x:Name="ConfigDetailText" Style="{StaticResource CaptionText}" Margin="0,8,0,0"
@@ -30,9 +30,9 @@
                      Text="将当前 OBS 场景集合、配置文件打包为 ZIP。默认不包含推流密钥（密码也会脱敏），勾选后才会包含完整密钥信息。" />
 
           <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
-            <Button x:Name="BackupButton" Content="📦 创建备份" Style="{StaticResource PrimaryButton}"
+            <Button x:Name="BackupButton" Content="创建备份" Style="{StaticResource PrimaryButton}"
                     Margin="0,0,10,0" Click="OnCreateBackup" />
-            <Button x:Name="ExportButton" Content="💾 导出到文件…" Style="{StaticResource SecondaryButton}"
+            <Button x:Name="ExportButton" Content="导出到文件…" Style="{StaticResource SecondaryButton}"
                     Click="OnExportClick" />
           </StackPanel>
 
@@ -55,9 +55,9 @@
                      Text="从之前导出的备份 ZIP 中恢复 OBS 配置。导入前会自动创建一份当前配置的备份，误操作可回滚。脱敏包（不含密钥）导入时会自动回填本机现有密钥。" />
 
           <StackPanel Orientation="Horizontal">
-            <Button x:Name="ImportOverwriteButton" Content="📥 导入并覆盖" Style="{StaticResource PrimaryButton}"
+            <Button x:Name="ImportOverwriteButton" Content="导入并覆盖" Style="{StaticResource PrimaryButton}"
                     Margin="0,0,10,0" Click="OnImportOverwrite" />
-            <Button x:Name="ImportMergeButton" Content="📥 导入并合并" Style="{StaticResource SecondaryButton}"
+            <Button x:Name="ImportMergeButton" Content="导入并合并" Style="{StaticResource SecondaryButton}"
                     Click="OnImportMerge" />
           </StackPanel>
 
@@ -74,9 +74,9 @@
                      Text="两档重置都强制先自动备份。彻底重置会把 OBS 恢复到第一次安装时的空白状态，将删除所有场景、profile、插件设置。" />
 
           <StackPanel Orientation="Horizontal">
-            <Button x:Name="LightResetButton" Content="🔄 轻度重置" Style="{StaticResource PrimaryButton}"
+            <Button x:Name="LightResetButton" Content="轻度重置" Style="{StaticResource PrimaryButton}"
                     Margin="0,0,10,0" Click="OnLightReset" />
-            <Button x:Name="FullResetButton" Content="⚠️ 彻底重置" Style="{StaticResource DangerButton}"
+            <Button x:Name="FullResetButton" Content="彻底重置" Style="{StaticResource DangerButton}"
                     Click="OnFullReset" />
           </StackPanel>
 
@@ -91,7 +91,7 @@
               CornerRadius="{DynamicResource CornerRadiusMd}" Padding="14,10">
         <StackPanel>
           <StackPanel Orientation="Horizontal">
-            <TextBlock x:Name="ResultIcon" Text="ℹ️" VerticalAlignment="Center"
+            <TextBlock x:Name="ResultIcon" Text="" VerticalAlignment="Center"
                        FontSize="{DynamicResource FontSizeLg}" Margin="0,0,8,0" />
             <TextBlock x:Name="ResultText" TextWrapping="Wrap" VerticalAlignment="Center"
                        FontSize="{DynamicResource FontSizeSm}"

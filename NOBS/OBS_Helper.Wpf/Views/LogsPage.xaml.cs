@@ -259,7 +259,7 @@ public partial class LogsPage : UserControl, INavigationAware
             body.Children.Add(evidence);
         }
 
-        var suggestion = MakeText($"💡 {f.Suggestion}", "FontSizeSm", "TextBrush");
+        var suggestion = MakeText($"{f.Suggestion}", "FontSizeSm", "TextBrush");
         suggestion.Margin = new Thickness(0, 8, 0, 0);
         body.Children.Add(suggestion);
 

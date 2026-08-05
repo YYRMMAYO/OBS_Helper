@@ -11,9 +11,9 @@
 
       <!-- 快捷入口：对应原版 hero 里的「搜索问题 / 问我一下」 -->
       <StackPanel Orientation="Horizontal">
-        <Button Style="{StaticResource PrimaryButton}" Content="🔍 搜索问题"
+        <Button Style="{StaticResource PrimaryButton}" Content="搜索问题"
                 Margin="0,0,10,0" Click="OnSearchClick" />
-        <Button Style="{StaticResource SecondaryButton}" Content="🤖 问我一下"
+        <Button Style="{StaticResource SecondaryButton}" Content="问我一下"
                 Click="OnAssistantClick" />
       </StackPanel>
 
@@ -73,7 +73,7 @@
 
       <!-- 我的收藏：没有收藏时整块隐藏（与原版一致） -->
       <StackPanel x:Name="BookmarkSection" Visibility="Collapsed">
-        <TextBlock Text="⭐ 我的收藏" Style="{StaticResource SectionTitle}" Margin="0,14,0,10" />
+        <TextBlock Text="我的收藏" Style="{StaticResource SectionTitle}" Margin="0,14,0,10" />
         <StackPanel x:Name="BookmarkList" />
       </StackPanel>
 

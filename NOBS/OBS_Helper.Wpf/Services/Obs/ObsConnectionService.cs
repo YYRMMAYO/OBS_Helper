@@ -375,11 +375,33 @@ public sealed class ObsConnectionService : IAsyncDisposable
     public Task<ObsRequestResult> StopRecordAsync() => _client.RequestAsync("StopRecord");
     public Task<ObsRequestResult> ToggleRecordPauseAsync() => _client.RequestAsync("ToggleRecordPause");
 
+    /// <summary>按当前状态切换录制开关（托盘菜单 / 全局热键共用）。</summary>
+    public Task<ObsRequestResult> ToggleRecordAsync()
+        => RecordStatus.Active ? StopRecordAsync() : StartRecordAsync();
+
     public Task<ObsRequestResult> StartStreamAsync() => _client.RequestAsync("StartStream");
     public Task<ObsRequestResult> StopStreamAsync() => _client.RequestAsync("StopStream");
 
+    /// <summary>按当前状态切换推流开关（托盘菜单 / 全局热键共用）。</summary>
+    public Task<ObsRequestResult> ToggleStreamAsync()
+        => StreamStatus.Active ? StopStreamAsync() : StartStreamAsync();
+
     public Task<ObsRequestResult> StartVirtualCamAsync() => _client.RequestAsync("StartVirtualCam");
     public Task<ObsRequestResult> StopVirtualCamAsync() => _client.RequestAsync("StopVirtualCam");
+
+    /// <summary>按当前状态切换虚拟摄像头开关（托盘菜单 / 全局热键共用）。</summary>
+    public Task<ObsRequestResult> ToggleVirtualCamAsync()
+        => VirtualCamStatus.Active ? StopVirtualCamAsync() : StartVirtualCamAsync();
+
+    /// <summary>读取 OBS 当前录制输出目录（「打开录制目录」用）。</summary>
+    public async Task<string?> GetRecordDirectoryAsync()
+    {
+        var r = await _client.RequestAsync("GetRecordDirectory");
+        if (!r.Ok || r.Data is not { } d) return null;
+        return d.TryGetProperty("recordDirectory", out var p) && p.ValueKind == System.Text.Json.JsonValueKind.String
+            ? p.GetString()
+            : null;
+    }
 
     public Task<ObsRequestResult> SetMuteAsync(string inputName, bool muted)
         => _client.RequestAsync("SetInputMute", new { inputName, inputMuted = muted });

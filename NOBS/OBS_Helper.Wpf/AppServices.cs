@@ -3,6 +3,7 @@ using OBS_Helper.Wpf.Services.Ai;
 using OBS_Helper.Wpf.Services.Host;
 using OBS_Helper.Wpf.Services.Obs;
 using OBS_Helper.Wpf.Services.ObsConfig;
+using OBS_Helper.Wpf.Services.Shell;
 
 namespace OBS_Helper.Wpf;
 
@@ -32,6 +33,13 @@ public static class AppServices
 
     private static readonly Lazy<UpdateService> _updates = new(() => new UpdateService());
 
+    // 后台 / 遥控能力
+    private static readonly Lazy<TrayService> _tray = new(() => new TrayService(Obs, Store));
+    private static readonly Lazy<GlobalHotkeyService> _hotkeys = new(() => new GlobalHotkeyService(Store, Obs));
+    private static readonly Lazy<SceneAutoSwitcher> _autoSwitcher = new(() => new SceneAutoSwitcher(Store, Obs));
+    private static readonly Lazy<ControlTimerService> _timer = new(() => new ControlTimerService(Obs, Tray));
+    private static readonly Lazy<SystemMonitorService> _systemMonitor = new(() => new SystemMonitorService(Tray));
+
     private static readonly Lazy<AiSettingsService> _aiSettings = new(() => new AiSettingsService(Store, Host));
     private static readonly Lazy<ObsToolRegistry> _tools = new(() => new ObsToolRegistry(Problems));
     private static readonly Lazy<LocalDiagnosticEngine> _localEngine = new(() => new LocalDiagnosticEngine(Problems, Assistant));
@@ -60,16 +68,41 @@ public static class AppServices
     public static ObsToolRegistry Tools => _tools.Value;
     public static LocalDiagnosticEngine LocalEngine => _localEngine.Value;
     public static CloudDiagnosticEngine CloudEngine => _cloudEngine.Value;
+
+    // 后台 / 遥控能力
+    public static TrayService Tray => _tray.Value;
+    public static GlobalHotkeyService Hotkeys => _hotkeys.Value;
+    public static SceneAutoSwitcher AutoSwitcher => _autoSwitcher.Value;
+    public static ControlTimerService Timer => _timer.Value;
+    public static SystemMonitorService SystemMonitor => _systemMonitor.Value;
     public static DiagnosticOrchestrator Orchestrator => _orchestrator.Value;
 
     /// <summary>导航服务由 MainWindow 在构造时注入，供各页面互相跳转。</summary>
     public static Navigation.NavigationService Navigation { get; internal set; } = null!;
 
-    /// <summary>应用启动时的一次性初始化（外观 + 各类设置）。</summary>
+    /// <summary>应用启动时的一次性初始化（外观 + 各类设置 + 后台能力）。</summary>
     public static async Task InitializeAsync()
     {
         Appearance.Initialize();
         await ObsSettings.LoadAsync().ConfigureAwait(false);
         await AiSettings.LoadAsync().ConfigureAwait(false);
+
+        // 后台能力：托盘、全局热键、场景自动切换（默认按各自配置启动）
+        Tray.LoadSettings();
+        Hotkeys.Load();
+        Hotkeys.Start();
+        AutoSwitcher.Load();
+        AutoSwitcher.Start();
+        Tray.Start();
+    }
+
+    /// <summary>应用退出时的清理（MainWindow.OnClosed 调用）。</summary>
+    public static void ShutdownServices()
+    {
+        try { AutoSwitcher.Stop(); } catch (Exception) { }
+        try { Hotkeys.Dispose(); } catch (Exception) { }
+        try { SystemMonitor.Dispose(); } catch (Exception) { }
+        try { Timer.Dispose(); } catch (Exception) { }
+        try { Tray.Stop(); } catch (Exception) { }
     }
 }

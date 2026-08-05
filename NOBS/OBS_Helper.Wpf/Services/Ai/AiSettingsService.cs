@@ -79,7 +79,19 @@ public sealed class AiSettingsService
 
     public Task SetCloudAsync(string url, string secretKeyName, string model)
     {
-        Settings.CloudUrl = (url ?? "").Trim();
+        var trimmed = (url ?? "").Trim();
+
+        // 保存前即时校验：非法地址立刻报错，而不是等诊断时才被发现。
+        // 空地址允许（用户可能想先清空，之后通过 IsCloudConfigured 感知「未配置」）。
+        if (!string.IsNullOrEmpty(trimmed))
+        {
+            if (!Uri.TryCreate(trimmed, UriKind.Absolute, out var u) || u.Scheme != Uri.UriSchemeHttps)
+                throw new ArgumentException("云端接口地址必须是 https:// 开头的完整 URL。");
+            if (HostBridge.IsPrivateHost(u.Host))
+                throw new ArgumentException("出于安全考虑，云端接口不能指向本机或内网地址。");
+        }
+
+        Settings.CloudUrl = trimmed;
         Settings.CloudSecretKeyName = string.IsNullOrWhiteSpace(secretKeyName) ? "obs_ai_apikey" : secretKeyName.Trim();
         Settings.CloudModel = (model ?? "").Trim();
         return SaveAsync();

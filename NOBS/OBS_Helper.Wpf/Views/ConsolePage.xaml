@@ -163,13 +163,47 @@
         <TextBlock Style="{StaticResource SectionTitle}" Text="输出" Margin="0,18,0,10" />
         <Button x:Name="RecordButton" Style="{StaticResource SecondaryButton}"
                 HorizontalContentAlignment="Left" Margin="0,0,0,8"
-                Content="🔴 录制：未开始" Click="OnRecordClick" />
+                Content="录制：未开始" Click="OnRecordClick" />
         <Button x:Name="StreamButton" Style="{StaticResource SecondaryButton}"
                 HorizontalContentAlignment="Left" Margin="0,0,0,8"
-                Content="📡 推流：未开始" Click="OnStreamClick" />
+                Content="推流：未开始" Click="OnStreamClick" />
         <Button x:Name="VirtualCamButton" Style="{StaticResource SecondaryButton}"
                 HorizontalContentAlignment="Left"
-                Content="🎥 虚拟摄像头：关闭" Click="OnVirtualCamClick" />
+                Content="虚拟摄像头：关闭" Click="OnVirtualCamClick" />
+
+        <Border Style="{StaticResource HLine}" Margin="0,16,0,12" />
+        <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
+          <TextBlock Text="定时停止" FontWeight="SemiBold" VerticalAlignment="Center"
+                     FontSize="{DynamicResource FontSizeSm}"
+                     Foreground="{DynamicResource TextBrush}" Margin="0,0,10,0" />
+          <ComboBox x:Name="TimerTargetBox" Style="{StaticResource AppComboBox}" Width="90"
+                    VerticalAlignment="Center">
+            <ComboBoxItem Content="录制" />
+            <ComboBoxItem Content="推流" />
+          </ComboBox>
+          <ComboBox x:Name="TimerDurationBox" Style="{StaticResource AppComboBox}" Width="110"
+                    Margin="8,0,0,0" VerticalAlignment="Center">
+            <ComboBoxItem Content="15 分钟" Tag="900" />
+            <ComboBoxItem Content="30 分钟" Tag="1800" />
+            <ComboBoxItem Content="45 分钟" Tag="2700" />
+            <ComboBoxItem Content="60 分钟" Tag="3600" />
+            <ComboBoxItem Content="90 分钟" Tag="5400" />
+          </ComboBox>
+          <Button x:Name="TimerStartButton" Content="开始定时" Style="{StaticResource SecondaryButton}"
+                  Margin="8,0,0,0" VerticalAlignment="Center" Click="OnTimerStartClick" />
+          <Button x:Name="TimerCancelButton" Content="取消" Style="{StaticResource GhostButton}"
+                  Margin="8,0,0,0" VerticalAlignment="Center" Click="OnTimerCancelClick" />
+          <TextBlock x:Name="TimerCountdownText" VerticalAlignment="Center" Margin="12,0,0,0"
+                     FontSize="{DynamicResource FontSizeSm}"
+                     Foreground="{DynamicResource BrandBrush}" FontWeight="Bold" />
+        </StackPanel>
+        <TextBlock Style="{StaticResource CaptionText}" Margin="2,0,0,0"
+                   Text="到点自动停止并弹出系统通知；若中途手动停止录制 / 推流，定时器会自动取消。" />
+
+        <Button x:Name="OpenRecordDirButton" Content="打开录制目录" Style="{StaticResource GhostButton}"
+                HorizontalAlignment="Left" Margin="0,14,0,0" Click="OnOpenRecordDirClick" />
+        <TextBlock x:Name="RecordDirHintText" Style="{StaticResource CaptionText}" Margin="2,6,0,0"
+                   Visibility="Collapsed" />
       </StackPanel>
 
     </StackPanel>

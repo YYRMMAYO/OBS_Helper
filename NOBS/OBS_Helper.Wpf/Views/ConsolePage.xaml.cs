@@ -7,6 +7,7 @@ using OBS_Helper.Wpf.Controls;
 using OBS_Helper.Wpf.Models.Obs;
 using OBS_Helper.Wpf.Navigation;
 using OBS_Helper.Wpf.Services.Obs;
+using OBS_Helper.Wpf.Services.Shell;
 
 namespace OBS_Helper.Wpf.Views;
 
@@ -73,6 +74,7 @@ public partial class ConsolePage : UserControl, INavigationAware
     private void OnLoaded(object sender, RoutedEventArgs e)
     {
         AppServices.Obs.StateChanged += OnObsStateChanged;
+        AppServices.Timer.StateChanged += OnTimerStateChanged;
         Render();
     }
 
@@ -80,6 +82,7 @@ public partial class ConsolePage : UserControl, INavigationAware
     {
         // 页面缓存复用，不退订就会越订越多；定时器不停就会在别的页面继续打请求
         AppServices.Obs.StateChanged -= OnObsStateChanged;
+        AppServices.Timer.StateChanged -= OnTimerStateChanged;
         _statsTimer.Stop();
         _volumeDebounce.Stop();
     }
@@ -122,6 +125,9 @@ public partial class ConsolePage : UserControl, INavigationAware
     /// <summary>连接服务可能在后台线程通知，必须回 UI 线程再动控件。</summary>
     private void OnObsStateChanged() => Dispatcher.BeginInvoke(new Action(Render));
 
+    /// <summary>定时器每秒刷新倒计时（定时器本身跑在 UI 线程）。</summary>
+    private void OnTimerStateChanged() => RenderTimer();
+
     private async void OnStatsTick(object? sender, EventArgs e)
     {
         if (_busy || !AppServices.Obs.IsConnected) return;
@@ -157,6 +163,7 @@ public partial class ConsolePage : UserControl, INavigationAware
         RenderSceneItems(obs);
         RenderAudio(obs);
         RenderOutputs(obs);
+        RenderTimer();
     }
 
     private void RenderStats(ObsStats s)
@@ -376,13 +383,13 @@ public partial class ConsolePage : UserControl, INavigationAware
     private void RenderOutputs(ObsConnectionService obs)
     {
         var rec = obs.RecordStatus;
-        RecordButton.Content = "🔴 录制：" + (rec.Active ? (rec.Paused ? "已暂停" : "进行中") : "未开始");
+        RecordButton.Content = "录制：" + (rec.Active ? (rec.Paused ? "已暂停" : "进行中") : "未开始");
         ApplyActiveLook(RecordButton, rec.Active);
 
-        StreamButton.Content = "📡 推流：" + (obs.StreamStatus.Active ? "进行中" : "未开始");
+        StreamButton.Content = "推流：" + (obs.StreamStatus.Active ? "进行中" : "未开始");
         ApplyActiveLook(StreamButton, obs.StreamStatus.Active);
 
-        VirtualCamButton.Content = "🎥 虚拟摄像头：" + (obs.VirtualCamStatus.Active ? "开启" : "关闭");
+        VirtualCamButton.Content = "虚拟摄像头：" + (obs.VirtualCamStatus.Active ? "开启" : "关闭");
         ApplyActiveLook(VirtualCamButton, obs.VirtualCamStatus.Active);
     }
 
@@ -585,6 +592,76 @@ public partial class ConsolePage : UserControl, INavigationAware
             await RunAsync("关闭虚拟摄像头", () => AppServices.Obs.StopVirtualCamAsync());
         else
             await RunAsync("开启虚拟摄像头", () => AppServices.Obs.StartVirtualCamAsync());
+    }
+
+    // -------------------------------------------------------------- 定时停止 / 录制目录
+
+    private void OnTimerStartClick(object sender, RoutedEventArgs e)
+    {
+        if (AppServices.Timer.IsRunning) return;
+
+        var target = TimerTargetBox.SelectedIndex == 1 ? TimerTarget.Stream : TimerTarget.Record;
+        var seconds = 1800; // 默认 30 分钟
+        if (TimerDurationBox.SelectedItem is ComboBoxItem item && item.Tag is string tag
+            && int.TryParse(tag, out var s) && s > 0)
+        {
+            seconds = s;
+        }
+
+        AppServices.Timer.Start(target, TimeSpan.FromSeconds(seconds));
+    }
+
+    private void OnTimerCancelClick(object sender, RoutedEventArgs e)
+        => AppServices.Timer.Cancel();
+
+    /// <summary>同步定时器相关控件状态：运行时锁定选项并显示倒计时。</summary>
+    private void RenderTimer()
+    {
+        var running = AppServices.Timer.IsRunning;
+        TimerStartButton.IsEnabled = !running;
+        TimerTargetBox.IsEnabled = !running;
+        TimerDurationBox.IsEnabled = !running;
+        TimerCancelButton.Visibility = running ? Visibility.Visible : Visibility.Collapsed;
+
+        if (running && AppServices.Timer.Current is { } t)
+        {
+            var label = t.Target == TimerTarget.Record ? "录制" : "推流";
+            var rem = AppServices.Timer.RemainingSeconds;
+            TimerCountdownText.Text = $"{label} · {TimeSpan.FromSeconds(rem):mm\\:ss} 后自动停止";
+        }
+        else
+        {
+            TimerCountdownText.Text = "";
+        }
+    }
+
+    private async void OnOpenRecordDirClick(object sender, RoutedEventArgs e)
+    {
+        if (_busy) return;
+        SetBusy(true);
+        try
+        {
+            var dir = await AppServices.Obs.GetRecordDirectoryAsync();
+            if (string.IsNullOrEmpty(dir))
+            {
+                RecordDirHintText.Text = "OBS 未返回录制目录（可能尚未设置或版本过旧）。";
+                RecordDirHintText.Visibility = Visibility.Visible;
+                return;
+            }
+
+            var ok = AppServices.Host.OpenFolder(dir);
+            RecordDirHintText.Text = ok ? $"已打开：{dir}" : $"目录不存在或无法打开：{dir}";
+            RecordDirHintText.Visibility = Visibility.Visible;
+        }
+        catch (Exception ex)
+        {
+            RecordDirHintText.Text = "获取录制目录失败：" + ex.Message;
+            RecordDirHintText.Visibility = Visibility.Visible;
+        }
+        finally
+        {
+            SetBusy(false);
+        }
     }
 
     // -------------------------------------------------------------- 辅助

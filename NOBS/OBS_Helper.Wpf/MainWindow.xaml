@@ -38,7 +38,8 @@
           <StackPanel Orientation="Horizontal">
             <Border Width="30" Height="30" CornerRadius="8"
                     Background="{DynamicResource BrandBrush}" VerticalAlignment="Center">
-              <TextBlock Text="🎬" FontSize="16" HorizontalAlignment="Center" VerticalAlignment="Center" />
+              <TextBlock Text="OB" FontSize="11" FontWeight="Bold" Foreground="White"
+                         HorizontalAlignment="Center" VerticalAlignment="Center" />
             </Border>
             <StackPanel Margin="10,0,0,0" VerticalAlignment="Center">
               <TextBlock Text="OBS 排障助手" FontWeight="Bold"
@@ -68,15 +69,16 @@
         <!-- 导航项 -->
         <ScrollViewer VerticalScrollBarVisibility="Auto" Style="{StaticResource PageScroll}">
           <StackPanel x:Name="NavPanel" Margin="0,2,0,8">
-            <RadioButton x:Name="NavHome"       Style="{StaticResource NavTabButton}" Tag="🏠" Content="首页"   Checked="OnNavChecked" />
-            <RadioButton x:Name="NavSearch"     Style="{StaticResource NavTabButton}" Tag="🔍" Content="搜索"   Checked="OnNavChecked" />
-            <RadioButton x:Name="NavAssistant"  Style="{StaticResource NavTabButton}" Tag="🤖" Content="助手"   Checked="OnNavChecked" />
-            <RadioButton x:Name="NavDiagnostic" Style="{StaticResource NavTabButton}" Tag="🩺" Content="诊断"   Checked="OnNavChecked" />
-            <RadioButton x:Name="NavSetup"      Style="{StaticResource NavTabButton}" Tag="🎬" Content="搭建"   Checked="OnNavChecked" />
-            <RadioButton x:Name="NavTemplates" Style="{StaticResource NavTabButton}" Tag="🧩" Content="模板"   Checked="OnNavChecked" />
-            <RadioButton x:Name="NavConsole"    Style="{StaticResource NavTabButton}" Tag="🎛️" Content="控制台" Checked="OnNavChecked" />
-            <RadioButton x:Name="NavGuide"      Style="{StaticResource NavTabButton}" Tag="📖" Content="指引"   Checked="OnNavChecked" />
-            <RadioButton x:Name="NavSettings"   Style="{StaticResource NavTabButton}" Tag="⚙️" Content="设置"   Checked="OnNavChecked" />
+            <RadioButton x:Name="NavHome"       Style="{StaticResource NavTabButton}" Content="首页"   Checked="OnNavChecked" />
+            <RadioButton x:Name="NavSearch"     Style="{StaticResource NavTabButton}" Content="搜索"   Checked="OnNavChecked" />
+            <RadioButton x:Name="NavAssistant"  Style="{StaticResource NavTabButton}" Content="助手"   Checked="OnNavChecked" />
+            <RadioButton x:Name="NavDiagnostic" Style="{StaticResource NavTabButton}" Content="诊断"   Checked="OnNavChecked" />
+            <RadioButton x:Name="NavSetup"      Style="{StaticResource NavTabButton}" Content="搭建"   Checked="OnNavChecked" />
+            <RadioButton x:Name="NavTemplates" Style="{StaticResource NavTabButton}" Content="模板"   Checked="OnNavChecked" />
+            <RadioButton x:Name="NavConsole"    Style="{StaticResource NavTabButton}" Content="控制台" Checked="OnNavChecked" />
+            <RadioButton x:Name="NavPerformance" Style="{StaticResource NavTabButton}" Content="监控"   Checked="OnNavChecked" />
+            <RadioButton x:Name="NavGuide"      Style="{StaticResource NavTabButton}" Content="指引"   Checked="OnNavChecked" />
+            <RadioButton x:Name="NavSettings"   Style="{StaticResource NavTabButton}" Content="设置"   Checked="OnNavChecked" />
           </StackPanel>
         </ScrollViewer>
       </DockPanel>
@@ -115,8 +117,8 @@
 
           <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
             <ctl:ConnectionBadge x:Name="TopBadge" Margin="0,0,10,0" />
-            <Button Style="{StaticResource IconButton}" Content="⚙️" ToolTip="设置"
-                    Click="OnSettingsClick" />
+            <Button Style="{StaticResource SecondaryButton}" Content="设置"
+                    Padding="10,6" Click="OnSettingsClick" />
           </StackPanel>
         </Grid>
       </Border>

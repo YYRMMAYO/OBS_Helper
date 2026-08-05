@@ -11,7 +11,7 @@
       <!-- ============================================ 智能诊断 -->
       <Border Style="{StaticResource Card}" Margin="0,14,0,0">
         <StackPanel>
-          <TextBlock Style="{StaticResource SectionTitle}" Text="🤖 智能诊断" />
+          <TextBlock Style="{StaticResource SectionTitle}" Text="智能诊断" />
 
           <!-- 引擎与已载入日志报告的提示，进入页面时重新计算 -->
           <TextBlock x:Name="EngineText" Style="{StaticResource MutedText}" />
@@ -116,7 +116,7 @@
               <Run FontWeight="Bold" Text="日志分析：" /><Run
                    Text="在 OBS 中 帮助 → 日志文件 → 上传日志，或访问" />
             </TextBlock>
-            <Button Content="OBS 官方日志分析器 ↗" Style="{StaticResource LinkButton}"
+            <Button Content="OBS 官方日志分析器" Style="{StaticResource LinkButton}"
                     Margin="6,0,0,0" VerticalAlignment="Center" Click="OnOpenAnalyzer" />
           </WrapPanel>
 

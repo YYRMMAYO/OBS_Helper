@@ -178,7 +178,7 @@ public partial class TemplatePage : UserControl, INavigationAware
         var buttons = new StackPanel { Orientation = Orientation.Horizontal };
         var applyBtn = new Button
         {
-            Content = "🚀 落地到 OBS",
+            Content = "落地到 OBS",
             Style = (Style)FindResource("PrimaryButton"),
             Tag = t.Id,
             Margin = new Thickness(0, 0, 10, 0)
@@ -188,7 +188,7 @@ public partial class TemplatePage : UserControl, INavigationAware
 
         var exportBtn = new Button
         {
-            Content = "📥 导出场景集合 JSON",
+            Content = "导出场景集合 JSON",
             Style = (Style)FindResource("SecondaryButton"),
             Tag = t.Id
         };

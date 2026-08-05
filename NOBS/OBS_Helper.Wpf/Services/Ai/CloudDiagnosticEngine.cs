@@ -67,72 +67,95 @@ public sealed class CloudDiagnosticEngine
         string? lastContent = null;
         var toolItems = new List<DiagnosticItem>();
 
-        for (int round = 0; round < 4; round++)
+        try
         {
-            string respJson;
-            try
+            for (int round = 0; round < 4; round++)
             {
-                respJson = await _host.AiChatAsync(_ai.Settings.CloudUrl, _ai.Settings.CloudSecretKeyName, request.ToJsonString());
-            }
-            catch (Exception ex)
-            {
-                result.Success = false;
-                result.Error = "云端 AI 请求失败：" + ex.Message;
-                return result;
-            }
-
-            var resp = JsonNode.Parse(respJson);
-            if (resp?["error"] is not null)
-            {
-                var errMsg = resp["error"]?["message"]?.GetValue<string>()
-                             ?? resp["error"]?.ToString()
-                             ?? "云端返回未知错误";
-                result.Success = false;
-                result.Error = "云端 AI 错误：" + errMsg;
-                return result;
-            }
-
-            var msg = resp?["choices"]?[0]?["message"];
-            if (msg is null)
-            {
-                result.Success = false;
-                result.Error = "云端 AI 返回格式异常（缺少 choices[0].message）。";
-                return result;
-            }
-
-            lastContent = msg["content"]?.GetValue<string>();
-
-            var toolCalls = msg["tool_calls"] as JsonArray;
-            if (toolCalls is null || toolCalls.Count == 0) break;
-
-            // 回挂 assistant 消息（含 tool_calls），再追加每个工具的返回
-            messages.Add(JsonNode.Parse(msg.ToJsonString())!);
-            foreach (var tc in toolCalls)
-            {
-                var fn = tc?["function"];
-                var name = fn?["name"]?.GetValue<string>() ?? "";
-                var argsRaw = fn?["arguments"]?.GetValue<string>() ?? "{}";
-                var callId = tc?["id"]?.GetValue<string>() ?? "";
-
-                JsonNode? argsNode;
-                try { argsNode = JsonNode.Parse(argsRaw); }
-                catch { argsNode = new JsonObject(); }
-
-                var tool = _tools.Find(name);
-                string toolOut;
-                try { toolOut = tool is null ? "{\"error\":\"未知工具 " + name + "\"}" : await tool.InvokeAsync(ctx, argsNode); }
-                catch (Exception ex) { toolOut = "{\"error\":" + (JsonValue.Create(ex.Message)?.ToJsonString() ?? "\"\"") + "}"; }
-
-                var parsed = TryParseToolItem(toolOut, name);
-                if (parsed is not null) toolItems.Add(parsed);
-
-                messages.Add(new JsonObject
+                string respJson;
+                try
                 {
-                    ["role"] = "tool",
-                    ["tool_call_id"] = callId,
-                    ["content"] = toolOut
-                });
+                    respJson = await _host.AiChatAsync(_ai.Settings.CloudUrl, _ai.Settings.CloudSecretKeyName, request.ToJsonString());
+                }
+                catch (Exception ex)
+                {
+                    result.Success = false;
+                    result.Error = "云端 AI 请求失败：" + ex.Message;
+                    return result;
+                }
+
+                JsonNode? resp;
+                try
+                {
+                    // 显式限制嵌套深度：JsonNode.Parse 内部虽默认 64 层，这里写清楚防止任何实现变更带来栈溢出风险
+                    resp = JsonNode.Parse(respJson, documentOptions: new JsonDocumentOptions { MaxDepth = 64 });
+                }
+                catch (JsonException ex)
+                {
+                    result.Success = false;
+                    result.Error = "云端 AI 返回了无法解析的内容：" + ex.Message;
+                    return result;
+                }
+
+                if (resp?["error"] is not null)
+                {
+                    var errMsg = resp["error"]?["message"]?.GetValue<string>()
+                                 ?? resp["error"]?.ToString()
+                                 ?? "云端返回未知错误";
+                    result.Success = false;
+                    result.Error = "云端 AI 错误：" + errMsg;
+                    return result;
+                }
+
+                var msg = resp?["choices"]?[0]?["message"];
+                if (msg is null)
+                {
+                    result.Success = false;
+                    result.Error = "云端 AI 返回格式异常（缺少 choices[0].message）。";
+                    return result;
+                }
+
+                lastContent = msg["content"]?.GetValue<string>();
+
+                var toolCalls = msg["tool_calls"] as JsonArray;
+                if (toolCalls is null || toolCalls.Count == 0) break;
+
+                // 回挂 assistant 消息（含 tool_calls），再追加每个工具的返回
+                messages.Add(JsonNode.Parse(msg.ToJsonString())!);
+                foreach (var tc in toolCalls)
+                {
+                    var fn = tc?["function"];
+                    var name = fn?["name"]?.GetValue<string>() ?? "";
+                    var argsRaw = fn?["arguments"]?.GetValue<string>() ?? "{}";
+                    var callId = tc?["id"]?.GetValue<string>() ?? "";
+
+                    JsonNode? argsNode;
+                    try { argsNode = JsonNode.Parse(argsRaw); }
+                    catch { argsNode = new JsonObject(); }
+
+                    var tool = _tools.Find(name);
+                    string toolOut;
+                    try { toolOut = tool is null ? "{\"error\":\"未知工具 " + name + "\"}" : await tool.InvokeAsync(ctx, argsNode); }
+                    catch (Exception ex) { toolOut = "{\"error\":" + (JsonValue.Create(ex.Message)?.ToJsonString() ?? "\"\"") + "}"; }
+
+                    var parsed = TryParseToolItem(toolOut, name);
+                    if (parsed is not null) toolItems.Add(parsed);
+
+                    messages.Add(new JsonObject
+                    {
+                        ["role"] = "tool",
+                        ["tool_call_id"] = callId,
+                        ["content"] = toolOut
+                    });
+                }
             }
+        }
+        catch (Exception ex) when (ex is JsonException or InvalidOperationException or ArgumentException or FormatException)
+        {
+            // 云端返回的字段类型异常 / 嵌套过深等：转成失败结果，让上层回退本地引擎，
+            // 而不是把异常一路抛到 UI。
+            result.Success = false;
+            result.Error = "云端 AI 响应处理失败：" + ex.Message;
+            return result;
         }
 
         result.Summary = lastContent ?? "（云端模型未返回文本结论）";

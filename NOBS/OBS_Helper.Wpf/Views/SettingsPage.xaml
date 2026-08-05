@@ -65,7 +65,7 @@
 
             <TextBlock x:Name="CloudWarnText" Style="{StaticResource MutedText}"
                        Foreground="{DynamicResource WarnBrush}" Margin="0,10,0,0" Visibility="Collapsed"
-                       Text="⚠️ 请填写 https 接口地址与密钥键名，并保存 API Key 后，云端诊断才会启用；未配置完成时诊断会自动回退到本地引擎。" />
+                       Text="请填写 https 接口地址与密钥键名，并保存 API Key 后，云端诊断才会启用；未配置完成时诊断会自动回退到本地引擎。" />
 
             <TextBlock x:Name="AiStatusText" Style="{StaticResource MutedText}"
                        Margin="0,10,0,0" Visibility="Collapsed" />
@@ -114,6 +114,182 @@
         </StackPanel>
       </Border>
 
+      <!-- ==================================================== 后台与遥控 -->
+      <Border Style="{StaticResource Card}" Margin="0,0,0,16">
+        <StackPanel>
+          <TextBlock Text="后台与遥控" Style="{StaticResource SectionTitle}" />
+          <TextBlock Style="{StaticResource MutedText}" Margin="0,0,0,12"
+                     Text="关闭窗口时最小化到系统托盘，录制 / 推流状态变化弹系统通知；全局热键让窗口不在前台也能控制 OBS。" />
+
+          <CheckBox x:Name="CloseToTraySwitch" Style="{StaticResource AppSwitch}"
+                    Content="关闭窗口时最小化到托盘"
+                    Checked="OnShellSettingToggled" Unchecked="OnShellSettingToggled" />
+          <TextBlock Style="{StaticResource CaptionText}" Margin="52,5,0,0"
+                     Text="点窗口右上角 ✕ 时隐藏到托盘而不是退出；从托盘菜单「退出」才会真正结束程序。" />
+
+          <CheckBox x:Name="NotifyStateSwitch" Style="{StaticResource AppSwitch}"
+                    Content="录制 / 推流状态变化时弹出系统通知" Margin="0,14,0,0"
+                    Checked="OnShellSettingToggled" Unchecked="OnShellSettingToggled" />
+
+          <Border Style="{StaticResource HLine}" Margin="0,16,0,0" />
+
+          <TextBlock Text="全局热键" FontWeight="SemiBold" Margin="0,0,0,10"
+                     Foreground="{DynamicResource TextBrush}" />
+          <TextBlock Style="{StaticResource CaptionText}" Margin="2,0,0,12"
+                     Text="主键支持字母 / 数字 / F1~F12。勾选后立即生效；被其他程序占用的组合会在这里提示。" />
+
+          <StackPanel Margin="0,0,0,12">
+            <!-- 录制 -->
+            <Grid Margin="0,0,0,8">
+              <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="86" />
+                <ColumnDefinition Width="46" />
+                <ColumnDefinition Width="44" />
+                <ColumnDefinition Width="44" />
+                <ColumnDefinition Width="48" />
+                <ColumnDefinition Width="48" />
+                <ColumnDefinition Width="56" />
+                <ColumnDefinition Width="*" />
+              </Grid.ColumnDefinitions>
+              <TextBlock Grid.Column="0" Text="录制开关" VerticalAlignment="Center"
+                         Foreground="{DynamicResource TextBrush}" FontSize="{DynamicResource FontSizeSm}" />
+              <CheckBox x:Name="RecHotkeyEnabled" Grid.Column="1" VerticalAlignment="Center"
+                        ToolTip="启用该热键" Checked="OnHotkeyToggled" Unchecked="OnHotkeyToggled" />
+              <CheckBox x:Name="RecHotkeyCtrl" Grid.Column="2" Content="Ctrl" VerticalAlignment="Center"
+                        Checked="OnHotkeyToggled" Unchecked="OnHotkeyToggled" />
+              <CheckBox x:Name="RecHotkeyAlt" Grid.Column="3" Content="Alt" VerticalAlignment="Center"
+                        Checked="OnHotkeyToggled" Unchecked="OnHotkeyToggled" />
+              <CheckBox x:Name="RecHotkeyShift" Grid.Column="4" Content="Shift" VerticalAlignment="Center"
+                        Checked="OnHotkeyToggled" Unchecked="OnHotkeyToggled" />
+              <CheckBox x:Name="RecHotkeyWin" Grid.Column="5" Content="Win" VerticalAlignment="Center"
+                        Checked="OnHotkeyToggled" Unchecked="OnHotkeyToggled" />
+              <TextBox x:Name="RecHotkeyKey" Grid.Column="6" Style="{StaticResource AppTextBox}"
+                       MaxLength="4" TextChanged="OnHotkeyChanged" />
+              <TextBlock x:Name="RecHotkeyDisplay" Grid.Column="7" VerticalAlignment="Center"
+                         Style="{StaticResource CaptionText}" Margin="10,0,0,0" />
+            </Grid>
+            <!-- 推流 -->
+            <Grid Margin="0,0,0,8">
+              <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="86" />
+                <ColumnDefinition Width="46" />
+                <ColumnDefinition Width="44" />
+                <ColumnDefinition Width="44" />
+                <ColumnDefinition Width="48" />
+                <ColumnDefinition Width="48" />
+                <ColumnDefinition Width="56" />
+                <ColumnDefinition Width="*" />
+              </Grid.ColumnDefinitions>
+              <TextBlock Grid.Column="0" Text="推流开关" VerticalAlignment="Center"
+                         Foreground="{DynamicResource TextBrush}" FontSize="{DynamicResource FontSizeSm}" />
+              <CheckBox x:Name="StreamHotkeyEnabled" Grid.Column="1" VerticalAlignment="Center"
+                        ToolTip="启用该热键" Checked="OnHotkeyToggled" Unchecked="OnHotkeyToggled" />
+              <CheckBox x:Name="StreamHotkeyCtrl" Grid.Column="2" Content="Ctrl" VerticalAlignment="Center"
+                        Checked="OnHotkeyToggled" Unchecked="OnHotkeyToggled" />
+              <CheckBox x:Name="StreamHotkeyAlt" Grid.Column="3" Content="Alt" VerticalAlignment="Center"
+                        Checked="OnHotkeyToggled" Unchecked="OnHotkeyToggled" />
+              <CheckBox x:Name="StreamHotkeyShift" Grid.Column="4" Content="Shift" VerticalAlignment="Center"
+                        Checked="OnHotkeyToggled" Unchecked="OnHotkeyToggled" />
+              <CheckBox x:Name="StreamHotkeyWin" Grid.Column="5" Content="Win" VerticalAlignment="Center"
+                        Checked="OnHotkeyToggled" Unchecked="OnHotkeyToggled" />
+              <TextBox x:Name="StreamHotkeyKey" Grid.Column="6" Style="{StaticResource AppTextBox}"
+                       MaxLength="4" TextChanged="OnHotkeyChanged" />
+              <TextBlock x:Name="StreamHotkeyDisplay" Grid.Column="7" VerticalAlignment="Center"
+                         Style="{StaticResource CaptionText}" Margin="10,0,0,0" />
+            </Grid>
+            <!-- 虚拟摄像头 -->
+            <Grid Margin="0,0,0,8">
+              <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="86" />
+                <ColumnDefinition Width="46" />
+                <ColumnDefinition Width="44" />
+                <ColumnDefinition Width="44" />
+                <ColumnDefinition Width="48" />
+                <ColumnDefinition Width="48" />
+                <ColumnDefinition Width="56" />
+                <ColumnDefinition Width="*" />
+              </Grid.ColumnDefinitions>
+              <TextBlock Grid.Column="0" Text="虚拟摄像头" VerticalAlignment="Center"
+                         Foreground="{DynamicResource TextBrush}" FontSize="{DynamicResource FontSizeSm}" />
+              <CheckBox x:Name="VcamHotkeyEnabled" Grid.Column="1" VerticalAlignment="Center"
+                        ToolTip="启用该热键" Checked="OnHotkeyToggled" Unchecked="OnHotkeyToggled" />
+              <CheckBox x:Name="VcamHotkeyCtrl" Grid.Column="2" Content="Ctrl" VerticalAlignment="Center"
+                        Checked="OnHotkeyToggled" Unchecked="OnHotkeyToggled" />
+              <CheckBox x:Name="VcamHotkeyAlt" Grid.Column="3" Content="Alt" VerticalAlignment="Center"
+                        Checked="OnHotkeyToggled" Unchecked="OnHotkeyToggled" />
+              <CheckBox x:Name="VcamHotkeyShift" Grid.Column="4" Content="Shift" VerticalAlignment="Center"
+                        Checked="OnHotkeyToggled" Unchecked="OnHotkeyToggled" />
+              <CheckBox x:Name="VcamHotkeyWin" Grid.Column="5" Content="Win" VerticalAlignment="Center"
+                        Checked="OnHotkeyToggled" Unchecked="OnHotkeyToggled" />
+              <TextBox x:Name="VcamHotkeyKey" Grid.Column="6" Style="{StaticResource AppTextBox}"
+                       MaxLength="4" TextChanged="OnHotkeyChanged" />
+              <TextBlock x:Name="VcamHotkeyDisplay" Grid.Column="7" VerticalAlignment="Center"
+                         Style="{StaticResource CaptionText}" Margin="10,0,0,0" />
+            </Grid>
+            <!-- 显示/隐藏窗口 -->
+            <Grid>
+              <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="86" />
+                <ColumnDefinition Width="46" />
+                <ColumnDefinition Width="44" />
+                <ColumnDefinition Width="44" />
+                <ColumnDefinition Width="48" />
+                <ColumnDefinition Width="48" />
+                <ColumnDefinition Width="56" />
+                <ColumnDefinition Width="*" />
+              </Grid.ColumnDefinitions>
+              <TextBlock Grid.Column="0" Text="显示/隐藏窗口" VerticalAlignment="Center"
+                         Foreground="{DynamicResource TextBrush}" FontSize="{DynamicResource FontSizeSm}" />
+              <CheckBox x:Name="WinHotkeyEnabled" Grid.Column="1" VerticalAlignment="Center"
+                        ToolTip="启用该热键" Checked="OnHotkeyToggled" Unchecked="OnHotkeyToggled" />
+              <CheckBox x:Name="WinHotkeyCtrl" Grid.Column="2" Content="Ctrl" VerticalAlignment="Center"
+                        Checked="OnHotkeyToggled" Unchecked="OnHotkeyToggled" />
+              <CheckBox x:Name="WinHotkeyAlt" Grid.Column="3" Content="Alt" VerticalAlignment="Center"
+                        Checked="OnHotkeyToggled" Unchecked="OnHotkeyToggled" />
+              <CheckBox x:Name="WinHotkeyShift" Grid.Column="4" Content="Shift" VerticalAlignment="Center"
+                        Checked="OnHotkeyToggled" Unchecked="OnHotkeyToggled" />
+              <CheckBox x:Name="WinHotkeyWin" Grid.Column="5" Content="Win" VerticalAlignment="Center"
+                        Checked="OnHotkeyToggled" Unchecked="OnHotkeyToggled" />
+              <TextBox x:Name="WinHotkeyKey" Grid.Column="6" Style="{StaticResource AppTextBox}"
+                       MaxLength="4" TextChanged="OnHotkeyChanged" />
+              <TextBlock x:Name="WinHotkeyDisplay" Grid.Column="7" VerticalAlignment="Center"
+                         Style="{StaticResource CaptionText}" Margin="10,0,0,0" />
+            </Grid>
+          </StackPanel>
+
+          <StackPanel Orientation="Horizontal">
+            <Button Content="保存热键设置" Style="{StaticResource PrimaryButton}"
+                    HorizontalAlignment="Left" Click="OnSaveHotkeys" />
+            <TextBlock x:Name="HotkeyStatusText" Style="{StaticResource CaptionText}"
+                       VerticalAlignment="Center" Margin="12,0,0,0" TextWrapping="Wrap" />
+          </StackPanel>
+        </StackPanel>
+      </Border>
+
+      <!-- ==================================================== 场景自动切换 -->
+      <Border Style="{StaticResource Card}" Margin="0,0,0,16">
+        <StackPanel>
+          <TextBlock Text="场景自动切换" Style="{StaticResource SectionTitle}" />
+          <TextBlock Style="{StaticResource MutedText}" Margin="0,0,0,12"
+                     Text="根据「前台窗口的标题」自动把 OBS 切到指定场景——比如切到游戏窗口时自动进游戏画面，切回浏览器时自动切回待机画面。规则按顺序匹配，第一条命中生效。" />
+
+          <CheckBox x:Name="AutoSwitchEnabled" Style="{StaticResource AppSwitch}"
+                    Content="启用场景自动切换" Margin="0,0,0,12"
+                    Checked="OnAutoSwitchToggled" Unchecked="OnAutoSwitchToggled" />
+
+          <StackPanel x:Name="AutoSwitchRulesPanel" Margin="0,0,0,12" />
+
+          <StackPanel Orientation="Horizontal">
+            <Button Content="添加规则" Style="{StaticResource SecondaryButton}"
+                    Click="OnAddAutoSwitchRule" />
+            <TextBlock x:Name="AutoSwitchStatusText" Style="{StaticResource CaptionText}"
+                       VerticalAlignment="Center" Margin="12,0,0,0" TextWrapping="Wrap" />
+          </StackPanel>
+          <TextBlock Style="{StaticResource CaptionText}" Margin="2,8,0,0"
+                     Text="「包含」为标题关键词（不区分大小写）；「正则」可写复杂匹配，如 ^Google Chrome。目标场景需先连接 OBS 才能列出。" />
+        </StackPanel>
+      </Border>
+
       <!-- ==================================================== 排障指引 -->
       <Border Style="{StaticResource Card}" Margin="0,0,0,16">
         <StackPanel>
@@ -122,9 +298,9 @@
                      Text="汇总黑屏、编码过载、音画不同步、推流失败等常见问题的排查步骤；日志分析可离线解析 OBS 日志并自动脱敏。" />
 
           <StackPanel Orientation="Horizontal">
-            <Button Content="📖 打开排障指引" Style="{StaticResource PrimaryButton}"
+            <Button Content="打开排障指引" Style="{StaticResource PrimaryButton}"
                     Margin="0,0,10,0" Click="OnOpenGuide" />
-            <Button Content="📜 打开日志分析" Style="{StaticResource SecondaryButton}" Click="OnOpenLogs" />
+            <Button Content="打开日志分析" Style="{StaticResource SecondaryButton}" Click="OnOpenLogs" />
           </StackPanel>
 
           <Border Style="{StaticResource HLine}" />
@@ -154,9 +330,9 @@
                      Text="正在检测 OBS 配置目录…" />
 
           <StackPanel Orientation="Horizontal">
-            <Button Content="💾 备份 / 导入导出 / 重置" Style="{StaticResource PrimaryButton}"
+            <Button Content="备份 / 导入导出 / 重置" Style="{StaticResource PrimaryButton}"
                     Margin="0,0,10,0" Click="OnOpenObsConfig" />
-            <Button Content="🧩 场景模板" Style="{StaticResource SecondaryButton}" Click="OnOpenTemplates" />
+            <Button Content="场景模板" Style="{StaticResource SecondaryButton}" Click="OnOpenTemplates" />
           </StackPanel>
         </StackPanel>
       </Border>

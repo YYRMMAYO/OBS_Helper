@@ -3,6 +3,7 @@ using System.IO;
 using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
+using System.Net.Sockets;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
@@ -352,7 +353,14 @@ public sealed class HostBridge
         try
         {
             if (string.IsNullOrWhiteSpace(directory) || !Directory.Exists(directory)) return false;
-            Process.Start(new ProcessStartInfo("explorer.exe", $"\"{directory}\"") { UseShellExecute = true });
+            // 用 ArgumentList 而非字符串拼接，避免路径中的特殊字符被 shell 解析
+            var psi = new ProcessStartInfo
+            {
+                FileName = "explorer.exe",
+                UseShellExecute = true
+            };
+            psi.ArgumentList.Add(directory);
+            Process.Start(psi);
             return true;
         }
         catch (Exception)
@@ -363,14 +371,43 @@ public sealed class HostBridge
 
     // -------------------------------------------------- 云端 AI 转发（可选）
 
+    /// <summary>云端 AI 响应体大小上限：诊断结论一般几十 KB，2MB 足以容纳任何合法返回。</summary>
+    private const long MaxAiResponseBytes = 2L * 1024 * 1024;
+
     private static readonly HttpClient Http = CreateHttpClient();
 
     private static HttpClient CreateHttpClient()
     {
-        var handler = new HttpClientHandler
+        // 用 SocketsHttpHandler + ConnectCallback：TCP 连接建立后校验「实际解析出的」远端 IP。
+        // 这是对 IsPrivateHost 字符串检查的补充——域名可以被解析到内网地址（DNS rebinding），
+        // 仅检查 URL 里的 host 挡不住这类绕过。
+        var handler = new SocketsHttpHandler
         {
             AllowAutoRedirect = false,
-            AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate
+            AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate,
+            ConnectCallback = async (ctx, ct) =>
+            {
+                var socket = new Socket(SocketType.Stream, ProtocolType.Tcp);
+                try
+                {
+                    // URL 直接是 IP 字面量时 ctx.DnsEndPoint 为 null，回退成从请求 URI 重建终点
+                    var endpoint = ctx.DnsEndPoint
+                        ?? new DnsEndPoint(ctx.InitialRequestMessage.RequestUri!.Host, ctx.InitialRequestMessage.RequestUri.Port);
+
+                    await socket.ConnectAsync(endpoint, ct).ConfigureAwait(false);
+                    if (socket.RemoteEndPoint is IPEndPoint remote && IsPrivateIp(remote.Address))
+                    {
+                        socket.Dispose();
+                        throw new UnauthorizedAccessException("拒绝连接本机 / 内网地址（含解析后的实际 IP）。");
+                    }
+                    return new NetworkStream(socket, ownsSocket: true);
+                }
+                catch
+                {
+                    socket.Dispose();
+                    throw;
+                }
+            }
         };
         var client = new HttpClient(handler)
         {
@@ -391,25 +428,57 @@ public sealed class HostBridge
             || h.EndsWith(".internal", StringComparison.Ordinal))
             return true;
 
-        if (IPAddress.TryParse(h, out var ip))
+        return IPAddress.TryParse(h, out var ip) && IsPrivateIp(ip);
+    }
+
+    /// <summary>
+    /// 判断一个 IP 是否属于本机 / 内网 / 不可路由地址。
+    /// 同时处理 IPv4-mapped IPv6（<c>::ffff:127.0.0.1</c>）与 IPv4-compatible（<c>::1.2.3.4</c>），
+    /// 二者会按内嵌的 IPv4 判定，避免绕过私网检查。
+    /// </summary>
+    private static bool IsPrivateIp(IPAddress ip)
+    {
+        if (IPAddress.IsLoopback(ip)) return true;   // 127/8 与 ::1
+        if (ip.Equals(IPAddress.IPv6Any)) return true; // ::（未指定地址，不可路由）
+
+        var b = ip.GetAddressBytes();
+
+        if (b.Length == 4)
         {
-            if (IPAddress.IsLoopback(ip)) return true;
-            var b = ip.GetAddressBytes();
-            if (b.Length == 4)
-            {
-                if (b[0] == 10) return true;                                  // 10/8
-                if (b[0] == 192 && b[1] == 168) return true;                  // 192.168/16
-                if (b[0] == 172 && b[1] >= 16 && b[1] <= 31) return true;     // 172.16/12
-                if (b[0] == 169 && b[1] == 254) return true;                  // 169.254/16
-                if (b[0] == 0) return true;
-            }
-            else if (b.Length == 16)
-            {
-                // fc00::/7（唯一本地地址）与 fe80::/10（链路本地）
-                if ((b[0] & 0xFE) == 0xFC) return true;
-                if (b[0] == 0xFE && (b[1] & 0xC0) == 0x80) return true;
-            }
+            if (b[0] == 0) return true;                                       // 0/8
+            if (b[0] == 10) return true;                                      // 10/8
+            if (b[0] == 100 && b[1] >= 64 && b[1] <= 127) return true;        // 100.64.0.0/10 CGNAT
+            if (b[0] == 127) return true;                                     // 127/8
+            if (b[0] == 169 && b[1] == 254) return true;                      // 169.254/16 链路本地
+            if (b[0] == 172 && b[1] >= 16 && b[1] <= 31) return true;         // 172.16/12
+            if (b[0] == 192 && b[1] == 168) return true;                      // 192.168/16
+            return false;
         }
+
+        if (b.Length == 16)
+        {
+            // IPv4-mapped（::ffff:a.b.c.d）与 IPv4-compatible（::a.b.c.d）：前 10 字节全 0
+            bool zeroHead = true;
+            for (int i = 0; i < 10; i++)
+            {
+                if (b[i] != 0) { zeroHead = false; break; }
+            }
+            if (zeroHead)
+            {
+                if (b[10] == 0xFF && b[11] == 0xFF)   // mapped
+                    return IsPrivateIp(new IPAddress(new[] { b[12], b[13], b[14], b[15] }));
+                if (b[10] == 0 && b[11] == 0)         // compatible
+                    return IsPrivateIp(new IPAddress(new[] { b[12], b[13], b[14], b[15] }));
+            }
+
+            // fc00::/7（唯一本地地址）
+            if ((b[0] & 0xFE) == 0xFC) return true;
+            // fe80::/10 与 fec0::/10（链路本地 / 站点本地）
+            if (b[0] == 0xFE && (b[1] & 0xC0) == 0x80) return true;
+            if (b[0] == 0xFE && (b[1] & 0xC0) == 0xC0) return true;
+            return false;
+        }
+
         return false;
     }
 
@@ -455,16 +524,36 @@ public sealed class HostBridge
         req.Headers.Authorization = new AuthenticationHeaderValue("Bearer", apiKey);
 
         using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(120));
-        using var resp = await Http.SendAsync(req, HttpCompletionOption.ResponseContentRead, cts.Token)
+        using var resp = await Http.SendAsync(req, HttpCompletionOption.ResponseHeadersRead, cts.Token)
                                    .ConfigureAwait(false);
 
-        var text = await resp.Content.ReadAsStringAsync(cts.Token).ConfigureAwait(false);
+        var text = await ReadBodyLimitedAsync(resp.Content, MaxAiResponseBytes, cts.Token).ConfigureAwait(false);
         if (!resp.IsSuccessStatusCode)
         {
             // 只回传状态码与响应体，绝不把 Authorization 头写进任何日志或错误信息
             throw new HttpRequestException($"云端 AI 请求失败（HTTP {(int)resp.StatusCode}）: {Truncate(text, 500)}");
         }
         return text;
+    }
+
+    /// <summary>限量读取响应体，防止恶意 / 异常服务器返回超大内容撑爆内存。</summary>
+    private static async Task<string> ReadBodyLimitedAsync(HttpContent content, long maxBytes, CancellationToken ct)
+    {
+        await using var stream = await content.ReadAsStreamAsync(ct).ConfigureAwait(false);
+        using var reader = new StreamReader(stream, Encoding.UTF8);
+        var sb = new StringBuilder();
+        var buf = new char[8192];
+        long total = 0;
+        while (true)
+        {
+            var n = await reader.ReadAsync(buf.AsMemory(), ct).ConfigureAwait(false);
+            if (n == 0) break;
+            total += n;
+            if (total > maxBytes)
+                throw new HttpRequestException($"云端响应体过大（>{maxBytes / (1024 * 1024)}MB），已中止读取。");
+            sb.Append(buf, 0, n);
+        }
+        return sb.ToString();
     }
 
     private static string Truncate(string s, int max)

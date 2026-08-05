@@ -171,7 +171,7 @@ public partial class DiagnosticPage : UserControl, INavigationAware
 
         if (!string.IsNullOrEmpty(it.Reason))
         {
-            var reason = MakeText($"🔎 {it.Reason}", "FontSizeSm", "MutedBrush");
+            var reason = MakeText($"{it.Reason}", "FontSizeSm", "MutedBrush");
             reason.Margin = new Thickness(0, 8, 0, 0);
             body.Children.Add(reason);
         }

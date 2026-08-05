@@ -4,6 +4,8 @@
     <OutputType>WinExe</OutputType>
     <TargetFramework>net10.0-windows</TargetFramework>
     <UseWPF>true</UseWPF>
+    <!-- 系统托盘（NotifyIcon）需要 WinForms 的消息循环支持 -->
+    <UseWindowsForms>true</UseWindowsForms>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <LangVersion>latest</LangVersion>
@@ -14,9 +16,9 @@
     <ApplicationIcon>Assets\appicon.ico</ApplicationIcon>
     <ApplicationManifest>app.manifest</ApplicationManifest>
 
-    <Version>1.3.0</Version>
-    <FileVersion>1.3.0.0</FileVersion>
-    <AssemblyVersion>1.3.0.0</AssemblyVersion>
+    <Version>1.4.0</Version>
+    <FileVersion>1.4.0.0</FileVersion>
+    <AssemblyVersion>1.4.0.0</AssemblyVersion>
     <AssemblyTitle>OBS 排障助手</AssemblyTitle>
     <Product>OBS 排障助手</Product>
     <Company>OBS Helper</Company>
@@ -32,16 +34,28 @@
     <EnableWindowsTargeting>true</EnableWindowsTargeting>
     <ErrorOnDuplicatePublishOutputFiles>false</ErrorOnDuplicatePublishOutputFiles>
 
+    <!-- WinForms 检测到 app.manifest 里已有 DPI 设置时的提示，WPF 由 manifest 管理 DPI，忽略该提示 -->
+    <NoWarn>$(NoWarn);WFO0003</NoWarn>
+
     <!-- WPF 不支持裁剪，显式关闭以免误开 -->
     <PublishTrimmed>false</PublishTrimmed>
     <GenerateDocumentationFile>false</GenerateDocumentationFile>
   </PropertyGroup>
 
   <ItemGroup>
+    <!-- UseWindowsForms 会隐式加入 System.Drawing / System.Windows.Forms 全局 using，
+         与 WPF 的 System.Windows.Controls 等类型大量撞名；这里移除，仅保留显式 using（托盘服务里）。 -->
+    <Using Remove="System.Drawing" />
+    <Using Remove="System.Windows.Forms" />
+  </ItemGroup>
+
+  <ItemGroup>
     <!-- 离线知识库与排障指引：内嵌进程序集，单文件发布也能读到 -->
     <EmbeddedResource Include="Assets\problems.json" LogicalName="OBS_Helper.Wpf.Assets.problems.json" />
     <EmbeddedResource Include="Assets\troubleshooting.md" LogicalName="OBS_Helper.Wpf.Assets.troubleshooting.md" />
     <EmbeddedResource Include="Assets\scene_templates.json" LogicalName="OBS_Helper.Wpf.Assets.scene_templates.json" />
+    <!-- 托盘图标：运行时以 Stream 读取（WinForms Icon 需要流，不能直接用 WPF 资源） -->
+    <EmbeddedResource Include="Assets\appicon.ico" LogicalName="OBS_Helper.Wpf.Assets.appicon.ico" />
   </ItemGroup>
 
   <!--

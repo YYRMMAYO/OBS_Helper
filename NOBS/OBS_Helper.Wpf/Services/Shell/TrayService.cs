@@ -43,6 +43,9 @@ public sealed class TrayService : IDisposable
     private bool _lastStreamActive;
     private bool _lastVcamActive;
 
+    /// <summary>首次刷新只记录当前状态、不弹「已开始」假通知（启动时 OBS 可能已在录制/推流）。</summary>
+    private bool _primed;
+
     /// <summary>托盘菜单「显示主窗口」或双击托盘图标时触发。</summary>
     public event Action? ShowRequested;
 
@@ -138,6 +141,16 @@ public sealed class TrayService : IDisposable
     private void NotifyStateFlips(bool rec, bool stream, bool vcam)
     {
         if (!Settings.NotifyStateChange || _icon is null) return;
+
+        // 首次刷新：只同步基线，避免把「启动时已存在」的录制/推流状态当成刚翻转弹通知
+        if (!_primed)
+        {
+            _primed = true;
+            _lastRecActive = rec;
+            _lastStreamActive = stream;
+            _lastVcamActive = vcam;
+            return;
+        }
 
         if (rec != _lastRecActive)
         {

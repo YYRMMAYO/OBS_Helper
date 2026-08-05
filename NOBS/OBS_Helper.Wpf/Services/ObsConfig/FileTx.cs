@@ -89,10 +89,8 @@ public sealed class FileTx : IDisposable
         {
             try { Rollback(); } catch (Exception) { }
         }
-        else
-        {
-            SafeDelete(_txDir);
-        }
+        // 已提交：_txDir 里的恢复副本是用户「找回」的唯一来源（UI 承诺「保留在回收站可恢复」），
+        // 必须保留，由 ObsPathService.CleanupTrash 按保留组数限量清理。
     }
 
     // ------------------------------------------------------------ 内部工具

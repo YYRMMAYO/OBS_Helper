@@ -319,10 +319,11 @@ public sealed class SceneTemplateService
         // 自校验：能解析 + 每个 source_uuid 都能在 sources 找到
         SelfCheckCollection(json);
 
-        var fileName = $"obshelper_{Slugify(tpl.Id)}_{DateTime.Now:yyyyMMdd}.json";
+        var stamp = $"{DateTime.Now:yyyyMMdd}";
+        var fileName = $"obshelper_{Slugify(tpl.Id)}_{stamp}.json";
         var path = Path.Combine(dir, fileName);
-        int n = 2;
-        while (File.Exists(path)) path = Path.Combine(dir, $"obshelper_{Slugify(tpl.Id)}_{DateTime.Now:yyyyMMdd}_{n}.json");
+        for (int n = 2; File.Exists(path); n++)
+            path = Path.Combine(dir, $"obshelper_{Slugify(tpl.Id)}_{stamp}_{n}.json");
 
         await File.WriteAllTextAsync(path, text, new UTF8Encoding(false), ct);
         return path;

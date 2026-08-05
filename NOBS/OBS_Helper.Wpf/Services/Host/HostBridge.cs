@@ -363,14 +363,23 @@ public sealed class HostBridge
     {
         try
         {
-            if (string.IsNullOrWhiteSpace(directory) || !Directory.Exists(directory)) return false;
+            if (string.IsNullOrWhiteSpace(directory)) return false;
+
+            // OBS 的 GetRecordDirectory 会原样返回配置文件里的录制路径，可能带正斜杠
+            // （如 D:/Captures，OBS 设置里手输路径就会存成正斜杠）甚至相对路径。
+            // 实测 explorer 接到正斜杠路径会解析错误——跳到 C:\Users\...\Documents。
+            // 先用 GetFullPath 统一规范化为绝对路径（正斜杠转反斜杠），再做存在性检查。
+            var full = Path.GetFullPath(directory);
+            full = Path.TrimEndingDirectorySeparator(full);
+            if (!Directory.Exists(full)) return false;
+
             // 用 ArgumentList 而非字符串拼接，避免路径中的特殊字符被 shell 解析
             var psi = new ProcessStartInfo
             {
                 FileName = "explorer.exe",
                 UseShellExecute = true
             };
-            psi.ArgumentList.Add(directory);
+            psi.ArgumentList.Add(full);
             Process.Start(psi);
             return true;
         }

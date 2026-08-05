@@ -68,9 +68,9 @@ dotnet run --project OBS_Helper.Wpf
 
 产物落在 `PAKE\windows\`：
 
-- `OBS_Helper_Setup_1.4.8.exe` — 安装包
-- `OBS_Helper_Portable_1.4.8.zip` — 解压即用
-- `OBS_Helper_Portable_1.4.8.exe` — 单文件（需 `-SingleFile`）
+- `OBS_Helper_Setup_1.4.9.exe` — 安装包
+- `OBS_Helper_Portable_1.4.9.zip` — 解压即用
+- `OBS_Helper_Portable_1.4.9.exe` — 单文件（需 `-SingleFile`）
 
 ## 工程结构
 

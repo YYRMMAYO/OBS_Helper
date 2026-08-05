@@ -11,7 +11,7 @@ CLIENT_COPY = os.path.join(ROOT, "OBS_Helper.Client", "wwwroot", "data", "proble
 # Canonical official link library
 L = {
     "mac_perm":   {"title": "OBS 官方 · macOS 屏幕录制/麦克风/辅助功能权限指南", "url": "https://obsproject.com/kb/macos-permissions-guide"},
-    "win_tshoot": {"title": "OBS 官方 · Windows 排障指南（黑屏/编码/音频/崩溃）", "url": "https://obs-studio-app.github.io/obs-studio-troubleshooting-windows.html"},
+    "win_tshoot": {"title": "OBS 官方 · Windows 排障指南（黑屏/编码/音频/崩溃）", "url": "https://obsproject.com/zh-cn/kb/category/2"},
     "black_fix":  {"title": "OBS Versions · 黑屏与编码问题修复教程", "url": "https://obs-versions.com/blog/fix-obs-black-screen"},
     "analyzer":   {"title": "OBS 官方 · 日志分析器（自动诊断日志）", "url": "https://obsproject.com/tools/analyzer"},
     "cn_guide":   {"title": "OBS 中文站 · 入门与基础配置指南", "url": "https://www.obsproject.com.cn/obs/62.html"},

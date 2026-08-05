@@ -92,7 +92,7 @@
 
 - 打开「🩺 诊断」输入现象，获取分步建议。
 - 查阅官方文档：
-  - OBS 中文文档：https://obsproject.com/zh-cn/docs
+  - OBS 中文知识库：https://obsproject.com/zh-cn/kb
   - 日志分析器：https://obsproject.com/analyzer
 - 到 OBS 官方论坛或社区按「现象 + 日志」提问，附上日志分析结论会更快得到帮助。
 

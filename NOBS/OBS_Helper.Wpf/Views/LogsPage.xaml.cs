@@ -107,6 +107,7 @@ public partial class LogsPage : UserControl, INavigationAware
         RenderFileList();
 
         SetBusy(true, "正在读取并分析日志…");
+        AppServices.Busy.Show("正在分析日志…");
         try
         {
             var text = await AppServices.Host.ReadObsLogAsync(f.Path);
@@ -122,6 +123,7 @@ public partial class LogsPage : UserControl, INavigationAware
         finally
         {
             SetBusy(false);
+            AppServices.Busy.Hide();
         }
     }
 
@@ -145,6 +147,7 @@ public partial class LogsPage : UserControl, INavigationAware
         RenderFileList();
 
         SetBusy(true, "正在读取并分析日志…");
+        AppServices.Busy.Show("正在分析日志…");
         try
         {
             var text = await Task.Run(() => ReadTail(path));
@@ -157,6 +160,7 @@ public partial class LogsPage : UserControl, INavigationAware
         finally
         {
             SetBusy(false);
+            AppServices.Busy.Hide();
         }
     }
 

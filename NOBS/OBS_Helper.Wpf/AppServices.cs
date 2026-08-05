@@ -80,6 +80,12 @@ public static class AppServices
     /// <summary>导航服务由 MainWindow 在构造时注入，供各页面互相跳转。</summary>
     public static Navigation.NavigationService Navigation { get; internal set; } = null!;
 
+    /// <summary>全局加载态遮罩，由 MainWindow 在构造时注入（P0）。</summary>
+    public static BusyService Busy { get; internal set; } = null!;
+
+    /// <summary>统一轻提示 Toast，由 MainWindow 在构造时注入（P0）。</summary>
+    public static ToastService Toast { get; internal set; } = null!;
+
     /// <summary>应用启动时的一次性初始化（外观 + 各类设置 + 后台能力）。</summary>
     public static async Task InitializeAsync()
     {

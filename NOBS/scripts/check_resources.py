@@ -6,7 +6,7 @@ XAML 资源引用体检。
 本项目有 11 个页面、上百处资源引用，靠手点一遍不现实，所以做成脚本。
 
 规则：
-  * 全局键来自 Themes/Palette.xaml + Themes/Controls.xaml 的 x:Key
+  * 全局键来自 Themes/ 下所有 .xaml（Palette + Controls + Icons 等）
   * 页面内 <UserControl.Resources> / <Window.Resources> 等局部 x:Key 也算已定义
   * WPF 内置键（SystemColors.* / 各类 ComponentResourceKey）跳过
 
@@ -24,6 +24,7 @@ for _stream in (sys.stdout, sys.stderr):
         _stream.reconfigure(encoding="utf-8", errors="replace")
 
 ROOT = Path(__file__).resolve().parent.parent / "OBS_Helper.Wpf"
+THEMES = ROOT / "Themes"
 
 KEY_RE = re.compile(r'x:Key="([^"]+)"')
 REF_RE = re.compile(r"\{(?:Static|Dynamic)Resource\s+([^\}\s,]+)\s*\}")
@@ -37,15 +38,19 @@ def collect_keys(path: Path) -> set[str]:
 
 
 def main() -> int:
-    palette = ROOT / "Themes" / "Palette.xaml"
-    controls = ROOT / "Themes" / "Controls.xaml"
-    for f in (palette, controls):
-        if not f.exists():
-            print(f"找不到主题文件：{f}")
-            return 2
+    if not THEMES.is_dir():
+        print(f"找不到主题目录：{THEMES}")
+        return 2
 
-    global_keys = collect_keys(palette) | collect_keys(controls)
-    print(f"全局资源键 {len(global_keys)} 个（Palette + Controls）")
+    theme_files = sorted(THEMES.glob("*.xaml"))
+    if not theme_files:
+        print(f"主题目录为空：{THEMES}")
+        return 2
+
+    global_keys: set[str] = set()
+    for f in theme_files:
+        global_keys |= collect_keys(f)
+    print(f"全局资源键 {len(global_keys)} 个（Themes/ 下 {len(theme_files)} 个字典：{', '.join(p.name for p in theme_files)}）")
 
     xamls = sorted(p for p in ROOT.rglob("*.xaml") if "obj" not in p.parts and "bin" not in p.parts)
 

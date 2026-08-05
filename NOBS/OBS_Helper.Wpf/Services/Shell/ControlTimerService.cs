@@ -129,11 +129,13 @@ public sealed class ControlTimerService : IDisposable
         {
             _ = FireAndForgetAsync(_obs.StopRecordAsync);
             _tray.Notify("定时停止录制", $"已按定时设置（{t.TotalSeconds / 60} 分钟）自动停止录制。");
+            AppServices.Toast.Show("定时停止生效：录制已停止", "ok");
         }
         else
         {
             _ = FireAndForgetAsync(_obs.StopStreamAsync);
             _tray.Notify("定时停止推流", $"已按定时设置（{t.TotalSeconds / 60} 分钟）自动停止推流。");
+            AppServices.Toast.Show("定时停止生效：推流已停止", "ok");
         }
         StateChanged?.Invoke();
     }

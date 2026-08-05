@@ -31,6 +31,10 @@ public partial class MainWindow : Window
     {
         InitializeComponent();
 
+        // 全局加载遮罩与统一 Toast：宿主元素在本窗口 XAML 里，构造时注入组合根
+        AppServices.Busy = new BusyService(BusyOverlayHost);
+        AppServices.Toast = new ToastService(ToastHost);
+
         _meta = new(StringComparer.OrdinalIgnoreCase)
         {
             [Routes.Home] = (NavHome, "首页", "按分类查问题，或直接问助手"),

@@ -6,6 +6,14 @@
     浅色默认调色板。运行时 AppearanceService.Apply() 会用同名键覆盖 Application.Resources，
     直接写在 Application.Resources 顶层的条目优先级高于合并字典，因此换肤立即生效。
     色值与 Blazor 版 wwwroot/css/app.css 的 CSS 变量一一对应。
+
+    【优化改动】MutedBrush 由 #6b6c80 加深为 #5c5d70：
+    在浅灰底 Surface2(#f4f4fb) 上对比度由约 4.57:1 提升到约 5.7:1，
+    明确满足 WCAG 2.1 正文文字 4.5:1 的要求（对应 P3「次要文字对比度」）。
+    其余色值不变。深色模式由 AppearanceService 单独覆盖，不在此文件改。
+
+    【v1.4.5 新增】OverlayBrush：BusyOverlay 全局加载遮罩底色（半透明黑），
+    深浅色通用，中性色不随主题切换。
   -->
 
   <SolidColorBrush x:Key="BrandBrush" Color="#7b2ff7" />
@@ -16,8 +24,9 @@
   <SolidColorBrush x:Key="Surface2Brush" Color="#f4f4fb" />
   <SolidColorBrush x:Key="Surface3Brush" Color="#ececf6" />
   <SolidColorBrush x:Key="TextBrush" Color="#1c1d2b" />
-  <SolidColorBrush x:Key="MutedBrush" Color="#6b6c80" />
+  <SolidColorBrush x:Key="MutedBrush" Color="#5c5d70" />
   <SolidColorBrush x:Key="LineBrush" Color="#e6e6f0" />
+  <SolidColorBrush x:Key="OverlayBrush" Color="#80000000" />
 
   <SolidColorBrush x:Key="DangerBrush" Color="#d92d20" />
   <SolidColorBrush x:Key="DangerSoftBrush" Color="#fdeceb" />

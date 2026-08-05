@@ -714,4 +714,148 @@
     <Setter Property="FontSize" Value="{DynamicResource FontSizeSm}" />
   </Style>
 
+  <!-- ===================== 加载态（P0） ===================== -->
+  <!-- 旋转环：纯 XAML，不依赖代码；ReduceMotion 开启时停止旋转 -->
+  <Style x:Key="Spinner" TargetType="Control">
+    <Setter Property="Width" Value="36" />
+    <Setter Property="Height" Value="36" />
+    <Setter Property="Template">
+      <Setter.Value>
+        <ControlTemplate TargetType="Control">
+          <Grid RenderTransformOrigin="0.5,0.5">
+            <Grid.RenderTransform>
+              <RotateTransform x:Name="Rot" />
+            </Grid.RenderTransform>
+            <Ellipse Width="36" Height="36" Stroke="{DynamicResource BrandBrush}" StrokeThickness="4"
+                     StrokeDashArray="80 40" StrokeDashCap="Round" Opacity="0.9" />
+          </Grid>
+          <ControlTemplate.Triggers>
+            <EventTrigger RoutedEvent="FrameworkElement.Loaded">
+              <BeginStoryboard x:Name="SpinnerSb">
+                <Storyboard RepeatBehavior="Forever">
+                  <DoubleAnimation Storyboard.TargetName="Rot" Storyboard.TargetProperty="Angle"
+                                   From="0" To="360" Duration="0:0:0.9" />
+                </Storyboard>
+              </BeginStoryboard>
+            </EventTrigger>
+            <!-- 减少动画开启时停转（绑定 Application.Resources[ReduceMotion]，随 AppearanceService 换肤同步） -->
+            <DataTrigger Binding="{Binding Source={x:Static Application.Current}, Path=Resources[ReduceMotion]}" Value="True">
+              <DataTrigger.EnterActions>
+                <StopStoryboard BeginStoryboardName="SpinnerSb" />
+              </DataTrigger.EnterActions>
+            </DataTrigger>
+          </ControlTemplate.Triggers>
+        </ControlTemplate>
+      </Setter.Value>
+    </Setter>
+  </Style>
+
+  <!-- 加载态遮罩：覆盖在目标区域之上；Tag 传提示文案，Visibility 控制显隐（P0） -->
+  <Style x:Key="BusyOverlay" TargetType="ContentControl">
+    <Setter Property="Background" Value="{DynamicResource OverlayBrush}" />
+    <Setter Property="Visibility" Value="Collapsed" />
+    <Setter Property="IsHitTestVisible" Value="True" />
+    <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+    <Setter Property="VerticalContentAlignment" Value="Stretch" />
+    <Setter Property="Template">
+      <Setter.Value>
+        <ControlTemplate TargetType="ContentControl">
+          <Grid Background="{TemplateBinding Background}">
+            <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+              <Control Style="{StaticResource Spinner}" />
+              <TextBlock Margin="0,14,0,0" HorizontalAlignment="Center"
+                         FontSize="{DynamicResource FontSizeSm}" Foreground="White"
+                         Text="{TemplateBinding Tag}" TextWrapping="Wrap" />
+            </StackPanel>
+          </Grid>
+        </ControlTemplate>
+      </Setter.Value>
+    </Setter>
+  </Style>
+
+  <!-- ===================== 轻提示 Toast（P0） ===================== -->
+  <Style x:Key="ToastHost" TargetType="StackPanel">
+    <Setter Property="Orientation" Value="Vertical" />
+    <Setter Property="VerticalAlignment" Value="Bottom" />
+    <Setter Property="HorizontalAlignment" Value="Center" />
+    <Setter Property="Margin" Value="0,0,0,18" />
+    <Setter Property="Panel.ZIndex" Value="99" />
+  </Style>
+
+  <Style x:Key="ToastCard" TargetType="ContentControl">
+    <Setter Property="Background" Value="{DynamicResource SurfaceBrush}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource LineBrush}" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="Padding" Value="14,10" />
+    <Setter Property="Margin" Value="0,8,0,0" />
+    <Setter Property="MaxWidth" Value="440" />
+    <Setter Property="Template">
+      <Setter.Value>
+        <ControlTemplate TargetType="ContentControl">
+          <Border Background="{TemplateBinding Background}"
+                  BorderBrush="{TemplateBinding BorderBrush}"
+                  BorderThickness="{TemplateBinding BorderThickness}"
+                  CornerRadius="{DynamicResource CornerRadiusMd}">
+            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+              <Border x:Name="Dot" Width="8" Height="8" CornerRadius="4" Margin="0,0,10,0"
+                      Background="{DynamicResource BrandBrush}" VerticalAlignment="Center" />
+              <ContentPresenter VerticalAlignment="Center" RecognizesAccessKey="True" />
+            </StackPanel>
+          </Border>
+          <ControlTemplate.Triggers>
+            <Trigger Property="Tag" Value="ok">
+              <Setter TargetName="Dot" Property="Background" Value="{DynamicResource OkBrush}" />
+            </Trigger>
+            <Trigger Property="Tag" Value="warn">
+              <Setter TargetName="Dot" Property="Background" Value="{DynamicResource WarnBrush}" />
+            </Trigger>
+            <Trigger Property="Tag" Value="danger">
+              <Setter TargetName="Dot" Property="Background" Value="{DynamicResource DangerBrush}" />
+            </Trigger>
+            <Trigger Property="Tag" Value="info">
+              <Setter TargetName="Dot" Property="Background" Value="{DynamicResource InfoBrush}" />
+            </Trigger>
+          </ControlTemplate.Triggers>
+        </ControlTemplate>
+      </Setter.Value>
+    </Setter>
+  </Style>
+
+  <!-- ===================== 状态药丸（P3，三重编码：图标+文字+颜色） ===================== -->
+  <Style x:Key="StatusPill" TargetType="ContentControl">
+    <Setter Property="Background" Value="{DynamicResource Surface3Brush}" />
+    <Setter Property="VerticalAlignment" Value="Center" />
+    <Setter Property="Template">
+      <Setter.Value>
+        <ControlTemplate TargetType="ContentControl">
+          <Border Background="{TemplateBinding Background}" CornerRadius="999" Padding="9,4">
+            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+              <TextBlock x:Name="Glyph" Text="●" FontSize="11" Margin="0,0,6,0" VerticalAlignment="Center"
+                         Foreground="{DynamicResource BrandBrush}" />
+              <ContentPresenter VerticalAlignment="Center" RecognizesAccessKey="True" />
+            </StackPanel>
+          </Border>
+          <ControlTemplate.Triggers>
+            <Trigger Property="Tag" Value="ok">
+              <Setter TargetName="Glyph" Property="Text" Value="✓" />
+              <Setter TargetName="Glyph" Property="Foreground" Value="{DynamicResource OkBrush}" />
+            </Trigger>
+            <Trigger Property="Tag" Value="warn">
+              <Setter TargetName="Glyph" Property="Text" Value="▲" />
+              <Setter TargetName="Glyph" Property="Foreground" Value="{DynamicResource WarnBrush}" />
+            </Trigger>
+            <Trigger Property="Tag" Value="danger">
+              <Setter TargetName="Glyph" Property="Text" Value="✕" />
+              <Setter TargetName="Glyph" Property="Foreground" Value="{DynamicResource DangerBrush}" />
+            </Trigger>
+            <Trigger Property="Tag" Value="info">
+              <Setter TargetName="Glyph" Property="Text" Value="ℹ" />
+              <Setter TargetName="Glyph" Property="Foreground" Value="{DynamicResource InfoBrush}" />
+            </Trigger>
+          </ControlTemplate.Triggers>
+        </ControlTemplate>
+      </Setter.Value>
+    </Setter>
+  </Style>
+
 </ResourceDictionary>

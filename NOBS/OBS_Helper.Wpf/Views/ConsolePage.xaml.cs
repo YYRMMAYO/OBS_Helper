@@ -383,14 +383,25 @@ public partial class ConsolePage : UserControl, INavigationAware
     private void RenderOutputs(ObsConnectionService obs)
     {
         var rec = obs.RecordStatus;
-        RecordButton.Content = "录制：" + (rec.Active ? (rec.Paused ? "已暂停" : "进行中") : "未开始");
+        var recLabel = rec.Active ? (rec.Paused ? "已暂停" : "进行中") : "未开始";
+        RecordButtonText.Text = "录制：" + recLabel;
+        RecordStatusPill.Tag = rec.Active ? "danger" : "info";
+        RecordStatusPill.Content = recLabel;
         ApplyActiveLook(RecordButton, rec.Active);
 
-        StreamButton.Content = "推流：" + (obs.StreamStatus.Active ? "进行中" : "未开始");
-        ApplyActiveLook(StreamButton, obs.StreamStatus.Active);
+        var streamActive = obs.StreamStatus.Active;
+        var streamLabel = streamActive ? "进行中" : "未开始";
+        StreamButtonText.Text = "推流：" + streamLabel;
+        StreamStatusPill.Tag = streamActive ? "danger" : "info";
+        StreamStatusPill.Content = streamLabel;
+        ApplyActiveLook(StreamButton, streamActive);
 
-        VirtualCamButton.Content = "虚拟摄像头：" + (obs.VirtualCamStatus.Active ? "开启" : "关闭");
-        ApplyActiveLook(VirtualCamButton, obs.VirtualCamStatus.Active);
+        var vcamActive = obs.VirtualCamStatus.Active;
+        var vcamLabel = vcamActive ? "开启" : "关闭";
+        VirtualCamButtonText.Text = "虚拟摄像头：" + vcamLabel;
+        VirtualCamStatusPill.Tag = vcamActive ? "ok" : "info";
+        VirtualCamStatusPill.Content = vcamLabel;
+        ApplyActiveLook(VirtualCamButton, vcamActive);
     }
 
     /// <summary>选中态的统一观感。用 SetResourceReference 而非直接赋画刷，换肤时才会跟着变。</summary>
@@ -447,7 +458,10 @@ public partial class ConsolePage : UserControl, INavigationAware
             var useStored = password.Length == 0 && remember && hasStored;
             if (!useStored) await AppServices.ObsSettings.SetPasswordAsync(password, remember);
 
+            // 连接是跨网络的长操作，挂全局加载遮罩（P0）；页面内按钮态并行保留
+            AppServices.Busy.Show("正在连接 OBS…");
             await AppServices.Obs.ConnectAsync(useStored ? null : password);
+            if (AppServices.Obs.IsConnected) AppServices.Toast.Show("已连接 OBS", "ok");
         }
         catch (Exception ex)
         {
@@ -457,6 +471,7 @@ public partial class ConsolePage : UserControl, INavigationAware
         {
             ConnectButton.Content = "连接";
             SetBusy(false);
+            AppServices.Busy.Hide();
             Render();
         }
     }
@@ -482,10 +497,12 @@ public partial class ConsolePage : UserControl, INavigationAware
         if (!ConfirmDialog.Show("断开连接", "确定要断开与 OBS 的连接吗？")) return;
 
         SetBusy(true);
+        AppServices.Busy.Show("正在断开连接…");
         try
         {
             await AppServices.Obs.DisconnectAsync();
             HideOpError();
+            AppServices.Toast.Show("已断开 OBS", "info");
         }
         catch (Exception ex)
         {
@@ -494,6 +511,7 @@ public partial class ConsolePage : UserControl, INavigationAware
         finally
         {
             SetBusy(false);
+            AppServices.Busy.Hide();
             Render();
         }
     }
@@ -501,7 +519,8 @@ public partial class ConsolePage : UserControl, INavigationAware
     private async void OnSceneClick(object sender, RoutedEventArgs e)
     {
         if (sender is not Button button || button.Tag is not string sceneName) return;
-        await RunAsync("切换场景", () => AppServices.Obs.SetSceneAsync(sceneName));
+        await RunAsync("切换场景", () => AppServices.Obs.SetSceneAsync(sceneName),
+            onSuccess: () => AppServices.Toast.Show($"已切换到「{sceneName}」", "ok"));
     }
 
     private async void OnSceneItemToggled(object sender, RoutedEventArgs e)
@@ -667,14 +686,18 @@ public partial class ConsolePage : UserControl, INavigationAware
     // -------------------------------------------------------------- 辅助
 
     /// <summary>统一跑一次写操作：期间禁用面板防连点，失败把 OBS 的原始说明摆到界面上。</summary>
-    private async Task RunAsync(string what, Func<Task<ObsRequestResult>> operation)
+    private async Task RunAsync(string what, Func<Task<ObsRequestResult>> operation, Action? onSuccess = null)
     {
         if (_busy) return;
         SetBusy(true);
         try
         {
             var result = await operation();
-            if (result.Ok) HideOpError();
+            if (result.Ok)
+            {
+                HideOpError();
+                onSuccess?.Invoke();
+            }
             else ShowOpError($"{what}失败：{Describe(result)}");
         }
         catch (Exception ex)

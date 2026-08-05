@@ -83,6 +83,7 @@ public partial class DiagnosticPage : UserControl, INavigationAware
         DiagnoseButton.IsEnabled = false;
         DiagnoseButton.Content = "分析中…";
         BusyText.Visibility = Visibility.Visible;
+        AppServices.Busy.Show("正在智能诊断…");
 
         try
         {
@@ -100,6 +101,7 @@ public partial class DiagnosticPage : UserControl, INavigationAware
             DiagnoseButton.IsEnabled = true;
             DiagnoseButton.Content = "诊断";
             BusyText.Visibility = Visibility.Collapsed;
+            AppServices.Busy.Hide();
             RefreshHeader();
         }
     }

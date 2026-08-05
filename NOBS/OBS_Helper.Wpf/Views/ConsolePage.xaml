@@ -162,14 +162,35 @@
 
         <TextBlock Style="{StaticResource SectionTitle}" Text="输出" Margin="0,18,0,10" />
         <Button x:Name="RecordButton" Style="{StaticResource SecondaryButton}"
-                HorizontalContentAlignment="Left" Margin="0,0,0,8"
-                Content="录制：未开始" Click="OnRecordClick" />
+                HorizontalContentAlignment="Left" Margin="0,0,0,8" Click="OnRecordClick">
+          <StackPanel Orientation="Horizontal">
+            <Image Width="16" Height="16" Source="{StaticResource IconRecord}"
+                   VerticalAlignment="Center" Margin="0,0,8,0" />
+            <TextBlock x:Name="RecordButtonText" Text="录制：未开始" VerticalAlignment="Center" />
+            <ContentControl x:Name="RecordStatusPill" Style="{StaticResource StatusPill}" Tag="info"
+                            Content="未开始" Margin="10,0,0,0" />
+          </StackPanel>
+        </Button>
         <Button x:Name="StreamButton" Style="{StaticResource SecondaryButton}"
-                HorizontalContentAlignment="Left" Margin="0,0,0,8"
-                Content="推流：未开始" Click="OnStreamClick" />
+                HorizontalContentAlignment="Left" Margin="0,0,0,8" Click="OnStreamClick">
+          <StackPanel Orientation="Horizontal">
+            <Image Width="16" Height="16" Source="{StaticResource IconStream}"
+                   VerticalAlignment="Center" Margin="0,0,8,0" />
+            <TextBlock x:Name="StreamButtonText" Text="推流：未开始" VerticalAlignment="Center" />
+            <ContentControl x:Name="StreamStatusPill" Style="{StaticResource StatusPill}" Tag="info"
+                            Content="未开始" Margin="10,0,0,0" />
+          </StackPanel>
+        </Button>
         <Button x:Name="VirtualCamButton" Style="{StaticResource SecondaryButton}"
-                HorizontalContentAlignment="Left"
-                Content="虚拟摄像头：关闭" Click="OnVirtualCamClick" />
+                HorizontalContentAlignment="Left" Click="OnVirtualCamClick">
+          <StackPanel Orientation="Horizontal">
+            <Image Width="16" Height="16" Source="{StaticResource IconConnect}"
+                   VerticalAlignment="Center" Margin="0,0,8,0" />
+            <TextBlock x:Name="VirtualCamButtonText" Text="虚拟摄像头：关闭" VerticalAlignment="Center" />
+            <ContentControl x:Name="VirtualCamStatusPill" Style="{StaticResource StatusPill}" Tag="info"
+                            Content="关闭" Margin="10,0,0,0" />
+          </StackPanel>
+        </Button>
 
         <Border Style="{StaticResource HLine}" Margin="0,16,0,12" />
         <StackPanel Orientation="Horizontal" Margin="0,0,0,10">

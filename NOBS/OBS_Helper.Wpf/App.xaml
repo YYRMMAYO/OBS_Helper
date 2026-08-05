@@ -1,6 +1,7 @@
 ﻿<Application x:Class="OBS_Helper.Wpf.App"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:ctl="clr-namespace:OBS_Helper.Wpf.Controls"
              ShutdownMode="OnExplicitShutdown">
   <!--
     不用 OnMainWindowClose：主窗口关闭时默认最小化到托盘（可关），
@@ -13,7 +14,11 @@
              这里提供一份浅色默认值，保证 XAML 设计器与首帧渲染不缺资源。 -->
         <ResourceDictionary Source="Themes/Palette.xaml" />
         <ResourceDictionary Source="Themes/Controls.xaml" />
+        <ResourceDictionary Source="Themes/Icons.xaml" />
       </ResourceDictionary.MergedDictionaries>
+
+      <!-- 监控指标 → 语义状态色（P2「指标无异常聚焦色」） -->
+      <ctl:MetricStatusBrushConverter x:Key="MetricStatusBrush" />
     </ResourceDictionary>
   </Application.Resources>
 </Application>

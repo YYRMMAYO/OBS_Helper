@@ -35,6 +35,9 @@ public partial class HomePage : UserControl, INavigationAware
         // 收藏可能在详情页 / 搜索页被改动。页面实例常驻，这里订阅后不再退订，
         // 生命周期与应用一致，不会泄漏。
         AppServices.Bookmarks.BookmarksChanged += OnBookmarksChanged;
+
+        // 连接状态变化时同步引导卡显隐（从控制台连接成功返回首页，引导卡自动消失）
+        AppServices.Obs.StateChanged += RefreshWelcome;
     }
 
     public async Task OnNavigatedToAsync(object? parameter)
@@ -59,12 +62,27 @@ public partial class HomePage : UserControl, INavigationAware
             if (error is not null) LoadErrorText.Text = Errors.ErrorCodes.Format(error);
 
             RefreshBookmarks();
+            RefreshWelcome();
         }
         catch (Exception ex)
         {
             App.ReportError(Errors.ErrorCodes.DataLoadFailed, ex);
         }
     }
+
+    /// <summary>新手引导卡：未连 OBS 时展示，连接后隐藏（StateChanged 可能来自 WebSocket 线程，需切回 UI 线程）。</summary>
+    private void RefreshWelcome()
+    {
+        if (!Dispatcher.CheckAccess())
+        {
+            Dispatcher.BeginInvoke(new Action(RefreshWelcome));
+            return;
+        }
+        WelcomeCard.Visibility = AppServices.Obs.IsConnected ? Visibility.Collapsed : Visibility.Visible;
+    }
+
+    private void OnConnectGuideClick(object sender, RoutedEventArgs e)
+        => AppServices.Navigation.Navigate(Routes.Console);
 
     /// <summary>
     /// 重建收藏区。收藏事件是在 ProblemCard 的点击处理中同步触发的，

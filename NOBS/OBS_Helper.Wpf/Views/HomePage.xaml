@@ -17,6 +17,30 @@
                 Click="OnAssistantClick" />
       </StackPanel>
 
+      <!-- 新手引导：未连 OBS 时显示，连接后由代码隐藏（P1） -->
+      <Border x:Name="WelcomeCard" Style="{StaticResource Card}" Margin="0,14,0,0"
+              Background="{DynamicResource BrandSoftBrush}" Visibility="Collapsed">
+        <Grid>
+          <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*" />
+            <ColumnDefinition Width="Auto" />
+          </Grid.ColumnDefinitions>
+          <StackPanel Grid.Column="0">
+            <TextBlock Text="欢迎使用 OBS 排障助手" Style="{StaticResource H3Text}" />
+            <TextBlock Style="{StaticResource BodyText}" Margin="0,6,0,0" TextWrapping="Wrap"
+                       Text="连上本机 OBS 后，可解锁控制台远程控制、一键智能诊断与场景模板落地。现在先用知识库排查问题也同样顺畅。" />
+          </StackPanel>
+          <Button Grid.Column="1" Style="{StaticResource SecondaryButton}"
+                  VerticalAlignment="Center" Margin="12,0,0,0" Click="OnConnectGuideClick">
+            <StackPanel Orientation="Horizontal">
+              <Image Width="14" Height="14" Source="{StaticResource IconConnect}"
+                     VerticalAlignment="Center" Margin="0,0,6,0" />
+              <TextBlock Text="去连接 OBS" VerticalAlignment="Center" />
+            </StackPanel>
+          </Button>
+        </Grid>
+      </Border>
+
       <!-- 数据加载失败时的提示（带报错码，便于用户反馈） -->
       <Border x:Name="LoadErrorPanel" Style="{StaticResource SoftPanel}"
               Margin="0,14,0,0" Visibility="Collapsed">

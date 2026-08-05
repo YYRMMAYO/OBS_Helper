@@ -2,6 +2,7 @@ using System.Globalization;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
+using OBS_Helper.Wpf.Controls;
 using OBS_Helper.Wpf.Navigation;
 using OBS_Helper.Wpf.Services.Shell;
 
@@ -14,6 +15,9 @@ namespace OBS_Helper.Wpf.Views;
 public partial class PerformancePage : UserControl, INavigationAware
 {
     private static readonly CultureInfo Inv = CultureInfo.InvariantCulture;
+
+    /// <summary>监控指标 → 语义状态色（P2）。阈值见 <see cref="MetricStatusBrushConverter"/>。</summary>
+    private static readonly MetricStatusBrushConverter MetricBrush = new();
 
     /// <summary>曲线最近展示的点数（2 分钟 × 1s）。</summary>
     private const int ChartPoints = 120;
@@ -72,14 +76,15 @@ public partial class PerformancePage : UserControl, INavigationAware
             : s.NetDownKbps.ToString("0", Inv) + " Kbps";
         var disk = s.LowestDisk;
         DiskValueText.Text = disk is null ? "—" : disk.FreeGb.ToString("0.0", Inv) + " G";
-        if (disk is not null && disk.FreeGb < 10)
-        {
-            DiskValueText.Foreground = (Brush)FindResource("DangerBrush");
-        }
+
+        // 指标状态色：cpu/mem 低于 70 正常、90 以下警告、其余危险；磁盘剩余 <10G 危险、<20G 警告（P2）
+        SetMetricColor(CpuValueText, "cpu", s.CpuPercent);
+        SetMetricColor(MemValueText, "mem", s.MemUsedPercent);
+        if (disk is not null)
+            SetMetricColor(DiskValueText, "disk", disk.FreeGb);
         else
-        {
             DiskValueText.SetResourceReference(TextBlock.ForegroundProperty, "BrandBrush");
-        }
+        // 网络下行暂不分级，保持品牌色。
 
         // 曲线：从历史取最近 N 点
         var hist = monitor.History;
@@ -188,7 +193,15 @@ public partial class PerformancePage : UserControl, INavigationAware
         ObsFpsText.Text = obs.Stats.ActiveFps.ToString("0.0", Inv);
         ObsRenderSkipText.Text = (obs.Stats.RenderSkipRatio * 100).ToString("0.##", Inv) + "%";
         ObsOutputSkipText.Text = (obs.Stats.OutputSkipRatio * 100).ToString("0.##", Inv) + "%";
+
+        // 丢帧率状态色：<1% 正常、<5% 警告、其余危险（P2）
+        SetMetricColor(ObsRenderSkipText, "skip", obs.Stats.RenderSkipRatio * 100);
+        SetMetricColor(ObsOutputSkipText, "skip", obs.Stats.OutputSkipRatio * 100);
     }
+
+    /// <summary>按指标类型与当前值设置语义状态色（正常/警告/危险）。</summary>
+    private static void SetMetricColor(TextBlock tb, string kind, double value)
+        => tb.Foreground = (Brush)MetricBrush.Convert(value, typeof(Brush), kind, CultureInfo.InvariantCulture);
 
     private void OnOpenDiagnostic(object sender, RoutedEventArgs e)
         => AppServices.Navigation.Navigate(Routes.Diagnostic);

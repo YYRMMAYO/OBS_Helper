@@ -125,6 +125,13 @@
 
       <!-- 页面容器 -->
       <ContentControl x:Name="PageHost" Grid.Row="1" Focusable="False" />
+
+      <!-- 全局加载态遮罩（覆盖顶栏 + 页面；P0，由 BusyService 控制显隐与文案） -->
+      <ContentControl x:Name="BusyOverlayHost" Grid.Row="0" Grid.RowSpan="2"
+                      Style="{StaticResource BusyOverlay}" Visibility="Collapsed" Tag="处理中…" />
+
+      <!-- 全局 Toast 容器（贴底居中；P0，由 ToastService 增删卡片） -->
+      <StackPanel x:Name="ToastHost" Grid.Row="1" Style="{StaticResource ToastHost}" />
     </Grid>
   </Grid>
 </Window>

@@ -69,11 +69,7 @@ dotnet run --project OBS_Helper.Wpf
 .\build.ps1 -SkipInstaller
 ```
 
-产物落在 `NOBS\PAKE\windows\`：
 
-- `OBS_Helper_Setup_1.4.1.exe` — 安装包
-- `OBS_Helper_Portable_1.4.1.zip` — 解压即用
-- `OBS_Helper_Portable_1.4.1.exe` — 单文件（需 `-SingleFile`）
 
 ## 工程结构
 

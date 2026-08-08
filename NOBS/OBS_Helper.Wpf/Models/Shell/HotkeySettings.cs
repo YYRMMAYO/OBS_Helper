@@ -4,7 +4,7 @@ namespace OBS_Helper.Wpf.Models.Shell;
 
 /// <summary>
 /// 全局热键配置。全部存 <c>prefs.json</c>（非敏感：只是键位组合，不含任何凭据）。
-/// 默认启用 4 组快捷键：录制 / 推流 / 虚拟摄像头 / 显示隐藏窗口。
+/// 默认启用 5 组快捷键：录制 / 推流 / 虚拟摄像头 / 小窗 / 显示隐藏窗口。
 /// </summary>
 public sealed class HotkeySettings
 {
@@ -16,6 +16,9 @@ public sealed class HotkeySettings
 
     [JsonPropertyName("virtualCam")] public HotkeyBinding VirtualCam { get; set; } = new("C");
     [JsonPropertyName("virtualCamEnabled")] public bool VirtualCamEnabled { get; set; } = true;
+
+    [JsonPropertyName("miniWindow")] public HotkeyBinding MiniWindow { get; set; } = new("M");
+    [JsonPropertyName("miniWindowEnabled")] public bool MiniWindowEnabled { get; set; } = true;
 
     [JsonPropertyName("toggleWindow")] public HotkeyBinding ToggleWindow { get; set; } = new("O");
     [JsonPropertyName("toggleWindowEnabled")] public bool ToggleWindowEnabled { get; set; } = true;

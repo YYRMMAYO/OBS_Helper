@@ -101,7 +101,9 @@ public partial class MainWindow : Window
         // 后台能力的事件接线（托盘 / 全局热键）
         AppServices.Tray.ShowRequested += OnTrayShowRequested;
         AppServices.Tray.ExitRequested += OnTrayExitRequested;
+        AppServices.Tray.MiniWindowRequested += OnMiniWindowRequested;
         AppServices.Hotkeys.ToggleWindowRequested += OnToggleWindowRequested;
+        AppServices.Hotkeys.ToggleMiniWindowRequested += OnMiniWindowRequested;
 
         // 自检测试：逐个导航所有路由，把异常写到 selftest_result.txt 后退出。
         // 用环境变量触发，避免影响正常启动。
@@ -186,6 +188,18 @@ public partial class MainWindow : Window
             }
         }
 
+        // 小窗：创建 + 显示 + 隐藏，拦截 XAML 解析 / 资源引用 / 位置恢复错误（自检时窗口一闪而过）
+        try
+        {
+            AppServices.Mini.Toggle();
+            AppServices.Mini.Toggle();
+            results.Add($"PASS  mini      (XAML + 状态刷新 + 显隐)");
+        }
+        catch (Exception ex)
+        {
+            results.Add($"FAIL  mini      -> {ex.GetType().Name}: {ex.Message}");
+        }
+
         var ok = results.Count(r => r.StartsWith("PASS"));
         var fail = results.Count - ok;
         var report = new StringBuilder();
@@ -240,6 +254,10 @@ public partial class MainWindow : Window
             if (WindowState == WindowState.Minimized) WindowState = WindowState.Normal;
             Activate();
         }));
+
+    /// <summary>托盘菜单「小窗控制」/ 全局热键「小窗」：呼出或隐藏迷你小窗。</summary>
+    private void OnMiniWindowRequested()
+        => Dispatcher.BeginInvoke(new Action(() => AppServices.Mini.Toggle()));
 
     /// <summary>托盘菜单「退出」。</summary>
     private void OnTrayExitRequested()

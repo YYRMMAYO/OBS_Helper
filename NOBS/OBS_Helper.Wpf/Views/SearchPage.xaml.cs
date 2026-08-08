@@ -25,7 +25,7 @@ public partial class SearchPage : UserControl, INavigationAware
     }
 
     /// <summary>
-    /// 结果卡池。85 条数据全量渲染时每次按键都重建控件会明显卡顿，
+    /// 结果卡池。95 条数据全量渲染时每次按键都重建控件会明显卡顿，
     /// 因此卡片只增不删，多出来的隐藏掉，下一次搜索直接重新 Bind。
     /// </summary>
     private readonly List<ProblemCard> _cards = new();

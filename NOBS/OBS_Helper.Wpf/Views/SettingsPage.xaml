@@ -226,6 +226,35 @@
               <TextBlock x:Name="VcamHotkeyDisplay" Grid.Column="7" VerticalAlignment="Center"
                          Style="{StaticResource CaptionText}" Margin="10,0,0,0" />
             </Grid>
+            <!-- 小窗控制 -->
+            <Grid Margin="0,0,0,8">
+              <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="86" />
+                <ColumnDefinition Width="46" />
+                <ColumnDefinition Width="44" />
+                <ColumnDefinition Width="44" />
+                <ColumnDefinition Width="48" />
+                <ColumnDefinition Width="48" />
+                <ColumnDefinition Width="56" />
+                <ColumnDefinition Width="*" />
+              </Grid.ColumnDefinitions>
+              <TextBlock Grid.Column="0" Text="小窗控制" VerticalAlignment="Center"
+                         Foreground="{DynamicResource TextBrush}" FontSize="{DynamicResource FontSizeSm}" />
+              <CheckBox x:Name="MiniHotkeyEnabled" Grid.Column="1" VerticalAlignment="Center"
+                        ToolTip="启用该热键" Checked="OnHotkeyToggled" Unchecked="OnHotkeyToggled" />
+              <CheckBox x:Name="MiniHotkeyCtrl" Grid.Column="2" Content="Ctrl" VerticalAlignment="Center"
+                        Checked="OnHotkeyToggled" Unchecked="OnHotkeyToggled" />
+              <CheckBox x:Name="MiniHotkeyAlt" Grid.Column="3" Content="Alt" VerticalAlignment="Center"
+                        Checked="OnHotkeyToggled" Unchecked="OnHotkeyToggled" />
+              <CheckBox x:Name="MiniHotkeyShift" Grid.Column="4" Content="Shift" VerticalAlignment="Center"
+                        Checked="OnHotkeyToggled" Unchecked="OnHotkeyToggled" />
+              <CheckBox x:Name="MiniHotkeyWin" Grid.Column="5" Content="Win" VerticalAlignment="Center"
+                        Checked="OnHotkeyToggled" Unchecked="OnHotkeyToggled" />
+              <TextBox x:Name="MiniHotkeyKey" Grid.Column="6" Style="{StaticResource AppTextBox}"
+                       MaxLength="4" TextChanged="OnHotkeyChanged" />
+              <TextBlock x:Name="MiniHotkeyDisplay" Grid.Column="7" VerticalAlignment="Center"
+                         Style="{StaticResource CaptionText}" Margin="10,0,0,0" />
+            </Grid>
             <!-- 显示/隐藏窗口 -->
             <Grid>
               <Grid.ColumnDefinitions>

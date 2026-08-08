@@ -158,6 +158,13 @@ public partial class SettingsPage : UserControl, INavigationAware
             WinHotkeyWin.IsChecked = h.ToggleWindow.Win;
             WinHotkeyKey.Text = h.ToggleWindow.Key;
 
+            MiniHotkeyEnabled.IsChecked = h.MiniWindowEnabled;
+            MiniHotkeyCtrl.IsChecked = h.MiniWindow.Ctrl;
+            MiniHotkeyAlt.IsChecked = h.MiniWindow.Alt;
+            MiniHotkeyShift.IsChecked = h.MiniWindow.Shift;
+            MiniHotkeyWin.IsChecked = h.MiniWindow.Win;
+            MiniHotkeyKey.Text = h.MiniWindow.Key;
+
             AutoSwitchEnabled.IsChecked = AppServices.AutoSwitcher.Settings.Enabled;
         }
         finally
@@ -197,6 +204,7 @@ public partial class SettingsPage : UserControl, INavigationAware
         RecHotkeyDisplay.Text = HotkeyDisplay(RecHotkeyCtrl, RecHotkeyAlt, RecHotkeyShift, RecHotkeyWin, RecHotkeyKey);
         StreamHotkeyDisplay.Text = HotkeyDisplay(StreamHotkeyCtrl, StreamHotkeyAlt, StreamHotkeyShift, StreamHotkeyWin, StreamHotkeyKey);
         VcamHotkeyDisplay.Text = HotkeyDisplay(VcamHotkeyCtrl, VcamHotkeyAlt, VcamHotkeyShift, VcamHotkeyWin, VcamHotkeyKey);
+        MiniHotkeyDisplay.Text = HotkeyDisplay(MiniHotkeyCtrl, MiniHotkeyAlt, MiniHotkeyShift, MiniHotkeyWin, MiniHotkeyKey);
         WinHotkeyDisplay.Text = HotkeyDisplay(WinHotkeyCtrl, WinHotkeyAlt, WinHotkeyShift, WinHotkeyWin, WinHotkeyKey);
     }
 
@@ -222,6 +230,8 @@ public partial class SettingsPage : UserControl, INavigationAware
         h.Stream = ReadBinding(StreamHotkeyCtrl, StreamHotkeyAlt, StreamHotkeyShift, StreamHotkeyWin, StreamHotkeyKey);
         h.VirtualCamEnabled = VcamHotkeyEnabled.IsChecked == true;
         h.VirtualCam = ReadBinding(VcamHotkeyCtrl, VcamHotkeyAlt, VcamHotkeyShift, VcamHotkeyWin, VcamHotkeyKey);
+        h.MiniWindowEnabled = MiniHotkeyEnabled.IsChecked == true;
+        h.MiniWindow = ReadBinding(MiniHotkeyCtrl, MiniHotkeyAlt, MiniHotkeyShift, MiniHotkeyWin, MiniHotkeyKey);
         h.ToggleWindowEnabled = WinHotkeyEnabled.IsChecked == true;
         h.ToggleWindow = ReadBinding(WinHotkeyCtrl, WinHotkeyAlt, WinHotkeyShift, WinHotkeyWin, WinHotkeyKey);
 

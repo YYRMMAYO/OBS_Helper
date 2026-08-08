@@ -59,6 +59,9 @@ public sealed class TrayService : IDisposable
     /// <summary>托盘菜单「退出」时触发（由 MainWindow 决定真正退出流程）。</summary>
     public event Action? ExitRequested;
 
+    /// <summary>托盘菜单「小窗控制」时触发（由 MainWindow 切到 UI 线程呼出小窗）。</summary>
+    public event Action? MiniWindowRequested;
+
     public TrayService(ObsConnectionService obs, LocalStore store)
     {
         _obs = obs;
@@ -281,6 +284,9 @@ public sealed class TrayService : IDisposable
         _virtualCamItem = new ToolStripMenuItem("开启虚拟摄像头");
         _virtualCamItem.Click += (_, _) => FireAndForget(_obs.ToggleVirtualCamAsync);
 
+        var miniItem = new ToolStripMenuItem("小窗控制（录制 / 推流）");
+        miniItem.Click += (_, _) => MiniWindowRequested?.Invoke();
+
         var exit = new ToolStripMenuItem("退出");
         exit.Click += (_, _) => ExitRequested?.Invoke();
 
@@ -289,6 +295,8 @@ public sealed class TrayService : IDisposable
         menu.Items.Add(_recordItem);
         menu.Items.Add(_streamItem);
         menu.Items.Add(_virtualCamItem);
+        menu.Items.Add(new ToolStripSeparator());
+        menu.Items.Add(miniItem);
         menu.Items.Add(new ToolStripSeparator());
         menu.Items.Add(exit);
         return menu;

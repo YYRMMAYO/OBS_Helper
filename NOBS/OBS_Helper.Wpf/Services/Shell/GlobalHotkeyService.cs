@@ -13,6 +13,7 @@ public enum HotkeyAction
     Record,
     Stream,
     VirtualCam,
+    MiniWindow,
     ToggleWindow
 }
 
@@ -38,12 +39,13 @@ public sealed class GlobalHotkeyService : IDisposable
     private const uint ModShift = 0x4;
     private const uint ModWin = 0x8;
 
-    // 4 个动作的注册 id（约定固定值，仅进程内使用）
+    // 5 个动作的注册 id（约定固定值，仅进程内使用）
     private static readonly (HotkeyAction Action, int Id)[] Bindings =
     {
         (HotkeyAction.Record, 0xC101),
         (HotkeyAction.Stream, 0xC102),
         (HotkeyAction.VirtualCam, 0xC103),
+        (HotkeyAction.MiniWindow, 0xC105),
         (HotkeyAction.ToggleWindow, 0xC104)
     };
 
@@ -82,6 +84,9 @@ public sealed class GlobalHotkeyService : IDisposable
 
     /// <summary>「显示/隐藏主窗口」热键触发。</summary>
     public event Action? ToggleWindowRequested;
+
+    /// <summary>「小窗」热键触发（呼出 / 隐藏迷你小窗）。</summary>
+    public event Action? ToggleMiniWindowRequested;
 
     /// <summary>注册状态变化（重新注册后），供设置页刷新。</summary>
     public event Action? Changed;
@@ -187,6 +192,9 @@ public sealed class GlobalHotkeyService : IDisposable
                 case HotkeyAction.VirtualCam:
                     await _obs.ToggleVirtualCamAsync();
                     break;
+                case HotkeyAction.MiniWindow:
+                    ToggleMiniWindowRequested?.Invoke();
+                    break;
                 case HotkeyAction.ToggleWindow:
                     ToggleWindowRequested?.Invoke();
                     break;
@@ -203,6 +211,7 @@ public sealed class GlobalHotkeyService : IDisposable
         HotkeyAction.Record => Settings.RecordEnabled,
         HotkeyAction.Stream => Settings.StreamEnabled,
         HotkeyAction.VirtualCam => Settings.VirtualCamEnabled,
+        HotkeyAction.MiniWindow => Settings.MiniWindowEnabled,
         HotkeyAction.ToggleWindow => Settings.ToggleWindowEnabled,
         _ => false
     };
@@ -212,6 +221,7 @@ public sealed class GlobalHotkeyService : IDisposable
         HotkeyAction.Record => Settings.Record,
         HotkeyAction.Stream => Settings.Stream,
         HotkeyAction.VirtualCam => Settings.VirtualCam,
+        HotkeyAction.MiniWindow => Settings.MiniWindow,
         HotkeyAction.ToggleWindow => Settings.ToggleWindow,
         _ => Settings.Record
     };
@@ -254,7 +264,7 @@ public sealed class GlobalHotkeyService : IDisposable
     /// <summary>收敛配置：清掉空主键、Win 键组合需显式允许（默认去勾）等。</summary>
     private static void Normalize(HotkeySettings s)
     {
-        foreach (var b in new[] { s.Record, s.Stream, s.VirtualCam, s.ToggleWindow })
+        foreach (var b in new[] { s.Record, s.Stream, s.VirtualCam, s.MiniWindow, s.ToggleWindow })
         {
             b.Key = (b.Key ?? "").Trim();
             // 只有 Ctrl/Alt/Shift/Win 任意一个作为修饰才注册（裸键太容易误触）

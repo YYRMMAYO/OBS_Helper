@@ -1,0 +1,84 @@
+<Window x:Class="OBS_Helper.Wpf.Views.MiniControlWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="OBS 小窗"
+        Width="344" Height="136"
+        WindowStyle="None"
+        AllowsTransparency="True"
+        Background="Transparent"
+        ResizeMode="NoResize"
+        ShowInTaskbar="False"
+        Topmost="True"
+        ShowActivated="False"
+        UseLayoutRounding="True"
+        WindowStartupLocation="Manual"
+        Closing="OnClosing">
+  <Window.Resources>
+    <!-- 小窗专用紧凑按钮：比 GhostButton 更小，适合窄面板 -->
+    <Style x:Key="MiniButton" TargetType="Button" BasedOn="{StaticResource GhostButton}">
+      <Setter Property="MinWidth" Value="96" />
+      <Setter Property="MinHeight" Value="30" />
+      <Setter Property="Padding" Value="8,4" />
+      <Setter Property="Margin" Value="0,0,8,0" />
+      <Setter Property="HorizontalContentAlignment" Value="Center" />
+    </Style>
+  </Window.Resources>
+
+  <Border x:Name="RootBorder"
+          CornerRadius="12"
+          Background="{DynamicResource SurfaceBrush}"
+          BorderBrush="{DynamicResource LineBrush}"
+          BorderThickness="1"
+          Padding="14,10"
+          MouseLeftButtonDown="OnDrag">
+    <Border.Effect>
+      <DropShadowEffect BlurRadius="18" ShadowDepth="3" Opacity="0.4" Direction="270" />
+    </Border.Effect>
+
+    <StackPanel>
+      <!-- 标题行：图标 + 标题 | 连接状态 | 关闭（隐藏） -->
+      <Grid Margin="0,0,0,10">
+        <Grid.ColumnDefinitions>
+          <ColumnDefinition Width="Auto" />
+          <ColumnDefinition Width="*" />
+          <ColumnDefinition Width="Auto" />
+          <ColumnDefinition Width="Auto" />
+        </Grid.ColumnDefinitions>
+
+        <TextBlock Grid.Column="0" Text="🎛" VerticalAlignment="Center" Margin="0,0,6,0" />
+        <TextBlock Grid.Column="1" Text="OBS 小窗" FontWeight="SemiBold"
+                   VerticalAlignment="Center"
+                   Foreground="{DynamicResource TextBrush}"
+                   FontSize="{DynamicResource FontSizeBase}" />
+        <TextBlock x:Name="StatusText" Grid.Column="2" Text="未连接 OBS"
+                   VerticalAlignment="Center" Margin="0,0,10,0"
+                   Style="{StaticResource CaptionText}" />
+        <Button x:Name="CloseButton" Grid.Column="3" Content="✕"
+                Style="{StaticResource MiniButton}"
+                MinWidth="26" MinHeight="26" Margin="0"
+                ToolTip="隐藏小窗（再次呼出可从托盘菜单或热键）"
+                Click="OnCloseClick" />
+      </Grid>
+
+      <!-- 控制按钮：录制 / 推流 / 虚拟摄像头 -->
+      <StackPanel Orientation="Horizontal">
+        <Button x:Name="RecordButton" Style="{StaticResource MiniButton}"
+                Click="OnRecordClick">
+          <TextBlock x:Name="RecordButtonText" Text="开始录制" VerticalAlignment="Center" />
+        </Button>
+        <Button x:Name="StreamButton" Style="{StaticResource MiniButton}"
+                Click="OnStreamClick">
+          <TextBlock x:Name="StreamButtonText" Text="开始推流" VerticalAlignment="Center" />
+        </Button>
+        <Button x:Name="VcamButton" Style="{StaticResource MiniButton}" Margin="0"
+                Click="OnVcamClick">
+          <TextBlock x:Name="VcamButtonText" Text="开启虚拟摄像头" VerticalAlignment="Center" />
+        </Button>
+      </StackPanel>
+
+      <!-- 底部提示 -->
+      <TextBlock Text="拖拽移动 · 始终置顶 · 未连接 OBS 时按钮不可用"
+                 Style="{StaticResource CaptionText}" Margin="2,8,0,0" />
+    </StackPanel>
+  </Border>
+</Window>

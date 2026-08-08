@@ -36,6 +36,7 @@ public static class AppServices
     // 后台 / 遥控能力
     private static readonly Lazy<TrayService> _tray = new(() => new TrayService(Obs, Store));
     private static readonly Lazy<GlobalHotkeyService> _hotkeys = new(() => new GlobalHotkeyService(Store, Obs));
+    private static readonly Lazy<MiniWindowService> _mini = new(() => new MiniWindowService(Store));
     private static readonly Lazy<SceneAutoSwitcher> _autoSwitcher = new(() => new SceneAutoSwitcher(Store, Obs));
     private static readonly Lazy<ControlTimerService> _timer = new(() => new ControlTimerService(Obs, Tray));
     private static readonly Lazy<SystemMonitorService> _systemMonitor = new(() => new SystemMonitorService());
@@ -72,6 +73,7 @@ public static class AppServices
     // 后台 / 遥控能力
     public static TrayService Tray => _tray.Value;
     public static GlobalHotkeyService Hotkeys => _hotkeys.Value;
+    public static MiniWindowService Mini => _mini.Value;
     public static SceneAutoSwitcher AutoSwitcher => _autoSwitcher.Value;
     public static ControlTimerService Timer => _timer.Value;
     public static SystemMonitorService SystemMonitor => _systemMonitor.Value;
@@ -107,6 +109,7 @@ public static class AppServices
     /// <summary>应用退出时的清理（MainWindow.OnClosed 调用）。</summary>
     public static void ShutdownServices()
     {
+        try { Mini.Stop(); } catch (Exception ex) { FileLogger.Warn("Shutdown", $"Mini.Stop 失败: {ex.Message}"); }
         try { AutoSwitcher.Stop(); } catch (Exception ex) { FileLogger.Warn("Shutdown", $"AutoSwitcher.Stop 失败: {ex.Message}"); }
         try { Hotkeys.Dispose(); } catch (Exception ex) { FileLogger.Warn("Shutdown", $"Hotkeys.Dispose 失败: {ex.Message}"); }
         try { SystemMonitor.Dispose(); } catch (Exception ex) { FileLogger.Warn("Shutdown", $"SystemMonitor.Dispose 失败: {ex.Message}"); }

@@ -221,8 +221,14 @@
         <TextBlock Style="{StaticResource CaptionText}" Margin="2,0,0,0"
                    Text="到点自动停止并弹出系统通知；若中途手动停止录制 / 推流，定时器会自动取消。" />
 
-        <Button x:Name="OpenRecordDirButton" Content="打开录制目录" Style="{StaticResource GhostButton}"
-                HorizontalAlignment="Left" Margin="0,14,0,0" Click="OnOpenRecordDirClick" />
+        <StackPanel Orientation="Horizontal" Margin="0,14,0,0">
+          <Button x:Name="MiniWindowButton" Content="迷你小窗（录制 / 推流）"
+                  Style="{StaticResource GhostButton}" HorizontalAlignment="Left"
+                  ToolTip="呼出置顶小窗：一键开始 / 停止录制、推流、虚拟摄像头（也可从托盘菜单或 Ctrl+Alt+M 呼出）"
+                  Click="OnMiniWindowClick" />
+          <Button x:Name="OpenRecordDirButton" Content="打开录制目录" Style="{StaticResource GhostButton}"
+                  HorizontalAlignment="Left" Margin="10,0,0,0" Click="OnOpenRecordDirClick" />
+        </StackPanel>
         <TextBlock x:Name="RecordDirHintText" Style="{StaticResource CaptionText}" Margin="2,6,0,0"
                    Visibility="Collapsed" />
       </StackPanel>

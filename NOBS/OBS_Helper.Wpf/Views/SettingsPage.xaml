@@ -286,12 +286,16 @@
             </Grid>
           </StackPanel>
 
-          <StackPanel Orientation="Horizontal">
-            <Button Content="保存热键设置" Style="{StaticResource PrimaryButton}"
+          <Grid>
+            <Grid.ColumnDefinitions>
+              <ColumnDefinition Width="Auto" />
+              <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+            <Button Grid.Column="0" Content="保存热键设置" Style="{StaticResource PrimaryButton}"
                     HorizontalAlignment="Left" Click="OnSaveHotkeys" />
-            <TextBlock x:Name="HotkeyStatusText" Style="{StaticResource CaptionText}"
+            <TextBlock x:Name="HotkeyStatusText" Grid.Column="1" Style="{StaticResource CaptionText}"
                        VerticalAlignment="Center" Margin="12,0,0,0" TextWrapping="Wrap" />
-          </StackPanel>
+          </Grid>
         </StackPanel>
       </Border>
 
@@ -308,12 +312,16 @@
 
           <StackPanel x:Name="AutoSwitchRulesPanel" Margin="0,0,0,12" />
 
-          <StackPanel Orientation="Horizontal">
-            <Button Content="添加规则" Style="{StaticResource SecondaryButton}"
-                    Click="OnAddAutoSwitchRule" />
-            <TextBlock x:Name="AutoSwitchStatusText" Style="{StaticResource CaptionText}"
+          <Grid>
+            <Grid.ColumnDefinitions>
+              <ColumnDefinition Width="Auto" />
+              <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+            <Button Grid.Column="0" Content="添加规则" Style="{StaticResource SecondaryButton}"
+                    HorizontalAlignment="Left" Click="OnAddAutoSwitchRule" />
+            <TextBlock x:Name="AutoSwitchStatusText" Grid.Column="1" Style="{StaticResource CaptionText}"
                        VerticalAlignment="Center" Margin="12,0,0,0" TextWrapping="Wrap" />
-          </StackPanel>
+          </Grid>
           <TextBlock Style="{StaticResource CaptionText}" Margin="2,8,0,0"
                      Text="「包含」为标题关键词（不区分大小写）；「正则」可写复杂匹配，如 ^Google Chrome。目标场景需先连接 OBS 才能列出。" />
         </StackPanel>

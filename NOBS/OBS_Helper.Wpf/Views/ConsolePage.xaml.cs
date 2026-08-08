@@ -654,6 +654,10 @@ public partial class ConsolePage : UserControl, INavigationAware
         }
     }
 
+    /// <summary>控制台页「迷你小窗」按钮：呼出或隐藏置顶小窗。</summary>
+    private void OnMiniWindowClick(object sender, RoutedEventArgs e)
+        => AppServices.Mini.Toggle();
+
     private async void OnOpenRecordDirClick(object sender, RoutedEventArgs e)
     {
         if (_busy) return;

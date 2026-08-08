@@ -49,6 +49,7 @@ public static class ErrorCodes
     public const string AiCloudNotConfigured = "OBS701";
     public const string AiCloudRequestFailed = "OBS702";
     public const string AiResponseInvalid = "OBS703";
+    public const string DiagnosticExportFailed = "OBS704";
 
     // 8xx OBS 配置管理
     public const string ObsConfigNotFound = "OBS801";
@@ -79,6 +80,7 @@ public static class ErrorCodes
         AiCloudNotConfigured => "尚未配置云端 AI：请在「设置」中填写 https 接口地址、模型名并保存 API Key。",
         AiCloudRequestFailed => "云端 AI 请求失败，已自动回退到本地规则引擎。",
         AiResponseInvalid => "云端 AI 返回内容无法解析，已按本地规则给出结论。",
+        DiagnosticExportFailed => "诊断报告导出失败，请确认目标目录可写后重试。",
         ObsConfigNotFound => "未找到 OBS 配置目录，请确认已安装并至少启动过一次 OBS；便携版可在本页手动指定目录。",
         ObsRunning => "OBS 正在运行，该操作需要先完全退出 OBS（含托盘图标）再重试。",
         BackupFailed => "备份 / 导出失败，请确认磁盘空间充足且目标目录可写。",

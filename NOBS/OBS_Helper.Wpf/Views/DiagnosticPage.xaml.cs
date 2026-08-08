@@ -1,3 +1,5 @@
+using System.IO;
+using System.Text;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Documents;
@@ -35,6 +37,12 @@ public partial class DiagnosticPage : UserControl, INavigationAware
     };
 
     private bool _diagnosing;
+
+    /// <summary>最近一次成功的诊断结果（「导出报告」用，页面被缓存复用，离开再回来仍可导出）。</summary>
+    private DiagnosticResult? _lastResult;
+
+    /// <summary>发起诊断时的原始描述（导出报告用，避免用户之后改了输入框影响报告内容）。</summary>
+    private string _lastQuery = "";
 
     public DiagnosticPage()
     {
@@ -80,6 +88,7 @@ public partial class DiagnosticPage : UserControl, INavigationAware
         if (_diagnosing) return;
 
         _diagnosing = true;
+        _lastQuery = QueryBox.Text;
         DiagnoseButton.IsEnabled = false;
         DiagnoseButton.Content = "分析中…";
         BusyText.Visibility = Visibility.Visible;
@@ -108,6 +117,9 @@ public partial class DiagnosticPage : UserControl, INavigationAware
 
     private void RenderResult(DiagnosticResult r)
     {
+        _lastResult = r.Success ? r : null;
+        ExportButton.IsEnabled = r.Success && r.Items.Count > 0;
+
         ResultPanel.Visibility = Visibility.Visible;
         ItemList.Children.Clear();
 
@@ -300,6 +312,72 @@ public partial class DiagnosticPage : UserControl, INavigationAware
 
     private void OnOpenAnalyzer(object sender, RoutedEventArgs e)
         => _ = AppServices.Host.OpenExternalAsync("https://obsproject.com/analyzer/");
+
+    // ------------------------------------------------------------ 导出报告
+
+    /// <summary>把最近一次成功诊断的结果导出为 Markdown 文件（纯本地，不走网络）。</summary>
+    private void OnExportReport(object sender, RoutedEventArgs e)
+    {
+        var result = _lastResult;
+        if (result is null || result.Items.Count == 0) return;
+
+        var sb = new StringBuilder();
+        sb.AppendLine("# OBS 诊断报告");
+        sb.AppendLine();
+        sb.AppendLine($"- 生成时间：{result.CreatedAt:yyyy-MM-dd HH:mm:ss}");
+        sb.AppendLine($"- 引擎：{(result.Engine == "cloud" ? "云端大模型" : "本地规则引擎")}{(result.FellBackToLocal ? "（云端失败已回退本地）" : "")}");
+        sb.AppendLine($"- 问题描述：{_lastQuery.Trim()}");
+        sb.AppendLine();
+
+        if (!string.IsNullOrWhiteSpace(result.Summary))
+        {
+            sb.AppendLine("## 结论");
+            sb.AppendLine();
+            sb.AppendLine(result.Summary);
+            sb.AppendLine();
+        }
+
+        sb.AppendLine("## 发现");
+        sb.AppendLine();
+        foreach (var it in result.Items)
+        {
+            sb.AppendLine($"### [{it.SeverityText}] {it.Title}（来源：{it.Source}）");
+            if (!string.IsNullOrWhiteSpace(it.Reason))
+            {
+                sb.AppendLine();
+                sb.AppendLine(it.Reason);
+            }
+            if (it.Steps.Count > 0)
+            {
+                sb.AppendLine();
+                for (var i = 0; i < it.Steps.Count; i++) sb.AppendLine($"{i + 1}. {it.Steps[i]}");
+            }
+            sb.AppendLine();
+        }
+
+        sb.AppendLine("---");
+        sb.AppendLine("由 OBS 排障助手生成");
+
+        var dialog = new Microsoft.Win32.SaveFileDialog
+        {
+            Title = "导出诊断报告",
+            Filter = "Markdown 文档 (*.md)|*.md|文本文件 (*.txt)|*.txt",
+            FileName = $"OBS诊断报告_{DateTime.Now:yyyyMMdd_HHmmss}.md",
+            DefaultExt = ".md",
+            AddExtension = true
+        };
+        if (dialog.ShowDialog(Window.GetWindow(this)) != true) return;
+
+        try
+        {
+            File.WriteAllText(dialog.FileName, sb.ToString(), new UTF8Encoding(false));
+            AppServices.Toast.Show($"诊断报告已导出：{Path.GetFileName(dialog.FileName)}", "ok");
+        }
+        catch (Exception ex)
+        {
+            App.ReportError(ErrorCodes.DiagnosticExportFailed, ex);
+        }
+    }
 
     /// <summary>建一个跟随主题的文本块：字号与颜色都用资源引用，换肤 / 改字号时自动生效。</summary>
     private static TextBlock MakeText(string text, string sizeKey, string brushKey, bool wrap = true)

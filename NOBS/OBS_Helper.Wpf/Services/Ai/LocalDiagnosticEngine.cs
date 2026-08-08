@@ -153,7 +153,7 @@ public sealed class LocalDiagnosticEngine
 
         if (ctx.Connection.IsConnected)
             sb.Append("\n提示：当前已连接 OBS，可在「控制台」直接查看/调整相关设置。");
-        sb.Append("\n如需更细致的多轮分析，可在「AI 设置」中切换到云端大模型。");
+        sb.Append("\n如需更细致的多轮分析，可在「AI 设置」中切换到免费 AI 或云端大模型。");
         return sb.ToString();
     }
 }

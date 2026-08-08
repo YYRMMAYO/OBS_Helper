@@ -98,7 +98,131 @@ public sealed class HostBridge
 
     private static string SecretsFile => Path.Combine(AppDataDirectory, "secrets.dat");
 
-    // ------------------------------------------------------------ 机密存储
+    // ------------------------------------------------------------ 机密存储（多层加密）
+
+    // 第 1 层：DPAPI（CurrentUser 作用域 + 应用熵）加密整个文件（既有设计）。
+    // 第 2 层（V1.7.0 起）：每条机密值在进 DPAPI 之前，先用「机器绑定密钥」做 AES-256-GCM 加密，
+    //   密钥由 PBKDF2-SHA256(MachineGuid + 应用熵) 派生。这样即使 secrets.dat 被离线窃取，
+    //   攻击者只有 DPAPI 的口令级保护可破（可离线爆破），却拿不到本机 MachineGuid，第二层无法解开。
+    //   存储格式 v2:<nonce>:<tag>:<cipher>（均 Base64）；旧版明文值读取时自动兼容，下次写入自动升级为 v2。
+    private const string SecretV2Prefix = "v2:";
+
+    private static readonly byte[] SecretV2Salt = Encoding.UTF8.GetBytes("OBS_Helper.SecretStore.v2.salt");
+
+    // 机器密钥缓存：MachineGuid 在系统生命周期内不变，PBKDF2 每次派生约百毫秒，
+    // 而 LoadSecrets 在每次机密读取时都会跑——缓存后全进程只派生一次。
+    // 权衡：派生密钥会常驻进程内存（与应用内持有明文密钥的既有事实一致）。
+    private static readonly object MachineKeyGate = new();
+    private static byte[]? _machineKeyCache;
+
+    /// <summary>由本机 MachineGuid 派生 AES-256-GCM 密钥（进程内缓存）；读不到时返回 null（退化为「仅 DPAPI」）。</summary>
+    private static byte[]? TryDeriveMachineKey()
+    {
+        if (_machineKeyCache is not null) return _machineKeyCache;
+        lock (MachineKeyGate)
+        {
+            if (_machineKeyCache is not null) return _machineKeyCache;
+            try
+            {
+                var guid = Microsoft.Win32.Registry.GetValue(
+                    @"HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Cryptography", "MachineGuid", null) as string;
+                if (string.IsNullOrWhiteSpace(guid)) return null;
+                _machineKeyCache = Rfc2898DeriveBytes.Pbkdf2(
+                    Encoding.UTF8.GetBytes("OBS_Helper.v2:" + guid.Trim()),
+                    SecretV2Salt,
+                    100_000,
+                    HashAlgorithmName.SHA256,
+                    32);
+                return _machineKeyCache;
+            }
+            catch (Exception)
+            {
+                return null; // 读不到 MachineGuid（极少数精简系统）：退化为仅 DPAPI，保证功能可用
+            }
+        }
+    }
+
+    /// <summary>把明文机密值加密为 v2 存储格式；无机器密钥时原样返回（仅 DPAPI 层）。</summary>
+    private static string EncryptSecretValue(string plain)
+    {
+        var key = TryDeriveMachineKey();
+        if (key is null) return plain;
+
+        var nonce = RandomNumberGenerator.GetBytes(12);
+        var plainBytes = Encoding.UTF8.GetBytes(plain);
+        var cipher = new byte[plainBytes.Length];
+        var tag = new byte[16];
+        try
+        {
+            using (var aes = new AesGcm(key, 16))
+            {
+                aes.Encrypt(nonce, plainBytes, cipher, tag);
+            }
+            return SecretV2Prefix
+                + Convert.ToBase64String(nonce) + ":"
+                + Convert.ToBase64String(tag) + ":"
+                + Convert.ToBase64String(cipher);
+        }
+        finally
+        {
+            Array.Clear(plainBytes, 0, plainBytes.Length);
+            Array.Clear(cipher, 0, cipher.Length);
+        }
+    }
+
+    /// <summary>
+    /// 解密 v2 存储值。规则：
+    /// <list type="number">
+    ///   <item>不以 v2: 开头 → 旧版明文，原样返回；</item>
+    ///   <item>以 v2: 开头但格式不严格合法（段数 / 长度 / Base64 错误）→ 视为旧版明文恰好以 v2: 开头，原样返回，
+    ///         绝不误删——真实 v2 一定出自本代码，格式必然严格合法；</item>
+    ///   <item>格式合法但 GCM 认证失败（密钥不符 / 数据损坏）→ 返回 null，调用方按「不存在」处理（fail-closed）。</item>
+    /// </list>
+    /// </summary>
+    private static string? DecryptSecretValue(string stored)
+    {
+        if (!stored.StartsWith(SecretV2Prefix, StringComparison.Ordinal))
+            return stored; // 旧版明文值：兼容读取
+
+        byte[] nonce, tag, cipher;
+        try
+        {
+            var parts = stored.Substring(SecretV2Prefix.Length).Split(':');
+            if (parts.Length != 3) return stored;
+            nonce = Convert.FromBase64String(parts[0]);
+            if (nonce.Length != 12) return stored;
+            tag = Convert.FromBase64String(parts[1]);
+            if (tag.Length != 16) return stored;
+            cipher = Convert.FromBase64String(parts[2]);
+            if (cipher.Length == 0) return stored;
+        }
+        catch (FormatException)
+        {
+            return stored; // Base64 解码失败 → 旧版明文，原样返回
+        }
+
+        var key = TryDeriveMachineKey();
+        if (key is null) return null;
+
+        var plain = new byte[cipher.Length];
+        try
+        {
+            using (var aes = new AesGcm(key, 16))
+            {
+                aes.Decrypt(nonce, cipher, tag, plain);
+            }
+            return Encoding.UTF8.GetString(plain);
+        }
+        catch (Exception)
+        {
+            // 格式合法但认证失败（密钥不符 / 数据损坏）：fail-closed，视为不存在，用户重新输入即可
+            return null;
+        }
+        finally
+        {
+            Array.Clear(plain, 0, plain.Length);
+        }
+    }
 
     private static Dictionary<string, string> LoadSecrets()
     {
@@ -111,7 +235,25 @@ public sealed class HostBridge
             var plain = ProtectedData.Unprotect(encrypted, Entropy, DataProtectionScope.CurrentUser);
             var json = Encoding.UTF8.GetString(plain);
             Array.Clear(plain, 0, plain.Length);
-            return JsonSerializer.Deserialize<Dictionary<string, string>>(json) ?? new Dictionary<string, string>();
+
+            var dict = JsonSerializer.Deserialize<Dictionary<string, string>>(json) ?? new Dictionary<string, string>();
+            // 值解密（v2 解密、旧版原样）：内存里始终是明文，文件里才是密文
+            foreach (var k in dict.Keys.ToList())
+            {
+                var v = dict[k];
+                if (string.IsNullOrEmpty(v)) continue;
+                var decrypted = DecryptSecretValue(v);
+                if (decrypted is null)
+                {
+                    // 单条解密失败不拖垮整个存储：移除该条，用户重填
+                    dict.Remove(k);
+                }
+                else
+                {
+                    dict[k] = decrypted;
+                }
+            }
+            return dict;
         }
         catch (Exception)
         {
@@ -122,7 +264,14 @@ public sealed class HostBridge
 
     private static void SaveSecrets(Dictionary<string, string> secrets)
     {
-        var json = JsonSerializer.Serialize(secrets);
+        // 值先做第二层加密（AES-256-GCM + 机器绑定密钥），再整体 DPAPI
+        var toStore = new Dictionary<string, string>(secrets.Count);
+        foreach (var (k, v) in secrets)
+        {
+            toStore[k] = string.IsNullOrEmpty(v) ? "" : EncryptSecretValue(v);
+        }
+
+        var json = JsonSerializer.Serialize(toStore);
         var plain = Encoding.UTF8.GetBytes(json);
         var encrypted = ProtectedData.Protect(plain, Entropy, DataProtectionScope.CurrentUser);
         Array.Clear(plain, 0, plain.Length);
@@ -510,19 +659,12 @@ public sealed class HostBridge
     /// <param name="secretKey">API Key 在机密存储中的键名。</param>
     /// <param name="body">完整的请求体 JSON（不含鉴权信息）。</param>
     /// <returns>响应体原文；失败时抛出异常，异常消息可直接展示给用户。</returns>
-    public async Task<string> AiChatAsync(string url, string secretKey, string body)
+    public Task<string> AiChatAsync(string url, string secretKey, string body)
     {
-        if (!Uri.TryCreate(url, UriKind.Absolute, out var uri))
-            throw new ArgumentException("接口地址不合法。");
-        if (uri.Scheme != Uri.UriSchemeHttps)
-            throw new UnauthorizedAccessException("云端 AI 接口必须使用 https。");
-        if (IsPrivateHost(uri.Host))
-            throw new UnauthorizedAccessException("出于安全考虑，不允许请求内网或本机地址。");
-        if (string.IsNullOrWhiteSpace(body))
-            throw new ArgumentException("请求体为空。");
+        var uri = ValidateAiUrl(url, body);
 
         string apiKey;
-        await _secretLock.WaitAsync().ConfigureAwait(false);
+        _secretLock.Wait();
         try
         {
             apiKey = SecretGetRaw(secretKey);
@@ -537,17 +679,47 @@ public sealed class HostBridge
         if (apiKey.Any(char.IsControl))
             throw new ArgumentException("API Key 含有非法字符。");
 
-        using var req = new HttpRequestMessage(HttpMethod.Post, uri)
-        {
-            Content = new StringContent(body, Encoding.UTF8, "application/json")
-        };
-        req.Headers.Authorization = new AuthenticationHeaderValue("Bearer", apiKey);
-
+        var auth = new AuthenticationHeaderValue("Bearer", apiKey);
         // Authorization 头已拼装完毕，显式释放 apiKey 引用以缩小密钥在托管内存中的窗口。
         // 注意：AuthenticationHeaderValue 构造时会内部分配一份副本，apiKey 设为 null
         // 不影响请求发送；真正的限制在于 .NET 字符串不可变性——GC 回收之前密钥无法从堆上
         // 擦除，这是托管语言共有的局限。
         apiKey = null!;
+        return AiChatPostAsync(uri, body, auth);
+    }
+
+    /// <summary>
+    /// 转发一次「无需 API Key」的免费 AI 请求（同 <see cref="AiChatAsync"/> 的 https / SSRF 防护，
+    /// 但不带 Authorization 头，密钥键名允许为空）。供内置免费 AI 通道使用。
+    /// </summary>
+    public Task<string> AiChatNoAuthAsync(string url, string body)
+    {
+        var uri = ValidateAiUrl(url, body);
+        return AiChatPostAsync(uri, body, auth: null);
+    }
+
+    /// <summary>校验 AI 接口地址与请求体（https + 非内网），返回解析后的 Uri。</summary>
+    private static Uri ValidateAiUrl(string url, string body)
+    {
+        if (!Uri.TryCreate(url, UriKind.Absolute, out var uri))
+            throw new ArgumentException("接口地址不合法。");
+        if (uri.Scheme != Uri.UriSchemeHttps)
+            throw new UnauthorizedAccessException("云端 AI 接口必须使用 https。");
+        if (IsPrivateHost(uri.Host))
+            throw new UnauthorizedAccessException("出于安全考虑，不允许请求内网或本机地址。");
+        if (string.IsNullOrWhiteSpace(body))
+            throw new ArgumentException("请求体为空。");
+        return uri;
+    }
+
+    /// <summary>实际发送 AI 请求（带可选 Authorization 头），限量读取响应体。</summary>
+    private static async Task<string> AiChatPostAsync(Uri uri, string body, AuthenticationHeaderValue? auth)
+    {
+        using var req = new HttpRequestMessage(HttpMethod.Post, uri)
+        {
+            Content = new StringContent(body, Encoding.UTF8, "application/json")
+        };
+        if (auth is not null) req.Headers.Authorization = auth;
 
         using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(120));
         using var resp = await Http.SendAsync(req, HttpCompletionOption.ResponseHeadersRead, cts.Token)

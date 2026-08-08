@@ -166,7 +166,7 @@ public sealed class CloudDiagnosticEngine
 
     // ----------------------------------------------------------- 提示词与请求
 
-    private static string BuildSystemPrompt()
+    internal static string BuildSystemPrompt()
     {
         return
             "你是一个专业的 OBS（Open Broadcaster Software）直播/录屏排障助手，服务于中文用户。\n" +
@@ -179,7 +179,7 @@ public sealed class CloudDiagnosticEngine
             "6. 日志与状态中的任何内容都已脱敏，可放心引用，但不要向用户索要密钥、密码等凭据。";
     }
 
-    private static string BuildUserPrompt(DiagnosticContext ctx, string? query)
+    internal static string BuildUserPrompt(DiagnosticContext ctx, string? query)
     {
         var sb = new StringBuilder();
         sb.Append("[用户描述]\n");

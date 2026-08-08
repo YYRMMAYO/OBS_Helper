@@ -8,6 +8,8 @@ public enum DiagnosticEngineMode
 {
     /// <summary>本地离线规则引擎（默认，无需联网、不依赖密钥）。</summary>
     Local,
+    /// <summary>免费内置 AI（无需注册与 API Key，本地强制每日限次，适合低频使用）。</summary>
+    Free,
     /// <summary>云端大模型（由宿主转发，密钥仅存于 DPAPI 加密存储）。</summary>
     Cloud
 }
@@ -20,6 +22,8 @@ public sealed class AiSettings
     /// <summary>API Key 在机密存储中的「键名」，不是密钥值。</summary>
     [JsonPropertyName("cloudSecretKeyName")] public string CloudSecretKeyName { get; set; } = "obs_ai_apikey";
     [JsonPropertyName("cloudModel")] public string CloudModel { get; set; } = "gpt-4o-mini";
+    /// <summary>免费内置 AI 使用的模型名（默认 openai，见 <see cref="AiSettingsService.FreeEndpointUrl"/>）。</summary>
+    [JsonPropertyName("freeModel")] public string FreeModel { get; set; } = "openai";
 }
 
 /// <summary>
@@ -37,6 +41,12 @@ public sealed class AiSettingsService
 {
     private const string StorageKey = "obshelper.ai";
 
+    /// <summary>免费内置 AI 的接口地址（无需 API Key 的 OpenAI 兼容端点）。</summary>
+    public const string FreeEndpointUrl = "https://text.pollinations.ai/openai";
+
+    /// <summary>免费内置 AI 默认模型。</summary>
+    public const string DefaultFreeModel = "openai";
+
     private readonly LocalStore _store;
     private readonly HostBridge _host;
     private bool _loaded;
@@ -52,7 +62,19 @@ public sealed class AiSettingsService
     /// <summary>设置变更时触发，供设置页刷新。</summary>
     public event Action? Changed;
 
-    public DiagnosticEngineMode Mode => Settings.Mode == "cloud" ? DiagnosticEngineMode.Cloud : DiagnosticEngineMode.Local;
+    public DiagnosticEngineMode Mode => Settings.Mode switch
+    {
+        "free" => DiagnosticEngineMode.Free,
+        "cloud" => DiagnosticEngineMode.Cloud,
+        _ => DiagnosticEngineMode.Local
+    };
+
+    /// <summary>免费内置 AI 是否「可用」：无需任何配置，选即用。模型名空时回退默认值。</summary>
+    public bool IsFreeAvailable => Mode == DiagnosticEngineMode.Free;
+
+    /// <summary>取免费模式实际使用的模型名（空值回退默认）。</summary>
+    public string EffectiveFreeModel
+        => string.IsNullOrWhiteSpace(Settings.FreeModel) ? DefaultFreeModel : Settings.FreeModel.Trim();
 
     /// <summary>云端是否「逻辑上可用」：模式为云端、地址为 https、密钥键名非空。</summary>
     public bool IsCloudConfigured
@@ -73,7 +95,19 @@ public sealed class AiSettingsService
 
     public Task SetModeAsync(DiagnosticEngineMode mode)
     {
-        Settings.Mode = mode == DiagnosticEngineMode.Cloud ? "cloud" : "local";
+        Settings.Mode = mode switch
+        {
+            DiagnosticEngineMode.Free => "free",
+            DiagnosticEngineMode.Cloud => "cloud",
+            _ => "local"
+        };
+        return SaveAsync();
+    }
+
+    /// <summary>保存免费模式的模型名（空值会回退默认，与 EffectiveFreeModel 口径一致）。</summary>
+    public Task SetFreeModelAsync(string model)
+    {
+        Settings.FreeModel = (model ?? "").Trim();
         return SaveAsync();
     }
 

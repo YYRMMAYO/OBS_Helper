@@ -47,6 +47,7 @@ public partial class SettingsPage : UserControl, INavigationAware
         RefreshDataSummary();
 
         await RefreshKeyStatusAsync();
+        await RefreshFreeQuotaAsync();
         await RefreshAboutAsync();
         await RefreshObsConfigHintAsync();
         RefreshUpdateStatus();
@@ -60,11 +61,14 @@ public partial class SettingsPage : UserControl, INavigationAware
         try
         {
             var ai = AppServices.AiSettings;
-            var cloud = ai.Mode == DiagnosticEngineMode.Cloud;
-            ModeLocal.IsChecked = !cloud;
-            ModeCloud.IsChecked = cloud;
-            CloudPanel.Visibility = cloud ? Visibility.Visible : Visibility.Collapsed;
+            var mode = ai.Mode;
+            ModeLocal.IsChecked = mode == DiagnosticEngineMode.Local;
+            ModeFree.IsChecked = mode == DiagnosticEngineMode.Free;
+            ModeCloud.IsChecked = mode == DiagnosticEngineMode.Cloud;
+            FreePanel.Visibility = mode == DiagnosticEngineMode.Free ? Visibility.Visible : Visibility.Collapsed;
+            CloudPanel.Visibility = mode == DiagnosticEngineMode.Cloud ? Visibility.Visible : Visibility.Collapsed;
 
+            FreeModelBox.Text = ai.Settings.FreeModel;
             CloudUrlBox.Text = ai.Settings.CloudUrl;
             CloudKeyNameBox.Text = ai.Settings.CloudSecretKeyName;
             CloudModelBox.Text = ai.Settings.CloudModel;
@@ -97,6 +101,20 @@ public partial class SettingsPage : UserControl, INavigationAware
             AppServices.AiSettings.Mode == DiagnosticEngineMode.Cloud && !AppServices.AiSettings.IsCloudConfigured
                 ? Visibility.Visible
                 : Visibility.Collapsed;
+
+    /// <summary>刷新免费 AI 的本地限额展示（只读统计，不消耗额度）。</summary>
+    private async Task RefreshFreeQuotaAsync()
+    {
+        try
+        {
+            var info = await AppServices.FreeLimiter.GetInfoAsync();
+            FreeQuotaText.Text = $"今日本地限额：已用 {info.Used} / {info.Max} 次（{info.Remaining} 次剩余，每天 0 点重置）。";
+        }
+        catch (Exception)
+        {
+            FreeQuotaText.Text = "今日本地限额：无法读取（不影响使用，额度仍按每日上限强制）。";
+        }
+    }
 
     /// <summary>只查询「有没有」，绝不把密钥取回 UI。</summary>
     private async Task RefreshKeyStatusAsync()
@@ -413,12 +431,35 @@ public partial class SettingsPage : UserControl, INavigationAware
     {
         if (_syncing) return;
 
-        var cloud = ReferenceEquals(sender, ModeCloud);
-        await AppServices.AiSettings.SetModeAsync(cloud ? DiagnosticEngineMode.Cloud : DiagnosticEngineMode.Local);
+        var mode = ReferenceEquals(sender, ModeFree) ? DiagnosticEngineMode.Free
+            : ReferenceEquals(sender, ModeCloud) ? DiagnosticEngineMode.Cloud
+            : DiagnosticEngineMode.Local;
+        await AppServices.AiSettings.SetModeAsync(mode);
 
-        CloudPanel.Visibility = cloud ? Visibility.Visible : Visibility.Collapsed;
+        FreePanel.Visibility = mode == DiagnosticEngineMode.Free ? Visibility.Visible : Visibility.Collapsed;
+        CloudPanel.Visibility = mode == DiagnosticEngineMode.Cloud ? Visibility.Visible : Visibility.Collapsed;
         RefreshCloudWarning();
-        if (cloud) await RefreshKeyStatusAsync();
+        if (mode == DiagnosticEngineMode.Free) await RefreshFreeQuotaAsync();
+        if (mode == DiagnosticEngineMode.Cloud) await RefreshKeyStatusAsync();
+    }
+
+    private async void OnSaveFreeModel(object sender, RoutedEventArgs e)
+    {
+        var model = FreeModelBox.Text.Trim();
+        if (string.IsNullOrWhiteSpace(model))
+        {
+            // 空值回退默认，与 EffectiveFreeModel 口径一致
+            model = AiSettingsService.DefaultFreeModel;
+            FreeModelBox.Text = model;
+        }
+        await AppServices.AiSettings.SetFreeModelAsync(model);
+        SetFreeStatus($"免费 AI 模型已保存为「{AppServices.AiSettings.EffectiveFreeModel}」。");
+    }
+
+    private void SetFreeStatus(string text)
+    {
+        FreeStatusText.Text = text;
+        FreeStatusText.Visibility = Visibility.Visible;
     }
 
     private async void OnSaveCloud(object sender, RoutedEventArgs e)

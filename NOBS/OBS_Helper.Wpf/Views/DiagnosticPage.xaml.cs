@@ -63,11 +63,16 @@ public partial class DiagnosticPage : UserControl, INavigationAware
     private void RefreshHeader()
     {
         var ai = AppServices.AiSettings;
-        var cloud = ai.Mode == DiagnosticEngineMode.Cloud;
+        var engineName = ai.Mode switch
+        {
+            DiagnosticEngineMode.Free => "免费 AI（内置）",
+            DiagnosticEngineMode.Cloud => "云端大模型",
+            _ => "本地的搜索助手"
+        };
 
         EngineText.Inlines.Clear();
         EngineText.Inlines.Add(new Run("当前引擎："));
-        EngineText.Inlines.Add(new Run(cloud ? "云端大模型" : "本地的搜索助手") { FontWeight = FontWeights.SemiBold });
+        EngineText.Inlines.Add(new Run(engineName) { FontWeight = FontWeights.SemiBold });
 
         var report = AppServices.Orchestrator.LatestReport;
         if (report is { HasIssues: true })
@@ -76,7 +81,7 @@ public partial class DiagnosticPage : UserControl, INavigationAware
         // 选了云端但配置不完整：直接告诉用户会走本地，并给出配置入口
         var cloudReady = AppServices.Orchestrator.CanUseCloud;
         CloudHintText.Text = "云端引擎尚未配置完整（需 https 接口地址 + 已保存的 API Key），本次诊断将使用本地的搜索助手。";
-        CloudHintPanel.Visibility = cloud && !cloudReady ? Visibility.Visible : Visibility.Collapsed;
+        CloudHintPanel.Visibility = ai.Mode == DiagnosticEngineMode.Cloud && !cloudReady ? Visibility.Visible : Visibility.Collapsed;
 
         ObsHintPanel.Visibility = AppServices.Obs.IsConnected ? Visibility.Collapsed : Visibility.Visible;
     }
@@ -118,7 +123,8 @@ public partial class DiagnosticPage : UserControl, INavigationAware
     private void RenderResult(DiagnosticResult r)
     {
         _lastResult = r.Success ? r : null;
-        ExportButton.IsEnabled = r.Success && r.Items.Count > 0;
+        // 免费内置 AI 无诊断项，只要结论非空即可导出
+        ExportButton.IsEnabled = r.Success && (r.Items.Count > 0 || !string.IsNullOrWhiteSpace(r.Summary));
 
         ResultPanel.Visibility = Visibility.Visible;
         ItemList.Children.Clear();
@@ -130,7 +136,7 @@ public partial class DiagnosticPage : UserControl, INavigationAware
         // 回退时 Success 仍为 true，Error 里带着云端失败原因，这里单独说明一次
         FallbackText.Text = failed || string.IsNullOrEmpty(r.Error)
             ? "已自动回退到本地离线引擎。"
-            : $"云端引擎失败（{r.Error}），已自动回退到本地离线引擎。";
+            : $"已自动回退到本地离线引擎（{r.Error}）。";
         FallbackText.Visibility = r.FellBackToLocal ? Visibility.Visible : Visibility.Collapsed;
 
         if (failed)
@@ -319,13 +325,19 @@ public partial class DiagnosticPage : UserControl, INavigationAware
     private void OnExportReport(object sender, RoutedEventArgs e)
     {
         var result = _lastResult;
-        if (result is null || result.Items.Count == 0) return;
+        // 免费内置 AI 不产生诊断项（无工具调用），只回结论文本——只要有结论也允许导出
+        if (result is null || (result.Items.Count == 0 && string.IsNullOrWhiteSpace(result.Summary))) return;
 
         var sb = new StringBuilder();
         sb.AppendLine("# OBS 诊断报告");
         sb.AppendLine();
         sb.AppendLine($"- 生成时间：{result.CreatedAt:yyyy-MM-dd HH:mm:ss}");
-        sb.AppendLine($"- 引擎：{(result.Engine == "cloud" ? "云端大模型" : "本地规则引擎")}{(result.FellBackToLocal ? "（云端失败已回退本地）" : "")}");
+        sb.AppendLine($"- 引擎：{(result.Engine switch
+        {
+            "free" => "免费内置 AI",
+            "cloud" => "云端大模型",
+            _ => "本地规则引擎"
+        })}{(result.FellBackToLocal ? "（云端/免费失败已回退本地）" : "")}");
         sb.AppendLine($"- 问题描述：{_lastQuery.Trim()}");
         sb.AppendLine();
 

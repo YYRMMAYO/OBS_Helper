@@ -349,6 +349,7 @@ public sealed class UpdateService
             // 先完整写入，再关闭句柄，最后才校验 PE 头。
             // 旧版 bug：fs 以 FileShare.None 打开且未释放就调用 IsValidPeExecutable，
             // 该校验再开同文件必然共享冲突失败 → 每个下载完的安装包都被当成「损坏」删除。
+            var oversized = false;
             await using (var fs = new FileStream(tmp, FileMode.Create, FileAccess.Write, FileShare.None))
             {
                 await using var stream = await resp.Content.ReadAsStreamAsync(ct).ConfigureAwait(false);
@@ -363,15 +364,16 @@ public sealed class UpdateService
                     received += n;
                     if (received > MaxInstallerBytes)
                     {
-                        try { File.Delete(tmp); } catch { /* 清理失败无妨 */ }
-                        return null;
+                        // 先跳出循环、关闭写句柄，再清理——句柄开着时 File.Delete 会共享冲突（同旧版 bug）
+                        oversized = true;
+                        break;
                     }
                     progress?.Report((received, total));
                 }
             }
 
-            // 文件句柄已关闭，此时校验 PE 头才有效
-            if (!IsValidPeExecutable(tmp))
+            // 文件句柄已关闭，此时清理 / 校验才有效
+            if (oversized || !IsValidPeExecutable(tmp))
             {
                 try { File.Delete(tmp); } catch { /* 清理失败无妨 */ }
                 return null;

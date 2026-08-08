@@ -62,11 +62,29 @@ public sealed class AiSettingsService
     /// <summary>免费内置 AI 默认通道（zhipu / pollinations）。</summary>
     public const string DefaultFreeProvider = "zhipu";
 
-    /// <summary>免费内置 AI 默认模型（zhipu 通道的官方免费档）。</summary>
-    public const string DefaultFreeModel = "glm-4.7-flash";
+    /// <summary>免费内置 AI 默认模型（zhipu 通道；实测 glm-4-flash-250414 稳定、glm-4.7-flash 高峰常限流）。</summary>
+    public const string DefaultFreeModel = "glm-4-flash-250414";
 
     /// <summary>Pollinations 通道默认模型。</summary>
     public const string DefaultPollinationsModel = "openai";
+
+    /// <summary>
+    /// zhipu 通道「当前线上确实存在」的免费模型编码（实测 200 + 返回正文；智谱曾静默下线
+    /// 部分 flash 编码，错误 1214=modelCode 不存在。该列表之外的值一律回退默认，避免
+    /// 用户在模型框里填了显示名/过期编码导致每次诊断都 400）。
+    /// </summary>
+    public static readonly string[] KnownFreeModels =
+    {
+        DefaultFreeModel,     // 稳定免费档（默认，实测多次连发不限流）
+        "glm-4.7-flash",      // 更新更聪明，但高峰可能 429 限流
+    };
+
+    /// <summary>Pollinations 通道实测可用的模型编码。</summary>
+    public static readonly string[] KnownPollinationsModels =
+    {
+        "openai",
+        "openai-fast",
+    };
 
     private readonly LocalStore _store;
     private readonly HostBridge _host;
@@ -97,14 +115,27 @@ public sealed class AiSettingsService
     /// <summary>免费内置 AI 是否「可用」：无需任何配置，选即用。模型名空时回退默认值。</summary>
     public bool IsFreeAvailable => Mode == DiagnosticEngineMode.Free;
 
-    /// <summary>取免费模式实际使用的模型名（空值按通道回退默认）。</summary>
+    /// <summary>取免费模式实际使用的模型名（空值/非法值按通道回退默认，杜绝 1214 modelCode 不存在 / 404）。</summary>
     public string EffectiveFreeModel
     {
         get
         {
-            var m = Settings.FreeModel?.Trim();
-            if (!string.IsNullOrWhiteSpace(m)) return m;
-            return FreeProviderMode == FreeAiProvider.Pollinations ? DefaultPollinationsModel : DefaultFreeModel;
+            if (FreeProviderMode == FreeAiProvider.Pollinations)
+            {
+                var m = Settings.FreeModel?.Trim();
+                return !string.IsNullOrWhiteSpace(m) && KnownPollinationsModels.Contains(m, StringComparer.Ordinal)
+                    ? m
+                    : DefaultPollinationsModel;
+            }
+
+            var model = Settings.FreeModel?.Trim();
+            if (!string.IsNullOrWhiteSpace(model)
+                && KnownFreeModels.Contains(model, StringComparer.Ordinal))
+            {
+                return model;
+            }
+            // 已保存的模型名不在线上免费列表（显示名 / 过期编码 / 空）：回退官方免费档
+            return DefaultFreeModel;
         }
     }
 

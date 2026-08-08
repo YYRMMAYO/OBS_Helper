@@ -47,7 +47,7 @@
 
 ### 免费 AI（内置）
 
-内置免费 AI，**开箱即用**，两条通道可选、共用同一套本地限频：`智谱 GLM-4.7-Flash`（国内直连最稳；密钥在构建时由 `scripts/embed_free_ai_key.ps1` 加密内嵌进安装包，多重加密 + 不入 git 仓库，详见 `docs/` 审查报告）与 `Pollinations`（国外免 Key 公共通道，无需任何密钥，适合能直连国际网络的用户）。为了不给免费服务加压，**免费档由应用本地强制限频**：
+内置免费 AI，**开箱即用**，两条通道可选、共用同一套本地限频：`智谱免费模型`（国内直连最稳；密钥在构建时由 `scripts/embed_free_ai_key.ps1` 加密内嵌进安装包，多重加密 + 不入 git 仓库，详见 `docs/` 审查报告）与 `Pollinations`（国外免 Key 公共通道，无需任何密钥，适合能直连国际网络的用户）。为了不给免费服务加压，**免费档由应用本地强制限频**：
 
 - 每台机器每天最多 **20 次** 诊断（每次发起计 1 次，失败重试也计数）；
 - 计数保存在本机 `prefs.json`，跨重启生效，每天 0 点自动恢复；
@@ -79,9 +79,9 @@ dotnet run --project OBS_Helper.Wpf
 
 产物落在 `PAKE\windows\`：
 
-- `OBS_Helper_Setup_1.7.1.exe` — 安装包
-- `OBS_Helper_Portable_1.7.1.zip` — 解压即用
-- `OBS_Helper_Portable_1.7.1.exe` — 单文件（需 `-SingleFile`）
+- `OBS_Helper_Setup_1.8.0.exe` — 安装包
+- `OBS_Helper_Portable_1.8.0.zip` — 解压即用
+- `OBS_Helper_Portable_1.8.0.exe` — 单文件（需 `-SingleFile`）
 
 ## 工程结构
 

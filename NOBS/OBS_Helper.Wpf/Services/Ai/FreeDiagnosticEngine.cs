@@ -66,7 +66,8 @@ public sealed class FreeDiagnosticEngine
             ["model"] = _ai.EffectiveFreeModel,
             ["messages"] = messages,
             ["temperature"] = 0.3,
-            ["max_tokens"] = 1600
+            // glm-4.7-flash 会先消费 reasoning tokens 再输出结论，给足空间避免结论被截断
+            ["max_tokens"] = 4096
         };
 
         string respJson;

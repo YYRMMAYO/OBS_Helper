@@ -71,10 +71,7 @@ public partial class SettingsPage : UserControl, INavigationAware
             var provider = ai.FreeProviderMode;
             FreeProviderZhipu.IsChecked = provider == FreeAiProvider.Zhipu;
             FreeProviderPollinations.IsChecked = provider == FreeAiProvider.Pollinations;
-            FreeModelBox.Text = ai.Settings.FreeModel;
-            FreeModelBox.Tag = provider == FreeAiProvider.Pollinations
-                ? AiSettingsService.DefaultPollinationsModel
-                : AiSettingsService.DefaultFreeModel;
+            FillFreeModelItems(provider, selectEffective: true);
             CloudUrlBox.Text = ai.Settings.CloudUrl;
             CloudKeyNameBox.Text = ai.Settings.CloudSecretKeyName;
             CloudModelBox.Text = ai.Settings.CloudModel;
@@ -456,6 +453,25 @@ public partial class SettingsPage : UserControl, INavigationAware
         if (mode == DiagnosticEngineMode.Cloud) await RefreshKeyStatusAsync();
     }
 
+    /// <summary>按通道填充模型下拉（数据源 = 服务端的线上可用白名单，避免两处维护漂移）。</summary>
+    private void FillFreeModelItems(FreeAiProvider provider, bool selectEffective)
+    {
+        FreeModelBox.Items.Clear();
+        var models = provider == FreeAiProvider.Pollinations
+            ? AiSettingsService.KnownPollinationsModels
+            : AiSettingsService.KnownFreeModels;
+        foreach (var m in models)
+        {
+            FreeModelBox.Items.Add(new ComboBoxItem { Content = m, Tag = m });
+        }
+
+        if (!selectEffective) return;
+        var effective = AppServices.AiSettings.EffectiveFreeModel;
+        FreeModelBox.SelectedItem = FreeModelBox.Items
+            .Cast<ComboBoxItem>()
+            .FirstOrDefault(i => (i.Tag as string) == effective);
+    }
+
     private async void OnFreeProviderChanged(object sender, RoutedEventArgs e)
     {
         if (_syncing) return;
@@ -465,28 +481,24 @@ public partial class SettingsPage : UserControl, INavigationAware
             : FreeAiProvider.Zhipu;
         await AppServices.AiSettings.SetFreeProviderAsync(provider);
 
-        // 模型名空时按新通道补默认值，并更新输入框的占位提示
-        FreeModelBox.Tag = provider == FreeAiProvider.Pollinations
-            ? AiSettingsService.DefaultPollinationsModel
-            : AiSettingsService.DefaultFreeModel;
-        if (string.IsNullOrWhiteSpace(FreeModelBox.Text))
-        {
-            FreeModelBox.Text = AppServices.AiSettings.EffectiveFreeModel;
-        }
+        // 换通道后按新通道重填模型下拉并选中有效默认
+        FillFreeModelItems(provider, selectEffective: true);
         await RefreshFreeQuotaAsync();
     }
 
     private async void OnSaveFreeModel(object sender, RoutedEventArgs e)
     {
-        var model = FreeModelBox.Text.Trim();
-        if (string.IsNullOrWhiteSpace(model))
+        try
         {
-            // 空值按当前通道回退默认，与 EffectiveFreeModel 口径一致
-            model = AppServices.AiSettings.EffectiveFreeModel;
-            FreeModelBox.Text = model;
+            var model = (FreeModelBox.SelectedItem as ComboBoxItem)?.Tag as string
+                        ?? AppServices.AiSettings.EffectiveFreeModel;
+            await AppServices.AiSettings.SetFreeModelAsync(model);
+            SetFreeStatus($"免费 AI 模型已保存为「{AppServices.AiSettings.EffectiveFreeModel}」。");
         }
-        await AppServices.AiSettings.SetFreeModelAsync(model);
-        SetFreeStatus($"免费 AI 模型已保存为「{AppServices.AiSettings.EffectiveFreeModel}」。");
+        catch (Exception ex)
+        {
+            SetFreeStatus("保存模型失败：" + ex.Message);
+        }
     }
 
     private void SetFreeStatus(string text)

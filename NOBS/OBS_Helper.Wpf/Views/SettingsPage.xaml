@@ -23,7 +23,21 @@
           <!-- 免费内置 AI：无需任何配置，选中即用；只展示模型名与本地限额 -->
           <StackPanel x:Name="FreePanel" Visibility="Collapsed" Margin="0,4,0,0">
             <TextBlock Style="{StaticResource CaptionText}" Margin="2,8,0,0"
-                       Text="无需注册、无需 API Key。应用通过内置免费通道发起诊断，本地端强制限频：每天最多 20 次（每次发起计 1 次，失败重试也计数），且两次请求间隔至少 10 秒，每天 0 点自动恢复；超出后自动回退本地引擎。" />
+                       Text="内置免费 AI，开箱即用。本地端强制限频：每天最多 20 次（每次发起计 1 次，失败重试也计数），且两次请求间隔至少 10 秒，每天 0 点自动恢复；两种通道共用同一套额度，超出后自动回退本地引擎。" />
+            <TextBlock x:Name="FreeKeyStatusText" Style="{StaticResource CaptionText}"
+                       Margin="2,6,0,0" Foreground="{DynamicResource WarnBrush}" Visibility="Collapsed" />
+
+            <TextBlock Text="免费通道" Style="{StaticResource MutedText}" Margin="2,10,0,0" />
+            <StackPanel Orientation="Horizontal" Margin="2,4,0,0">
+              <RadioButton x:Name="FreeProviderZhipu" GroupName="SettingsFreeProvider"
+                           Content="智谱 GLM-4.7-Flash（国内 · 内置密钥）"
+                           Style="{StaticResource SegmentButton}" Checked="OnFreeProviderChanged" />
+              <RadioButton x:Name="FreeProviderPollinations" GroupName="SettingsFreeProvider"
+                           Content="Pollinations（国外 · 免 Key）"
+                           Style="{StaticResource SegmentButton}" Checked="OnFreeProviderChanged" />
+            </StackPanel>
+            <TextBlock Style="{StaticResource CaptionText}" Margin="2,6,0,0"
+                       Text="智谱国内直连最稳（密钥加密内置在安装包中，无需自己注册）；Pollinations 无需任何密钥，但需要能访问国外网络。两者都受同一套本地限频约束。" />
 
             <Grid Margin="0,12,0,0">
               <Grid.ColumnDefinitions>
@@ -32,7 +46,7 @@
               </Grid.ColumnDefinitions>
               <StackPanel Grid.Column="0" Margin="0,0,10,0">
                 <TextBlock Text="模型名" Style="{StaticResource MutedText}" Margin="0,0,0,5" />
-                <TextBox x:Name="FreeModelBox" Style="{StaticResource AppTextBox}" Tag="openai" />
+                <TextBox x:Name="FreeModelBox" Style="{StaticResource AppTextBox}" Tag="glm-4.7-flash" />
               </StackPanel>
               <Button Grid.Column="1" Content="保存" Style="{StaticResource SecondaryButton}"
                       VerticalAlignment="Bottom" Click="OnSaveFreeModel" />

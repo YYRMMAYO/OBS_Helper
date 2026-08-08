@@ -689,13 +689,30 @@ public sealed class HostBridge
     }
 
     /// <summary>
-    /// 转发一次「无需 API Key」的免费 AI 请求（同 <see cref="AiChatAsync"/> 的 https / SSRF 防护，
-    /// 但不带 Authorization 头，密钥键名允许为空）。供内置免费 AI 通道使用。
+    /// 转发一次「无需 API Key」的 AI 请求（国外免 Key 免费通道 Pollinations 用）：
+    /// 同 <see cref="AiChatAsync"/> 的 https / SSRF 防护，但不带 Authorization 头、不触碰任何密钥。
     /// </summary>
     public Task<string> AiChatNoAuthAsync(string url, string body)
     {
         var uri = ValidateAiUrl(url, body);
         return AiChatPostAsync(uri, body, auth: null);
+    }
+
+    /// <summary>
+    /// 转发一次「应用内嵌密钥」的 AI 请求（内置免费通道用）：https / SSRF 防护与
+    /// <see cref="AiChatAsync"/> 一致，但密钥由调用方（FreeAiKeyProvider）直接提供——
+    /// 不写入机密存储、不进 prefs.json，密钥明文只在进程内存中短暂存在。
+    /// </summary>
+    public Task<string> AiChatWithKeyAsync(string url, string apiKey, string body)
+    {
+        var uri = ValidateAiUrl(url, body);
+        if (string.IsNullOrEmpty(apiKey))
+            throw new InvalidOperationException("内置免费 AI 密钥为空。");
+        if (apiKey.Any(char.IsControl))
+            throw new ArgumentException("内置免费 AI 密钥含有非法字符。");
+
+        var auth = new AuthenticationHeaderValue("Bearer", apiKey);
+        return AiChatPostAsync(uri, body, auth);
     }
 
     /// <summary>校验 AI 接口地址与请求体（https + 非内网），返回解析后的 Uri。</summary>

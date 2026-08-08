@@ -14,6 +14,16 @@ public enum DiagnosticEngineMode
     Cloud
 }
 
+/// <summary>免费内置 AI 可选的通道。</summary>
+public enum FreeAiProvider
+{
+    /// <summary>智谱 GLM-4.7-Flash（国内直连，密钥加密内嵌在安装包里，零配置）。</summary>
+    Zhipu,
+
+    /// <summary>Pollinations（国外免 Key 公共通道，无需任何密钥，但依赖国际网络可达性）。</summary>
+    Pollinations,
+}
+
 /// <summary>持久化的 AI 设置（不含任何密钥本身）。</summary>
 public sealed class AiSettings
 {
@@ -22,8 +32,10 @@ public sealed class AiSettings
     /// <summary>API Key 在机密存储中的「键名」，不是密钥值。</summary>
     [JsonPropertyName("cloudSecretKeyName")] public string CloudSecretKeyName { get; set; } = "obs_ai_apikey";
     [JsonPropertyName("cloudModel")] public string CloudModel { get; set; } = "gpt-4o-mini";
-    /// <summary>免费内置 AI 使用的模型名（默认 openai，见 <see cref="AiSettingsService.FreeEndpointUrl"/>）。</summary>
-    [JsonPropertyName("freeModel")] public string FreeModel { get; set; } = "openai";
+    /// <summary>免费内置 AI 的通道（zhipu / pollinations），见 <see cref="AiSettingsService.FreeProviderMode"/>。</summary>
+    [JsonPropertyName("freeProvider")] public string FreeProvider { get; set; } = AiSettingsService.DefaultFreeProvider;
+    /// <summary>免费内置 AI 使用的模型名（默认随通道：zhipu→glm-4.7-flash，pollinations→openai）。</summary>
+    [JsonPropertyName("freeModel")] public string FreeModel { get; set; } = AiSettingsService.DefaultFreeModel;
 }
 
 /// <summary>
@@ -41,11 +53,20 @@ public sealed class AiSettingsService
 {
     private const string StorageKey = "obshelper.ai";
 
-    /// <summary>免费内置 AI 的接口地址（无需 API Key 的 OpenAI 兼容端点）。</summary>
-    public const string FreeEndpointUrl = "https://text.pollinations.ai/openai";
+    /// <summary>内置免费 AI 通道一：智谱开放平台（OpenAI 兼容，需 Bearer Key，见 FreeAiKeyProvider）。</summary>
+    public const string ZhipuEndpointUrl = "https://open.bigmodel.cn/api/paas/v4/chat/completions";
 
-    /// <summary>免费内置 AI 默认模型。</summary>
-    public const string DefaultFreeModel = "openai";
+    /// <summary>内置免费 AI 通道二：Pollinations（国外免 Key 公共端点，保留给能直连国际网络的用户）。</summary>
+    public const string PollinationsEndpointUrl = "https://text.pollinations.ai/openai";
+
+    /// <summary>免费内置 AI 默认通道（zhipu / pollinations）。</summary>
+    public const string DefaultFreeProvider = "zhipu";
+
+    /// <summary>免费内置 AI 默认模型（zhipu 通道的官方免费档）。</summary>
+    public const string DefaultFreeModel = "glm-4.7-flash";
+
+    /// <summary>Pollinations 通道默认模型。</summary>
+    public const string DefaultPollinationsModel = "openai";
 
     private readonly LocalStore _store;
     private readonly HostBridge _host;
@@ -69,12 +90,27 @@ public sealed class AiSettingsService
         _ => DiagnosticEngineMode.Local
     };
 
+    /// <summary>当前免费通道（zhipu / pollinations），非法值回退 zhipu。</summary>
+    public FreeAiProvider FreeProviderMode
+        => Settings.FreeProvider == "pollinations" ? FreeAiProvider.Pollinations : FreeAiProvider.Zhipu;
+
     /// <summary>免费内置 AI 是否「可用」：无需任何配置，选即用。模型名空时回退默认值。</summary>
     public bool IsFreeAvailable => Mode == DiagnosticEngineMode.Free;
 
-    /// <summary>取免费模式实际使用的模型名（空值回退默认）。</summary>
+    /// <summary>取免费模式实际使用的模型名（空值按通道回退默认）。</summary>
     public string EffectiveFreeModel
-        => string.IsNullOrWhiteSpace(Settings.FreeModel) ? DefaultFreeModel : Settings.FreeModel.Trim();
+    {
+        get
+        {
+            var m = Settings.FreeModel?.Trim();
+            if (!string.IsNullOrWhiteSpace(m)) return m;
+            return FreeProviderMode == FreeAiProvider.Pollinations ? DefaultPollinationsModel : DefaultFreeModel;
+        }
+    }
+
+    /// <summary>取免费模式实际使用的接口地址（随通道切换）。</summary>
+    public string EffectiveFreeEndpoint
+        => FreeProviderMode == FreeAiProvider.Pollinations ? PollinationsEndpointUrl : ZhipuEndpointUrl;
 
     /// <summary>云端是否「逻辑上可用」：模式为云端、地址为 https、密钥键名非空。</summary>
     public bool IsCloudConfigured
@@ -104,10 +140,17 @@ public sealed class AiSettingsService
         return SaveAsync();
     }
 
-    /// <summary>保存免费模式的模型名（空值会回退默认，与 EffectiveFreeModel 口径一致）。</summary>
+    /// <summary>保存免费模式的模型名（空值会按通道回退默认，与 EffectiveFreeModel 口径一致）。</summary>
     public Task SetFreeModelAsync(string model)
     {
         Settings.FreeModel = (model ?? "").Trim();
+        return SaveAsync();
+    }
+
+    /// <summary>保存免费模式的通道（zhipu / pollinations）。</summary>
+    public Task SetFreeProviderAsync(FreeAiProvider provider)
+    {
+        Settings.FreeProvider = provider == FreeAiProvider.Pollinations ? "pollinations" : "zhipu";
         return SaveAsync();
     }
 

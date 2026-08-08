@@ -46,7 +46,8 @@ public static class AppServices
     private static readonly Lazy<LocalDiagnosticEngine> _localEngine = new(() => new LocalDiagnosticEngine(Problems, Assistant));
     private static readonly Lazy<CloudDiagnosticEngine> _cloudEngine = new(() => new CloudDiagnosticEngine(AiSettings, Host, Tools));
     private static readonly Lazy<FreeRateLimiter> _freeLimiter = new(() => new FreeRateLimiter(Store));
-    private static readonly Lazy<FreeDiagnosticEngine> _freeEngine = new(() => new FreeDiagnosticEngine(AiSettings, Host));
+    private static readonly Lazy<FreeAiKeyProvider> _freeAiKey = new(() => new FreeAiKeyProvider());
+    private static readonly Lazy<FreeDiagnosticEngine> _freeEngine = new(() => new FreeDiagnosticEngine(AiSettings, Host, FreeAiKey));
     private static readonly Lazy<DiagnosticOrchestrator> _orchestrator = new(() =>
         new DiagnosticOrchestrator(AiSettings, Obs, Analyzer, Problems, Assistant, Host, Tools, LocalEngine, CloudEngine, FreeEngine, FreeLimiter));
 
@@ -72,6 +73,7 @@ public static class AppServices
     public static LocalDiagnosticEngine LocalEngine => _localEngine.Value;
     public static CloudDiagnosticEngine CloudEngine => _cloudEngine.Value;
     public static FreeRateLimiter FreeLimiter => _freeLimiter.Value;
+    public static FreeAiKeyProvider FreeAiKey => _freeAiKey.Value;
     public static FreeDiagnosticEngine FreeEngine => _freeEngine.Value;
 
     // 后台 / 遥控能力

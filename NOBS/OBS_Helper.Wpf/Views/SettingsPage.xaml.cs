@@ -68,7 +68,13 @@ public partial class SettingsPage : UserControl, INavigationAware
             FreePanel.Visibility = mode == DiagnosticEngineMode.Free ? Visibility.Visible : Visibility.Collapsed;
             CloudPanel.Visibility = mode == DiagnosticEngineMode.Cloud ? Visibility.Visible : Visibility.Collapsed;
 
+            var provider = ai.FreeProviderMode;
+            FreeProviderZhipu.IsChecked = provider == FreeAiProvider.Zhipu;
+            FreeProviderPollinations.IsChecked = provider == FreeAiProvider.Pollinations;
             FreeModelBox.Text = ai.Settings.FreeModel;
+            FreeModelBox.Tag = provider == FreeAiProvider.Pollinations
+                ? AiSettingsService.DefaultPollinationsModel
+                : AiSettingsService.DefaultFreeModel;
             CloudUrlBox.Text = ai.Settings.CloudUrl;
             CloudKeyNameBox.Text = ai.Settings.CloudSecretKeyName;
             CloudModelBox.Text = ai.Settings.CloudModel;
@@ -114,6 +120,13 @@ public partial class SettingsPage : UserControl, INavigationAware
         {
             FreeQuotaText.Text = "今日本地限额：无法读取（不影响使用，额度仍按每日上限强制）。";
         }
+
+        // 内置密钥状态：只展示「有没有」，绝不展示密钥本身；仅智谱通道需要密钥
+        var keyMissing = AppServices.AiSettings.FreeProviderMode == FreeAiProvider.Zhipu && !AppServices.FreeAiKey.IsAvailable;
+        FreeKeyStatusText.Text = keyMissing
+            ? "内置密钥：未打包（智谱通道不可用，会自动回退本地引擎；可改用 Pollinations 通道或换官方安装包）。"
+            : "";
+        FreeKeyStatusText.Visibility = keyMissing ? Visibility.Visible : Visibility.Collapsed;
     }
 
     /// <summary>只查询「有没有」，绝不把密钥取回 UI。</summary>
@@ -443,13 +456,33 @@ public partial class SettingsPage : UserControl, INavigationAware
         if (mode == DiagnosticEngineMode.Cloud) await RefreshKeyStatusAsync();
     }
 
+    private async void OnFreeProviderChanged(object sender, RoutedEventArgs e)
+    {
+        if (_syncing) return;
+
+        var provider = ReferenceEquals(sender, FreeProviderPollinations)
+            ? FreeAiProvider.Pollinations
+            : FreeAiProvider.Zhipu;
+        await AppServices.AiSettings.SetFreeProviderAsync(provider);
+
+        // 模型名空时按新通道补默认值，并更新输入框的占位提示
+        FreeModelBox.Tag = provider == FreeAiProvider.Pollinations
+            ? AiSettingsService.DefaultPollinationsModel
+            : AiSettingsService.DefaultFreeModel;
+        if (string.IsNullOrWhiteSpace(FreeModelBox.Text))
+        {
+            FreeModelBox.Text = AppServices.AiSettings.EffectiveFreeModel;
+        }
+        await RefreshFreeQuotaAsync();
+    }
+
     private async void OnSaveFreeModel(object sender, RoutedEventArgs e)
     {
         var model = FreeModelBox.Text.Trim();
         if (string.IsNullOrWhiteSpace(model))
         {
-            // 空值回退默认，与 EffectiveFreeModel 口径一致
-            model = AiSettingsService.DefaultFreeModel;
+            // 空值按当前通道回退默认，与 EffectiveFreeModel 口径一致
+            model = AppServices.AiSettings.EffectiveFreeModel;
             FreeModelBox.Text = model;
         }
         await AppServices.AiSettings.SetFreeModelAsync(model);
@@ -680,13 +713,32 @@ public partial class SettingsPage : UserControl, INavigationAware
         UpdateStatusText.Text = "正在检查更新…";
         UpdateStatusText.SetResourceReference(TextBlock.ForegroundProperty, "MutedBrush");
 
-        var result = await AppServices.Updates.CheckAsync();
-        CheckUpdateButton.IsEnabled = true;
-
-        RefreshUpdateStatus();
-        if (result.Status == UpdateCheckStatus.UpdateAvailable)
+        try
         {
-            UpdateDialog.Show(result.CurrentVersion, result.LatestVersion);
+            var result = await AppServices.Updates.CheckAsync();
+            RefreshUpdateStatus();
+            if (result.Status == UpdateCheckStatus.UpdateAvailable)
+            {
+                // 弹窗本身（XAML/下载）出错也要兜底，别让 async void 把整个应用带崩
+                try
+                {
+                    UpdateDialog.Show(result.CurrentVersion, result.LatestVersion);
+                }
+                catch (Exception ex)
+                {
+                    UpdateStatusText.Text = "打开更新窗口失败：" + ex.Message;
+                    UpdateStatusText.SetResourceReference(TextBlock.ForegroundProperty, "WarnBrush");
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            UpdateStatusText.Text = "检查更新失败：" + ex.Message;
+            UpdateStatusText.SetResourceReference(TextBlock.ForegroundProperty, "WarnBrush");
+        }
+        finally
+        {
+            CheckUpdateButton.IsEnabled = true;
         }
     }
 

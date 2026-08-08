@@ -1,7 +1,6 @@
 <Window x:Class="OBS_Helper.Wpf.Controls.UpdateDialog"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:services="clr-namespace:OBS_Helper.Wpf.Services"
         WindowStyle="None"
         AllowsTransparency="True"
         Background="Transparent"
@@ -39,18 +38,16 @@
               CornerRadius="{DynamicResource CornerRadiusMd}"
               Padding="12,10" Margin="0,14,0,0">
         <StackPanel>
-          <TextBlock Text="下载方式"
+          <TextBlock Text="请选择下载方式"
                      FontSize="{DynamicResource FontSizeXs}"
-                     Foreground="{DynamicResource MutedBrush}" Margin="0,0,0,4" />
+                     Foreground="{DynamicResource MutedBrush}" Margin="0,0,0,8" />
 
           <!-- 方式一：蓝奏云网盘（浏览器打开） -->
           <TextBlock TextWrapping="Wrap" FontSize="{DynamicResource FontSizeBase}"
                      Foreground="{DynamicResource TextBrush}" LineHeight="21">
-            <Run Text="方式一 · 蓝奏云网盘：" />&#x0a;<Hyperlink x:Name="DownloadLink"
-             NavigateUri="{x:Static services:UpdateService.DownloadUrl}"
-             Foreground="{DynamicResource OkBrush}">https://wwbpq.lanzouu.com/b01d7578be</Hyperlink>
+            <Run Text="方式一 · 蓝奏云网盘（浏览器打开）：" FontWeight="SemiBold" />
           </TextBlock>
-          <StackPanel Orientation="Horizontal" Margin="0,6,0,0">
+          <StackPanel Orientation="Horizontal" Margin="0,6,0,10">
             <TextBlock Text="网盘更新密码：" VerticalAlignment="Center"
                        FontSize="{DynamicResource FontSizeBase}"
                        Foreground="{DynamicResource TextBrush}" />
@@ -62,22 +59,25 @@
                          Foreground="{DynamicResource OkBrush}"
                          TextAlignment="Center" MinWidth="64" />
             </Border>
+            <Button x:Name="LanzouButton" Style="{StaticResource SecondaryButton}"
+                    Content="打开蓝奏云下载" MinWidth="150" Margin="14,0,0,0"
+                    Click="OnDownloadLanzou" />
           </StackPanel>
 
-          <Border Style="{StaticResource HLine}" Margin="0,12,0,10" />
+          <Border Style="{StaticResource HLine}" Margin="0,0,0,10" />
 
-          <!-- 方式二：应用内加载 GitHub（应用内直接下载最新版并启动安装） -->
-          <TextBlock Text="方式二 · 应用内加载 GitHub"
+          <!-- 方式二：应用内下载（GitHub Release） -->
+          <TextBlock Text="方式二 · 应用内下载（GitHub Release）"
                      FontSize="{DynamicResource FontSizeBase}" FontWeight="SemiBold"
                      Foreground="{DynamicResource TextBrush}" />
           <TextBlock TextWrapping="Wrap" FontSize="{DynamicResource FontSizeSm}"
                      Foreground="{DynamicResource MutedBrush}" Margin="0,4,0,8" LineHeight="20">
-            在应用内直接从 GitHub 仓库下载最新版安装包（不用开浏览器），下载完成后自动启动安装程序。
+            在应用内直接从 GitHub Release 下载最新安装包（不用开浏览器），下载完成后自动启动安装程序。
           </TextBlock>
 
-          <Button x:Name="GithubDownloadButton" Style="{StaticResource SecondaryButton}"
-                  Content="应用内加载 GitHub 下载" HorizontalAlignment="Left"
-                  MinWidth="180" Click="OnDownloadGithub" />
+          <Button x:Name="GithubDownloadButton" Style="{StaticResource PrimaryButton}"
+                  Content="应用内下载" HorizontalAlignment="Left"
+                  MinWidth="150" Click="OnDownloadGithub" />
 
           <StackPanel x:Name="GithubProgressPanel" Visibility="Collapsed" Margin="0,10,0,0">
             <ProgressBar x:Name="GithubProgressBar" Style="{StaticResource AppProgressBar}"
@@ -90,18 +90,15 @@
       </Border>
 
       <TextBlock Style="{StaticResource CaptionText}" Margin="2,8,0,0"
-                 Text="进入链接后输入上方密码即可下载安装包。也可以直接去 GitHub 仓库查看发布说明。" />
+                 Text="应用内下载走 GitHub，网络受限时请改用方式一；也可以直接访问 GitHub Release 页查看发布说明与历史版本。" />
 
-      <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,20,0,0">
-        <Button x:Name="RepoButton" Style="{StaticResource GhostButton}"
-                Content="GitHub 仓库" MinWidth="96" Margin="0,0,10,0"
-                Click="OnOpenRepo" />
+      <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,16,0,0">
+        <Button x:Name="ReleasePageButton" Style="{StaticResource GhostButton}"
+                Content="GitHub Release 页" MinWidth="110" Margin="0,0,10,0"
+                Click="OnOpenReleasePage" />
         <Button x:Name="LaterButton" Style="{StaticResource SecondaryButton}"
-                Content="稍后再说" MinWidth="96" Margin="0,0,10,0"
+                Content="稍后再说" MinWidth="96"
                 IsCancel="True" Click="OnLater" />
-        <Button x:Name="DownloadButton" Style="{StaticResource PrimaryButton}"
-                Content="去下载" MinWidth="96"
-                IsDefault="True" Click="OnDownload" />
       </StackPanel>
     </StackPanel>
   </Border>

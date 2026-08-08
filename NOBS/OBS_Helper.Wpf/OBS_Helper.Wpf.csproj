@@ -16,9 +16,9 @@
     <ApplicationIcon>Assets\appicon.ico</ApplicationIcon>
     <ApplicationManifest>app.manifest</ApplicationManifest>
 
-    <Version>1.7.0</Version>
-    <FileVersion>1.7.0.0</FileVersion>
-    <AssemblyVersion>1.7.0.0</AssemblyVersion>
+    <Version>1.7.1</Version>
+    <FileVersion>1.7.1.0</FileVersion>
+    <AssemblyVersion>1.7.1.0</AssemblyVersion>
     <AssemblyTitle>OBS 排障助手</AssemblyTitle>
     <Product>OBS 排障助手</Product>
     <Company>OBS Helper</Company>
@@ -56,6 +56,9 @@
     <EmbeddedResource Include="Assets\scene_templates.json" LogicalName="OBS_Helper.Wpf.Assets.scene_templates.json" />
     <!-- 托盘图标：运行时以 Stream 读取（WinForms Icon 需要流，不能直接用 WPF 资源） -->
     <EmbeddedResource Include="Assets\appicon.ico" LogicalName="OBS_Helper.Wpf.Assets.appicon.ico" />
+    <!-- 内置免费 AI 密钥：真实文件由 scripts/embed_free_ai_key.ps1 生成（已 gitignore），
+         源码仓库只有脚本没有密钥；文件缺失时（开发机/未 embed）此资源自动跳过，免费通道按「未内置」处理 -->
+    <EmbeddedResource Include="Assets\free_ai_key.json" LogicalName="OBS_Helper.Wpf.Assets.free_ai_key.json" Condition="Exists('Assets\free_ai_key.json')" />
   </ItemGroup>
 
   <!--

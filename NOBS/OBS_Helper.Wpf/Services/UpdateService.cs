@@ -52,6 +52,9 @@ public sealed class UpdateService
     /// <summary>GitHub 仓库主页。</summary>
     public const string RepoUrl = "https://github.com/YYRMMAYO/OBS_Helper";
 
+    /// <summary>GitHub Release 页（浏览器打开，看发布说明 / 历史版本 / 手动下载）。</summary>
+    public const string ReleasesPageUrl = RepoUrl + "/releases/latest";
+
     private const string TagsApi = "https://api.github.com/repos/YYRMMAYO/OBS_Helper/tags";
 
     /// <summary>
@@ -132,52 +135,72 @@ public sealed class UpdateService
 
     /// <summary>
     /// 执行一次更新检查。永不抛异常。
+    /// GitHub API 在国内网络偶发超时 / 抖动，失败自动重试一次再报失败。
     /// </summary>
     public async Task<UpdateCheckResult> CheckAsync()
     {
-        try
+        // 最多尝试 2 次（首次 + 1 次重试），每次独立超时
+        for (var attempt = 0; attempt < 2; attempt++)
         {
-            using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(12));
-            using var resp = await Http.GetAsync(TagsApi, cts.Token).ConfigureAwait(false);
-            resp.EnsureSuccessStatusCode();
-
-            var body = await resp.Content.ReadAsStringAsync(cts.Token).ConfigureAwait(false);
-            var latest = ParseLatestVersion(body);
-
-            var current = typeof(UpdateService).Assembly.GetName().Version;
-            if (latest is null)
+            try
             {
+                using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(12));
+                using var resp = await Http.GetAsync(TagsApi, cts.Token).ConfigureAwait(false);
+                resp.EnsureSuccessStatusCode();
+
+                var body = await resp.Content.ReadAsStringAsync(cts.Token).ConfigureAwait(false);
+                var latest = ParseLatestVersion(body);
+
+                var current = typeof(UpdateService).Assembly.GetName().Version;
+                if (latest is null)
+                {
+                    _lastResult = new UpdateCheckResult
+                    {
+                        Status = UpdateCheckStatus.Failed,
+                        CurrentVersion = current,
+                        Error = "GitHub 返回的 tag 中无法解析出版本号。",
+                    };
+                    return _lastResult;
+                }
+
+                var status = Compare(current, latest) < 0
+                    ? UpdateCheckStatus.UpdateAvailable
+                    : UpdateCheckStatus.UpToDate;
+
                 _lastResult = new UpdateCheckResult
                 {
-                    Status = UpdateCheckStatus.Failed,
+                    Status = status,
                     CurrentVersion = current,
-                    Error = "GitHub 返回的 tag 中无法解析出版本号。",
+                    LatestVersion = latest,
                 };
                 return _lastResult;
             }
-
-            var status = Compare(current, latest) < 0
-                ? UpdateCheckStatus.UpdateAvailable
-                : UpdateCheckStatus.UpToDate;
-
-            _lastResult = new UpdateCheckResult
+            catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException or JsonException)
             {
-                Status = status,
-                CurrentVersion = current,
-                LatestVersion = latest,
-            };
-            return _lastResult;
+                if (attempt == 0)
+                {
+                    // 网络抖动常见，重试一次（短等待）
+                    await Task.Delay(500).ConfigureAwait(false);
+                    continue;
+                }
+                _lastResult = new UpdateCheckResult
+                {
+                    Status = UpdateCheckStatus.Failed,
+                    CurrentVersion = typeof(UpdateService).Assembly.GetName().Version,
+                    Error = ex.Message,
+                };
+                return _lastResult;
+            }
         }
-        catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException or JsonException)
+
+        // 理论不可达（循环内必然 return）
+        _lastResult = new UpdateCheckResult
         {
-            _lastResult = new UpdateCheckResult
-            {
-                Status = UpdateCheckStatus.Failed,
-                CurrentVersion = typeof(UpdateService).Assembly.GetName().Version,
-                Error = ex.Message,
-            };
-            return _lastResult;
-        }
+            Status = UpdateCheckStatus.Failed,
+            CurrentVersion = typeof(UpdateService).Assembly.GetName().Version,
+            Error = "检查更新失败。",
+        };
+        return _lastResult;
     }
 
     /// <summary>
@@ -322,30 +345,34 @@ public sealed class UpdateService
             // 随机文件名 + 下载后校验 PE 头：既避免临时文件被占位 / 符号链接劫持，
             // 也保证启动的一定是可执行的 Windows 程序（防止下载到残缺文件后白弹 UAC）。
             var tmp = Path.Combine(Path.GetTempPath(), "OBS_Helper_Setup_" + Path.GetRandomFileName() + ".exe");
-            await using var fs = new FileStream(tmp, FileMode.Create, FileAccess.Write, FileShare.None);
-            await using var stream = await resp.Content.ReadAsStreamAsync(ct).ConfigureAwait(false);
 
-            var buffer = new byte[81920];
-            long received = 0;
-            while (true)
+            // 先完整写入，再关闭句柄，最后才校验 PE 头。
+            // 旧版 bug：fs 以 FileShare.None 打开且未释放就调用 IsValidPeExecutable，
+            // 该校验再开同文件必然共享冲突失败 → 每个下载完的安装包都被当成「损坏」删除。
+            await using (var fs = new FileStream(tmp, FileMode.Create, FileAccess.Write, FileShare.None))
             {
-                var n = await stream.ReadAsync(buffer, ct).ConfigureAwait(false);
-                if (n == 0) break;
-                await fs.WriteAsync(buffer.AsMemory(0, n), ct).ConfigureAwait(false);
-                received += n;
-                if (received > MaxInstallerBytes)
+                await using var stream = await resp.Content.ReadAsStreamAsync(ct).ConfigureAwait(false);
+
+                var buffer = new byte[81920];
+                long received = 0;
+                while (true)
                 {
-                    fs.Dispose();
-                    try { File.Delete(tmp); } catch { /* 清理失败无妨 */ }
-                    return null;
+                    var n = await stream.ReadAsync(buffer, ct).ConfigureAwait(false);
+                    if (n == 0) break;
+                    await fs.WriteAsync(buffer.AsMemory(0, n), ct).ConfigureAwait(false);
+                    received += n;
+                    if (received > MaxInstallerBytes)
+                    {
+                        try { File.Delete(tmp); } catch { /* 清理失败无妨 */ }
+                        return null;
+                    }
+                    progress?.Report((received, total));
                 }
-                progress?.Report((received, total));
             }
 
-            // 校验 PE 可执行文件头（MZ 签名），防止下载到 HTML 错误页 / 残缺文件
+            // 文件句柄已关闭，此时校验 PE 头才有效
             if (!IsValidPeExecutable(tmp))
             {
-                fs.Dispose();
                 try { File.Delete(tmp); } catch { /* 清理失败无妨 */ }
                 return null;
             }

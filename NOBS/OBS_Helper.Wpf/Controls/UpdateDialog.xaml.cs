@@ -5,14 +5,12 @@ using OBS_Helper.Wpf.Services;
 namespace OBS_Helper.Wpf.Controls;
 
 /// <summary>
-/// 发现新版本时的提示弹窗。
-///
-/// 与 <see cref="ConfirmDialog"/> 同款窗口样式（不跟随系统、深色模式不闪白），
-/// 额外承载两种下载方式：
+/// 发现新版本时的提示弹窗，让用户**自行选择**下载方式：
 /// <list type="bullet">
-///   <item>方式一：蓝奏云网盘（打开浏览器）——保留原有路径；</item>
-///   <item>方式二：应用内加载 GitHub——不依赖浏览器，在应用内直接下载最新版安装包并启动安装。</item>
+///   <item>方式一：蓝奏云网盘（打开浏览器）——国内网络最稳；</item>
+///   <item>方式二：应用内下载（GitHub Release）——不依赖浏览器，应用内直接下载并启动安装。</item>
 /// </list>
+/// 另提供「GitHub Release 页」入口（浏览器打开发布说明 / 历史版本）。
 /// 弹窗内只做展示、打开浏览器与下载安装，不含版本比较之外的更新逻辑。
 /// </summary>
 public partial class UpdateDialog : Window
@@ -20,17 +18,9 @@ public partial class UpdateDialog : Window
     private UpdateDialog()
     {
         InitializeComponent();
-        DownloadLink.RequestNavigate += async (_, e) =>
-        {
-            // Hyperlink 默认会用自己的导航逻辑，这里改为统一走系统浏览器。
-            // 注意不能用 e.Uri：未显式设置 NavigateUri 时它为 null，直接 ToString() 会抛异常。
-            e.Handled = true;
-            var opened = await AppServices.Host.OpenExternalAsync(UpdateService.DownloadUrl);
-            if (!opened) SetGithubStatus("打开浏览器失败，请复制链接手动访问：" + UpdateService.DownloadUrl);
-        };
     }
 
-    /// <summary>弹出更新提示框。返回用户选择（去下载 / 稍后再说 / GitHub 仓库 / 应用内下载）。</summary>
+    /// <summary>弹出更新提示框。返回用户选择（蓝奏云/应用内下载 / 稍后再说 / GitHub Release 页）。</summary>
     public static UpdateDialogResult Show(Version? current, Version? latest)
     {
         var dlg = new UpdateDialog
@@ -65,18 +55,24 @@ public partial class UpdateDialog : Window
 
     // ------------------------------------------------------------ 方式一：蓝奏云
 
-    private async void OnDownload(object sender, RoutedEventArgs e)
+    private async void OnDownloadLanzou(object sender, RoutedEventArgs e)
     {
-        // 「去下载」直接打开蓝奏云链接（弹窗关闭前触发，避免被调用方忽略返回值导致点了没反应）
-        var opened = await AppServices.Host.OpenExternalAsync(UpdateService.DownloadUrl);
-        if (!opened)
+        try
         {
-            // 浏览器打开失败时别直接关窗：留在弹窗里给用户明确提示 + 可复制链接
-            SetGithubStatus("打开浏览器失败，请复制链接手动访问：" + UpdateService.DownloadUrl);
-            return;
+            var opened = await AppServices.Host.OpenExternalAsync(UpdateService.DownloadUrl);
+            if (!opened)
+            {
+                // 浏览器打开失败时别直接关窗：留在弹窗里给用户明确提示 + 可复制链接
+                SetGithubStatus("打开浏览器失败，请复制链接手动访问：" + UpdateService.DownloadUrl);
+                return;
+            }
+            _result = UpdateDialogResult.Download;
+            Close();
         }
-        _result = UpdateDialogResult.Download;
-        Close();
+        catch (Exception ex)
+        {
+            SetGithubStatus("打开浏览器失败：" + ex.Message);
+        }
     }
 
     private void OnLater(object sender, RoutedEventArgs e)
@@ -85,19 +81,28 @@ public partial class UpdateDialog : Window
         Close();
     }
 
-    private async void OnOpenRepo(object sender, RoutedEventArgs e)
+    // ------------------------------------------------------------ GitHub Release 页（浏览器）
+
+    private async void OnOpenReleasePage(object sender, RoutedEventArgs e)
     {
-        var opened = await AppServices.Host.OpenExternalAsync(UpdateService.RepoUrl);
-        if (!opened)
+        try
         {
-            SetGithubStatus("打开浏览器失败，请复制链接手动访问：" + UpdateService.RepoUrl);
-            return;
+            var opened = await AppServices.Host.OpenExternalAsync(UpdateService.ReleasesPageUrl);
+            if (!opened)
+            {
+                SetGithubStatus("打开浏览器失败，请复制链接手动访问：" + UpdateService.ReleasesPageUrl);
+                return;
+            }
+            _result = UpdateDialogResult.Repo;
+            Close();
         }
-        _result = UpdateDialogResult.Repo;
-        Close();
+        catch (Exception ex)
+        {
+            SetGithubStatus("打开浏览器失败：" + ex.Message);
+        }
     }
 
-    // ------------------------------------------------------------ 方式二：应用内加载 GitHub
+    // ------------------------------------------------------------ 方式二：应用内下载（GitHub Release）
 
     /// <summary>
     /// 应用内加载 GitHub 下载：
@@ -111,84 +116,97 @@ public partial class UpdateDialog : Window
         // 下载期间锁定全部按钮，避免重复点击 / 中途切换路径
         SetDownloading(true);
 
-        var info = await AppServices.Updates.GetLatestReleaseAsync();
-        if (!info.IsOk)
-        {
-            SetGithubStatus($"获取最新版本失败：{info.Error}（可改用蓝奏云，或到 GitHub 仓库手动下载。）");
-            SetDownloading(false);
-            return;
-        }
-
-        // 去掉版本号前头的 "V"（不论大小写）再比较版本大小：
-        // 最新 Release 不高于当前版本时，没有下载的必要。
-        var latestVersion = UpdateService.ParseVersion(info.Tag);
-        if (latestVersion is not null && _currentVersion is not null && latestVersion <= _currentVersion)
-        {
-            SetGithubStatus($"GitHub 最新版本 {latestVersion} 不高于当前版本 {_currentVersion.Major}.{_currentVersion.Minor}.{_currentVersion.Build}，无需下载。");
-            SetDownloading(false);
-            return;
-        }
-
-        GithubStatusText.Text = latestVersion is null
-            ? $"正在从 GitHub 下载最新版（{info.Tag}）…"
-            : $"正在从 GitHub 下载 V{latestVersion} 安装包…";
-
-        var progress = new Progress<(long Received, long? Total)>(p =>
-        {
-            if (p.Total is > 0)
-            {
-                GithubProgressBar.Value = Math.Min(100, p.Received * 100.0 / p.Total.Value);
-                GithubStatusText.Text = $"正在下载… {FormatMb(p.Received)} / {FormatMb(p.Total.Value)}";
-            }
-            else
-            {
-                GithubStatusText.Text = $"正在下载… {FormatMb(p.Received)}";
-            }
-        });
-
-        var path = await AppServices.Updates.DownloadReleaseAssetAsync(info.SetupAssetUrl!, progress);
-        if (path is null)
-        {
-            SetGithubStatus("下载失败，请稍后重试；也可以改用蓝奏云网盘下载。");
-            SetDownloading(false);
-            return;
-        }
-
-        SetGithubStatus("下载完成，正在启动安装程序…");
-        _result = UpdateDialogResult.Download;
-
-        // 启动安装包（UAC 提权由安装程序自行申请）
         try
         {
-            Process.Start(new ProcessStartInfo(path) { UseShellExecute = true });
-        }
-        catch (Exception)
-        {
-            SetGithubStatus($"安装包已下载到：{path}\n启动安装程序失败，请手动双击该文件安装。");
-            SetDownloading(false);
-            return;
-        }
+            var info = await AppServices.Updates.GetLatestReleaseAsync();
+            if (!info.IsOk)
+            {
+                SetGithubStatus($"获取最新版本失败：{info.Error}（可改用方式一蓝奏云，或到 GitHub Release 页手动下载。）");
+                SetDownloading(false);
+                return;
+            }
 
-        Close();
+            // 去掉版本号前头的 "V"（不论大小写）再比较版本大小：
+            // 最新 Release 不高于当前版本时，没有下载的必要。
+            var latestVersion = UpdateService.ParseVersion(info.Tag);
+            if (latestVersion is not null && _currentVersion is not null && latestVersion <= _currentVersion)
+            {
+                SetGithubStatus($"GitHub 最新版本 {latestVersion} 不高于当前版本 {_currentVersion.Major}.{_currentVersion.Minor}.{_currentVersion.Build}，无需下载。");
+                SetDownloading(false);
+                return;
+            }
+
+            GithubStatusText.Text = latestVersion is null
+                ? $"正在从 GitHub 下载最新版（{info.Tag}）…"
+                : $"正在从 GitHub 下载 V{latestVersion} 安装包…";
+
+            var progress = new Progress<(long Received, long? Total)>(p =>
+            {
+                if (p.Total is > 0)
+                {
+                    GithubProgressBar.Value = Math.Min(100, p.Received * 100.0 / p.Total.Value);
+                    GithubStatusText.Text = $"正在下载… {FormatMb(p.Received)} / {FormatMb(p.Total.Value)}";
+                }
+                else
+                {
+                    GithubStatusText.Text = $"正在下载… {FormatMb(p.Received)}";
+                }
+            });
+
+            var path = await AppServices.Updates.DownloadReleaseAssetAsync(info.SetupAssetUrl!, progress);
+            if (path is null)
+            {
+                SetGithubStatus("下载失败，请稍后重试；也可以改用方式一蓝奏云网盘下载。");
+                SetDownloading(false);
+                return;
+            }
+
+            SetGithubStatus("下载完成，正在启动安装程序…");
+            _result = UpdateDialogResult.Download;
+
+            // 启动安装包（UAC 提权由安装程序自行申请）
+            try
+            {
+                Process.Start(new ProcessStartInfo(path) { UseShellExecute = true });
+            }
+            catch (Exception)
+            {
+                SetGithubStatus($"安装包已下载到：{path}\n启动安装程序失败，请手动双击该文件安装。");
+                SetDownloading(false);
+                return;
+            }
+
+            Close();
+        }
+        catch (Exception ex)
+        {
+            // async void 兜底：任何异常都不让整个应用崩掉
+            SetGithubStatus("应用内下载出错：" + ex.Message);
+            SetDownloading(false);
+        }
     }
 
     private void SetDownloading(bool downloading)
     {
+        LanzouButton.IsEnabled = !downloading;
         GithubDownloadButton.IsEnabled = !downloading;
-        DownloadButton.IsEnabled = !downloading;
-        RepoButton.IsEnabled = !downloading;
+        ReleasePageButton.IsEnabled = !downloading;
         LaterButton.IsEnabled = !downloading;
-        GithubProgressPanel.Visibility = downloading ? Visibility.Visible : Visibility.Collapsed;
+        // 状态区域在下载开始时即展开（进度条只在真正下载时显示）
+        GithubProgressPanel.Visibility = Visibility.Visible;
+        GithubProgressBar.Visibility = downloading ? Visibility.Visible : Visibility.Collapsed;
         if (!downloading)
         {
             GithubProgressBar.Value = 0;
         }
     }
 
+    /// <summary>写入状态/错误信息并展开进度面板——旧版错误信息写在 Collapsed 面板里，用户看不到任何反馈。</summary>
     private void SetGithubStatus(string text)
     {
         GithubStatusText.Text = text;
-        GithubStatusText.SetResourceReference(System.Windows.Controls.TextBlock.ForegroundProperty, "MutedBrush");
+        GithubProgressPanel.Visibility = Visibility.Visible;
+        GithubProgressBar.Visibility = Visibility.Collapsed;
     }
 
     private static string FormatMb(long bytes)
@@ -200,12 +218,12 @@ public partial class UpdateDialog : Window
 /// <summary>用户在更新提示弹窗中的选择。</summary>
 public enum UpdateDialogResult
 {
-    /// <summary>去下载（打开蓝奏云，或应用内完成 GitHub 下载）。</summary>
+    /// <summary>去下载（蓝奏云打开浏览器，或应用内完成 GitHub 下载）。</summary>
     Download,
 
     /// <summary>稍后再说。</summary>
     Later,
 
-    /// <summary>打开 GitHub 仓库。</summary>
+    /// <summary>打开 GitHub Release 页。</summary>
     Repo,
 }

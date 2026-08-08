@@ -16,3 +16,7 @@ tmp_build/
 # Agent workspace metadata (local only)
 .reasonix/
 reasonix.toml
+
+# 内置免费 AI 密钥（构建时由 scripts/embed_free_ai_key.ps1 生成；真实密钥绝不入库）
+OBS_Helper.Wpf/Assets/free_ai_key.json
+local/

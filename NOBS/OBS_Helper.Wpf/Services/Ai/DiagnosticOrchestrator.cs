@@ -94,23 +94,25 @@ public sealed class DiagnosticOrchestrator
 
     /// <summary>
     /// 免费 AI 路径：先强制限额（发出请求前消耗 1 次，失败重试也计数），失败或超额一律回退本地。
+    /// 两通道各自独立限额（智谱 10 次/天、Pollinations 20 次/天），按当前选中通道计费。
     /// 这样即便免费端点不可用，诊断能力也不中断，只是结论来自本地引擎。
     /// </summary>
     private async Task<DiagnosticResult> DiagnoseFreeAsync(DiagnosticContext ctx, string? query)
     {
-        var quota = await _freeLimiter.GetInfoAsync().ConfigureAwait(false);
+        var provider = _ai.FreeProviderMode;
+        var quota = await _freeLimiter.GetInfoAsync(provider).ConfigureAwait(false);
         if (quota.Remaining <= 0)
         {
-            return await Fallback(_local, ctx, query, FreeQuotaExhaustedMessage).ConfigureAwait(false);
+            return await Fallback(_local, ctx, query, FreeQuotaExhaustedMessage(provider)).ConfigureAwait(false);
         }
 
-        var consume = await _freeLimiter.TryConsumeAsync().ConfigureAwait(false);
+        var consume = await _freeLimiter.TryConsumeAsync(provider).ConfigureAwait(false);
         switch (consume)
         {
             case FreeConsumeResult.Allowed:
                 break; // 放行，继续走免费引擎
             case FreeConsumeResult.DailyQuotaExceeded:
-                return await Fallback(_local, ctx, query, FreeQuotaExhaustedMessage).ConfigureAwait(false);
+                return await Fallback(_local, ctx, query, FreeQuotaExhaustedMessage(provider)).ConfigureAwait(false);
             case FreeConsumeResult.TooSoon:
                 return await Fallback(_local, ctx, query,
                     $"免费 AI 触发本地低频保护：两次请求之间至少间隔 {FreeRateLimiter.MinIntervalSeconds} 秒，请稍后再试；本次已改用本地的搜索助手。").ConfigureAwait(false);
@@ -125,8 +127,12 @@ public sealed class DiagnosticOrchestrator
         return await Fallback(_local, ctx, query, free.Error).ConfigureAwait(false);
     }
 
-    private static string FreeQuotaExhaustedMessage
-        => $"今日免费 AI 额度（{FreeRateLimiter.MaxFreePerDay} 次/天）已用完，本次改用本地的搜索助手；每天 0 点自动恢复，或切换到「云端大模型」使用自己的 API。";
+    private static string FreeQuotaExhaustedMessage(FreeAiProvider provider)
+        => $"今日{provider switch
+        {
+            FreeAiProvider.Pollinations => "Pollinations（国外免 Key）",
+            _ => "智谱免费 AI",
+        }}额度（{FreeRateLimiter.MaxPerDay(provider)} 次/天）已用完，本次改用本地的搜索助手；每天 0 点自动恢复，或切换到「云端大模型」使用自己的 API。";
 
     private async Task<DiagnosticResult> Fallback(LocalDiagnosticEngine local, DiagnosticContext ctx, string? query, string? error)
     {

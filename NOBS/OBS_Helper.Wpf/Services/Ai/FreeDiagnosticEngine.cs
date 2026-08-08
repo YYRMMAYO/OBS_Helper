@@ -5,7 +5,7 @@ using OBS_Helper.Wpf.Services.Host;
 namespace OBS_Helper.Wpf.Services.Ai;
 
 /// <summary>
-/// 免费内置 AI 诊断引擎，两种通道由用户自选、共用同一套本地强限频：
+/// 免费内置 AI 诊断引擎，两种通道由用户自选、各按通道独立限频（见 <see cref="FreeRateLimiter"/>）：
 /// <list type="bullet">
 ///   <item><see cref="FreeAiProvider.Zhipu"/>（默认）：智谱 GLM-4.7-Flash，国内直连；
 ///         密钥来自 <see cref="FreeAiKeyProvider"/>（构建时由脚本加密内嵌，运行时解密，不落盘），
@@ -15,7 +15,8 @@ namespace OBS_Helper.Wpf.Services.Ai;
 /// </list>
 /// 两种通道都是「单轮普通对话」，不做工具调用、不产生知识库诊断项——结论直接来自模型对脱敏日志 + 实时状态的分析。
 ///
-/// 限额由 <see cref="FreeRateLimiter"/> 在编排层强制：两种通道**共用**每日 20 次 + 10 秒间隔，
+/// 限额由 <see cref="FreeRateLimiter"/> 在编排层强制：两通道**各自独立**计数
+/// （智谱每日 10 次、Pollinations 每日 20 次，10 秒间隔共用），
 /// 每次发起请求前消耗 1 次，超出后由编排器自动回退本地引擎，不把压力打到免费端点。
 /// </summary>
 public sealed class FreeDiagnosticEngine

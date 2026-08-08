@@ -32,13 +32,15 @@ public enum FreeConsumeResult
 }
 
 /// <summary>
-/// 免费内置 AI 的「本地端强制限额」：每台机器每天最多 <see cref="MaxFreePerDay"/> 次请求，
-/// 且任意两次请求之间至少间隔 <see cref="MinIntervalSeconds"/> 秒（低频保护，防突发连打）。
+/// 免费内置 AI 的「本地端强制限额」：按通道分别统计——智谱通道每台机器每天最多
+/// <see cref="ZhipuMaxPerDay"/> 次、Pollinations 通道每天最多 <see cref="PollinationsMaxPerDay"/> 次，
+/// 且任意两次免费请求之间至少间隔 <see cref="MinIntervalSeconds"/> 秒（低频保护，防突发连打，两通道共用）。
 ///
 /// 设计要点：
 /// <list type="bullet">
 ///   <item>日计数落在 %LocalAppData%\OBS_Helper\prefs.json（<see cref="LocalStore"/>），跨会话、跨重启生效；
-///         免费端点按 IP 也有自己的限流，本地这一层负责把单机用量压到「低频」档位，避免一个用户拖垮共享服务；</item>
+///         免费端点按 IP 也有自己的限流，本地这一层负责把单机用量压到「低频」档位，避免一个用户拖垮共享服务；
+///         两通道各自独立计数（<see cref="StorageKeyFor"/>），互不挤占额度；</item>
 ///   <item>按本地日期（yyyyMMdd）统计，跨天自动清零恢复；间隔保护在内存里（重启即重置），两者互补；
 ///         日期基于 <see cref="DateTime.Now"/>：本限制是非机密的「荣誉制」防线（prefs.json 可手改），
 ///         不追求对抗时钟回拨 / 篡改，只负责把正常用户压到低频档；</item>
@@ -48,13 +50,16 @@ public enum FreeConsumeResult
 /// </summary>
 public sealed class FreeRateLimiter
 {
-    /// <summary>每日免费请求上限（低频使用档位；免费共享端点不可承受高频，也不建议放开）。</summary>
-    public const int MaxFreePerDay = 20;
+    /// <summary>智谱通道每日免费请求上限（强限制档：智谱是国内共享免费端点，压到最低频，避免单用户拖垮）。</summary>
+    public const int ZhipuMaxPerDay = 10;
 
-    /// <summary>两次免费请求之间的最小间隔（秒），突发连打会触发本地低频保护。</summary>
+    /// <summary>Pollinations（国外免 Key）通道每日免费请求上限（维持原低频档不变）。</summary>
+    public const int PollinationsMaxPerDay = 20;
+
+    /// <summary>两次免费请求之间的最小间隔（秒），突发连打会触发本地低频保护（两通道共用）。</summary>
     public const int MinIntervalSeconds = 10;
 
-    private const string StorageKey = "obshelper.ai.freequota";
+    private const string StorageKeyPrefix = "obshelper.ai.freequota";
 
     private readonly LocalStore _store;
     private readonly object _gate = new();
@@ -65,44 +70,53 @@ public sealed class FreeRateLimiter
         _store = store;
     }
 
-    /// <summary>读取当前限额信息（自动处理跨天清零，不消耗额度）。</summary>
-    public Task<FreeQuotaInfo> GetInfoAsync()
+    /// <summary>某通道的每日上限。</summary>
+    public static int MaxPerDay(FreeAiProvider provider)
+        => provider == FreeAiProvider.Pollinations ? PollinationsMaxPerDay : ZhipuMaxPerDay;
+
+    private static string StorageKeyFor(FreeAiProvider provider)
+        => provider == FreeAiProvider.Pollinations
+            ? StorageKeyPrefix + ".pollinations"
+            : StorageKeyPrefix + ".zhipu";
+
+    /// <summary>读取指定通道的当前限额信息（自动处理跨天清零，不消耗额度）。</summary>
+    public Task<FreeQuotaInfo> GetInfoAsync(FreeAiProvider provider)
     {
         lock (_gate)
         {
-            var state = LoadState();
-            return Task.FromResult(new FreeQuotaInfo { Used = state.Used, Max = MaxFreePerDay });
+            var state = LoadState(provider);
+            return Task.FromResult(new FreeQuotaInfo { Used = state.Used, Max = MaxPerDay(provider) });
         }
     }
 
     /// <summary>
-    /// 尝试消耗一次额度（含间隔保护）。返回 <see cref="FreeConsumeResult.Allowed"/> 才应发起请求。
+    /// 尝试消耗一次指定通道的额度（含间隔保护）。返回 <see cref="FreeConsumeResult.Allowed"/> 才应发起请求。
     /// 落盘失败时 <see cref="LocalStore"/> 会静默保留内存值，本会话内限额仍然生效，不会误伤诊断。
     /// </summary>
-    public Task<FreeConsumeResult> TryConsumeAsync()
+    public Task<FreeConsumeResult> TryConsumeAsync(FreeAiProvider provider)
     {
         lock (_gate)
         {
-            var state = LoadState();
+            var state = LoadState(provider);
 
             // 低频保护：距上次请求不足 MinIntervalSeconds 秒直接拒绝（不扣日额度）
             var elapsed = DateTime.UtcNow - _lastRequestUtc;
             if (_lastRequestUtc != DateTime.MinValue && elapsed.TotalSeconds < MinIntervalSeconds)
                 return Task.FromResult(FreeConsumeResult.TooSoon);
 
-            if (state.Used >= MaxFreePerDay) return Task.FromResult(FreeConsumeResult.DailyQuotaExceeded);
+            if (state.Used >= MaxPerDay(provider)) return Task.FromResult(FreeConsumeResult.DailyQuotaExceeded);
 
             state.Used++;
-            SaveState(state);
+            SaveState(provider, state);
             _lastRequestUtc = DateTime.UtcNow;
             return Task.FromResult(FreeConsumeResult.Allowed);
         }
     }
 
-    private FreeQuotaState LoadState()
+    private FreeQuotaState LoadState(FreeAiProvider provider)
     {
         var today = DateTime.Now.ToString("yyyyMMdd");
-        var s = _store.GetObject<FreeQuotaState>(StorageKey);
+        var s = _store.GetObject<FreeQuotaState>(StorageKeyFor(provider));
         if (s is null || s.DateKey != today)
         {
             // 首次使用或跨天：重置为新的一天（不立刻落盘，首次消耗时才写）；
@@ -113,6 +127,6 @@ public sealed class FreeRateLimiter
         return s;
     }
 
-    private void SaveState(FreeQuotaState state)
-        => _store.SetObject(StorageKey, state);
+    private void SaveState(FreeAiProvider provider, FreeQuotaState state)
+        => _store.SetObject(StorageKeyFor(provider), state);
 }

@@ -23,7 +23,7 @@
           <!-- 免费内置 AI：无需任何配置，选中即用；只展示模型名与本地限额 -->
           <StackPanel x:Name="FreePanel" Visibility="Collapsed" Margin="0,4,0,0">
             <TextBlock Style="{StaticResource CaptionText}" Margin="2,8,0,0"
-                       Text="内置免费 AI，开箱即用。本地端强制限频：每天最多 20 次（每次发起计 1 次，失败重试也计数），且两次请求间隔至少 10 秒，每天 0 点自动恢复；两种通道共用同一套额度，超出后自动回退本地引擎。" />
+                       Text="内置免费 AI，开箱即用。本地端强制限频：智谱通道每天最多 10 次、Pollinations 通道每天最多 20 次（每次发起计 1 次，失败重试也计数），两次请求间隔至少 10 秒，每天 0 点自动恢复；两通道各自独立计数，超出后自动回退本地引擎。" />
             <TextBlock x:Name="FreeKeyStatusText" Style="{StaticResource CaptionText}"
                        Margin="2,6,0,0" Foreground="{DynamicResource WarnBrush}" Visibility="Collapsed" />
 
@@ -37,7 +37,7 @@
                            Style="{StaticResource SegmentButton}" Checked="OnFreeProviderChanged" />
             </StackPanel>
             <TextBlock Style="{StaticResource CaptionText}" Margin="2,6,0,0"
-                       Text="智谱国内直连最稳（密钥加密内置在安装包中，默认免费模型为实测稳定的 glm-4-flash-250414）；Pollinations 无需任何密钥，但需要能访问国外网络。两者都受同一套本地限频约束。" />
+                       Text="智谱国内直连最稳（密钥加密内置在安装包中，默认免费模型为实测稳定的 glm-4-flash-250414）；Pollinations 无需任何密钥，但需要能访问国外网络。两通道各自独立限频（智谱 10 次/天、Pollinations 20 次/天），间隔保护共用。" />
 
             <Grid Margin="0,12,0,0">
               <Grid.ColumnDefinitions>

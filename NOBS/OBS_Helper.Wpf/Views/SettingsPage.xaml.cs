@@ -105,13 +105,15 @@ public partial class SettingsPage : UserControl, INavigationAware
                 ? Visibility.Visible
                 : Visibility.Collapsed;
 
-    /// <summary>刷新免费 AI 的本地限额展示（只读统计，不消耗额度）。</summary>
+    /// <summary>刷新免费 AI 的本地限额展示（只读统计，不消耗额度；按当前选中通道展示对应上限）。</summary>
     private async Task RefreshFreeQuotaAsync()
     {
         try
         {
-            var info = await AppServices.FreeLimiter.GetInfoAsync();
-            FreeQuotaText.Text = $"今日本地限额：已用 {info.Used} / {info.Max} 次（{info.Remaining} 次剩余，每天 0 点重置）。";
+            var provider = AppServices.AiSettings.FreeProviderMode;
+            var info = await AppServices.FreeLimiter.GetInfoAsync(provider);
+            var channel = provider == FreeAiProvider.Pollinations ? "Pollinations（国外免 Key）" : "智谱免费 AI";
+            FreeQuotaText.Text = $"今日本地限额（{channel}）：已用 {info.Used} / {info.Max} 次（{info.Remaining} 次剩余，每天 0 点重置）。";
         }
         catch (Exception)
         {

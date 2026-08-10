@@ -140,56 +140,21 @@ public sealed class UpdateService
     public async Task<UpdateCheckResult> CheckAsync()
     {
         // 最多尝试 2 次（首次 + 1 次重试），每次独立超时
+        string? lastError = null;
         for (var attempt = 0; attempt < 2; attempt++)
         {
-            try
+            var (result, error) = await TryCheckOnceAsync().ConfigureAwait(false);
+            if (result is not null)
             {
-                using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(12));
-                using var resp = await Http.GetAsync(TagsApi, cts.Token).ConfigureAwait(false);
-                resp.EnsureSuccessStatusCode();
-
-                var body = await resp.Content.ReadAsStringAsync(cts.Token).ConfigureAwait(false);
-                var latest = ParseLatestVersion(body);
-
-                var current = typeof(UpdateService).Assembly.GetName().Version;
-                if (latest is null)
-                {
-                    _lastResult = new UpdateCheckResult
-                    {
-                        Status = UpdateCheckStatus.Failed,
-                        CurrentVersion = current,
-                        Error = "GitHub 返回的 tag 中无法解析出版本号。",
-                    };
-                    return _lastResult;
-                }
-
-                var status = Compare(current, latest) < 0
-                    ? UpdateCheckStatus.UpdateAvailable
-                    : UpdateCheckStatus.UpToDate;
-
-                _lastResult = new UpdateCheckResult
-                {
-                    Status = status,
-                    CurrentVersion = current,
-                    LatestVersion = latest,
-                };
-                return _lastResult;
+                _lastResult = result;
+                return result;
             }
-            catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException or JsonException)
+
+            lastError = error;
+            if (attempt == 0)
             {
-                if (attempt == 0)
-                {
-                    // 网络抖动常见，重试一次（短等待）
-                    await Task.Delay(500).ConfigureAwait(false);
-                    continue;
-                }
-                _lastResult = new UpdateCheckResult
-                {
-                    Status = UpdateCheckStatus.Failed,
-                    CurrentVersion = typeof(UpdateService).Assembly.GetName().Version,
-                    Error = ex.Message,
-                };
-                return _lastResult;
+                // 网络抖动常见，重试一次（短等待）
+                await Task.Delay(500).ConfigureAwait(false);
             }
         }
 
@@ -198,9 +163,53 @@ public sealed class UpdateService
         {
             Status = UpdateCheckStatus.Failed,
             CurrentVersion = typeof(UpdateService).Assembly.GetName().Version,
-            Error = "检查更新失败。",
+            Error = lastError ?? "检查更新失败。",
         };
         return _lastResult;
+    }
+
+    /// <summary>
+    /// 执行单次更新检查。成功返回结果；网络 / 解析类异常返回 (null, 错误信息)，
+    /// 由 <see cref="CheckAsync"/> 决定重试或报失败。
+    /// </summary>
+    private async Task<(UpdateCheckResult? Result, string? Error)> TryCheckOnceAsync()
+    {
+        try
+        {
+            using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(12));
+            using var resp = await Http.GetAsync(TagsApi, cts.Token).ConfigureAwait(false);
+            resp.EnsureSuccessStatusCode();
+
+            var body = await resp.Content.ReadAsStringAsync(cts.Token).ConfigureAwait(false);
+            var latest = ParseLatestVersion(body);
+
+            var current = typeof(UpdateService).Assembly.GetName().Version;
+            if (latest is null)
+            {
+                return (new UpdateCheckResult
+                {
+                    Status = UpdateCheckStatus.Failed,
+                    CurrentVersion = current,
+                    Error = "GitHub 返回的 tag 中无法解析出版本号。",
+                }, null);
+            }
+
+            var status = Compare(current, latest) < 0
+                ? UpdateCheckStatus.UpdateAvailable
+                : UpdateCheckStatus.UpToDate;
+
+            return (new UpdateCheckResult
+            {
+                Status = status,
+                CurrentVersion = current,
+                LatestVersion = latest,
+            }, null);
+        }
+        catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException or JsonException)
+        {
+            // 网络抖动常见：交给调用方重试一次再报失败
+            return (null, ex.Message);
+        }
     }
 
     /// <summary>
@@ -265,60 +274,69 @@ public sealed class UpdateService
 
             var body = await resp.Content.ReadAsStringAsync(cts.Token).ConfigureAwait(false);
             using var doc = JsonDocument.Parse(body);
-            var root = doc.RootElement;
 
-            // 遍历全部 Release，取版本号最高且确实带安装包资产的那条
-            Version? best = null;
-            string? bestTag = null;
-            string? bestAssetUrl = null;
-
-            foreach (var rel in root.EnumerateArray())
-            {
-                var tag = rel.TryGetProperty("tag_name", out var tagProp) ? tagProp.GetString() : null;
-                if (string.IsNullOrWhiteSpace(tag)) continue;
-                var v = ParseVersion(tag);
-                if (v is null) continue; // 跳过无法解析出版本号的 Release
-
-                string? assetUrl = null;
-                if (rel.TryGetProperty("assets", out var assets) && assets.ValueKind == JsonValueKind.Array)
-                {
-                    foreach (var asset in assets.EnumerateArray())
-                    {
-                        var name = asset.TryGetProperty("name", out var n) ? n.GetString() : "";
-                        if (string.IsNullOrEmpty(name)) continue;
-                        if (!name.StartsWith("OBS_Helper_Setup_", StringComparison.OrdinalIgnoreCase)) continue;
-                        if (!name.EndsWith(".exe", StringComparison.OrdinalIgnoreCase)) continue;
-
-                        if (asset.TryGetProperty("browser_download_url", out var u))
-                        {
-                            assetUrl = u.GetString();
-                        }
-                        if (!string.IsNullOrEmpty(assetUrl)) break;
-                    }
-                }
-
-                // 该版本没带安装包资产，跳过（例如纯说明性质的 Release）
-                if (string.IsNullOrEmpty(assetUrl)) continue;
-
-                if (best is null || v > best)
-                {
-                    best = v;
-                    bestTag = tag;
-                    bestAssetUrl = assetUrl;
-                }
-            }
-
-            if (bestTag is null || string.IsNullOrEmpty(bestAssetUrl))
-            {
+            var best = FindBestRelease(doc.RootElement);
+            if (best is null)
                 return new GitHubReleaseInfo(null, null, "GitHub 上还没有发布过带安装包的版本。");
-            }
 
-            return new GitHubReleaseInfo(bestTag, bestAssetUrl, null);
+            return new GitHubReleaseInfo(best.Tag, best.AssetUrl, null);
         }
         catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException or JsonException)
         {
             return new GitHubReleaseInfo(null, null, ex.Message);
         }
+    }
+
+    private sealed record ReleaseCandidate(string Tag, string AssetUrl);
+
+    /// <summary>遍历全部 Release，取「版本号最高且确实带安装包资产」的一条；找不到返回 null。</summary>
+    private static ReleaseCandidate? FindBestRelease(JsonElement root)
+    {
+        Version? best = null;
+        string? bestTag = null;
+        string? bestAssetUrl = null;
+
+        foreach (var rel in root.EnumerateArray())
+        {
+            var tag = rel.TryGetProperty("tag_name", out var tagProp) ? tagProp.GetString() : null;
+            if (string.IsNullOrWhiteSpace(tag)) continue;
+            var v = ParseVersion(tag);
+            if (v is null) continue; // 跳过无法解析出版本号的 Release
+
+            var assetUrl = FindSetupAssetUrl(rel);
+            if (string.IsNullOrEmpty(assetUrl)) continue; // 该版本没带安装包资产，跳过（例如纯说明性质的 Release）
+
+            if (best is null || v > best)
+            {
+                best = v;
+                bestTag = tag;
+                bestAssetUrl = assetUrl;
+            }
+        }
+
+        if (bestTag is null || string.IsNullOrEmpty(bestAssetUrl)) return null;
+        return new ReleaseCandidate(bestTag, bestAssetUrl);
+    }
+
+    /// <summary>在 Release 的 assets 里找安装包（OBS_Helper_Setup_*.exe）的下载地址。</summary>
+    private static string? FindSetupAssetUrl(JsonElement release)
+    {
+        if (!release.TryGetProperty("assets", out var assets) || assets.ValueKind != JsonValueKind.Array) return null;
+
+        foreach (var asset in assets.EnumerateArray())
+        {
+            var name = asset.TryGetProperty("name", out var n) ? n.GetString() : "";
+            if (string.IsNullOrEmpty(name)) continue;
+            if (!name.StartsWith("OBS_Helper_Setup_", StringComparison.OrdinalIgnoreCase)) continue;
+            if (!name.EndsWith(".exe", StringComparison.OrdinalIgnoreCase)) continue;
+
+            if (asset.TryGetProperty("browser_download_url", out var u))
+            {
+                var url = u.GetString();
+                if (!string.IsNullOrEmpty(url)) return url;
+            }
+        }
+        return null;
     }
 
     /// <summary>
@@ -346,34 +364,11 @@ public sealed class UpdateService
             // 也保证启动的一定是可执行的 Windows 程序（防止下载到残缺文件后白弹 UAC）。
             var tmp = Path.Combine(Path.GetTempPath(), "OBS_Helper_Setup_" + Path.GetRandomFileName() + ".exe");
 
-            // 先完整写入，再关闭句柄，最后才校验 PE 头。
-            // 旧版 bug：fs 以 FileShare.None 打开且未释放就调用 IsValidPeExecutable，
-            // 该校验再开同文件必然共享冲突失败 → 每个下载完的安装包都被当成「损坏」删除。
-            var oversized = false;
-            await using (var fs = new FileStream(tmp, FileMode.Create, FileAccess.Write, FileShare.None))
-            {
-                await using var stream = await resp.Content.ReadAsStreamAsync(ct).ConfigureAwait(false);
-
-                var buffer = new byte[81920];
-                long received = 0;
-                while (true)
-                {
-                    var n = await stream.ReadAsync(buffer, ct).ConfigureAwait(false);
-                    if (n == 0) break;
-                    await fs.WriteAsync(buffer.AsMemory(0, n), ct).ConfigureAwait(false);
-                    received += n;
-                    if (received > MaxInstallerBytes)
-                    {
-                        // 先跳出循环、关闭写句柄，再清理——句柄开着时 File.Delete 会共享冲突（同旧版 bug）
-                        oversized = true;
-                        break;
-                    }
-                    progress?.Report((received, total));
-                }
-            }
+            // 先完整写入，再关闭句柄，最后才校验 PE 头（旧版曾因句柄未释放导致共享冲突误判损坏）。
+            var ok = await DownloadToTempFileAsync(resp, tmp, total, progress, ct).ConfigureAwait(false);
 
             // 文件句柄已关闭，此时清理 / 校验才有效
-            if (oversized || !IsValidPeExecutable(tmp))
+            if (!ok || !IsValidPeExecutable(tmp))
             {
                 try { File.Delete(tmp); } catch { /* 清理失败无妨 */ }
                 return null;
@@ -385,6 +380,35 @@ public sealed class UpdateService
         {
             return null;
         }
+    }
+
+    /// <summary>把响应体流式写入临时文件；超过体积上限时中止并返回 false（句柄已关闭，可安全清理）。</summary>
+    private static async Task<bool> DownloadToTempFileAsync(HttpResponseMessage resp, string tmp, long? total,
+        IProgress<(long Received, long? Total)>? progress, CancellationToken ct)
+    {
+        var oversized = false;
+        await using (var fs = new FileStream(tmp, FileMode.Create, FileAccess.Write, FileShare.None))
+        {
+            await using var stream = await resp.Content.ReadAsStreamAsync(ct).ConfigureAwait(false);
+
+            var buffer = new byte[81920];
+            long received = 0;
+            while (true)
+            {
+                var n = await stream.ReadAsync(buffer, ct).ConfigureAwait(false);
+                if (n == 0) break;
+                await fs.WriteAsync(buffer.AsMemory(0, n), ct).ConfigureAwait(false);
+                received += n;
+                if (received > MaxInstallerBytes)
+                {
+                    // 先跳出循环、关闭写句柄，再清理——句柄开着时 File.Delete 会共享冲突（同旧版 bug）
+                    oversized = true;
+                    break;
+                }
+                progress?.Report((received, total));
+            }
+        }
+        return !oversized;
     }
 
     /// <summary>校验文件头为 Windows 可执行文件（MZ 签名），避免启动非 PE 文件。</summary>

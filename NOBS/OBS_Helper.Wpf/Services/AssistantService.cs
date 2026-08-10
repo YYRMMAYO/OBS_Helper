@@ -2,6 +2,7 @@ using OBS_Helper.Wpf.Models;
 
 namespace OBS_Helper.Wpf.Services;
 
+/// <summary>一次知识库匹配结果（问题 + 相关度评分 + 理由）。</summary>
 public class AssistantMatch
 {
     public Problem Problem { get; set; } = new();
@@ -9,6 +10,7 @@ public class AssistantMatch
     public string Reason { get; set; } = "";
 }
 
+/// <summary>助手对话服务：在知识库里做关键词匹配，返回建议问题与回答。</summary>
 public class AssistantService
 {
     private readonly ProblemService _problemService;

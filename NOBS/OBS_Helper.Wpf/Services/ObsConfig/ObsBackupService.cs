@@ -88,6 +88,7 @@ public sealed class ObsBackupService
         await Task.Run(() => BuildZip(zipPath, loc, includeKey, includePluginConfig, "导出", p));
     }
 
+    /// <summary>把 OBS 配置按「config/…」相对路径打包进 zip（密钥可选脱敏），并写入 manifest.json。</summary>
     private void BuildZip(string zipPath, ObsConfigLocation loc, bool includeKey, bool includePluginConfig, string reason, IProgress<string>? p)
     {
         var scenes = new List<string>();
@@ -99,98 +100,114 @@ public sealed class ObsBackupService
         {
             var configDir = loc.ConfigDir;
 
-            // 场景集合
-            p?.Report("正在打包场景集合…");
-            var scenesDir = Path.Combine(configDir, "basic", "scenes");
-            if (Directory.Exists(scenesDir))
-            {
-                foreach (var file in Directory.GetFiles(scenesDir, "*.json"))
-                {
-                    AddFileRaw(zip, "config/basic/scenes/" + Path.GetFileName(file), file);
-                    entryCount++;
-                    var name = ReadSceneCollectionName(file);
-                    if (name is not null) scenes.Add(name);
-                }
-            }
-
-            // 配置文件（profiles）
-            p?.Report("正在打包配置文件…");
-            var profilesDir = Path.Combine(configDir, "basic", "profiles");
-            if (Directory.Exists(profilesDir))
-            {
-                foreach (var profDir in Directory.GetDirectories(profilesDir))
-                {
-                    var profName = Path.GetFileName(profDir.TrimEnd(Path.DirectorySeparatorChar));
-                    profiles.Add(profName);
-                    foreach (var file in Directory.GetFiles(profDir, "*", SearchOption.AllDirectories))
-                    {
-                        var rel = "config/basic/profiles/" + profName + "/" +
-                                  file.Substring(profDir.Length).TrimStart(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar)
-                                      .Replace(Path.DirectorySeparatorChar, '/');
-                        if (!includeKey && Path.GetFileName(file).Equals("service.json", StringComparison.OrdinalIgnoreCase))
-                        {
-                            AddServiceJsonRedacted(zip, rel, file);
-                            redacted.Add(rel);
-                        }
-                        else
-                        {
-                            AddFileRaw(zip, rel, file);
-                        }
-                        entryCount++;
-                    }
-                }
-            }
-
-            // global.ini / user.ini
-            p?.Report("正在打包全局设置…");
-            foreach (var ini in new[] { "global.ini", "user.ini" })
-            {
-                var p2 = Path.Combine(configDir, ini);
-                if (File.Exists(p2))
-                {
-                    AddFileRaw(zip, "config/" + ini, p2);
-                    entryCount++;
-                }
-            }
-
-            // plugin_config（可选）
+            AddSceneCollections(zip, configDir, scenes, ref entryCount, p);
+            AddProfiles(zip, configDir, includeKey, profiles, redacted, ref entryCount, p);
+            AddGlobalSettings(zip, configDir, ref entryCount, p);
             if (includePluginConfig)
-            {
-                p?.Report("正在打包插件配置…");
-                var pc = Path.Combine(configDir, "plugin_config");
-                if (Directory.Exists(pc))
-                {
-                    foreach (var file in Directory.GetFiles(pc, "*", SearchOption.AllDirectories))
-                    {
-                        var rel = "config/plugin_config/" +
-                                  file.Substring(pc.Length).TrimStart(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar)
-                                      .Replace(Path.DirectorySeparatorChar, '/');
-                        AddFileRaw(zip, rel, file);
-                        entryCount++;
-                    }
-                }
-            }
+                AddPluginConfig(zip, configDir, ref entryCount, p);
 
-            // 清单
-            p?.Report("正在写入清单…");
-            var manifest = new BackupManifestFile
-            {
-                schema = 1,
-                app = "OBS_Helper",
-                appVersion = HostBridge.AppVersion,
-                createdAt = DateTime.Now.ToString("o"),
-                portable = loc.IsPortable,
-                includesPluginConfig = includePluginConfig,
-                includesStreamKey = includeKey,
-                redactedFiles = redacted.ToArray(),
-                sceneCollections = scenes.ToArray(),
-                profiles = profiles.ToArray(),
-                entryCount = entryCount,
-                reason = reason
-            };
-            var manifestJson = JsonSerializer.Serialize(manifest, new JsonSerializerOptions { WriteIndented = true });
-            AddTextEntry(zip, "manifest.json", manifestJson, DateTime.Now);
+            AddManifest(zip, loc, includeKey, includePluginConfig, reason, scenes, profiles, redacted, entryCount, p);
         }
+    }
+
+    /// <summary>打包 basic/scenes/*.json 场景集合。</summary>
+    private void AddSceneCollections(ZipArchive zip, string configDir, List<string> scenes, ref int entryCount, IProgress<string>? p)
+    {
+        p?.Report("正在打包场景集合…");
+        var scenesDir = Path.Combine(configDir, "basic", "scenes");
+        if (!Directory.Exists(scenesDir)) return;
+
+        foreach (var file in Directory.GetFiles(scenesDir, "*.json"))
+        {
+            AddFileRaw(zip, "config/basic/scenes/" + Path.GetFileName(file), file);
+            entryCount++;
+            var name = ReadSceneCollectionName(file);
+            if (name is not null) scenes.Add(name);
+        }
+    }
+
+    /// <summary>打包 basic/profiles/*（服务密钥可选脱敏，脱敏清单记入 redacted）。</summary>
+    private void AddProfiles(ZipArchive zip, string configDir, bool includeKey, List<string> profiles, List<string> redacted, ref int entryCount, IProgress<string>? p)
+    {
+        p?.Report("正在打包配置文件…");
+        var profilesDir = Path.Combine(configDir, "basic", "profiles");
+        if (!Directory.Exists(profilesDir)) return;
+
+        foreach (var profDir in Directory.GetDirectories(profilesDir))
+        {
+            var profName = Path.GetFileName(profDir.TrimEnd(Path.DirectorySeparatorChar));
+            profiles.Add(profName);
+            foreach (var file in Directory.GetFiles(profDir, "*", SearchOption.AllDirectories))
+            {
+                var rel = "config/basic/profiles/" + profName + "/" +
+                          file.Substring(profDir.Length).TrimStart(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar)
+                              .Replace(Path.DirectorySeparatorChar, '/');
+                if (!includeKey && Path.GetFileName(file).Equals("service.json", StringComparison.OrdinalIgnoreCase))
+                {
+                    AddServiceJsonRedacted(zip, rel, file);
+                    redacted.Add(rel);
+                }
+                else
+                {
+                    AddFileRaw(zip, rel, file);
+                }
+                entryCount++;
+            }
+        }
+    }
+
+    /// <summary>打包 global.ini / user.ini 全局设置。</summary>
+    private void AddGlobalSettings(ZipArchive zip, string configDir, ref int entryCount, IProgress<string>? p)
+    {
+        p?.Report("正在打包全局设置…");
+        foreach (var ini in new[] { "global.ini", "user.ini" })
+        {
+            var path = Path.Combine(configDir, ini);
+            if (!File.Exists(path)) continue;
+            AddFileRaw(zip, "config/" + ini, path);
+            entryCount++;
+        }
+    }
+
+    /// <summary>打包 plugin_config（可选）。</summary>
+    private void AddPluginConfig(ZipArchive zip, string configDir, ref int entryCount, IProgress<string>? p)
+    {
+        p?.Report("正在打包插件配置…");
+        var pc = Path.Combine(configDir, "plugin_config");
+        if (!Directory.Exists(pc)) return;
+
+        foreach (var file in Directory.GetFiles(pc, "*", SearchOption.AllDirectories))
+        {
+            var rel = "config/plugin_config/" +
+                      file.Substring(pc.Length).TrimStart(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar)
+                          .Replace(Path.DirectorySeparatorChar, '/');
+            AddFileRaw(zip, rel, file);
+            entryCount++;
+        }
+    }
+
+    /// <summary>写入 manifest.json（含脱敏文件清单、场景 / 配置列表）。</summary>
+    private void AddManifest(ZipArchive zip, ObsConfigLocation loc, bool includeKey, bool includePluginConfig, string reason,
+        List<string> scenes, List<string> profiles, List<string> redacted, int entryCount, IProgress<string>? p)
+    {
+        p?.Report("正在写入清单…");
+        var manifest = new BackupManifestFile
+        {
+            schema = 1,
+            app = "OBS_Helper",
+            appVersion = HostBridge.AppVersion,
+            createdAt = DateTime.Now.ToString("o"),
+            portable = loc.IsPortable,
+            includesPluginConfig = includePluginConfig,
+            includesStreamKey = includeKey,
+            redactedFiles = redacted.ToArray(),
+            sceneCollections = scenes.ToArray(),
+            profiles = profiles.ToArray(),
+            entryCount = entryCount,
+            reason = reason
+        };
+        var manifestJson = JsonSerializer.Serialize(manifest, new JsonSerializerOptions { WriteIndented = true });
+        AddTextEntry(zip, "manifest.json", manifestJson, DateTime.Now);
     }
 
     // ---------------------------------------------------------------- 列表 / 清理
@@ -284,7 +301,7 @@ public sealed class ObsBackupService
                 return new ObsImportResult(false, "OBS 正在运行，请先完全退出 OBS 后再导入（否则配置文件会被占用）。", null, 0, 0);
 
             p.Report("正在创建导入前自动备份（含密钥，以便可恢复）…");
-            string? autoBackup = null;
+            string? autoBackup;
             try
             {
                 autoBackup = await CreateBackupAsync("导入前自动备份", includeKey: true, includePluginConfig: true, null);
@@ -294,85 +311,7 @@ public sealed class ObsBackupService
                 return new ObsImportResult(false, $"导入前自动备份失败，已中止导入以保护现有配置：{ex.Message}", null, 0, 0);
             }
 
-            int importedCollections = 0, importedProfiles = 0;
-            var touchedProfiles = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-
-            using (var tx = new FileTx(ObsPathService.TrashRoot))
-            {
-                var configDir = loc.ConfigDir;
-
-                // 记录本机现有 profile 的密钥，供脱敏包回填
-                var machineKeys = ReadMachineProfileKeys(configDir);
-
-                if (mode == ObsImportMode.Overwrite)
-                {
-                    p.Report("正在移走现有配置（保留在回收站可恢复）…");
-                    var scenesDir = Path.Combine(configDir, "basic", "scenes");
-                    if (Directory.Exists(scenesDir)) foreach (var f in Directory.GetFiles(scenesDir)) tx.StageMove(f);
-                    var profDir = Path.Combine(configDir, "basic", "profiles");
-                    if (Directory.Exists(profDir)) foreach (var d in Directory.GetDirectories(profDir)) tx.StageMove(d);
-                    foreach (var ini in new[] { "global.ini", "user.ini" })
-                    {
-                        var ip = Path.Combine(configDir, ini);
-                        if (File.Exists(ip)) tx.StageMove(ip);
-                    }
-                    var pc = Path.Combine(configDir, "plugin_config");
-                    if (Directory.Exists(pc)) foreach (var d in Directory.GetDirectories(pc)) tx.StageMove(d);
-                }
-
-                using var zip = ZipFile.OpenRead(zipPath);
-                foreach (var entry in zip.Entries)
-                {
-                    var rel = NormalizeEntryName(entry.FullName);
-                    if (rel is null) continue;                 // slip：扫描阶段已拒绝整包
-                    if (rel == "manifest.json") continue;
-                    if (!rel.StartsWith("config/", StringComparison.OrdinalIgnoreCase)) continue;
-
-                    if (rel.StartsWith("config/basic/scenes/", StringComparison.OrdinalIgnoreCase))
-                    {
-                        var fileName = Path.GetFileName(rel);
-                        if (mode == ObsImportMode.Merge && File.Exists(Path.Combine(configDir, "basic", "scenes", fileName)))
-                        {
-                            ExtractSceneCollectionMerge(zip, entry, configDir);
-                            p.Report($"已合并场景集合（重命名避免冲突）：{fileName}");
-                        }
-                        else
-                        {
-                            ExtractRaw(zip, entry, Path.Combine(configDir, "basic", "scenes", fileName), configDir);
-                        }
-                        importedCollections++;
-                    }
-                    else if (rel.StartsWith("config/basic/profiles/", StringComparison.OrdinalIgnoreCase))
-                    {
-                        var seg = rel.Split('/');
-                        if (seg.Length < 5) continue;
-                        var profName = seg[3];
-                        if (mode == ObsImportMode.Merge && machineKeys.ContainsKey(profName))
-                        {
-                            p.Report($"已跳过同名配置「{profName}」（合并模式不覆盖）。");
-                            continue;
-                        }
-                        var rest = string.Join("/", seg.Skip(4));
-                        var dest = Path.Combine(configDir, "basic", "profiles", profName, rest);
-                        ExtractProfileFile(zip, entry, dest, scan.IncludesStreamKey, machineKeys, profName);
-                        touchedProfiles.Add(profName);
-                    }
-                    else if (rel == "config/global.ini" || rel == "config/user.ini")
-                    {
-                        if (mode == ObsImportMode.Overwrite)
-                            ExtractRaw(zip, entry, Path.Combine(configDir, Path.GetFileName(rel)), configDir);
-                    }
-                    else if (rel.StartsWith("config/plugin_config/", StringComparison.OrdinalIgnoreCase))
-                    {
-                        if (mode == ObsImportMode.Overwrite)
-                            ExtractRaw(zip, entry, Path.Combine(configDir, rel.Substring("config/".Length).Replace('/', Path.DirectorySeparatorChar)), configDir);
-                    }
-                }
-
-                importedProfiles = touchedProfiles.Count;
-                p.Report("正在提交…");
-                tx.Commit();
-            }
+            var (importedCollections, importedProfiles) = ExtractIntoConfig(zipPath, loc, scan, mode, p);
 
             return new ObsImportResult(true, null, autoBackup, importedCollections, importedProfiles);
         }
@@ -380,6 +319,121 @@ public sealed class ObsBackupService
         {
             return new ObsImportResult(false, $"导入失败：{ex.Message}", null, 0, 0);
         }
+    }
+
+    /// <summary>在事务保护下把备份包内容解压进 OBS 配置目录，返回 (导入场景集合数, 导入配置数)。</summary>
+    private (int Collections, int Profiles) ExtractIntoConfig(string zipPath, ObsConfigLocation loc, ZipScan scan, ObsImportMode mode, IProgress<string> p)
+    {
+        var configDir = loc.ConfigDir;
+        var touchedProfiles = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        int importedCollections = 0;
+
+        using (var tx = new FileTx(ObsPathService.TrashRoot))
+        {
+            // 记录本机现有 profile 的密钥，供脱敏包回填
+            var machineKeys = ReadMachineProfileKeys(configDir);
+
+            if (mode == ObsImportMode.Overwrite)
+            {
+                p.Report("正在移走现有配置（保留在回收站可恢复）…");
+                StageExistingConfig(tx, configDir);
+            }
+
+            using var zip = ZipFile.OpenRead(zipPath);
+            foreach (var entry in zip.Entries)
+            {
+                var rel = NormalizeEntryName(entry.FullName);
+                if (rel is null) continue;                 // slip：扫描阶段已拒绝整包
+                if (rel == "manifest.json") continue;
+                if (!rel.StartsWith("config/", StringComparison.OrdinalIgnoreCase)) continue;
+
+                if (rel.StartsWith("config/basic/scenes/", StringComparison.OrdinalIgnoreCase))
+                {
+                    ImportSceneCollectionEntry(zip, entry, rel, configDir, mode, p);
+                    importedCollections++;
+                }
+                else if (rel.StartsWith("config/basic/profiles/", StringComparison.OrdinalIgnoreCase))
+                {
+                    ImportProfileEntry(zip, entry, rel, configDir, mode, scan, machineKeys, touchedProfiles, p);
+                }
+                else if (rel == "config/global.ini" || rel == "config/user.ini")
+                {
+                    ImportIniEntry(zip, entry, rel, configDir, mode);
+                }
+                else if (rel.StartsWith("config/plugin_config/", StringComparison.OrdinalIgnoreCase))
+                {
+                    ImportPluginConfigEntry(zip, entry, rel, configDir, mode);
+                }
+            }
+
+            p.Report("正在提交…");
+            tx.Commit();
+        }
+
+        return (importedCollections, touchedProfiles.Count);
+    }
+
+    /// <summary>覆盖模式：把现有配置移进事务回收站（保留可恢复），随后导入包内文件。</summary>
+    private static void StageExistingConfig(FileTx tx, string configDir)
+    {
+        var scenesDir = Path.Combine(configDir, "basic", "scenes");
+        if (Directory.Exists(scenesDir)) foreach (var f in Directory.GetFiles(scenesDir)) tx.StageMove(f);
+        var profDir = Path.Combine(configDir, "basic", "profiles");
+        if (Directory.Exists(profDir)) foreach (var d in Directory.GetDirectories(profDir)) tx.StageMove(d);
+        foreach (var ini in new[] { "global.ini", "user.ini" })
+        {
+            var ip = Path.Combine(configDir, ini);
+            if (File.Exists(ip)) tx.StageMove(ip);
+        }
+        var pc = Path.Combine(configDir, "plugin_config");
+        if (Directory.Exists(pc)) foreach (var d in Directory.GetDirectories(pc)) tx.StageMove(d);
+    }
+
+    /// <summary>写一个场景集合文件（合并模式重命名避免冲突）。</summary>
+    private static void ImportSceneCollectionEntry(ZipArchive zip, ZipArchiveEntry entry, string rel, string configDir, ObsImportMode mode, IProgress<string> p)
+    {
+        var fileName = Path.GetFileName(rel);
+        if (mode == ObsImportMode.Merge && File.Exists(Path.Combine(configDir, "basic", "scenes", fileName)))
+        {
+            ExtractSceneCollectionMerge(zip, entry, configDir);
+            p.Report($"已合并场景集合（重命名避免冲突）：{fileName}");
+        }
+        else
+        {
+            ExtractRaw(zip, entry, Path.Combine(configDir, "basic", "scenes", fileName), configDir);
+        }
+    }
+
+    /// <summary>写一个 profile 文件（合并模式跳过同名配置；脱敏包按本机密钥回填）。</summary>
+    private static void ImportProfileEntry(ZipArchive zip, ZipArchiveEntry entry, string rel, string configDir, ObsImportMode mode,
+        ZipScan scan, Dictionary<string, (string? key, string? bearer)> machineKeys, HashSet<string> touchedProfiles, IProgress<string> p)
+    {
+        var seg = rel.Split('/');
+        if (seg.Length < 5) return;
+        var profName = seg[3];
+        if (mode == ObsImportMode.Merge && machineKeys.ContainsKey(profName))
+        {
+            p.Report($"已跳过同名配置「{profName}」（合并模式不覆盖）。");
+            return;
+        }
+        var rest = string.Join("/", seg.Skip(4));
+        var dest = Path.Combine(configDir, "basic", "profiles", profName, rest);
+        ExtractProfileFile(zip, entry, dest, scan.IncludesStreamKey, machineKeys, profName);
+        touchedProfiles.Add(profName);
+    }
+
+    /// <summary>global.ini / user.ini 仅在覆盖模式写入。</summary>
+    private static void ImportIniEntry(ZipArchive zip, ZipArchiveEntry entry, string rel, string configDir, ObsImportMode mode)
+    {
+        if (mode == ObsImportMode.Overwrite)
+            ExtractRaw(zip, entry, Path.Combine(configDir, Path.GetFileName(rel)), configDir);
+    }
+
+    /// <summary>plugin_config 仅在覆盖模式写入。</summary>
+    private static void ImportPluginConfigEntry(ZipArchive zip, ZipArchiveEntry entry, string rel, string configDir, ObsImportMode mode)
+    {
+        if (mode == ObsImportMode.Overwrite)
+            ExtractRaw(zip, entry, Path.Combine(configDir, rel.Substring("config/".Length).Replace('/', Path.DirectorySeparatorChar)), configDir);
     }
 
     // ---------------------------------------------------------------- zip 读取 / 写入工具

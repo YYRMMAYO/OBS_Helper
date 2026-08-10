@@ -7,6 +7,7 @@ using OBS_Helper.Wpf.Services;
 
 namespace OBS_Helper.Wpf;
 
+/// <summary>应用入口：单实例锁、全局异常挂钩、服务启动装配与自检模式。</summary>
 public partial class App : Application
 {
     /// <summary>

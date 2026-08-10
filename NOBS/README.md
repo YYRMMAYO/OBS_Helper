@@ -7,3 +7,9 @@
 
 - 简体中文 → [`../README.md`](../README.md)
 - English → [`../README.en.md`](../README.en.md)
+
+本目录的工程文档：
+
+- [`docs/CODEBASE.md`](docs/CODEBASE.md) — 项目库代码清单（按模块列出全部源码 / 资源文件及职责）
+- [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) — 架构总览（分层 / 组合根 / 连接 / AI 诊断 / 安全设计）
+- [`docs/reviews/`](docs/reviews/) — 各版本发布审查报告

@@ -96,6 +96,7 @@ public sealed class ObsEventMessage
 // 领域 DTO：仅保留 UI 与诊断实际需要的字段，避免过度建模。
 // ---------------------------------------------------------------------------
 
+/// <summary>一个 OBS 场景（名称 + 排序 + 是否当前场景）。</summary>
 public sealed class ObsSceneInfo
 {
     public string Name { get; set; } = "";
@@ -103,6 +104,7 @@ public sealed class ObsSceneInfo
     public bool IsCurrent { get; set; }
 }
 
+/// <summary>一个 OBS 输入源（含静音 / 音量等 UI 所需字段）。</summary>
 public sealed class ObsInputInfo
 {
     public string Name { get; set; } = "";

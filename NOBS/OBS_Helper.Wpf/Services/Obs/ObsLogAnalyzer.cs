@@ -297,40 +297,15 @@ public sealed class ObsLogAnalyzer
             lineNo++;
             var line = LogSanitizer.SanitizeLine(rawLine);
             sanitizedLines.Add(line);
-
             if (line.Length == 0) continue;
 
+            // 逐行解析环境信息与错误统计
             ParseSummaryLine(line, report.Summary);
+            CountIssueLines(line, report.Summary);
 
-            if (line.Contains("warning", StringComparison.OrdinalIgnoreCase)) report.Summary.WarningLines++;
-            if (line.Contains("error", StringComparison.OrdinalIgnoreCase) ||
-                line.Contains("failed", StringComparison.OrdinalIgnoreCase)) report.Summary.ErrorLines++;
-
-            if (found.Count >= MaxFindings) continue;
-
-            foreach (var rule in Rules)
-            {
-                if (!rule.Pattern.IsMatch(line)) continue;
-
-                if (found.TryGetValue(rule.Code, out var existing))
-                {
-                    existing.Occurrences++;
-                }
-                else
-                {
-                    found[rule.Code] = new LogFinding
-                    {
-                        Code = rule.Code,
-                        Severity = rule.Severity,
-                        Title = rule.Title,
-                        Suggestion = rule.Suggestion,
-                        ProblemId = rule.ProblemId,
-                        Evidence = Trim(line),
-                        FirstLine = lineNo
-                    };
-                }
-                // 一行可能同时命中多条规则（例如同时含 failed 与 NVENC），全部记录
-            }
+            // 用规则表匹配已知故障特征（一行可能同时命中多条，全部记录）
+            if (found.Count < MaxFindings)
+                MatchRules(line, lineNo, found);
         }
 
         report.Summary.TotalLines = lineNo;
@@ -344,6 +319,42 @@ public sealed class ObsLogAnalyzer
             .ToList();
 
         return report;
+    }
+
+    /// <summary>统计 warning / error 行数。</summary>
+    private static void CountIssueLines(string line, ObsLogSummary s)
+    {
+        if (line.Contains("warning", StringComparison.OrdinalIgnoreCase)) s.WarningLines++;
+        if (line.Contains("error", StringComparison.OrdinalIgnoreCase) ||
+            line.Contains("failed", StringComparison.OrdinalIgnoreCase)) s.ErrorLines++;
+    }
+
+    /// <summary>用规则表匹配一行：命中则聚合计数或新建 finding。</summary>
+    private static void MatchRules(string line, int lineNo, Dictionary<string, LogFinding> found)
+    {
+        foreach (var rule in Rules)
+        {
+            if (!rule.Pattern.IsMatch(line)) continue;
+
+            if (found.TryGetValue(rule.Code, out var existing))
+            {
+                existing.Occurrences++;
+            }
+            else
+            {
+                found[rule.Code] = new LogFinding
+                {
+                    Code = rule.Code,
+                    Severity = rule.Severity,
+                    Title = rule.Title,
+                    Suggestion = rule.Suggestion,
+                    ProblemId = rule.ProblemId,
+                    Evidence = Trim(line),
+                    FirstLine = lineNo
+                };
+            }
+            // 一行可能同时命中多条规则（例如同时含 failed 与 NVENC），全部记录
+        }
     }
 
     // ------------------------------------------------------- 环境信息逐行提取

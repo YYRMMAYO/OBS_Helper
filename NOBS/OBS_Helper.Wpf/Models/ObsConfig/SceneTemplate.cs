@@ -30,6 +30,7 @@ public sealed class CanvasSpec
     public int FpsDenominator { get; set; } = 1;
 }
 
+/// <summary>模板里的一个场景：名称、可选过渡覆盖、快捷键与来源列表。</summary>
 public sealed class TemplateScene
 {
     public string Name { get; set; } = "";

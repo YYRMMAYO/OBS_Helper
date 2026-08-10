@@ -82,103 +82,33 @@ public sealed class SceneTemplateService
         if (!_obs.IsConnected)
             return new ApplyResult(false, 0, 0, Array.Empty<string>(), "未连接到 OBS，无法在线落地。请先在控制台连接，或使用「导出场景集合 JSON」。");
 
+        var transitionNotes = new List<string>();
         try
         {
             p.Report("正在读取 OBS 可用来源类型…");
-            var kindsResult = await _obs.RawRequestAsync("GetInputKindList", null, ct);
-            var available = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-            if (kindsResult.Ok && kindsResult.Data is JsonElement kd && kd.TryGetProperty("inputKinds", out var arr) && arr.ValueKind == JsonValueKind.Array)
-                foreach (var e in arr.EnumerateArray())
-                    if (e.ValueKind == JsonValueKind.String) available.Add(e.GetString()!);
+            var available = await LoadAvailableInputKindsAsync(ct);
 
             // 读取可用过渡，落地时把模板默认过渡设为当前过渡
             var transitionNames = await LoadTransitionNamesAsync(ct);
 
             p.Report("正在新建模板专属配置集合…");
-            var collectionName = await EnsureSceneCollectionAsync(ct, $"模板 · {tpl.Title}");
+            await EnsureSceneCollectionAsync(ct, $"模板 · {tpl.Title}");
 
             if (applyCanvas)
-            {
-                p.Report("正在设置画布分辨率…");
-                await _obs.RawRequestAsync("SetVideoSettings", new
-                {
-                    baseWidth = tpl.Canvas.BaseWidth,
-                    baseHeight = tpl.Canvas.BaseHeight,
-                    outputWidth = tpl.Canvas.OutputWidth,
-                    outputHeight = tpl.Canvas.OutputHeight,
-                    fpsNumerator = tpl.Canvas.FpsNumerator,
-                    fpsDenominator = tpl.Canvas.FpsDenominator
-                }, ct);
-            }
+                await ApplyCanvasAsync(tpl, p, ct);
 
-            var transitionNotes = new List<string>();
-            if (transitionNames.Count > 0)
-            {
-                // 当前过渡 + 时长
-                var cur = PickTransitionName(tpl.Transition, transitionNames);
-                if (cur is not null)
-                {
-                    await _obs.RawRequestAsync("SetCurrentSceneTransition", new { transitionName = cur }, ct);
-                    await _obs.RawRequestAsync("SetCurrentSceneTransitionDuration", new { transitionDuration = tpl.TransitionDurationMs }, ct);
-                }
-                else
-                {
-                    transitionNotes.Add($"模板默认过渡「{tpl.Transition}」在 OBS 中不可用，已保持 OBS 原过渡。");
-                }
-            }
+            await ApplyDefaultTransitionAsync(tpl, transitionNames, transitionNotes, ct);
 
-            int created = 0, skipped = 0;
-            var placeholders = new List<string>();
-            var createdInputs = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-
-            foreach (var scene in tpl.Scenes)
-            {
-                p.Report($"正在创建场景「{scene.Name}」…");
-                var cs = await _obs.RawRequestAsync("CreateScene", new { sceneName = scene.Name }, ct);
-                if (!cs.Ok) { skipped++; continue; }
-                created++;
-
-                // 场景级过渡覆盖（仅当该场景单独设置了过渡 / 时长时下发）
-                if (transitionNames.Count > 0 && (scene.Transition is not null || scene.TransitionDurationMs is not null))
-                {
-                    var ovName = PickTransitionName(scene.Transition ?? tpl.Transition, transitionNames);
-                    var ovDur = scene.TransitionDurationMs ?? tpl.TransitionDurationMs;
-                    var ovOk = await _obs.RawRequestAsync("SetSceneTransitionOverride", new
-                    {
-                        sceneName = scene.Name,
-                        transitionName = ovName ?? (object?)null,
-                        transitionDuration = ovDur
-                    }, ct);
-                    if (!ovOk.Ok && ovName is null)
-                        transitionNotes.Add($"场景「{scene.Name}」的过渡覆盖未生效（{Describe(ovOk)}）。");
-                }
-
-                var ordered = scene.Sources.OrderBy(s => s.ZOrder).ToList();
-                foreach (var src in ordered)
-                {
-                    try
-                    {
-                        await CreateOneSourceAsync(scene.Name, src, available, createdInputs, placeholders, ct);
-                    }
-                    catch (Exception ex)
-                    {
-                        skipped++;
-                        placeholders.Add($"{scene.Name} / {src.Name}：创建失败（{ex.Message}），已跳过。");
-                    }
-                }
-            }
+            var (created, skipped, placeholders) = await CreateAllScenesAsync(tpl, available, transitionNames, transitionNotes, p, ct);
 
             p.Report("正在切换到主场景…");
-            if (tpl.Scenes.Count > 0)
-                await _obs.RawRequestAsync("SetCurrentProgramScene", new { sceneName = tpl.Scenes[0].Name }, ct);
+            await SwitchToFirstSceneAsync(tpl, ct);
 
             p.Report("正在刷新状态…");
             await _obs.RefreshAllAsync();
 
             // 快捷键：obs-websocket 无设置场景快捷键的 API，落地后提示用户
-            var hotkeyScenes = tpl.Scenes.Where(s => !string.IsNullOrWhiteSpace(s.Hotkey)).ToList();
-            if (hotkeyScenes.Count > 0)
-                transitionNotes.Add("场景切换快捷键（" + string.Join(" / ", hotkeyScenes.Select(s => $"{s.Hotkey} → {s.Name}")) + "）需在 OBS 中手动绑定，或改用「导出场景集合 JSON」方式导入后自动生效。");
+            AppendHotkeyHints(tpl, transitionNotes);
 
             if (transitionNotes.Count > 0)
                 placeholders.InsertRange(0, transitionNotes);
@@ -196,58 +126,125 @@ public sealed class SceneTemplateService
         }
     }
 
+    /// <summary>读取 OBS 可用的输入来源类型集合（大小写不敏感）。</summary>
+    private async Task<HashSet<string>> LoadAvailableInputKindsAsync(CancellationToken ct)
+    {
+        var kindsResult = await _obs.RawRequestAsync("GetInputKindList", null, ct);
+        var available = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        if (kindsResult.Ok && kindsResult.Data is JsonElement kd && kd.TryGetProperty("inputKinds", out var arr) && arr.ValueKind == JsonValueKind.Array)
+            foreach (var e in arr.EnumerateArray())
+                if (e.ValueKind == JsonValueKind.String) available.Add(e.GetString()!);
+        return available;
+    }
+
+    /// <summary>按模板画布设置 OBS 视频分辨率与帧率。</summary>
+    private async Task ApplyCanvasAsync(SceneTemplate tpl, IProgress<string> p, CancellationToken ct)
+    {
+        p.Report("正在设置画布分辨率…");
+        var canvas = tpl.Canvas;
+        await _obs.RawRequestAsync("SetVideoSettings", new
+        {
+            baseWidth = canvas.BaseWidth,
+            baseHeight = canvas.BaseHeight,
+            outputWidth = canvas.OutputWidth,
+            outputHeight = canvas.OutputHeight,
+            fpsNumerator = canvas.FpsNumerator,
+            fpsDenominator = canvas.FpsDenominator
+        }, ct);
+    }
+
+    /// <summary>把模板默认过渡设为 OBS 当前过渡（不可用时记录提示并保持 OBS 原过渡）。</summary>
+    private async Task ApplyDefaultTransitionAsync(SceneTemplate tpl, List<string> transitionNames, List<string> notes, CancellationToken ct)
+    {
+        if (transitionNames.Count == 0) return;
+
+        // 当前过渡 + 时长
+        var cur = PickTransitionName(tpl.Transition, transitionNames);
+        if (cur is null)
+        {
+            notes.Add($"模板默认过渡「{tpl.Transition}」在 OBS 中不可用，已保持 OBS 原过渡。");
+            return;
+        }
+
+        await _obs.RawRequestAsync("SetCurrentSceneTransition", new { transitionName = cur }, ct);
+        await _obs.RawRequestAsync("SetCurrentSceneTransitionDuration", new { transitionDuration = tpl.TransitionDurationMs }, ct);
+    }
+
+    /// <summary>逐场景创建场景与来源，返回 (创建场景数, 跳过数, 占位提示列表)。</summary>
+    private async Task<(int Created, int Skipped, List<string> Placeholders)> CreateAllScenesAsync(
+        SceneTemplate tpl, HashSet<string> available, List<string> transitionNames, List<string> notes,
+        IProgress<string> p, CancellationToken ct)
+    {
+        int created = 0, skipped = 0;
+        var placeholders = new List<string>();
+        var createdInputs = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+
+        foreach (var scene in tpl.Scenes)
+        {
+            p.Report($"正在创建场景「{scene.Name}」…");
+            var cs = await _obs.RawRequestAsync("CreateScene", new { sceneName = scene.Name }, ct);
+            if (!cs.Ok) { skipped++; continue; }
+            created++;
+
+            await ApplySceneTransitionOverrideAsync(scene, tpl, transitionNames, notes, ct);
+
+            foreach (var src in scene.Sources.OrderBy(s => s.ZOrder))
+            {
+                try
+                {
+                    await CreateOneSourceAsync(scene.Name, src, available, createdInputs, placeholders, ct);
+                }
+                catch (Exception ex)
+                {
+                    skipped++;
+                    placeholders.Add($"{scene.Name} / {src.Name}：创建失败（{ex.Message}），已跳过。");
+                }
+            }
+        }
+
+        return (created, skipped, placeholders);
+    }
+
+    /// <summary>场景级过渡覆盖（仅当该场景单独设置了过渡 / 时长时下发）。</summary>
+    private async Task ApplySceneTransitionOverrideAsync(TemplateScene scene, SceneTemplate tpl, List<string> transitionNames, List<string> notes, CancellationToken ct)
+    {
+        if (transitionNames.Count == 0 || (scene.Transition is null && scene.TransitionDurationMs is null)) return;
+
+        var ovName = PickTransitionName(scene.Transition ?? tpl.Transition, transitionNames);
+        var ovDur = scene.TransitionDurationMs ?? tpl.TransitionDurationMs;
+        var ovOk = await _obs.RawRequestAsync("SetSceneTransitionOverride", new
+        {
+            sceneName = scene.Name,
+            transitionName = ovName ?? (object?)null,
+            transitionDuration = ovDur
+        }, ct);
+
+        if (!ovOk.Ok && ovName is null)
+            notes.Add($"场景「{scene.Name}」的过渡覆盖未生效（{Describe(ovOk)}）。");
+    }
+
+    /// <summary>落地后切到模板的第一个场景作为主场景。</summary>
+    private async Task SwitchToFirstSceneAsync(SceneTemplate tpl, CancellationToken ct)
+    {
+        if (tpl.Scenes.Count > 0)
+            await _obs.RawRequestAsync("SetCurrentProgramScene", new { sceneName = tpl.Scenes[0].Name }, ct);
+    }
+
+    /// <summary>obs-websocket 无设置场景快捷键的 API，落地后把「需手动绑定」提示写入 notes。</summary>
+    private static void AppendHotkeyHints(SceneTemplate tpl, List<string> notes)
+    {
+        var hotkeyScenes = tpl.Scenes.Where(s => !string.IsNullOrWhiteSpace(s.Hotkey)).ToList();
+        if (hotkeyScenes.Count == 0) return;
+        notes.Add("场景切换快捷键（" + string.Join(" / ", hotkeyScenes.Select(s => $"{s.Hotkey} → {s.Name}")) + "）需在 OBS 中手动绑定，或改用「导出场景集合 JSON」方式导入后自动生效。");
+    }
+
+    /// <summary>创建一个来源：优先复用跨场景共享输入，否则新建；随后应用变换、层级与显隐，并追加占位提示。</summary>
     private async Task CreateOneSourceAsync(string sceneName, TemplateSource src, HashSet<string> available,
         Dictionary<string, string> createdInputs, List<string> placeholders, CancellationToken ct)
     {
-        int itemId;
-        string inputName;
-
-        if (src.Shared && createdInputs.TryGetValue(src.Name, out var existingInput))
-        {
-            // 复用已创建的输入：在同一场景里用 CreateSceneItem 引用它
-            var ci = await _obs.RawRequestAsync("CreateSceneItem", new { sceneName, sourceName = existingInput, sceneItemEnabled = src.Enabled }, ct);
-            if (!ci.Ok || ci.Data is not JsonElement cid || !cid.TryGetProperty("sceneItemId", out var siid) || siid.ValueKind != JsonValueKind.Number)
-                throw new InvalidOperationException("复用来源失败：" + Describe(ci));
-            itemId = siid.GetInt32();
-            inputName = existingInput;
-        }
-        else
-        {
-            var kind = PickKind(src, available);
-            if (kind is null)
-            {
-                placeholders.Add($"{sceneName} / {src.Name}：来源类型不可用，需在 OBS 中手动添加。");
-                throw new InvalidOperationException("来源类型不可用");
-            }
-
-            var ci = await _obs.RawRequestAsync("CreateInput", new
-            {
-                sceneName,
-                inputName = src.Name,
-                inputKind = kind,
-                inputSettings = src.Settings ?? new JsonObject(),
-                sceneItemEnabled = src.Enabled
-            }, ct);
-
-            if (!ci.Ok || ci.Data is not JsonElement cid)
-            {
-                // 601 ResourceAlreadyExists 等情况：尝试用 CreateSceneItem 引用同名来源
-                var fallback = await _obs.RawRequestAsync("CreateSceneItem", new { sceneName, sourceName = src.Name, sceneItemEnabled = src.Enabled }, ct);
-                if (!fallback.Ok || fallback.Data is not JsonElement fcid || !fcid.TryGetProperty("sceneItemId", out var fsiid) || fsiid.ValueKind != JsonValueKind.Number)
-                {
-                    placeholders.Add($"{sceneName} / {src.Name}：{Describe(ci)}");
-                    throw new InvalidOperationException("创建来源失败");
-                }
-                itemId = fsiid.GetInt32();
-                inputName = src.Name;
-            }
-            else
-            {
-                inputName = cid.TryGetProperty("inputName", out var inn) && inn.ValueKind == JsonValueKind.String ? inn.GetString()! : src.Name;
-                itemId = cid.TryGetProperty("sceneItemId", out var siidn) && siidn.ValueKind == JsonValueKind.Number ? siidn.GetInt32() : -1;
-                if (!createdInputs.ContainsKey(src.Name)) createdInputs[src.Name] = inputName;
-            }
-        }
+        var (itemId, inputName) = src.Shared && createdInputs.TryGetValue(src.Name, out var existingInput)
+            ? await ReuseSharedSourceAsync(sceneName, src, existingInput, ct)
+            : await CreateSourceWithFallbackAsync(sceneName, src, available, createdInputs, placeholders, ct);
 
         if (itemId < 0) return;
 
@@ -256,12 +253,7 @@ public sealed class SceneTemplateService
             await ApplyTransformAsync(sceneName, itemId, src.Transform, ct);
 
         // 层级：OBS index 0 = 最上，模板 zOrder 0 = 最底 → index = count-1-zOrder
-        var ordered = (await _obs.RawRequestAsync("GetSceneItemList", new { sceneName }, ct));
-        int count = 0;
-        if (ordered.Ok && ordered.Data is JsonElement od && od.TryGetProperty("sceneItems", out var sal) && sal.ValueKind == JsonValueKind.Array)
-            count = sal.GetArrayLength();
-        if (count > 0)
-            await _obs.RawRequestAsync("SetSceneItemIndex", new { sceneName, sceneItemId = itemId, sceneItemIndex = Math.Max(0, count - 1 - src.ZOrder) }, ct);
+        await ApplyZOrderAsync(sceneName, itemId, src.ZOrder, ct);
 
         if (!src.Enabled)
             await _obs.RawRequestAsync("SetSceneItemEnabled", new { sceneName, sceneItemId = itemId, sceneItemEnabled = false }, ct);
@@ -269,6 +261,66 @@ public sealed class SceneTemplateService
         // 占位提示
         if (src.Placeholder is not null)
             placeholders.Add($"{sceneName} / {src.Name}：{src.Placeholder.Hint}");
+    }
+
+    /// <summary>复用已创建的输入：在同一场景里用 CreateSceneItem 引用它。</summary>
+    private async Task<(int ItemId, string InputName)> ReuseSharedSourceAsync(string sceneName, TemplateSource src, string existingInput, CancellationToken ct)
+    {
+        var ci = await _obs.RawRequestAsync("CreateSceneItem", new { sceneName, sourceName = existingInput, sceneItemEnabled = src.Enabled }, ct);
+        if (!ci.Ok || ci.Data is not JsonElement cid || !cid.TryGetProperty("sceneItemId", out var siid) || siid.ValueKind != JsonValueKind.Number)
+            throw new InvalidOperationException("复用来源失败：" + Describe(ci));
+        return (siid.GetInt32(), existingInput);
+    }
+
+    /// <summary>
+    /// 新建输入源：类型不可用直接抛错（外层记占位）；CreateInput 失败（如 601 已存在）时
+    /// 降级用 CreateSceneItem 引用同名来源；成功则记录 inputName 供跨场景复用。
+    /// </summary>
+    private async Task<(int ItemId, string InputName)> CreateSourceWithFallbackAsync(string sceneName, TemplateSource src, HashSet<string> available,
+        Dictionary<string, string> createdInputs, List<string> placeholders, CancellationToken ct)
+    {
+        var kind = PickKind(src, available);
+        if (kind is null)
+        {
+            placeholders.Add($"{sceneName} / {src.Name}：来源类型不可用，需在 OBS 中手动添加。");
+            throw new InvalidOperationException("来源类型不可用");
+        }
+
+        var ci = await _obs.RawRequestAsync("CreateInput", new
+        {
+            sceneName,
+            inputName = src.Name,
+            inputKind = kind,
+            inputSettings = src.Settings ?? new JsonObject(),
+            sceneItemEnabled = src.Enabled
+        }, ct);
+
+        if (ci.Ok && ci.Data is JsonElement cid)
+        {
+            var inputName = cid.TryGetProperty("inputName", out var inn) && inn.ValueKind == JsonValueKind.String ? inn.GetString()! : src.Name;
+            var itemId = cid.TryGetProperty("sceneItemId", out var siidn) && siidn.ValueKind == JsonValueKind.Number ? siidn.GetInt32() : -1;
+            if (!createdInputs.ContainsKey(src.Name)) createdInputs[src.Name] = inputName;
+            return (itemId, inputName);
+        }
+
+        // 601 ResourceAlreadyExists 等情况：尝试用 CreateSceneItem 引用同名来源
+        var fallback = await _obs.RawRequestAsync("CreateSceneItem", new { sceneName, sourceName = src.Name, sceneItemEnabled = src.Enabled }, ct);
+        if (fallback.Ok && fallback.Data is JsonElement fcid && fcid.TryGetProperty("sceneItemId", out var fsiid) && fsiid.ValueKind == JsonValueKind.Number)
+            return (fsiid.GetInt32(), src.Name);
+
+        placeholders.Add($"{sceneName} / {src.Name}：{Describe(ci)}");
+        throw new InvalidOperationException("创建来源失败");
+    }
+
+    /// <summary>应用来源层级：OBS index 0 = 最上，模板 zOrder 0 = 最底，故 index = count-1-zOrder。</summary>
+    private async Task ApplyZOrderAsync(string sceneName, int itemId, int zOrder, CancellationToken ct)
+    {
+        var ordered = await _obs.RawRequestAsync("GetSceneItemList", new { sceneName }, ct);
+        int count = 0;
+        if (ordered.Ok && ordered.Data is JsonElement od && od.TryGetProperty("sceneItems", out var sal) && sal.ValueKind == JsonValueKind.Array)
+            count = sal.GetArrayLength();
+        if (count > 0)
+            await _obs.RawRequestAsync("SetSceneItemIndex", new { sceneName, sceneItemId = itemId, sceneItemIndex = Math.Max(0, count - 1 - zOrder) }, ct);
     }
 
     /// <summary>把变换应用到某个场景元素。boundsType=NONE 时不带 bounds 尺寸；用 bounds 时不带 scale。</summary>
@@ -358,92 +410,110 @@ public sealed class SceneTemplateService
         var uuidByName = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
         var canvasW = Math.Max(1, tpl.Canvas.BaseWidth);
         var canvasH = Math.Max(1, tpl.Canvas.BaseHeight);
-        var canvasUuid = "6c69626f-6273-4c00-9d88-c5136d61696e"; // OBS 默认主画布 uuid（libobs 固定值）
 
         // 先收集输入源，再生成场景 source（场景依赖 source_uuid）
         foreach (var scene in tpl.Scenes)
         {
             sceneOrder.Add(new JsonObject { ["name"] = scene.Name });
             foreach (var src in scene.Sources.OrderBy(s => s.ZOrder))
-            {
-                if (!uuidByName.TryGetValue(src.Name, out var srcUuid))
-                {
-                    srcUuid = Guid.NewGuid().ToString("D").ToLowerInvariant();
-                    uuidByName[src.Name] = srcUuid;
-                    var (id, versionedId) = ResolveSourceId(src.InputKind);
-                    var isAudio = IsAudioInput(src.InputKind);
-                    sources.Add(BuildSourceJson(src, id, versionedId, srcUuid, isAudio));
-                }
-            }
+                if (!uuidByName.ContainsKey(src.Name))
+                    AddInputSource(src, sources, uuidByName);
         }
 
         // 场景 source（id=scene），items 引用上面的 source_uuid
         int sceneItemId = 1;
         foreach (var scene in tpl.Scenes)
+            AddSceneSource(scene, uuidByName, sources, ref sceneItemId, canvasW, canvasH);
+
+        return BuildCollectionRoot(tpl, collectionName, sources, sceneOrder, canvasW, canvasH);
+    }
+
+    /// <summary>为模板输入源分配 uuid 并生成标准输入 source（同名输入全集合复用同一 uuid）。</summary>
+    private static void AddInputSource(TemplateSource src, JsonArray sources, Dictionary<string, string> uuidByName)
+    {
+        var srcUuid = Guid.NewGuid().ToString("D").ToLowerInvariant();
+        uuidByName[src.Name] = srcUuid;
+
+        var (id, versionedId) = ResolveSourceId(src.InputKind);
+        sources.Add(BuildSourceJson(src, id, versionedId, srcUuid, IsAudioInput(src.InputKind)));
+    }
+
+    /// <summary>构建一个场景 source（id=scene）：items 按 zOrder 引用输入源 uuid，并写场景级过渡覆盖与快捷键。</summary>
+    private static void AddSceneSource(TemplateScene scene, Dictionary<string, string> uuidByName, JsonArray sources, ref int sceneItemId, int canvasW, int canvasH)
+    {
+        var sceneUuid = Guid.NewGuid().ToString("D").ToLowerInvariant();
+        var items = new JsonArray();
+        var itemIds = new List<int>();
+
+        foreach (var src in scene.Sources.OrderBy(s => s.ZOrder))
         {
-            var sceneUuid = Guid.NewGuid().ToString("D").ToLowerInvariant();
-            var items = new JsonArray();
-            var itemIds = new List<int>();
-
-            foreach (var src in scene.Sources.OrderBy(s => s.ZOrder))
-            {
-                var srcUuid = uuidByName[src.Name];
-                items.Add(BuildFileItem(src, srcUuid, sceneItemId, canvasW, canvasH));
-                itemIds.Add(sceneItemId);
-                sceneItemId++;
-            }
-
-            // 场景级过渡覆盖：transition_override + transition_override_duration
-            var sceneSettings = new JsonObject
-            {
-                ["id_counter"] = sceneItemId,
-                ["custom_size"] = false,
-                ["items"] = items
-            };
-            if (!string.IsNullOrWhiteSpace(scene.Transition))
-                sceneSettings["transition_override"] = scene.Transition;
-            if (scene.TransitionDurationMs is > 0)
-                sceneSettings["transition_override_duration"] = scene.TransitionDurationMs.Value;
-
-            var sceneHotkeys = new JsonObject
-            {
-                ["OBSBasic.SelectScene"] = BuildHotkeyBindings(scene.Hotkey)
-            };
-            foreach (var id in itemIds)
-            {
-                sceneHotkeys[$"libobs.show_scene_item.{id}"] = new JsonArray();
-                sceneHotkeys[$"libobs.hide_scene_item.{id}"] = new JsonArray();
-            }
-
-            sources.Add(new JsonObject
-            {
-                ["prev_ver"] = 537001985,
-                ["name"] = scene.Name,
-                ["uuid"] = sceneUuid,
-                ["id"] = "scene",
-                ["versioned_id"] = "scene",
-                ["settings"] = sceneSettings,
-                ["mixers"] = 0,
-                ["sync"] = 0,
-                ["flags"] = 0,
-                ["volume"] = 1.0,
-                ["balance"] = 0.5,
-                ["enabled"] = true,
-                ["muted"] = false,
-                ["push-to-mute"] = false,
-                ["push-to-mute-delay"] = 0,
-                ["push-to-talk"] = false,
-                ["push-to-talk-delay"] = 0,
-                ["hotkeys"] = sceneHotkeys,
-                ["deinterlace_mode"] = 0,
-                ["deinterlace_field_order"] = 0,
-                ["monitoring_type"] = 0,
-                ["canvas_uuid"] = canvasUuid,
-                ["private_settings"] = new JsonObject()
-            });
+            items.Add(BuildFileItem(src, uuidByName[src.Name], sceneItemId, canvasW, canvasH));
+            itemIds.Add(sceneItemId);
+            sceneItemId++;
         }
 
-        var root = new JsonObject
+        // 场景级过渡覆盖：transition_override + transition_override_duration
+        var sceneSettings = new JsonObject
+        {
+            ["id_counter"] = sceneItemId,
+            ["custom_size"] = false,
+            ["items"] = items
+        };
+        if (!string.IsNullOrWhiteSpace(scene.Transition))
+            sceneSettings["transition_override"] = scene.Transition;
+        if (scene.TransitionDurationMs is > 0)
+            sceneSettings["transition_override_duration"] = scene.TransitionDurationMs.Value;
+
+        // OBS 默认主画布 uuid（libobs 固定值）
+        const string canvasUuid = "6c69626f-6273-4c00-9d88-c5136d61696e";
+
+        sources.Add(new JsonObject
+        {
+            ["prev_ver"] = 537001985,
+            ["name"] = scene.Name,
+            ["uuid"] = sceneUuid,
+            ["id"] = "scene",
+            ["versioned_id"] = "scene",
+            ["settings"] = sceneSettings,
+            ["mixers"] = 0,
+            ["sync"] = 0,
+            ["flags"] = 0,
+            ["volume"] = 1.0,
+            ["balance"] = 0.5,
+            ["enabled"] = true,
+            ["muted"] = false,
+            ["push-to-mute"] = false,
+            ["push-to-mute-delay"] = 0,
+            ["push-to-talk"] = false,
+            ["push-to-talk-delay"] = 0,
+            ["hotkeys"] = BuildSceneHotkeys(scene, itemIds),
+            ["deinterlace_mode"] = 0,
+            ["deinterlace_field_order"] = 0,
+            ["monitoring_type"] = 0,
+            ["canvas_uuid"] = canvasUuid,
+            ["private_settings"] = new JsonObject()
+        });
+    }
+
+    /// <summary>场景快捷键：切场景（SelectScene）与每个 item 的显/隐快捷键占位。</summary>
+    private static JsonObject BuildSceneHotkeys(TemplateScene scene, List<int> itemIds)
+    {
+        var hotkeys = new JsonObject
+        {
+            ["OBSBasic.SelectScene"] = BuildHotkeyBindings(scene.Hotkey)
+        };
+        foreach (var id in itemIds)
+        {
+            hotkeys[$"libobs.show_scene_item.{id}"] = new JsonArray();
+            hotkeys[$"libobs.hide_scene_item.{id}"] = new JsonArray();
+        }
+        return hotkeys;
+    }
+
+    /// <summary>组装场景集合根对象（过渡 / 模块 / 分辨率等集合级设置）。</summary>
+    private static JsonObject BuildCollectionRoot(SceneTemplate tpl, string collectionName, JsonArray sources, JsonArray sceneOrder, int canvasW, int canvasH)
+    {
+        return new JsonObject
         {
             ["name"] = collectionName,
             ["sources"] = sources,
@@ -481,7 +551,6 @@ public sealed class SceneTemplateService
             ["resolution"] = new JsonObject { ["x"] = canvasW, ["y"] = canvasH },
             ["version"] = 2
         };
-        return root;
     }
 
     /// <summary>构建标准输入源 source 对象（含音频混音等 OBS 必需字段）。</summary>

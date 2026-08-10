@@ -158,32 +158,35 @@ public sealed class ObsConnectionService : IAsyncDisposable
         var delay = _policy.DelayFor(_attempt);
 
         SetState(ObsConnectionState.Reconnecting);
-        Task.Run(async () =>
+        Task.Run(() => RunReconnectCountdownAsync(delay, token), token).FireAndForget("ObsReconnect", "自动重连任务");
+    }
+
+    /// <summary>倒计时展示重连剩余秒数，结束后发起重连；取消与异常均在此收敛。</summary>
+    private async Task RunReconnectCountdownAsync(TimeSpan delay, CancellationToken token)
+    {
+        try
         {
-            try
+            var remaining = (int)Math.Ceiling(delay.TotalSeconds);
+            while (remaining > 0 && !token.IsCancellationRequested)
             {
-                var remaining = (int)Math.Ceiling(delay.TotalSeconds);
-                while (remaining > 0 && !token.IsCancellationRequested)
-                {
-                    ReconnectInSeconds = remaining;
-                    Notify();
-                    await Task.Delay(1000, token);
-                    remaining--;
-                }
-                ReconnectInSeconds = 0;
-                if (!token.IsCancellationRequested)
-                    await ConnectCoreAsync(null);
+                ReconnectInSeconds = remaining;
+                Notify();
+                await Task.Delay(1000, token);
+                remaining--;
             }
-            catch (OperationCanceledException)
-            {
-                // 用户手动重连 / 断开时取消倒计时，属正常路径。
-            }
-            catch (Exception ex)
-            {
-                // P3-2：重连链路异常不能静默丢失，落盘留痕（不弹窗，重连失败本就有状态提示）
-                FileLogger.Error("ObsReconnect", ex);
-            }
-        }, token).FireAndForget("ObsReconnect", "自动重连任务");
+            ReconnectInSeconds = 0;
+            if (!token.IsCancellationRequested)
+                await ConnectCoreAsync(null);
+        }
+        catch (OperationCanceledException)
+        {
+            // 用户手动重连 / 断开时取消倒计时，属正常路径。
+        }
+        catch (Exception ex)
+        {
+            // P3-2：重连链路异常不能静默丢失，落盘留痕（不弹窗，重连失败本就有状态提示）
+            FileLogger.Error("ObsReconnect", ex);
+        }
     }
 
     private void CancelReconnect()
@@ -432,9 +435,7 @@ public sealed class ObsConnectionService : IAsyncDisposable
         switch (e.EventType)
         {
             case "CurrentProgramSceneChanged":
-                CurrentScene = Str(e.Data, "sceneName");
-                foreach (var s in Scenes) s.IsCurrent = s.Name == CurrentScene;
-                _ = FireAndForget(RefreshSceneItemsAsync);
+                OnCurrentSceneChanged(e);
                 break;
 
             case "SceneListChanged":
@@ -445,34 +446,24 @@ public sealed class ObsConnectionService : IAsyncDisposable
                 break;
 
             case "RecordStateChanged":
-                RecordStatus.Active = Bool(e.Data, "outputActive");
-                RecordStatus.Paused = Str(e.Data, "outputState") == "OBS_WEBSOCKET_OUTPUT_PAUSED";
+                OnRecordStateChanged(e);
                 break;
 
             case "StreamStateChanged":
-                StreamStatus.Active = Bool(e.Data, "outputActive");
-                StreamStatus.Reconnecting = Str(e.Data, "outputState") == "OBS_WEBSOCKET_OUTPUT_RECONNECTING";
+                OnStreamStateChanged(e);
                 break;
 
             case "VirtualcamStateChanged":
-                VirtualCamStatus.Active = Bool(e.Data, "outputActive");
+                OnVirtualCamStateChanged(e);
                 break;
 
             case "InputMuteStateChanged":
-                {
-                    var name = Str(e.Data, "inputName");
-                    var i = AudioInputs.FirstOrDefault(x => x.Name == name);
-                    if (i is not null) i.Muted = Bool(e.Data, "inputMuted");
-                    break;
-                }
+                OnInputMuteChanged(e);
+                break;
 
             case "InputVolumeChanged":
-                {
-                    var name = Str(e.Data, "inputName");
-                    var i = AudioInputs.FirstOrDefault(x => x.Name == name);
-                    if (i is not null) i.VolumeDb = (float)Dbl(e.Data, "inputVolumeDb");
-                    break;
-                }
+                OnInputVolumeChanged(e);
+                break;
 
             case "InputCreated":
             case "InputRemoved":
@@ -481,12 +472,8 @@ public sealed class ObsConnectionService : IAsyncDisposable
                 break;
 
             case "SceneItemEnableStateChanged":
-                {
-                    var id = Int(e.Data, "sceneItemId");
-                    var item = CurrentSceneItems.FirstOrDefault(x => x.Id == id);
-                    if (item is not null) item.Enabled = Bool(e.Data, "sceneItemEnabled");
-                    break;
-                }
+                OnSceneItemEnabledChanged(e);
+                break;
 
             case "SceneItemCreated":
             case "SceneItemRemoved":
@@ -498,6 +485,50 @@ public sealed class ObsConnectionService : IAsyncDisposable
                 break;
         }
         Notify();
+    }
+
+    /// <summary>主场景切换：更新高亮并异步刷新当前场景的来源列表。</summary>
+    private void OnCurrentSceneChanged(ObsEventMessage e)
+    {
+        CurrentScene = Str(e.Data, "sceneName");
+        foreach (var s in Scenes) s.IsCurrent = s.Name == CurrentScene;
+        _ = FireAndForget(RefreshSceneItemsAsync);
+    }
+
+    private void OnRecordStateChanged(ObsEventMessage e)
+    {
+        RecordStatus.Active = Bool(e.Data, "outputActive");
+        RecordStatus.Paused = Str(e.Data, "outputState") == "OBS_WEBSOCKET_OUTPUT_PAUSED";
+    }
+
+    private void OnStreamStateChanged(ObsEventMessage e)
+    {
+        StreamStatus.Active = Bool(e.Data, "outputActive");
+        StreamStatus.Reconnecting = Str(e.Data, "outputState") == "OBS_WEBSOCKET_OUTPUT_RECONNECTING";
+    }
+
+    private void OnVirtualCamStateChanged(ObsEventMessage e)
+        => VirtualCamStatus.Active = Bool(e.Data, "outputActive");
+
+    private void OnInputMuteChanged(ObsEventMessage e)
+    {
+        var name = Str(e.Data, "inputName");
+        var i = AudioInputs.FirstOrDefault(x => x.Name == name);
+        if (i is not null) i.Muted = Bool(e.Data, "inputMuted");
+    }
+
+    private void OnInputVolumeChanged(ObsEventMessage e)
+    {
+        var name = Str(e.Data, "inputName");
+        var i = AudioInputs.FirstOrDefault(x => x.Name == name);
+        if (i is not null) i.VolumeDb = (float)Dbl(e.Data, "inputVolumeDb");
+    }
+
+    private void OnSceneItemEnabledChanged(ObsEventMessage e)
+    {
+        var id = Int(e.Data, "sceneItemId");
+        var item = CurrentSceneItems.FirstOrDefault(x => x.Id == id);
+        if (item is not null) item.Enabled = Bool(e.Data, "sceneItemEnabled");
     }
 
     private async Task FireAndForget(Func<Task> action)

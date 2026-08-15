@@ -1,0 +1,15 @@
+root = true
+
+# 通用：统一缩进与行尾，避免无关格式差异
+[*]
+charset = utf-8
+end_of_line = crlf
+insert_final_newline = true
+indent_style = space
+indent_size = 4
+trim_trailing_whitespace = true
+
+# C#：System 指令置顶、命名空间文件作用域
+[*.cs]
+dotnet_sort_system_directives_first = true
+csharp_style_namespace_declarations = file_scoped:warning

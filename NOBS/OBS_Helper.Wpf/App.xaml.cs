@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.IO;
 using System.Threading;
 using System.Windows;
 using System.Windows.Threading;
@@ -84,6 +85,11 @@ public partial class App : Application
             foreach (var p in Process.GetProcessesByName("OBS_Helper"))
             {
                 if (p.Id == currentId) continue;
+
+                // 防误杀：只清理确认是「本应用」的残留进程，主模块路径必须匹配当前安装目录；
+                // 避免同名无关进程（用户重命名的其它程序）被误杀。
+                if (!IsOwnExecutable(p)) continue;
+
                 try
                 {
                     p.Kill();
@@ -98,6 +104,28 @@ public partial class App : Application
         catch (Exception)
         {
             // 进程枚举失败（权限 / 系统限制）：不做清理，也不阻塞启动
+        }
+    }
+
+    /// <summary>
+    /// 判断进程是否为本应用的残留实例：主模块路径与当前程序集所在目录一致，
+    /// 或文件名恰为 OBS_Helper.exe（兼容旧版安装到其它目录）。其余一律视为无关进程、不清理。
+    /// </summary>
+    private static bool IsOwnExecutable(Process p)
+    {
+        try
+        {
+            var ownDir = Path.GetDirectoryName(Environment.ProcessPath);
+            var target = p.MainModule?.FileName;
+            if (string.IsNullOrEmpty(target)) return false;
+            var targetDir = Path.GetDirectoryName(target);
+            return string.Equals(ownDir, targetDir, StringComparison.OrdinalIgnoreCase)
+                || string.Equals(Path.GetFileName(target), "OBS_Helper.exe", StringComparison.OrdinalIgnoreCase);
+        }
+        catch (Exception)
+        {
+            // 读不到主模块（权限 / 已退出）：宁可不清理，也不要误杀
+            return false;
         }
     }
 

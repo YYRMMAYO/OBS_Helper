@@ -10,7 +10,7 @@
 [![Platform](https://img.shields.io/badge/Platform-Windows_10%2F11-0078D6.svg)]()
 [![.NET](https://img.shields.io/badge/.NET-10-512BD4.svg)]()
 [![Stack](https://img.shields.io/badge/Stack-WPF_%2F_C%23-239120.svg)]()
-[![Release](https://img.shields.io/badge/Release-1.8.1-38bdf8.svg)](https://github.com/YYRMMAYO/OBS_Helper/releases)
+[![Release](https://img.shields.io/badge/Release-1.9.0-38bdf8.svg)](https://github.com/YYRMMAYO/OBS_Helper/releases)
 [![Offline](https://img.shields.io/badge/offline--first-2ea44f.svg)]()
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
@@ -119,9 +119,9 @@ dotnet run --project OBS_Helper.Wpf
 
 Artifacts land in `NOBS\PAKE\windows\`:
 
-- `OBS_Helper_Setup_1.8.1.exe` — installer
-- `OBS_Helper_Portable_1.8.1.zip` — unzip-and-run portable build
-- `OBS_Helper_Portable_1.8.1.exe` — single-file build (with `-SingleFile`)
+- `OBS_Helper_Setup_1.9.0.exe` — installer
+- `OBS_Helper_Portable_1.9.0.zip` — unzip-and-run portable build
+- `OBS_Helper_Portable_1.9.0.exe` — single-file build (with `-SingleFile`)
 
 ## Project Structure
 

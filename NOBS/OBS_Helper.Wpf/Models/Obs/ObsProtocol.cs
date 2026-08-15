@@ -85,6 +85,13 @@ public sealed class ObsRequestResult
     public static ObsRequestResult Fail(int code, string comment) => new() { Ok = false, Code = code, Comment = comment };
 }
 
+/// <summary>CallBatch（Request Batch）的一条子请求。</summary>
+public sealed class ObsBatchRequest
+{
+    public required string RequestType { get; init; }
+    public object? RequestData { get; init; }
+}
+
 /// <summary>服务端推送的事件。</summary>
 public sealed class ObsEventMessage
 {

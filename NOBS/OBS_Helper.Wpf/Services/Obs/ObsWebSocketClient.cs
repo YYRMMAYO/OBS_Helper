@@ -119,6 +119,89 @@ public sealed class ObsWebSocketClient : IAsyncDisposable
             return ObsRequestResult.Fail(0, "发送请求失败：" + ex.Message);
         }
 
+        return await AwaitResponseAsync(tcs, requestId, requestType, ct);
+    }
+
+    /// <summary>
+    /// 用 obs-websocket 5.x 的 CallBatch（Request Batch）把多条只读请求合并成一次往返，
+    /// 大幅降低连接后首次刷新 / 大量音频输入时的请求延迟。返回与入参同序的结果；
+    /// 任一条子请求失败时仅该条 Ok=false，不抛异常（除非整体超时 / 断开）。
+    /// </summary>
+    public async Task<IReadOnlyList<ObsRequestResult>> CallBatchAsync(
+        IReadOnlyList<ObsBatchRequest> requests,
+        string executionType = "Parallel",
+        bool haltOnFailure = false,
+        CancellationToken ct = default)
+    {
+        if (requests.Count == 0) return Array.Empty<ObsRequestResult>();
+        if (!IsOpen) return requests.Select(_ => ObsRequestResult.Fail(0, "未连接到 OBS。")).ToArray();
+
+        var batchId = Guid.NewGuid().ToString("N");
+        var items = requests.Select(r => new
+        {
+            requestType = r.RequestType,
+            requestId = Guid.NewGuid().ToString("N"),
+            requestData = r.RequestData
+        }).ToList();
+
+        // 子请求 id → 入参序号：并行执行时服务端可能乱序返回，这里回填到原顺序
+        var order = new Dictionary<string, int>(StringComparer.Ordinal);
+        for (var i = 0; i < items.Count; i++) order[items[i].requestId] = i;
+
+        var tcs = new TaskCompletionSource<ObsRequestResult>(TaskCreationOptions.RunContinuationsAsynchronously);
+        _pending[batchId] = tcs;
+
+        var payload = new
+        {
+            op = ObsOpCode.Request,
+            d = new
+            {
+                requestType = "CallBatch",
+                requestId = batchId,
+                requestData = new
+                {
+                    haltOnFailure,
+                    executionType,
+                    requests = items
+                }
+            }
+        };
+
+        try
+        {
+            await SendJsonAsync(payload, ct);
+        }
+        catch (Exception ex)
+        {
+            _pending.TryRemove(batchId, out _);
+            return requests.Select(_ => ObsRequestResult.Fail(0, "发送批量请求失败：" + ex.Message)).ToArray();
+        }
+
+        var batch = await AwaitResponseAsync(tcs, batchId, "CallBatch", ct);
+        if (!batch.Ok)
+            return requests.Select(_ => ObsRequestResult.Fail(batch.Code, batch.Comment ?? "批量请求失败。")).ToArray();
+
+        var results = new ObsRequestResult[requests.Count];
+        if (batch.Data is { } d && d.TryGetProperty("results", out var arr) && arr.ValueKind == JsonValueKind.Array)
+        {
+            foreach (var e in arr.EnumerateArray())
+            {
+                var rid = e.TryGetProperty("requestId", out var rp) ? rp.GetString() : null;
+                if (rid is null || !order.TryGetValue(rid, out var idx)) continue;
+                results[idx] = ParseRequestResponse(e);
+            }
+        }
+
+        for (var i = 0; i < results.Length; i++)
+            results[i] ??= ObsRequestResult.Fail(0, "批量响应中缺少该子请求的结果。");
+
+        return results;
+    }
+
+    /// <summary>等待某请求的响应，统一处理超时与取消语义。</summary>
+    private async Task<ObsRequestResult> AwaitResponseAsync(
+        TaskCompletionSource<ObsRequestResult> tcs, string requestId, string requestType, CancellationToken ct)
+    {
         using var timeout = new CancellationTokenSource(RequestTimeout);
         using var linked = CancellationTokenSource.CreateLinkedTokenSource(timeout.Token, ct);
         var done = await Task.WhenAny(tcs.Task, Task.Delay(Timeout.Infinite, linked.Token));
@@ -131,6 +214,22 @@ public sealed class ObsWebSocketClient : IAsyncDisposable
             return ObsRequestResult.Fail(0, $"请求 {requestType} 超时（>{RequestTimeout.TotalSeconds:0}s）。");
         }
         return await tcs.Task;
+    }
+
+    /// <summary>从请求响应对象里解析出统一结果（单条请求与 CallBatch 子请求共用同一结构）。</summary>
+    private static ObsRequestResult ParseRequestResponse(JsonElement d)
+    {
+        var ok = false;
+        var code = 0;
+        string? comment = null;
+        if (d.TryGetProperty("requestStatus", out var status) && status.ValueKind == JsonValueKind.Object)
+        {
+            ok = status.TryGetProperty("result", out var r) && r.GetBoolean();
+            code = status.TryGetProperty("code", out var c) ? c.GetInt32() : 0;
+            comment = status.TryGetProperty("comment", out var cm) ? cm.GetString() : null;
+        }
+        JsonElement? data = d.TryGetProperty("responseData", out var rd) ? rd.Clone() : null;
+        return new ObsRequestResult { Ok = ok, Code = code, Comment = comment, Data = data };
     }
 
     public async Task CloseAsync()
@@ -248,18 +347,7 @@ public sealed class ObsWebSocketClient : IAsyncDisposable
                 {
                     var id = d.TryGetProperty("requestId", out var ri) ? ri.GetString() : null;
                     if (id is null || !_pending.TryRemove(id, out var tcs)) break;
-
-                    var ok = false;
-                    var code = 0;
-                    string? comment = null;
-                    if (d.TryGetProperty("requestStatus", out var status))
-                    {
-                        ok = status.TryGetProperty("result", out var r) && r.GetBoolean();
-                        code = status.TryGetProperty("code", out var c) ? c.GetInt32() : 0;
-                        comment = status.TryGetProperty("comment", out var cm) ? cm.GetString() : null;
-                    }
-                    JsonElement? data = d.TryGetProperty("responseData", out var rd) ? rd.Clone() : null;
-                    tcs.TrySetResult(new ObsRequestResult { Ok = ok, Code = code, Comment = comment, Data = data });
+                    tcs.TrySetResult(ParseRequestResponse(d));
                     break;
                 }
         }

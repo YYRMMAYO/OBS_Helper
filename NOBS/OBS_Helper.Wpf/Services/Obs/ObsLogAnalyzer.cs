@@ -115,7 +115,9 @@ public sealed class ObsLogAnalyzer
 
     // ------------------------------------------------------------ 环境信息解析
 
-    private static readonly Regex ReVersion = new(@"OBS\s+Studio\s+([\d.]+(?:-[\w.]+)?)\s*(?:\(([^)]+)\))?", Opts);
+    // OBS 日志版本行实为 "OBS 30.0.0 (64-bit, windows)"（不带 "Studio"），但个别文案/旧版会带 "Studio"，
+    // 因此把 "Studio" 做成可选段，避免只认其中一种导致版本与平台永远解析不出来。
+    private static readonly Regex ReVersion = new(@"OBS(?:\s+Studio)?\s+([\d.]+(?:-[\w.]+)?)\s*(?:\(([^)]+)\))?", Opts);
     private static readonly Regex ReCpu = new(@"^\s*CPU Name:\s*(.+)$", Opts);
     private static readonly Regex ReMemory = new(@"^\s*Physical Memory:\s*(.+)$", Opts);
     private static readonly Regex ReWinVer = new(@"^\s*Windows Version:\s*(.+)$", Opts);
@@ -273,6 +275,38 @@ public sealed class ObsLogAnalyzer
             Pattern = new Regex(@"Safe Mode enabled|--safe-mode", Opts),
             Title = "本次以安全模式启动",
             Suggestion = "安全模式下第三方插件、脚本与 WebSocket 均不加载，排障完成后请正常启动。"
+        },
+
+        // —— 双显卡 / 集成显卡 ——
+        new() {
+            Code = "LOG-GPU-HYBRID", Severity = LogSeverity.Warning, ProblemId = "bs-display",
+            Pattern = new Regex(@"Intel\(R\)\s+(?:UHD|HD Graphics|Iris)|AMD Radeon\(TM\) Graphics\b", Opts),
+            Title = "疑似正在使用集成显卡渲染",
+            Suggestion = "笔记本双显卡请把 OBS 指定到独立显卡：Windows「设置 → 系统 → 显示 → 图形」里为 OBS 选择「高性能」，或在 NVIDIA 控制面板里单独指定。"
+        },
+
+        // —— 音频采样率 ——
+        new() {
+            Code = "LOG-AUDIO-SAMPLERATE", Severity = LogSeverity.Warning, ProblemId = "av-desync",
+            Pattern = new Regex(@"sample rate(?:s)?[^.\n]{0,40}(?:don't match|doesn't match|mismatch|differ)", Opts),
+            Title = "音频采样率不匹配",
+            Suggestion = "把所有音频设备（麦克风 / 扬声器 / 声卡）的采样率统一为 48 kHz，并在 Windows 声音设置里保持一致，可避免爆音与音画漂移。"
+        },
+
+        // —— 推流密钥泄漏风险 ——
+        new() {
+            Code = "LOG-STREAMKEY-LEAK", Severity = LogSeverity.Warning, ProblemId = "sf-auth",
+            Pattern = new Regex(@"stream[_-]?key\s*[:=]", Opts),
+            Title = "日志中出现串流密钥",
+            Suggestion = "日志里可能包含推流密钥，切勿直接公开分享原始日志；本工具对复制 / 发送到云端的内容已自动脱敏。"
+        },
+
+        // —— 崩溃肇事模块 ——
+        new() {
+            Code = "LOG-CRASH-MODULE", Severity = LogSeverity.Critical, ProblemId = "cr-plugin",
+            Pattern = new Regex(@"(?:faulting module|fault module|crashed module|module that caused)[^:\n]*:\s*([^\s]+)|Exception Module Name:\s*([^\s]+)", Opts),
+            Title = "崩溃报告：定位到肇事模块",
+            Suggestion = "从崩溃报告中提取到了引发崩溃的模块，通常是某个插件或驱动；禁用对应插件 / 更新驱动后再试。"
         }
     };
 

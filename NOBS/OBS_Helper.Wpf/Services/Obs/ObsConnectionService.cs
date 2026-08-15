@@ -305,21 +305,40 @@ public sealed class ObsConnectionService : IAsyncDisposable
             }
         }
 
-        // 逐个补齐静音 / 音量（OBS 无批量接口；音频输入通常仅 2~6 个，开销可忽略）
-        foreach (var i in inputs)
+        // 逐输入补齐静音 / 音量：原来 2N 次串行往返，改为一次 CallBatch（服务端并行执行）。
+        // CallBatch 是 obs-websocket 5.x 核心能力（OBS 28+ 内置），结果按请求 id 回填到原顺序。
+        if (inputs.Count > 0)
         {
-            var m = await _client.RequestAsync("GetInputMute", new { inputName = i.Name });
-            if (m.Ok && m.Data is { } md) i.Muted = Bool(md, "inputMuted");
+            var batch = new List<ObsBatchRequest>(inputs.Count * 2);
+            foreach (var i in inputs)
+            {
+                batch.Add(new ObsBatchRequest { RequestType = "GetInputMute", RequestData = new { inputName = i.Name } });
+                batch.Add(new ObsBatchRequest { RequestType = "GetInputVolume", RequestData = new { inputName = i.Name } });
+            }
 
-            var v = await _client.RequestAsync("GetInputVolume", new { inputName = i.Name });
-            if (v.Ok && v.Data is { } vd) i.VolumeDb = (float)Dbl(vd, "inputVolumeDb");
+            var results = await _client.CallBatchAsync(batch);
+            for (var idx = 0; idx < inputs.Count; idx++)
+            {
+                var mute = results[idx * 2];
+                var vol = results[idx * 2 + 1];
+                if (mute.Ok && mute.Data is { } md) inputs[idx].Muted = Bool(md, "inputMuted");
+                if (vol.Ok && vol.Data is { } vd) inputs[idx].VolumeDb = (float)Dbl(vd, "inputVolumeDb");
+            }
         }
         AudioInputs = inputs;
     }
 
     public async Task RefreshOutputsAsync()
     {
-        var rec = await _client.RequestAsync("GetRecordStatus");
+        // 三条输出状态查询合并成一次 CallBatch，连接/刷新时少两次往返
+        var results = await _client.CallBatchAsync(new[]
+        {
+            new ObsBatchRequest { RequestType = "GetRecordStatus" },
+            new ObsBatchRequest { RequestType = "GetStreamStatus" },
+            new ObsBatchRequest { RequestType = "GetVirtualCamStatus" },
+        });
+
+        var rec = results[0];
         if (rec.Ok && rec.Data is { } rd)
         {
             RecordStatus = new ObsOutputStatus
@@ -331,7 +350,7 @@ public sealed class ObsConnectionService : IAsyncDisposable
             };
         }
 
-        var st = await _client.RequestAsync("GetStreamStatus");
+        var st = results[1];
         if (st.Ok && st.Data is { } sd)
         {
             StreamStatus = new ObsOutputStatus
@@ -346,7 +365,7 @@ public sealed class ObsConnectionService : IAsyncDisposable
             };
         }
 
-        var vc = await _client.RequestAsync("GetVirtualCamStatus");
+        var vc = results[2];
         if (vc.Ok && vc.Data is { } vd)
         {
             VirtualCamStatus = new ObsOutputStatus { Active = Bool(vd, "outputActive") };

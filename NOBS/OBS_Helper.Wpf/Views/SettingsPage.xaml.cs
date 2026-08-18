@@ -1,5 +1,6 @@
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Input;
 using OBS_Helper.Wpf.Controls;
 using OBS_Helper.Wpf.Errors;
 using OBS_Helper.Wpf.Models.Shell;
@@ -88,6 +89,16 @@ public partial class SettingsPage : UserControl, INavigationAware
 
             HighContrastSwitch.IsChecked = ap.Settings.HighContrast;
             ReduceMotionSwitch.IsChecked = ap.Settings.ReduceMotion;
+
+            // 自定义背景（v1.10）
+            var bgMode = ap.Settings.BackgroundMode;
+            BgDefault.IsChecked = bgMode == "default";
+            BgColor.IsChecked = bgMode == "color";
+            BgImage.IsChecked = bgMode == "image";
+            BgColorPanel.Visibility = bgMode == "color" ? Visibility.Visible : Visibility.Collapsed;
+            BgImagePanel.Visibility = bgMode == "image" ? Visibility.Visible : Visibility.Collapsed;
+            SyncBgColorState();
+            SyncBgImageState();
         }
         finally
         {
@@ -633,6 +644,78 @@ public partial class SettingsPage : UserControl, INavigationAware
     {
         if (_syncing) return;
         AppServices.Appearance.SetReduceMotion(ReduceMotionSwitch.IsChecked == true);
+    }
+
+    // ------------------------------------------------------------ 自定义背景（v1.10）
+
+    private void OnBgModeChecked(object sender, RoutedEventArgs e)
+    {
+        if (_syncing) return;
+        AppServices.Appearance.SetBackgroundMode(
+            ReferenceEquals(sender, BgColor) ? "color" :
+            ReferenceEquals(sender, BgImage) ? "image" :
+            "default");
+        BgColorPanel.Visibility = ReferenceEquals(sender, BgColor) ? Visibility.Visible : Visibility.Collapsed;
+        BgImagePanel.Visibility = ReferenceEquals(sender, BgImage) ? Visibility.Visible : Visibility.Collapsed;
+    }
+
+    private void OnBgSwatchClick(object sender, MouseButtonEventArgs e)
+    {
+        if (_syncing || sender is not Border { Tag: string hex }) return;
+        AppServices.Appearance.SetBackgroundColor(hex);
+        SyncBgColorState();
+    }
+
+    /// <summary>回填当前纯色选中态（高亮所选色块，显示色值）。</summary>
+    private void SyncBgColorState()
+    {
+        var cur = AppServices.Appearance.Settings.BackgroundColor;
+        foreach (var child in BgColorPanel.Children)
+        {
+            if (child is Border b && b.Tag is string hex)
+            {
+                var selected = string.Equals(hex, cur, StringComparison.OrdinalIgnoreCase);
+                b.BorderBrush = selected
+                    ? (System.Windows.Media.Brush)Application.Current.Resources["BrandBrush"]
+                    : (System.Windows.Media.Brush)Application.Current.Resources["LineBrush"];
+                b.BorderThickness = new Thickness(selected ? 2 : 1);
+            }
+        }
+        BgColorHint.Text = string.Equals(cur, "#f4f4fb", StringComparison.OrdinalIgnoreCase)
+            ? "点选色块可换底色"
+            : $"当前：{cur}";
+    }
+
+    private void OnPickBgImage(object sender, RoutedEventArgs e)
+    {
+        var dlg = new Microsoft.Win32.OpenFileDialog
+        {
+            Title = "选择背景图片",
+            Filter = "图片文件 (*.jpg;*.jpeg;*.png;*.bmp)|*.jpg;*.jpeg;*.png;*.bmp|所有文件 (*.*)|*.*",
+            CheckFileExists = true
+        };
+        if (dlg.ShowDialog() == true)
+        {
+            AppServices.Appearance.SetBackgroundImage(dlg.FileName);
+            SyncBgImageState();
+        }
+    }
+
+    private void OnClearBgImage(object sender, RoutedEventArgs e)
+    {
+        AppServices.Appearance.SetBackgroundImage(null);
+        SyncBgImageState();
+    }
+
+    /// <summary>回填图片路径与「清除」按钮显隐。</summary>
+    private void SyncBgImageState()
+    {
+        var path = AppServices.Appearance.Settings.BackgroundImage;
+        var has = !string.IsNullOrWhiteSpace(path);
+        BgClearImageButton.Visibility = has ? Visibility.Visible : Visibility.Collapsed;
+        BgImagePathText.Text = has
+            ? $"当前图片：{path}"
+            : "尚未选择图片。";
     }
 
     // ------------------------------------------------------------ 指引与本地数据

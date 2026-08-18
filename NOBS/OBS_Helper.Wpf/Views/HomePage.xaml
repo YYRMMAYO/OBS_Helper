@@ -19,18 +19,21 @@
 
       <!-- 新手引导：未连 OBS 时显示，连接后由代码隐藏（P1） -->
       <Border x:Name="WelcomeCard" Style="{StaticResource Card}" Margin="0,14,0,0"
-              Background="{DynamicResource BrandSoftBrush}" Visibility="Collapsed">
+              Background="{DynamicResource BrandSoftBrush}"
+              BorderBrush="{DynamicResource BrandBrush}" BorderThickness="1,1,1,1"
+              Visibility="Collapsed">
         <Grid>
           <Grid.ColumnDefinitions>
             <ColumnDefinition Width="*" />
             <ColumnDefinition Width="Auto" />
           </Grid.ColumnDefinitions>
           <StackPanel Grid.Column="0">
-            <TextBlock Text="欢迎使用 OBS 排障助手" Style="{StaticResource H3Text}" />
+            <TextBlock Text="欢迎使用 OBS 排障助手" Style="{StaticResource H3Text}"
+                       Foreground="{DynamicResource BrandBrush}" />
             <TextBlock Style="{StaticResource BodyText}" Margin="0,6,0,0" TextWrapping="Wrap"
                        Text="连上本机 OBS 后，可解锁控制台远程控制、一键智能诊断与场景模板落地。现在先用知识库排查问题也同样顺畅。" />
           </StackPanel>
-          <Button Grid.Column="1" Style="{StaticResource SecondaryButton}"
+          <Button Grid.Column="1" Style="{StaticResource PrimaryButton}"
                   VerticalAlignment="Center" Margin="12,0,0,0" Click="OnConnectGuideClick">
             <StackPanel Orientation="Horizontal">
               <Image Width="14" Height="14" Source="{StaticResource IconConnect}"
@@ -71,20 +74,27 @@
                   <ColumnDefinition Width="*" />
                 </Grid.ColumnDefinitions>
 
-                <!-- 分类色竖条，对应原版 .cat-card 的 border-left；语义色随主题深浅自动切换（P2-1） -->
-                <Border Grid.Column="0" Width="4" CornerRadius="2" Margin="0,0,12,0"
-                        Background="{Binding Semantic, Converter={StaticResource SemanticBrush}}" />
+                <!--
+                  分类图标芯片（P2-1 语义色）：去掉原 4px 彩色竖条（craft-floor 禁用卡片左侧彩色描边），
+                  改为圆角色块 + 图标，语义色以「色块底 + 数量文字」双重编码，深浅主题均清晰。
+                -->
+                <Grid Grid.Column="0" Width="44" Height="44" Margin="0,0,12,0"
+                      VerticalAlignment="Top">
+                  <Border Background="{Binding Semantic, Converter={StaticResource SemanticBrush}}"
+                          CornerRadius="12" Opacity="0.16" />
+                  <TextBlock Text="{Binding Icon}" FontSize="20"
+                             HorizontalAlignment="Center" VerticalAlignment="Center" />
+                </Grid>
 
                 <StackPanel Grid.Column="1">
-                  <TextBlock Text="{Binding Icon}" FontSize="24" />
-                  <TextBlock Text="{Binding Title}" Margin="0,6,0,0"
-                             FontWeight="Bold"
+                  <TextBlock Text="{Binding Title}" Margin="0,1,0,0"
+                             FontWeight="SemiBold"
                              FontSize="{DynamicResource FontSizeMd}"
                              Foreground="{DynamicResource TextBrush}"
                              TextWrapping="Wrap" />
-                  <TextBlock Text="{Binding Description}" Margin="0,4,0,0"
+                  <TextBlock Text="{Binding Description}" Margin="0,3,0,0"
                              Style="{StaticResource CaptionText}" />
-                  <TextBlock Text="{Binding CountText}" Margin="0,8,0,0"
+                  <TextBlock Text="{Binding CountText}" Margin="0,6,0,0"
                              FontWeight="SemiBold"
                              FontSize="{DynamicResource FontSizeXs}"
                              Foreground="{Binding Semantic, Converter={StaticResource SemanticBrush}}" />

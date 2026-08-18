@@ -89,6 +89,7 @@
     <Setter Property="BorderThickness" Value="1" />
     <Setter Property="CornerRadius" Value="{DynamicResource CornerRadiusLg}" />
     <Setter Property="Padding" Value="16" />
+    <Setter Property="Effect" Value="{DynamicResource CardShadow}" />
     <Setter Property="SnapsToDevicePixels" Value="True" />
   </Style>
 
@@ -212,12 +213,6 @@
                               RecognizesAccessKey="True" />
           </Border>
           <ControlTemplate.Triggers>
-            <Trigger Property="IsMouseOver" Value="True">
-              <Setter TargetName="Bd" Property="Opacity" Value="0.88" />
-            </Trigger>
-            <Trigger Property="IsPressed" Value="True">
-              <Setter TargetName="Bd" Property="Opacity" Value="0.72" />
-            </Trigger>
             <Trigger Property="IsKeyboardFocused" Value="True">
               <Setter TargetName="Bd" Property="BorderBrush" Value="{DynamicResource BrandBrush}" />
               <Setter TargetName="Bd" Property="BorderThickness" Value="2" />
@@ -237,6 +232,15 @@
     <Setter Property="Foreground" Value="White" />
     <Setter Property="BorderThickness" Value="0" />
     <Setter Property="FontWeight" Value="SemiBold" />
+    <Style.Triggers>
+      <!-- 【UI 优化 v1.10】真实色阶悬停 / 按下（替代统一透明度过场）：悬停微亮、按下更沉 -->
+      <Trigger Property="IsMouseOver" Value="True">
+        <Setter Property="Background" Value="{DynamicResource BrandHoverBrush}" />
+      </Trigger>
+      <Trigger Property="IsPressed" Value="True">
+        <Setter Property="Background" Value="{DynamicResource BrandPressedBrush}" />
+      </Trigger>
+    </Style.Triggers>
   </Style>
 
   <Style x:Key="SecondaryButton" TargetType="Button" BasedOn="{StaticResource BaseButton}">
@@ -244,6 +248,15 @@
     <Setter Property="Foreground" Value="{DynamicResource TextBrush}" />
     <Setter Property="BorderBrush" Value="{DynamicResource LineBrush}" />
     <Setter Property="BorderThickness" Value="1" />
+    <Style.Triggers>
+      <Trigger Property="IsMouseOver" Value="True">
+        <Setter Property="Background" Value="{DynamicResource Surface2Brush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource BrandBrush}" />
+      </Trigger>
+      <Trigger Property="IsPressed" Value="True">
+        <Setter Property="Background" Value="{DynamicResource Surface3Brush}" />
+      </Trigger>
+    </Style.Triggers>
   </Style>
 
   <Style x:Key="GhostButton" TargetType="Button" BasedOn="{StaticResource BaseButton}">
@@ -251,6 +264,14 @@
     <Setter Property="Foreground" Value="{DynamicResource BrandBrush}" />
     <Setter Property="BorderThickness" Value="0" />
     <Setter Property="Padding" Value="10,6" />
+    <Style.Triggers>
+      <Trigger Property="IsMouseOver" Value="True">
+        <Setter Property="Background" Value="{DynamicResource BrandSoftBrush}" />
+      </Trigger>
+      <Trigger Property="IsPressed" Value="True">
+        <Setter Property="Foreground" Value="{DynamicResource BrandPressedBrush}" />
+      </Trigger>
+    </Style.Triggers>
   </Style>
 
   <Style x:Key="DangerButton" TargetType="Button" BasedOn="{StaticResource BaseButton}">
@@ -258,6 +279,14 @@
     <Setter Property="Foreground" Value="White" />
     <Setter Property="BorderThickness" Value="0" />
     <Setter Property="FontWeight" Value="SemiBold" />
+    <Style.Triggers>
+      <Trigger Property="IsMouseOver" Value="True">
+        <Setter Property="Background" Value="{DynamicResource DangerHoverBrush}" />
+      </Trigger>
+      <Trigger Property="IsPressed" Value="True">
+        <Setter Property="Background" Value="{DynamicResource DangerPressedBrush}" />
+      </Trigger>
+    </Style.Triggers>
   </Style>
 
   <Style x:Key="LinkButton" TargetType="Button" BasedOn="{StaticResource BaseButton}">
@@ -267,6 +296,11 @@
     <Setter Property="Padding" Value="2,0" />
     <Setter Property="MinHeight" Value="0" />
     <Setter Property="HorizontalContentAlignment" Value="Left" />
+    <Style.Triggers>
+      <Trigger Property="IsMouseOver" Value="True">
+        <Setter Property="Foreground" Value="{DynamicResource BrandDarkBrush}" />
+      </Trigger>
+    </Style.Triggers>
   </Style>
 
   <Style x:Key="IconButton" TargetType="Button" BasedOn="{StaticResource BaseButton}">
@@ -276,6 +310,11 @@
     <Setter Property="Padding" Value="8" />
     <Setter Property="MinWidth" Value="36" />
     <Setter Property="FontSize" Value="{DynamicResource FontSizeLg}" />
+    <Style.Triggers>
+      <Trigger Property="IsMouseOver" Value="True">
+        <Setter Property="Background" Value="{DynamicResource Surface3Brush}" />
+      </Trigger>
+    </Style.Triggers>
   </Style>
 
   <!-- 可点击的卡片（首页分类卡、问题卡）：整块可点，悬停描边变品牌色 -->
@@ -293,6 +332,7 @@
                   BorderThickness="1"
                   CornerRadius="{DynamicResource CornerRadiusLg}"
                   Padding="14"
+                  Effect="{DynamicResource CardShadow}"
                   SnapsToDevicePixels="True">
             <ContentPresenter />
           </Border>
@@ -300,6 +340,10 @@
             <Trigger Property="IsMouseOver" Value="True">
               <Setter TargetName="Bd" Property="BorderBrush" Value="{DynamicResource BrandBrush}" />
               <Setter TargetName="Bd" Property="Background" Value="{DynamicResource Surface2Brush}" />
+              <Setter TargetName="Bd" Property="Effect" Value="{DynamicResource CardShadowStrong}" />
+            </Trigger>
+            <Trigger Property="IsPressed" Value="True">
+              <Setter TargetName="Bd" Property="Background" Value="{DynamicResource Surface3Brush}" />
             </Trigger>
             <Trigger Property="IsKeyboardFocused" Value="True">
               <Setter TargetName="Bd" Property="BorderBrush" Value="{DynamicResource BrandBrush}" />
@@ -311,7 +355,7 @@
     </Setter>
   </Style>
 
-  <!-- 侧边导航项 -->
+  <!-- 侧边导航项：矢量图标（Tag=StreamGeometry）+ 文字；选中态品牌色填充底 + 图标/文字变色 -->
   <Style x:Key="NavTabButton" TargetType="RadioButton">
     <Setter Property="Cursor" Value="Hand" />
     <Setter Property="Foreground" Value="{DynamicResource MutedBrush}" />
@@ -323,9 +367,12 @@
           <Border x:Name="Bd" Background="Transparent" CornerRadius="{DynamicResource CornerRadiusMd}"
                   Padding="10,9">
             <StackPanel Orientation="Horizontal">
-              <!-- 导航项不再使用 emoji 图标，Tag 留空时此 TextBlock 宽度为 0，不占位 -->
-              <TextBlock x:Name="Icon" Text="{TemplateBinding Tag}" FontSize="17" Width="Auto"
-                         VerticalAlignment="Center" />
+              <!-- 矢量图标：描边色跟随主题（Muted），选中切品牌色；Tag 为空时宽度为 0 不占位 -->
+              <Path x:Name="Icon" Data="{TemplateBinding Tag}" Stretch="Uniform"
+                    Width="18" Height="18" Margin="0,0,8,0"
+                    Stroke="{DynamicResource MutedBrush}" StrokeThickness="1.8"
+                    StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"
+                    VerticalAlignment="Center" />
               <TextBlock x:Name="Label" Text="{TemplateBinding Content}"
                          VerticalAlignment="Center"
                          FontSize="{TemplateBinding FontSize}"
@@ -338,6 +385,7 @@
             </Trigger>
             <Trigger Property="IsChecked" Value="True">
               <Setter TargetName="Bd" Property="Background" Value="{DynamicResource BrandSoftBrush}" />
+              <Setter TargetName="Icon" Property="Stroke" Value="{DynamicResource BrandBrush}" />
               <Setter TargetName="Label" Property="Foreground" Value="{DynamicResource BrandBrush}" />
               <Setter TargetName="Label" Property="FontWeight" Value="SemiBold" />
             </Trigger>
@@ -581,9 +629,11 @@
                 <ColumnDefinition Width="*" />
                 <ColumnDefinition Width="26" />
               </Grid.ColumnDefinitions>
-              <TextBlock Grid.Column="1" Text="⌄" FontSize="14"
-                         Foreground="{DynamicResource MutedBrush}"
-                         HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0,-4,0,0" />
+              <!-- 下拉箭头：矢量 chevron，避免 unicode 字形在不同字体下走样 -->
+              <Path Grid.Column="1" Data="M 8,10 L 12,14 L 16,10"
+                    Stroke="{DynamicResource MutedBrush}" StrokeThickness="1.8"
+                    StrokeStartLineCap="Round" StrokeEndLineCap="Round"
+                    HorizontalAlignment="Center" VerticalAlignment="Center" />
             </Grid>
           </Border>
           <ControlTemplate.Triggers>
@@ -617,6 +667,7 @@
               <Border Background="{DynamicResource SurfaceBrush}"
                       BorderBrush="{DynamicResource LineBrush}" BorderThickness="1"
                       CornerRadius="{DynamicResource CornerRadiusMd}" Padding="4"
+                      Effect="{DynamicResource CardShadowStrong}"
                       MinWidth="{Binding ActualWidth, RelativeSource={RelativeSource TemplatedParent}}"
                       MaxHeight="280">
                 <ScrollViewer VerticalScrollBarVisibility="Auto">
@@ -790,6 +841,7 @@
     <Setter Property="Padding" Value="14,10" />
     <Setter Property="Margin" Value="0,8,0,0" />
     <Setter Property="MaxWidth" Value="440" />
+    <Setter Property="Effect" Value="{DynamicResource CardShadowStrong}" />
     <Setter Property="Template">
       <Setter.Value>
         <ControlTemplate TargetType="ContentControl">
@@ -823,6 +875,7 @@
   </Style>
 
   <!-- ===================== 状态药丸（P3，三重编码：图标+文字+颜色） ===================== -->
+  <!-- 图标为矢量 Path（圆形 / 对勾 / 三角 / 叉 / i），替代 unicode 字形，统一描边风格 -->
   <Style x:Key="StatusPill" TargetType="ContentControl">
     <Setter Property="Background" Value="{DynamicResource Surface3Brush}" />
     <Setter Property="VerticalAlignment" Value="Center" />
@@ -831,27 +884,52 @@
         <ControlTemplate TargetType="ContentControl">
           <Border Background="{TemplateBinding Background}" CornerRadius="999" Padding="9,4">
             <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-              <TextBlock x:Name="Glyph" Text="●" FontSize="11" Margin="0,0,6,0" VerticalAlignment="Center"
-                         Foreground="{DynamicResource BrandBrush}" />
+              <Grid Width="12" Height="12" Margin="0,0,6,0" VerticalAlignment="Center">
+                <!-- 默认：品牌色圆点 -->
+                <Ellipse x:Name="Dot" Fill="{DynamicResource BrandBrush}" Width="7" Height="7"
+                         HorizontalAlignment="Center" VerticalAlignment="Center" />
+                <!-- ok：对勾 -->
+                <Path x:Name="CheckPath" Data="M 2.5,6.5 L 5,9 L 9.5,3.5"
+                      Stroke="{DynamicResource OkBrush}" StrokeThickness="1.8"
+                      StrokeStartLineCap="Round" StrokeEndLineCap="Round"
+                      Visibility="Collapsed" />
+                <!-- warn：三角（Fill 警告色） -->
+                <Path x:Name="WarnPath" Data="M 6,1.5 L 11.5,10.5 L 0.5,10.5 Z"
+                      Fill="{DynamicResource WarnBrush}"
+                      Visibility="Collapsed" />
+                <!-- danger：叉 -->
+                <Path x:Name="DangerPath" Data="M 2.5,2.5 L 9.5,9.5 M 9.5,2.5 L 2.5,9.5"
+                      Stroke="{DynamicResource DangerBrush}" StrokeThickness="1.8"
+                      StrokeStartLineCap="Round" StrokeEndLineCap="Round"
+                      Visibility="Collapsed" />
+                <!-- info：i（圆点 + 竖线） -->
+                <StackPanel x:Name="InfoIcon" Visibility="Collapsed">
+                  <Ellipse Fill="{DynamicResource InfoBrush}" Width="2.2" Height="2.2"
+                           HorizontalAlignment="Center" Margin="0,1,0,0" />
+                  <Rectangle Fill="{DynamicResource InfoBrush}" Width="2.2" Height="4.4"
+                             RadiusX="1.1" RadiusY="1.1"
+                             HorizontalAlignment="Center" Margin="0,2,0,0" />
+                </StackPanel>
+              </Grid>
               <ContentPresenter VerticalAlignment="Center" RecognizesAccessKey="True" />
             </StackPanel>
           </Border>
           <ControlTemplate.Triggers>
             <Trigger Property="Tag" Value="ok">
-              <Setter TargetName="Glyph" Property="Text" Value="✓" />
-              <Setter TargetName="Glyph" Property="Foreground" Value="{DynamicResource OkBrush}" />
+              <Setter TargetName="Dot" Property="Visibility" Value="Collapsed" />
+              <Setter TargetName="CheckPath" Property="Visibility" Value="Visible" />
             </Trigger>
             <Trigger Property="Tag" Value="warn">
-              <Setter TargetName="Glyph" Property="Text" Value="▲" />
-              <Setter TargetName="Glyph" Property="Foreground" Value="{DynamicResource WarnBrush}" />
+              <Setter TargetName="Dot" Property="Visibility" Value="Collapsed" />
+              <Setter TargetName="WarnPath" Property="Visibility" Value="Visible" />
             </Trigger>
             <Trigger Property="Tag" Value="danger">
-              <Setter TargetName="Glyph" Property="Text" Value="✕" />
-              <Setter TargetName="Glyph" Property="Foreground" Value="{DynamicResource DangerBrush}" />
+              <Setter TargetName="Dot" Property="Visibility" Value="Collapsed" />
+              <Setter TargetName="DangerPath" Property="Visibility" Value="Visible" />
             </Trigger>
             <Trigger Property="Tag" Value="info">
-              <Setter TargetName="Glyph" Property="Text" Value="ℹ" />
-              <Setter TargetName="Glyph" Property="Foreground" Value="{DynamicResource InfoBrush}" />
+              <Setter TargetName="Dot" Property="Visibility" Value="Collapsed" />
+              <Setter TargetName="InfoIcon" Property="Visibility" Value="Visible" />
             </Trigger>
           </ControlTemplate.Triggers>
         </ControlTemplate>

@@ -247,7 +247,7 @@ public partial class TemplatePage : UserControl, INavigationAware
 
         if (!AppServices.Obs.IsConnected)
         {
-            ShowStatus("⚠️", "尚未连接 OBS。请先去「OBS 控制台」连上 obs-websocket 后再试，或改用「导出场景集合 JSON」离线使用。");
+            ShowStatus("warn", "尚未连接 OBS。请先去「OBS 控制台」连上 obs-websocket 后再试，或改用「导出场景集合 JSON」离线使用。");
             return;
         }
 
@@ -269,17 +269,17 @@ public partial class TemplatePage : UserControl, INavigationAware
                 if (result.Skipped > 0) msg += $"（{result.Skipped} 个已跳过）";
                 if (result.Placeholders.Count > 0)
                     msg += $"\n\n还需手动补齐：\n  · " + string.Join("\n  · ", result.Placeholders);
-                ShowStatus("✅", msg);
+                ShowStatus("ok", msg);
             }
             else
             {
-                ShowStatus("❌", $"模板落地失败：{result.Error ?? "未知错误"}");
+                ShowStatus("danger", $"模板落地失败：{result.Error ?? "未知错误"}");
                 App.ReportError(ErrorCodes.TemplateApplyFailed);
             }
         }
         catch (Exception ex)
         {
-            ShowStatus("❌", $"模板落地时发生异常：{ex.Message}");
+            ShowStatus("danger", $"模板落地时发生异常：{ex.Message}");
             App.ReportError(ErrorCodes.TemplateApplyFailed, ex);
         }
         finally
@@ -313,11 +313,11 @@ public partial class TemplatePage : UserControl, INavigationAware
             var dir = Path.GetDirectoryName(dialog.FileName)!;
             var baseName = Path.GetFileNameWithoutExtension(dialog.FileName);
             await AppServices.Templates.ExportToObsAsync(id, dir, CancellationToken.None);
-            ShowStatus("✅", $"已导出到 {dir}（文件名以 obshelper_{SceneTemplateService.Slugify(t.Id)} 开头，请放入 OBS 的 basic/scenes/ 目录）。");
+            ShowStatus("ok", $"已导出到 {dir}（文件名以 obshelper_{SceneTemplateService.Slugify(t.Id)} 开头，请放入 OBS 的 basic/scenes/ 目录）。");
         }
         catch (Exception ex)
         {
-            ShowStatus("❌", $"导出失败：{ex.Message}");
+            ShowStatus("danger", $"导出失败：{ex.Message}");
             App.ReportError(ErrorCodes.TemplateApplyFailed, ex);
         }
         finally
@@ -334,9 +334,14 @@ public partial class TemplatePage : UserControl, INavigationAware
         TemplateList.IsEnabled = !busy;
     }
 
-    private void ShowStatus(string icon, string text)
+    private void ShowStatus(string kind, string text)
     {
-        StatusIcon.Text = icon;
+        // kind: "info" / "ok" / "warn" / "danger" → 切换矢量状态图标
+        StatusIcon.Tag = kind;
+        StatusIconInfo.Visibility = kind == "info" ? Visibility.Visible : Visibility.Collapsed;
+        StatusIconOk.Visibility = kind == "ok" ? Visibility.Visible : Visibility.Collapsed;
+        StatusIconWarn.Visibility = kind == "warn" ? Visibility.Visible : Visibility.Collapsed;
+        StatusIconDanger.Visibility = kind == "danger" ? Visibility.Visible : Visibility.Collapsed;
         StatusText.Text = text;
         StatusBar.Visibility = Visibility.Visible;
     }

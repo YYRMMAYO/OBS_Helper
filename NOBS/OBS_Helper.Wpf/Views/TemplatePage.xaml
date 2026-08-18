@@ -7,13 +7,36 @@
       <TextBlock Style="{StaticResource MutedText}" Margin="0,0,0,16"
                  Text="选择一套模板，程序会通过 OBS WebSocket 远程创建场景与来源（需先连上 OBS）。未连接时可将模板导出为标准场景集合 JSON，手动放入 OBS 的 basic/scenes/ 目录使用。" />
 
-      <!-- 状态条 -->
+      <!-- 状态条：矢量状态图标（info / ok / warn / danger 由 Tag 切换），替代 emoji -->
       <Border x:Name="StatusBar" Margin="0,0,0,14" Visibility="Collapsed"
               Background="{DynamicResource Surface2Brush}"
               CornerRadius="{DynamicResource CornerRadiusMd}" Padding="12,9">
         <StackPanel Orientation="Horizontal">
-          <TextBlock x:Name="StatusIcon" Text="ℹ️" VerticalAlignment="Center"
-                     FontSize="{DynamicResource FontSizeLg}" Margin="0,0,8,0" />
+          <Grid x:Name="StatusIcon" Width="16" Height="16" Margin="0,0,8,0"
+                VerticalAlignment="Center">
+            <!-- info：i -->
+            <StackPanel x:Name="StatusIconInfo">
+              <Ellipse Fill="{DynamicResource InfoBrush}" Width="2.2" Height="2.2"
+                       HorizontalAlignment="Center" Margin="0,0,0,10" />
+              <Rectangle Fill="{DynamicResource InfoBrush}" Width="2.2" Height="6"
+                         RadiusX="1.1" RadiusY="1.1" HorizontalAlignment="Center"
+                         Margin="0,4,0,0" />
+            </StackPanel>
+            <!-- ok：对勾 -->
+            <Path x:Name="StatusIconOk" Data="M 2.5,8.5 L 6,12 L 13.5,4"
+                  Stroke="{DynamicResource OkBrush}" StrokeThickness="1.8"
+                  StrokeStartLineCap="Round" StrokeEndLineCap="Round"
+                  Visibility="Collapsed" />
+            <!-- warn：三角 -->
+            <Path x:Name="StatusIconWarn" Data="M 8,1.5 L 15,13.5 L 1,13.5 Z"
+                  Fill="{DynamicResource WarnBrush}"
+                  Visibility="Collapsed" />
+            <!-- danger：叉 -->
+            <Path x:Name="StatusIconDanger" Data="M 3,3 L 13,13 M 13,3 L 3,13"
+                  Stroke="{DynamicResource DangerBrush}" StrokeThickness="1.8"
+                  StrokeStartLineCap="Round" StrokeEndLineCap="Round"
+                  Visibility="Collapsed" />
+          </Grid>
           <TextBlock x:Name="StatusText" TextWrapping="Wrap" VerticalAlignment="Center"
                      FontSize="{DynamicResource FontSizeSm}"
                      Foreground="{DynamicResource TextBrush}" />

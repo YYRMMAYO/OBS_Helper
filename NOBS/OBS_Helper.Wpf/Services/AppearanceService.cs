@@ -1,6 +1,9 @@
+using System.IO;
 using System.Text.Json.Serialization;
 using System.Windows;
 using System.Windows.Media;
+using System.Windows.Media.Effects;
+using System.Windows.Media.Imaging;
 using Microsoft.Win32;
 using OBS_Helper.Wpf.Services.Host;
 
@@ -43,6 +46,18 @@ public sealed class AppearanceSettings
     /// <summary>减少动画（尊重前庭功能障碍用户）。</summary>
     [JsonPropertyName("reduceMotion")]
     public bool ReduceMotion { get; set; }
+
+    /// <summary>自定义背景模式："default"（跟随主题）/"color"（纯色）/"image"（图片）。</summary>
+    [JsonPropertyName("bgMode")]
+    public string BackgroundMode { get; set; } = "default";
+
+    /// <summary>纯色背景的色值（仅 BackgroundMode=color 时生效）。</summary>
+    [JsonPropertyName("bgColor")]
+    public string BackgroundColor { get; set; } = "#f4f4fb";
+
+    /// <summary>背景图片的本地路径（仅 BackgroundMode=image 时生效）。</summary>
+    [JsonPropertyName("bgImage")]
+    public string BackgroundImage { get; set; } = "";
 }
 
 /// <summary>
@@ -174,6 +189,34 @@ public sealed class AppearanceService : IDisposable
         SaveAndApply();
     }
 
+    /// <summary>设置自定义背景模式：default / color / image。</summary>
+    public void SetBackgroundMode(string mode)
+    {
+        Settings.BackgroundMode = mode switch
+        {
+            "color" => "color",
+            "image" => "image",
+            _ => "default"
+        };
+        SaveAndApply();
+    }
+
+    /// <summary>设置纯色背景（同时切到 color 模式）。非法色值会被 Apply 阶段回退到默认底。</summary>
+    public void SetBackgroundColor(string hex)
+    {
+        Settings.BackgroundMode = "color";
+        Settings.BackgroundColor = string.IsNullOrWhiteSpace(hex) ? "#f4f4fb" : hex.Trim();
+        SaveAndApply();
+    }
+
+    /// <summary>设置背景图片路径（同时切到 image 模式）；传 null/空串清除图片并回到默认。</summary>
+    public void SetBackgroundImage(string? path)
+    {
+        Settings.BackgroundMode = string.IsNullOrWhiteSpace(path) ? "default" : "image";
+        Settings.BackgroundImage = path?.Trim() ?? "";
+        SaveAndApply();
+    }
+
     private void SaveAndApply()
     {
         _store.SetObject(StorageKey, Settings);
@@ -209,6 +252,21 @@ public sealed class AppearanceService : IDisposable
         return brush;
     }
 
+    /// <summary>生成主题化的 DropShadowEffect（偏移 + 柔和模糊），并冻结以便跨控件共享。</summary>
+    private static DropShadowEffect NewShadow(double opacity, double blur, double depth)
+    {
+        var effect = new DropShadowEffect
+        {
+            Color = Colors.Black,
+            Opacity = opacity,
+            BlurRadius = blur,
+            ShadowDepth = depth,
+            Direction = 270
+        };
+        effect.Freeze();
+        return effect;
+    }
+
     /// <summary>把当前设置写进应用级资源字典。控件样式通过 DynamicResource 感知变化。</summary>
     public void Apply()
     {
@@ -223,6 +281,9 @@ public sealed class AppearanceService : IDisposable
         res["BrandBrush"] = Frozen("#7b2ff7");
         res["BrandDarkBrush"] = Frozen("#5a1fc4");
         res["BrandSoftBrush"] = Frozen(dark ? "#2a1f47" : "#efe6ff");
+        // 【UI 优化 v1.10】主按钮悬停 / 按下色阶：深色模式提亮，保持可辨
+        res["BrandHoverBrush"] = Frozen(dark ? "#8b4df8" : "#6a1fd0");
+        res["BrandPressedBrush"] = Frozen(dark ? "#9f6cf9" : "#4d15ad");
 
         // ---- 表面 / 文字 / 边框
         res["SurfaceBrush"] = Frozen(dark ? "#1b1c26" : "#ffffff");
@@ -237,6 +298,9 @@ public sealed class AppearanceService : IDisposable
         // 上的对比度 ≥4.5:1（原 4.23:1 不达标），白底 / Surface2 上同步达标。
         res["DangerBrush"] = Frozen(dark ? "#ff6b6b" : "#c62828");
         res["DangerSoftBrush"] = Frozen(dark ? "#3a1e1e" : "#fdeceb");
+        // 【UI 优化 v1.10】危险按钮悬停 / 按下色阶
+        res["DangerHoverBrush"] = Frozen(dark ? "#ff8080" : "#ab2121");
+        res["DangerPressedBrush"] = Frozen(dark ? "#ff9696" : "#8f1a1a");
         res["WarnBrush"] = Frozen(dark ? "#f5a524" : "#b54708");
         res["WarnSoftBrush"] = Frozen(dark ? "#3a2e14" : "#fef4e6");
         res["OkBrush"] = Frozen(dark ? "#3ecf8e" : "#067647");
@@ -258,6 +322,11 @@ public sealed class AppearanceService : IDisposable
 
         // ---- 阴影强度（用不透明度模拟 CSS 的 shadow-sm / md）
         res["ShadowOpacity"] = dark ? 0.45 : 0.10;
+
+        // ---- 【UI 优化 v1.10】卡片投影：带偏移 + 柔和的真实阴影（craft-floor：深度必须 offset+blur）
+        // DropShadowEffect 是 Freezable，按主题生成同名资源，卡片 / 卡片按钮 / Toast 统一引用。
+        res["CardShadow"] = NewShadow(dark ? 0.35 : 0.10, blur: 18, depth: 2);
+        res["CardShadowStrong"] = NewShadow(dark ? 0.50 : 0.16, blur: 24, depth: 4);
 
         // ---- 圆角（与 CSS --radius / --radius-sm 对齐）
         res["CornerRadiusLg"] = new CornerRadius(14);
@@ -286,5 +355,94 @@ public sealed class AppearanceService : IDisposable
             ? new Duration(TimeSpan.Zero)
             : new Duration(TimeSpan.FromMilliseconds(160));
         res["ReduceMotion"] = Settings.ReduceMotion;
+
+        // ---- 【自定义背景 v1.10】内容区背景：默认跟随主题；可选纯色 / 本地图片。
+        // 高对比模式强制回退默认底，保证可读性优先于个性化。
+        ApplyBackgroundResources(res, dark, hc);
+    }
+
+    // ------------------------------------------------------------ 自定义背景
+
+    private ImageSource? _bgImageCache;
+    private string? _bgImageCachePath;
+
+    /// <summary>按当前设置写入内容区背景资源：ContentBackgroundBrush / ContentBackgroundImage / ContentBackgroundDim。</summary>
+    private void ApplyBackgroundResources(ResourceDictionary res, bool dark, bool hc)
+    {
+        if (hc || Settings.BackgroundMode == "default")
+        {
+            res["ContentBackgroundBrush"] = Frozen(dark ? "#14151d" : "#f4f4fb");
+            res["ContentBackgroundImage"] = null;
+            res["ContentBackgroundDim"] = Brushes.Transparent;
+            return;
+        }
+
+        if (Settings.BackgroundMode == "color")
+        {
+            var brush = TryParseBrush(Settings.BackgroundColor)
+                        ?? Frozen(dark ? "#14151d" : "#f4f4fb");
+            res["ContentBackgroundBrush"] = brush;
+            res["ContentBackgroundImage"] = null;
+            res["ContentBackgroundDim"] = Brushes.Transparent;
+            return;
+        }
+
+        // image 模式：图片加载失败（文件被移动 / 删除）时静默回退默认底，不弹错误。
+        var img = LoadBackgroundImage(Settings.BackgroundImage);
+        res["ContentBackgroundBrush"] = Frozen(dark ? "#14151d" : "#f4f4fb");
+        res["ContentBackgroundImage"] = img;
+        // 图片上方加一层柔和压暗遮罩，保证卡片与文字可读性（craft-floor：可读性优先）
+        res["ContentBackgroundDim"] = img is null
+            ? Brushes.Transparent
+            : Frozen(dark ? "#66000000" : "#22000000");
+    }
+
+    /// <summary>加载本地背景图片；带路径缓存，文件缺失返回 null。</summary>
+    private ImageSource? LoadBackgroundImage(string path)
+    {
+        if (string.IsNullOrWhiteSpace(path)) return null;
+        if (string.Equals(_bgImageCachePath, path, StringComparison.OrdinalIgnoreCase))
+            return _bgImageCache;
+
+        ImageSource? loaded = null;
+        try
+        {
+            if (File.Exists(path))
+            {
+                var bmp = new BitmapImage();
+                bmp.BeginInit();
+                bmp.CacheOption = BitmapCacheOption.OnLoad;
+                bmp.UriSource = new Uri(path, UriKind.Absolute);
+                bmp.EndInit();
+                bmp.Freeze();
+                loaded = bmp;
+            }
+        }
+        catch (Exception)
+        {
+            loaded = null; // 文件损坏 / 权限不足：回退默认底
+        }
+
+        _bgImageCachePath = path;
+        _bgImageCache = loaded;
+        return loaded;
+    }
+
+    private static SolidColorBrush? TryParseBrush(string hex)
+    {
+        try
+        {
+            if (ColorConverter.ConvertFromString(hex) is Color c)
+            {
+                var b = new SolidColorBrush(c);
+                b.Freeze();
+                return b;
+            }
+        }
+        catch (Exception)
+        {
+            // 非法色值
+        }
+        return null;
     }
 }

@@ -20,6 +20,9 @@
   <SolidColorBrush PresentationOptions:Freeze="True" x:Key="BrandBrush" Color="#7b2ff7" />
   <SolidColorBrush PresentationOptions:Freeze="True" x:Key="BrandDarkBrush" Color="#5a1fc4" />
   <SolidColorBrush PresentationOptions:Freeze="True" x:Key="BrandSoftBrush" Color="#efe6ff" />
+  <!-- 【UI 优化 v1.10】主按钮悬停 / 按下：用真实色阶代替透明度过场，悬停更明确、按下更沉 -->
+  <SolidColorBrush PresentationOptions:Freeze="True" x:Key="BrandHoverBrush" Color="#6a1fd0" />
+  <SolidColorBrush PresentationOptions:Freeze="True" x:Key="BrandPressedBrush" Color="#4d15ad" />
 
   <SolidColorBrush PresentationOptions:Freeze="True" x:Key="SurfaceBrush" Color="#ffffff" />
   <SolidColorBrush PresentationOptions:Freeze="True" x:Key="Surface2Brush" Color="#f4f4fb" />
@@ -29,8 +32,15 @@
   <SolidColorBrush PresentationOptions:Freeze="True" x:Key="LineBrush" Color="#e6e6f0" />
   <SolidColorBrush PresentationOptions:Freeze="True" x:Key="OverlayBrush" Color="#80000000" />
 
+  <!-- 【自定义背景 v1.10】内容区背景默认值（运行时由 AppearanceService 覆盖）：默认即 Surface2 -->
+  <SolidColorBrush PresentationOptions:Freeze="True" x:Key="ContentBackgroundBrush" Color="#f4f4fb" />
+  <SolidColorBrush PresentationOptions:Freeze="True" x:Key="ContentBackgroundDim" Color="#00000000" />
+
   <SolidColorBrush PresentationOptions:Freeze="True" x:Key="DangerBrush" Color="#c62828" />
   <SolidColorBrush PresentationOptions:Freeze="True" x:Key="DangerSoftBrush" Color="#fdeceb" />
+  <!-- 【UI 优化 v1.10】危险按钮悬停 / 按下色阶 -->
+  <SolidColorBrush PresentationOptions:Freeze="True" x:Key="DangerHoverBrush" Color="#ab2121" />
+  <SolidColorBrush PresentationOptions:Freeze="True" x:Key="DangerPressedBrush" Color="#8f1a1a" />
   <SolidColorBrush PresentationOptions:Freeze="True" x:Key="WarnBrush" Color="#b54708" />
   <SolidColorBrush PresentationOptions:Freeze="True" x:Key="WarnSoftBrush" Color="#fef4e6" />
   <SolidColorBrush PresentationOptions:Freeze="True" x:Key="OkBrush" Color="#067647" />
@@ -54,6 +64,13 @@
   <SolidColorBrush PresentationOptions:Freeze="True" x:Key="SemanticCrimsonBrush" Color="#c0392b" />
 
   <sys:Double x:Key="ShadowOpacity">0.10</sys:Double>
+
+  <!-- 【UI 优化 v1.10】卡片投影：带偏移 + 柔和的真实阴影（craft-floor：深度必须有 offset + blur），
+       浅色 0.10 / 深色 0.35，由 AppearanceService.Apply() 按主题覆盖为同名键。 -->
+  <DropShadowEffect x:Key="CardShadow" BlurRadius="18" ShadowDepth="2" Direction="270"
+                    Opacity="0.10" Color="#000000" />
+  <DropShadowEffect x:Key="CardShadowStrong" BlurRadius="24" ShadowDepth="4" Direction="270"
+                    Opacity="0.16" Color="#000000" />
 
   <CornerRadius x:Key="CornerRadiusLg">14</CornerRadius>
   <CornerRadius x:Key="CornerRadiusMd">10</CornerRadius>

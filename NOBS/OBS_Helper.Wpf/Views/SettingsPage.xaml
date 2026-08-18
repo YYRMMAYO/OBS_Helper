@@ -156,6 +156,62 @@
                     Margin="0,14,0,0" Checked="OnReduceMotionToggled" Unchecked="OnReduceMotionToggled" />
           <TextBlock Style="{StaticResource CaptionText}" Margin="52,5,0,0"
                      Text="关闭界面过渡动效，适合对动态画面敏感的用户。" />
+
+          <!-- ============================================ 自定义背景（v1.10） -->
+          <Border Style="{StaticResource HLine}" Margin="0,14,0,0" />
+
+          <TextBlock Text="自定义背景" Style="{StaticResource MutedText}" Margin="0,2,0,7" />
+          <WrapPanel>
+            <RadioButton x:Name="BgDefault" GroupName="SettingsBackground" Content="默认"
+                         Style="{StaticResource SegmentButton}" Checked="OnBgModeChecked" />
+            <RadioButton x:Name="BgColor" GroupName="SettingsBackground" Content="纯色"
+                         Style="{StaticResource SegmentButton}" Checked="OnBgModeChecked" />
+            <RadioButton x:Name="BgImage" GroupName="SettingsBackground" Content="图片"
+                         Style="{StaticResource SegmentButton}" Checked="OnBgModeChecked" />
+          </WrapPanel>
+
+          <!-- 纯色预设色板 -->
+          <WrapPanel x:Name="BgColorPanel" Margin="0,10,0,0" Visibility="Collapsed">
+            <Border x:Name="BgSwatchLight" Width="30" Height="30" CornerRadius="8" Margin="0,0,8,8"
+                    Background="#f4f4fb" BorderBrush="{DynamicResource LineBrush}" BorderThickness="1"
+                    Cursor="Hand" ToolTip="浅灰" MouseLeftButtonUp="OnBgSwatchClick" Tag="#f4f4fb" />
+            <Border x:Name="BgSwatchBlue" Width="30" Height="30" CornerRadius="8" Margin="0,0,8,8"
+                    Background="#e8f0fe" BorderBrush="{DynamicResource LineBrush}" BorderThickness="1"
+                    Cursor="Hand" ToolTip="浅蓝" MouseLeftButtonUp="OnBgSwatchClick" Tag="#e8f0fe" />
+            <Border x:Name="BgSwatchGreen" Width="30" Height="30" CornerRadius="8" Margin="0,0,8,8"
+                    Background="#e7f6ee" BorderBrush="{DynamicResource LineBrush}" BorderThickness="1"
+                    Cursor="Hand" ToolTip="浅绿" MouseLeftButtonUp="OnBgSwatchClick" Tag="#e7f6ee" />
+            <Border x:Name="BgSwatchWarm" Width="30" Height="30" CornerRadius="8" Margin="0,0,8,8"
+                    Background="#fef4e6" BorderBrush="{DynamicResource LineBrush}" BorderThickness="1"
+                    Cursor="Hand" ToolTip="暖米" MouseLeftButtonUp="OnBgSwatchClick" Tag="#fef4e6" />
+            <Border x:Name="BgSwatchPink" Width="30" Height="30" CornerRadius="8" Margin="0,0,8,8"
+                    Background="#fdeceb" BorderBrush="{DynamicResource LineBrush}" BorderThickness="1"
+                    Cursor="Hand" ToolTip="浅粉" MouseLeftButtonUp="OnBgSwatchClick" Tag="#fdeceb" />
+            <Border x:Name="BgSwatchDark" Width="30" Height="30" CornerRadius="8" Margin="0,0,8,8"
+                    Background="#14151d" BorderBrush="{DynamicResource LineBrush}" BorderThickness="1"
+                    Cursor="Hand" ToolTip="深墨" MouseLeftButtonUp="OnBgSwatchClick" Tag="#14151d" />
+            <TextBlock x:Name="BgColorHint" Style="{StaticResource CaptionText}"
+                       VerticalAlignment="Center" Margin="2,0,0,8" />
+          </WrapPanel>
+
+          <!-- 图片背景 -->
+          <StackPanel x:Name="BgImagePanel" Margin="0,10,0,0" Visibility="Collapsed">
+            <Grid>
+              <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="*" />
+              </Grid.ColumnDefinitions>
+              <Button Grid.Column="0" Content="选择图片…" Style="{StaticResource SecondaryButton}"
+                      Click="OnPickBgImage" />
+              <Button x:Name="BgClearImageButton" Grid.Column="1" Content="清除"
+                      Style="{StaticResource GhostButton}" Margin="8,0,0,0"
+                      VerticalAlignment="Center" Click="OnClearBgImage" Visibility="Collapsed" />
+            </Grid>
+            <TextBlock x:Name="BgImagePathText" Style="{StaticResource CaptionText}"
+                       Margin="2,6,0,0" TextWrapping="Wrap" />
+            <TextBlock Style="{StaticResource CaptionText}" Margin="2,4,0,0"
+                       Text="支持 jpg / png / bmp 等常见图片格式；仅保存在本机设置中，不会上传。深色主题下图片会自动压暗，保证文字可读。" />
+          </StackPanel>
         </StackPanel>
       </Border>
 

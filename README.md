@@ -10,17 +10,20 @@
 [![平台](https://img.shields.io/badge/Platform-Windows_10%2F11-0078D6.svg)]()
 [![.NET](https://img.shields.io/badge/.NET-10-512BD4.svg)]()
 [![技术栈](https://img.shields.io/badge/Stack-WPF_%2F_C%23-239120.svg)]()
-[![版本](https://img.shields.io/badge/Release-2.0.0-38bdf8.svg)](https://github.com/YYRMMAYO/OBS_Helper/releases)
+[![版本](https://img.shields.io/badge/Release-2.1.1-38bdf8.svg)](https://github.com/YYRMMAYO/OBS_Helper/releases)
 [![离线可用](https://img.shields.io/badge/offline--first-2ea44f.svg)]()
+[![增量更新](https://img.shields.io/badge/Incremental%20Update-1.27MB-7dd3fc.svg)]()
 [![许可](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
 [English](README.en.md) · **简体中文**
 
 </div>
 
-> **这是什么？** 面向直播新手的 OBS Studio 排障工具。**纯离线可用**：95 条问题的知识库、排障指引、日志分析规则全部内嵌在程序里，不联网也能查。连上 OBS 之后还能远程控制场景、录制与推流，并做一键体检。
+> **这是什么？** 面向直播新手的 OBS Studio 排障工具。**纯离线可用**：110 条问题的知识库、排障指引、日志分析规则全部内嵌在程序里，不联网也能查。连上 OBS 之后还能远程控制场景、录制与推流，并做一键体检。
 >
 > 这是原 Blazor WebAssembly + WebView2 版本的**原生 WPF 重构**（源码在 [`NOBS/`](NOBS/)），功能一比一对齐，但去掉了浏览器内核这一层：冷启动直接起窗口、自包含单目录发布、无需安装 WebView2 与 .NET 运行时。
+>
+> **V2.1 起支持增量更新与知识库独立更新**：更新只下载变更文件（2.0 → 2.1.1 增量包仅 1.27MB），问题库可脱离应用单独升级。
 
 ---
 
@@ -28,7 +31,9 @@
 
 | | |
 |---|---|
-| **95 条问题库，完全离线** | 内置 **10 个分类、95 条问题**，含现象 / 成因 / 分步解决 / 小贴士 / 相关问题；步骤可勾选，进度自动记住 |
+| **110 条问题库，完全离线** | 内置 **10 个分类、110 条问题**（v1.5），含现象 / 成因 / 分步解决 / 小贴士 / 相关问题；步骤可勾选，进度自动记住。**知识库支持独立更新**（应用之外随拉随新，不用等发版） |
+| **增量更新，更新更轻** | V2.1 起应用内「增量更新」只下载变更文件——2.0 → 2.1.1 增量包仅 **1.27MB**（整包 52MB 的 3%）；逐文件 SHA-256 校验，失败自动回退完整安装包；安装版自动提权替换并重启 |
+| **安装包自动清理** | 启动后自动扫描临时 / 下载 / 桌面目录，删除本应用旧安装包与增量包（每类保留最新一份），只认 `OBS_Helper_*` 命名，不碰其它文件 |
 | **免费 AI 诊断，开箱即用** | 不用注册、不用 API Key。内置两条免费通道（智谱国内直连 / Pollinations 全球免 Key），**本地强制限频**保护免费服务，失败自动回退离线引擎 |
 | **远程控制 OBS** | 场景切换、元素显隐、音频静音与音量、录制 / 推流 / 虚拟摄像头、定时停止、打开录制目录——控制台、托盘、全局热键、迷你小窗四种入口随时可用 |
 | **全局热键** | `Ctrl+Alt+R` 录制 · `Ctrl+Alt+S` 推流 · `Ctrl+Alt+C` 虚拟摄像头 · `Ctrl+Alt+M` 小窗 · `Ctrl+Alt+O` 显隐窗口——全部可在设置里改键或停用 |
@@ -41,7 +46,8 @@
 
 ### 学习与排查
 
-- **知识库** — 10 个分类、95 条问题，含现象 / 成因 / 分步解决 / 小贴士 / 相关问题；步骤可勾选且进度会记住
+- **知识库** — 10 个分类、110 条问题（v1.5），含现象 / 成因 / 分步解决 / 小贴士 / 相关问题；步骤可勾选且进度会记住
+- **知识库独立更新** — 问题库与应用版本解耦：启动静默自动更新（6 小时节流）/ 设置页「检查知识库更新」/ 更新弹窗「仅更新知识库」三入口；GitHub raw 主通道 + Release 资产兜底
 - **搜索** — 边打边搜，跨标题、现象、成因匹配
 - **问我一下** — 用大白话描述现象，自动匹配最可能的问题
 - **排障指引** — 通用排查思路速查手册
@@ -92,9 +98,13 @@
 
 - **GitHub Releases** — 从 [Releases 页面](https://github.com/YYRMMAYO/OBS_Helper/releases) 下载安装包或便携版；便携版免安装、自带 .NET 运行时
 - **蓝奏云（国内镜像）** — 提取码 `YYKWY`（详见应用内更新弹窗）
-- **应用内更新** — 「检查更新」对比 GitHub 仓库最新 tag，仅当有更高版本时才提示；检查失败不影响正常使用
+- **应用内更新（推荐）** — 「检查更新」对比 GitHub 最新版本后，可任选：
+  - **增量更新全部功能**：只下载自上一版本以来的变更文件（通常几 MB），下载后自动校验、提权替换并重启
+  - **仅更新知识库**：单独升级问题库，几秒完成，不用重装应用
+  - **完整安装包**：蓝奏云 / 应用内下载整包覆盖安装
 
 > 支持 Windows 10 / 11。无需 WebView2、无需安装 .NET 运行时、无需管理员权限。
+> 已安装旧版（2.0 / 2.1.0）的用户可直接走应用内「增量更新」升级到 2.1.1。
 
 ## 构建
 
@@ -107,7 +117,7 @@ cd NOBS
 # 跑起来看看
 dotnet run --project OBS_Helper.Wpf
 
-# 出安装包 + 便携 zip -> NOBS\PAKE\windows\（版本号取自 csproj 的 <Version>）
+# 出安装包 + 便携 zip + 增量包 -> NOBS\PAKE\windows\（版本号取自 csproj 的 <Version>）
 .\build.ps1
 
 # 额外出一个单文件 exe
@@ -115,13 +125,22 @@ dotnet run --project OBS_Helper.Wpf
 
 # 没装 Inno Setup 时只出便携包
 .\build.ps1 -SkipInstaller
+
+# 跳版本发布：指定增量包基准（让停留在更早版本的用户也能直接增量升级）
+.\build.ps1 -DeltaBaseVersion 2.0.0
+
+# 发布后校验增量包可完整升级（模拟升级 + 全文件 SHA-256 比对）
+python scripts\verify_delta.py --old PAKE\windows\OBS_Helper_Portable_2.0.0.zip --delta PAKE\windows\OBS_Helper_Update_2.1.1.zip --publish OBS_Helper.Wpf\bin\Release\net10.0-windows\win-x64\publish
 ```
 
 产物落在 `NOBS\PAKE\windows\`：
 
-- `OBS_Helper_Setup_2.0.0.exe` — 安装包
-- `OBS_Helper_Portable_2.0.0.zip` — 解压即用
-- `OBS_Helper_Portable_2.0.0.exe` — 单文件（需 `-SingleFile`）
+- `OBS_Helper_Setup_2.1.1.exe` — 安装包
+- `OBS_Helper_Portable_2.1.1.zip` — 解压即用
+- `OBS_Helper_Update_2.1.1.zip` — 增量更新包（含 `update_manifest.json`，应用内增量更新用）
+- `OBS_Helper_Manifest_2.1.1.json` — 完整文件清单（SHA-256，比对/核验用）
+- `OBS_Helper_Portable_2.1.1.exe` — 单文件（需 `-SingleFile`）
+- `manifests/manifest_<ver>.json` — 各版本完整清单存档（增量包 diff 基准）
 
 ## 工程结构
 
@@ -140,11 +159,13 @@ NOBS/
       Host/                HostBridge（DPAPI、日志读取、AI 转发）、LocalStore
       Obs/                 WebSocket 客户端、连接服务、日志分析、脱敏
       ObsConfig/           OBS 配置定位、备份/导出/导入、重置、场景模板落地
+      Update/              增量更新（清单/自举替换）、知识库独立更新、安装包自动清理
       Ai/                  本地 / 免费 / 云端诊断引擎与编排（含免费档本地限频器）
       Shell/               系统托盘、全局热键、场景自动切换、定时器、系统监控
       Markdown/            排障指引的 Markdown 解析
-    Assets/                problems.json、troubleshooting.md、scene_templates.json（内嵌资源）、图标
-  build.ps1                Windows 构建与打包脚本
+    Assets/                problems.json（内嵌种子，运行时可用外部文件覆盖更新）、troubleshooting.md、scene_templates.json、图标
+  build.ps1                Windows 构建与打包脚本（安装包 / 便携 / 增量包 / 清单）
+  scripts/verify_delta.py  增量包发布校验工具（模拟升级 + 全文件 SHA-256 比对）
 ```
 
 换肤靠的是把调色板写进 `Application.Resources`，XAML 一律用 `DynamicResource` 引用，所以主题切换是整窗即时生效的。

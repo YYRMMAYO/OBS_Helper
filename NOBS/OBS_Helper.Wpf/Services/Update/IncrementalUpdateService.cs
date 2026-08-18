@@ -31,6 +31,11 @@ public sealed class IncrementalUpdateService
     /// <summary>暂存目录内的新文件根（保持发布目录的相对结构）。</summary>
     public static string PendingFilesDir => Path.Combine(PendingDir, "files");
 
+    /// <summary>增量包临时下载文件：放应用私有目录（而非系统 %TEMP%），且命名避开
+    /// 安装包清理器的识别模式（OBS_Helper_Update_*），不会被误删。</summary>
+    private static string TempDownloadPath =>
+        Path.Combine(HostBridge.AppDataDirectory, "updates", "dl_" + Guid.NewGuid().ToString("N") + ".zip");
+
     private static string ManifestPath => Path.Combine(PendingDir, "update_manifest.json");
 
     private static readonly HttpClient Http = CreateClient();
@@ -69,10 +74,11 @@ public sealed class IncrementalUpdateService
     {
         try
         {
-            // 1) 下载 zip 到临时文件
-            var tmp = Path.Combine(Path.GetTempPath(), "OBS_Helper_Update_" + Guid.NewGuid().ToString("N") + ".zip");
+            // 1) 下载 zip 到应用私有目录的临时文件
+            var tmp = TempDownloadPath;
             try
             {
+                Directory.CreateDirectory(Path.GetDirectoryName(tmp)!);
                 using var resp = await Http.GetAsync(assetUrl, HttpCompletionOption.ResponseHeadersRead, ct).ConfigureAwait(false);
                 resp.EnsureSuccessStatusCode();
                 await using (var fs = new FileStream(tmp, FileMode.Create, FileAccess.Write, FileShare.None))
@@ -96,12 +102,11 @@ public sealed class IncrementalUpdateService
                 return (null, "增量包下载失败：" + ex.Message);
             }
 
-            // 2) 清空旧暂存并解压
+            // 2) 清空旧暂存并安全解压（逐条目校验路径，防 zip-slip）
             try
             {
                 ClearPending();
-                Directory.CreateDirectory(PendingFilesDir);
-                ZipFile.ExtractToDirectory(tmp, PendingDir, overwriteFiles: true);
+                SafeExtractToDirectory(tmp, PendingDir);
             }
             catch (Exception ex)
             {
@@ -236,6 +241,30 @@ public sealed class IncrementalUpdateService
         catch (Exception)
         {
             // 个别文件被占用时清不掉，不阻塞主流程
+        }
+    }
+
+    /// <summary>
+    /// 安全解压：逐条目校验相对路径（拒绝 <c>..</c> / 根路径），防止被篡改的增量包 zip-slip。
+    /// </summary>
+    private static void SafeExtractToDirectory(string zipPath, string destDir)
+    {
+        using var archive = ZipFile.OpenRead(zipPath);
+        foreach (var entry in archive.Entries)
+        {
+            if (string.IsNullOrWhiteSpace(entry.FullName)) continue;
+
+            var rel = UpdatePaths.NormalizeRel(entry.FullName); // 非法路径直接抛 InvalidDataException
+            var dst = Path.Combine(destDir, rel);
+
+            if (entry.FullName.EndsWith("/", StringComparison.Ordinal))
+            {
+                Directory.CreateDirectory(dst);
+                continue;
+            }
+
+            Directory.CreateDirectory(Path.GetDirectoryName(dst)!);
+            entry.ExtractToFile(dst, overwrite: true);
         }
     }
 

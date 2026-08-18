@@ -22,7 +22,11 @@ param(
     [string]$Configuration = "Release",
     [string]$Runtime = "win-x64",
     [switch]$SingleFile,
-    [switch]$SkipInstaller
+    [switch]$SkipInstaller,
+    # 指定增量包的基准版本（如 -DeltaBaseVersion 2.0.0）：强制以该版本清单做 diff，
+    # 用于「跳版本发布」——让仍停留在更早版本的用户也能直接增量升级。
+    # 不指定时默认取「低于当前版本的最近一份清单」。
+    [string]$DeltaBaseVersion = ""
 )
 
 $ErrorActionPreference = "Stop"
@@ -126,20 +130,27 @@ Write-Host "便携包：$zip" -ForegroundColor DarkGray
 
 function New-FileManifest {
     param([string]$Dir, [string]$Version)
-    $entries = Get-ChildItem $Dir -Recurse -File | ForEach-Object {
-        $rel = $_.FullName.Substring($Dir.Length).TrimStart('\', '/').Replace('\', '/')
-        [pscustomobject]@{
-            path   = $rel
-            size   = $_.Length
-            sha256 = (Get-FileHash $_.FullName -Algorithm SHA256).Hash.ToLowerInvariant()
-        }
-    } | Sort-Object path
+    # 排除运行时产物（如 OBS_SELFTEST 写入的 selftest_result.txt）：它们不属于发布内容，
+    # 一旦存在会污染清单并让增量包多出无意义文件。
+    $entries = Get-ChildItem $Dir -Recurse -File |
+        Where-Object { $_.Name -ne 'selftest_result.txt' } |
+        ForEach-Object {
+            $rel = $_.FullName.Substring($Dir.Length).TrimStart('\', '/').Replace('\', '/')
+            [pscustomobject]@{
+                path   = $rel
+                size   = $_.Length
+                sha256 = (Get-FileHash $_.FullName -Algorithm SHA256).Hash.ToLowerInvariant()
+            }
+        } | Sort-Object path
     return [ordered]@{ version = $Version; files = $entries }
 }
 
 function Save-ManifestTo {
     param([object]$Manifest, [string]$Path)
-    $Manifest | ConvertTo-Json -Depth 5 | Set-Content -Path $Path -Encoding UTF8
+    # 显式写「无 BOM 的 UTF-8」：PS 5.1 的 Set-Content -Encoding UTF8 会带 BOM，
+    # 导致 Python / 严格解析器读 JSON 报错（应用端 ReadAllText 虽能容忍，但产物不干净）。
+    $json = $Manifest | ConvertTo-Json -Depth 5
+    [System.IO.File]::WriteAllText($Path, $json, (New-Object System.Text.UTF8Encoding($false)))
     return $Path
 }
 
@@ -157,11 +168,25 @@ $currentManifestPath = Join-Path $manifestDir "manifest_$ver.json"
 Save-ManifestTo (New-FileManifest -Dir $pub -Version $ver) $currentManifestPath | Out-Null
 Write-Host "完整清单：$currentManifestPath" -ForegroundColor DarkGray
 
-# 找「低于当前版本」的上一版清单（取版本号最高的一份）
+# 找「低于当前版本」的上一版清单（取版本号最高的一份）；
+# 指定 -DeltaBaseVersion 时强制用该版本（跳版本发布场景）。
 $verObj = [version]$ver
-$prevManifestFile = Get-ChildItem $manifestDir -Filter "manifest_*.json" |
-    Where-Object { $v = Get-ManifestVersion $_.BaseName; $v -ne $null -and $v -lt $verObj } |
-    Sort-Object { Get-ManifestVersion $_.BaseName } | Select-Object -Last 1
+$prevManifestFile = $null
+if ($DeltaBaseVersion) {
+    $prevManifestFile = Get-ChildItem $manifestDir -Filter "manifest_$DeltaBaseVersion.json" |
+        Where-Object { (Get-ManifestVersion $_.BaseName) -lt $verObj } |
+        Select-Object -First 1
+    if ($prevManifestFile) {
+        Write-Host "按 -DeltaBaseVersion $DeltaBaseVersion 指定基准清单" -ForegroundColor DarkGray
+    } else {
+        Warn "找不到指定基准清单 manifest_$DeltaBaseVersion.json，回退默认（最近一份）。"
+    }
+}
+if (-not $prevManifestFile) {
+    $prevManifestFile = Get-ChildItem $manifestDir -Filter "manifest_*.json" |
+        Where-Object { $v = Get-ManifestVersion $_.BaseName; $v -ne $null -and $v -lt $verObj } |
+        Sort-Object { Get-ManifestVersion $_.BaseName } | Select-Object -Last 1
+}
 
 if (-not $prevManifestFile) {
     # 首次启用增量（清单还没积累）：用历史便携包重建上一版本清单

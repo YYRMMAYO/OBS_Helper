@@ -79,7 +79,9 @@ public sealed class ProblemService
     /// </summary>
     private ProblemData LoadData()
     {
-        // 外部覆盖文件优先（知识库可独立更新，不需要随应用发版）
+        // 外部覆盖文件优先（知识库可独立更新，不需要随应用发版）。
+        // 外部文件不存在 / 损坏 / 读取失败都静默回退内置种子——
+        // 内置可用就不算「加载失败」，不设置 LoadError（首页错误面板只在两者都失败时出现）。
         try
         {
             var externalPath = KnowledgeBaseUpdater.KbFile;
@@ -92,13 +94,12 @@ public sealed class ProblemService
                     _usingExternal = true;
                     return data;
                 }
-                // 外部文件损坏 → 记录并回退内置
-                LoadError = "external-kb-invalid";
+                FileLogger.Warn("KB", "外部知识库文件损坏，回退内置：" + externalPath);
             }
         }
-        catch (Exception)
+        catch (Exception ex)
         {
-            LoadError = Errors.ErrorCodes.DataLoadFailed;
+            FileLogger.Warn("KB", "外部知识库读取失败，回退内置：" + ex.Message);
         }
 
         var embedded = LoadEmbedded();

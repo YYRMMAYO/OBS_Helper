@@ -41,6 +41,25 @@ public static class UpdaterBootstrap
 
         var pendingDir = args[1];
         var parentPid = int.TryParse(args[2], out var pid) ? pid : 0;
+
+        // 防御：pending 目录必须与应用的私有暂存目录一致（%LocalAppData%\OBS_Helper\updates\pending）。
+        // 防止被恶意参数指向任意目录、把任意文件复制进应用目录。
+        try
+        {
+            var expected = Path.GetFullPath(IncrementalUpdateService.PendingDir);
+            var actual = Path.GetFullPath(pendingDir);
+            if (!string.Equals(expected, actual, StringComparison.OrdinalIgnoreCase))
+            {
+                FileLogger.Error("Updater", $"pending 目录不匹配（期望 {expected}，实际 {actual}），拒绝执行。");
+                return 1;
+            }
+        }
+        catch (Exception ex)
+        {
+            FileLogger.Error("Updater", "pending 目录校验失败：" + ex.Message);
+            return 1;
+        }
+
         var manifestPath = Path.Combine(pendingDir, "update_manifest.json");
         var filesDir = Path.Combine(pendingDir, "files");
         var appDir = AppContext.BaseDirectory;

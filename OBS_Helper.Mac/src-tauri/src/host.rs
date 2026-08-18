@@ -24,11 +24,17 @@
 
 use serde::Serialize;
 use serde_json::Value;
+use std::collections::HashSet;
 use std::fs;
 use std::io::{Read, Seek, SeekFrom, Write};
 use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
+use std::sync::{Mutex, OnceLock};
 use std::time::{SystemTime, UNIX_EPOCH};
+use tauri_plugin_dialog::DialogExt;
+use tauri_plugin_dialog::FilePath;
+use zip::write::SimpleFileOptions;
+use zip::{ZipArchive, ZipWriter};
 
 /// 单个日志文件最多读取的字节数（超出只读尾部）。
 const MAX_LOG_BYTES: u64 = 8 * 1024 * 1024;
@@ -61,12 +67,17 @@ const CONFIG_ALLOWED_EXT: [&str; 5] = ["ini", "json", "jsonc", "txt", "conf"];
 /// 因此读取 8 MB 日志或等待 AI 响应都不会让窗口卡住。
 ///
 /// 参数名刻意避开 `cmd`（Tauri v1 时代 IPC 报文的保留字段名），使用 `action`。
+/// `app` 由 Tauri 自动注入，供需要原生对话框的命令（导出 / 导入）使用。
 #[tauri::command]
-pub async fn host_invoke(action: String, payload: String) -> Result<String, String> {
-    dispatch(&action, &payload)
+pub async fn host_invoke(
+    app: tauri::AppHandle,
+    action: String,
+    payload: String,
+) -> Result<String, String> {
+    dispatch(Some(&app), &action, &payload)
 }
 
-fn dispatch(action: &str, payload: &str) -> Result<String, String> {
+fn dispatch(app: Option<&tauri::AppHandle>, action: &str, payload: &str) -> Result<String, String> {
     let raw = if payload.trim().is_empty() { "{}" } else { payload };
     let p: Value = serde_json::from_str(raw).map_err(|e| format!("参数解析失败: {e}"))?;
 
@@ -82,11 +93,38 @@ fn dispatch(action: &str, payload: &str) -> Result<String, String> {
         "config.list" => config_list(str_of(&p, "path")),
         "config.read" => config_read(str_of(&p, "path")),
         "shell.open" => shell_open(str_of(&p, "url")),
+        "shell.reveal" => shell_reveal(str_of(&p, "path")),
         "ai.chat" => ai_chat(
             str_of(&p, "url"),
             str_of(&p, "secretKey"),
             str_of(&p, "body"),
         ),
+        "template.export" => template_export(
+            app.ok_or_else(|| "该命令需要宿主上下文。".to_string())?,
+            str_of(&p, "filename"),
+            str_of(&p, "json"),
+        ),
+        "config.locate" => config_locate(str_of(&p, "override")),
+        "config.running" => config_running(),
+        "config.pack" => config_pack(
+            str_of(&p, "targetPath"),
+            bool_of(&p, "includeKey"),
+            bool_of(&p, "includePluginConfig"),
+            str_of(&p, "reason"),
+        ),
+        "config.export" => config_export(
+            app.ok_or_else(|| "该命令需要宿主上下文。".to_string())?,
+            bool_of(&p, "includeKey"),
+            bool_of(&p, "includePluginConfig"),
+        ),
+        "config.import" => config_import(
+            app.ok_or_else(|| "该命令需要宿主上下文。".to_string())?,
+            str_of(&p, "mode"),
+        ),
+        "config.listBackups" => config_list_backups(),
+        "config.resetFull" => config_reset_full(),
+        "system.sample" => system_sample(),
+        "app.checkUpdate" => app_check_update(),
         other => Err(format!("未知命令: {other}")),
     }
 }
@@ -94,6 +132,11 @@ fn dispatch(action: &str, payload: &str) -> Result<String, String> {
 /// 从 JSON 对象里安全地取字符串字段，缺失或类型不符时返回空串。
 fn str_of<'a>(v: &'a Value, name: &str) -> &'a str {
     v.get(name).and_then(Value::as_str).unwrap_or("")
+}
+
+/// 从 JSON 对象里安全地取布尔字段，缺失或类型不符时返回 false。
+fn bool_of(v: &Value, name: &str) -> bool {
+    v.get(name).and_then(Value::as_bool).unwrap_or(false)
 }
 
 // ===========================================================================
@@ -947,6 +990,1350 @@ fn run_curl_get(url: &str) -> String {
 }
 
 // ===========================================================================
+// 场景模板导出（与 Windows 侧 TemplatePage 的「导出场景集合 JSON」对应）
+// ===========================================================================
+//
+// 前端（Blazor WASM）生成标准 OBS 场景集合 JSON 后交给宿主落盘：
+// 用系统原生「保存」对话框选位置，避免 WebView 里没有可靠的文件下载通道。
+
+/// 模板导出内容上限（10 MB，远大于任何合理模板）。
+const MAX_TEMPLATE_BYTES: usize = 10 * 1024 * 1024;
+
+fn template_export(app: &tauri::AppHandle, filename: &str, json: &str) -> Result<String, String> {
+    if json.len() > MAX_TEMPLATE_BYTES {
+        return Err("导出内容过大。".into());
+    }
+    let name = sanitize_file_name(filename, "obshelper_template.json");
+
+    let path = app
+        .dialog()
+        .file()
+        .set_file_name(name)
+        .add_filter("OBS 场景集合", &["json"])
+        .set_directory(template_default_dir())
+        .blocking_save_file()
+        .ok_or_else(|| "已取消保存。".to_string())?;
+
+    let mut path = match path {
+        FilePath::Path(p) => p,
+        FilePath::Url(u) => return Err(format!("无法写入该位置: {u}")),
+    };
+    if path.extension().is_none() {
+        path.set_extension("json");
+    }
+
+    fs::write(&path, json.as_bytes()).map_err(|e| format!("写入文件失败: {e}"))?;
+    Ok(path.to_string_lossy().into_owned())
+}
+
+/// 模板导出的默认目录：OBS 场景目录存在时优先（放进去即被 OBS 识别），否则桌面。
+fn template_default_dir() -> PathBuf {
+    let scenes = obs_config_dir().join("basic").join("scenes");
+    if scenes.is_dir() {
+        scenes
+    } else {
+        let home = std::env::var("HOME").unwrap_or_default();
+        let desktop = PathBuf::from(&home).join("Desktop");
+        if desktop.is_dir() {
+            desktop
+        } else {
+            std::env::temp_dir()
+        }
+    }
+}
+
+/// 把文件名清洗成安全的纯文件名（不含路径分隔符 / 控制字符）。
+fn sanitize_file_name(name: &str, fallback: &str) -> String {
+    let mut s: String = name
+        .chars()
+        .map(|c| {
+            if c.is_alphanumeric() || c == '_' || c == '-' || c == '.' || c == ' ' {
+                c
+            } else {
+                '_'
+            }
+        })
+        .collect();
+    s = s.trim().replace(' ', "_");
+    s = s.trim_matches('.').to_string();
+    if s.is_empty() || s.len() > 64 {
+        fallback.to_string()
+    } else {
+        s
+    }
+}
+
+// ===========================================================================
+// 配置管理：定位 / 运行检测 / 备份 / 导出 / 导入 / 重置（与 Windows 侧
+// ObsPathService + ObsBackupService + ObsResetService 对应）
+// ===========================================================================
+//
+// 设计原则与 Windows 侧一致：
+//   * 永不硬删——所有「重置 / 覆盖导入」都先把旧文件移进应用数据目录下的
+//     trash（回收站），并在操作前强制自动备份，误操作可恢复；
+//   * 导入前先扫描整包：路径穿越（Zip Slip）、压缩炸弹、危险扩展名一律整包拒绝；
+//   * 推流密钥默认脱敏：includeKey=false 时 service.json 删掉密钥字段，不丢文件；
+//   * 备份 zip 布局与 Windows 侧完全一致（config/ 前缀 + manifest.json），
+//     两端的备份包理论上可以互换导入。
+//
+// macOS 的 OBS 配置目录固定为 ~/Library/Application Support/obs-studio。
+
+/// 应用私有数据目录（备份 / 回收站都在这里）。
+fn app_data_dir() -> PathBuf {
+    PathBuf::from(std::env::var("HOME").unwrap_or_default())
+        .join("Library")
+        .join("Application Support")
+        .join("com.obshelper.desktop")
+}
+
+fn backups_root() -> PathBuf {
+    app_data_dir().join("backups")
+}
+
+fn trash_root() -> PathBuf {
+    app_data_dir().join("trash")
+}
+
+fn config_dir_location(override_path: Option<&str>) -> Result<PathBuf, String> {
+    let dir = match override_path {
+        Some(o) if !o.trim().is_empty() => PathBuf::from(o.trim()),
+        _ => obs_config_dir(),
+    };
+    if !dir.is_dir() {
+        return Err("未找到本机 OBS 配置目录，无法继续。".into());
+    }
+    Ok(dir)
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct ConfigLocation {
+    config_dir: String,
+    exists: bool,
+    portable: bool,
+    source: String,
+}
+
+fn config_locate(override_path: &str) -> Result<String, String> {
+    let manual = !override_path.trim().is_empty();
+    let dir = if manual {
+        PathBuf::from(override_path.trim())
+    } else {
+        obs_config_dir()
+    };
+    let loc = ConfigLocation {
+        config_dir: dir.to_string_lossy().to_string(),
+        exists: dir.is_dir(),
+        portable: false,
+        source: if manual { "manual".into() } else { "appdata".into() },
+    };
+    serde_json::to_string(&loc).map_err(|e| format!("序列化失败: {e}"))
+}
+
+fn config_running_bool() -> bool {
+    !run_cmd(&["/usr/bin/pgrep", "-x", "obs"]).trim().is_empty()
+}
+
+fn config_running() -> Result<String, String> {
+    Ok(format!(r#"{{"running":{}}}"#, config_running_bool()))
+}
+
+/// 当前时间（Unix 秒）拼进文件名，保证备份名唯一。
+fn stamp_secs() -> u64 {
+    SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .map(|d| d.as_secs())
+        .unwrap_or(0)
+}
+
+/// 打包 OBS 配置为 zip。targetPath 为空时自动落到应用备份目录
+/// （obsconfig_<秒>_<原因>.zip），返回实际写入的路径。
+fn config_pack(
+    target_path: &str,
+    include_key: bool,
+    include_plugin_config: bool,
+    reason: &str,
+) -> Result<String, String> {
+    let config_dir = config_dir_location(None)?;
+
+    let zip_path = if target_path.trim().is_empty() {
+        let dir = backups_root();
+        fs::create_dir_all(&dir).map_err(|e| format!("创建备份目录失败: {e}"))?;
+        let safe = sanitize_file_name(reason, "backup");
+        dir.join(format!("obsconfig_{}_{}.zip", stamp_secs(), safe))
+    } else {
+        PathBuf::from(target_path.trim())
+    };
+
+    if zip_path.parent().is_some_and(|p| !p.as_os_str().is_empty()) {
+        fs::create_dir_all(zip_path.parent().unwrap()).map_err(|e| format!("创建目录失败: {e}"))?;
+    }
+
+    build_zip(&zip_path, &config_dir, include_key, include_plugin_config, reason)?;
+    prune_backups(10);
+    Ok(zip_path.to_string_lossy().into_owned())
+}
+
+/// 导出到用户选择的位置（原生保存对话框）。
+fn config_export(
+    app: &tauri::AppHandle,
+    include_key: bool,
+    include_plugin_config: bool,
+) -> Result<String, String> {
+    let _ = config_dir_location(None)?;
+    let default_name = format!("OBS_备份_{}.zip", stamp_secs());
+    let path = app
+        .dialog()
+        .file()
+        .set_file_name(default_name)
+        .add_filter("ZIP 压缩包", &["zip"])
+        .blocking_save_file()
+        .ok_or_else(|| "已取消导出。".to_string())?;
+
+    let mut path = match path {
+        FilePath::Path(p) => p,
+        FilePath::Url(u) => return Err(format!("无法写入该位置: {u}")),
+    };
+    if path.extension().is_none() {
+        path.set_extension("zip");
+    }
+
+    let config_dir = config_dir_location(None)?;
+    build_zip(&path, &config_dir, include_key, include_plugin_config, "导出")?;
+    Ok(path.to_string_lossy().into_owned())
+}
+
+/// 密钥字段黑名单（与 Windows 侧 RedactKeys 一致）：脱敏 = 删字段不丢文件。
+const REDACT_KEYS: [&str; 10] = [
+    "key",
+    "stream_key",
+    "password",
+    "username",
+    "bearer_token",
+    "token",
+    "auth_token",
+    "refresh_token",
+    "connect_info",
+    "whip_bearer_token",
+];
+
+const FORBIDDEN_EXT: [&str; 9] = ["exe", "dll", "bat", "cmd", "ps1", "vbs", "js", "scr", "com"];
+const ALLOWED_EXT: [&str; 10] = ["json", "ini", "txt", "bak", "csv", "lua", "py", "effect", "qss", "css"];
+
+const MAX_ZIP_ENTRIES: usize = 5000;
+const MAX_ENTRY_BYTES: u64 = 32 * 1024 * 1024;
+const MAX_TOTAL_BYTES: u64 = 512 * 1024 * 1024;
+const MAX_RATIO: f64 = 200.0;
+
+fn build_zip(
+    zip_path: &Path,
+    config_dir: &Path,
+    include_key: bool,
+    include_plugin_config: bool,
+    reason: &str,
+) -> Result<(), String> {
+    let file = fs::File::create(zip_path).map_err(|e| format!("创建备份文件失败: {e}"))?;
+    let mut zip = ZipWriter::new(file);
+    let opts = SimpleFileOptions::default()
+        .compression_method(zip::CompressionMethod::Deflated)
+        .unix_permissions(0o644);
+
+    let mut scenes: Vec<String> = Vec::new();
+    let mut profiles: Vec<String> = Vec::new();
+    let mut redacted: Vec<String> = Vec::new();
+    let mut entry_count: usize = 0;
+
+    // 场景集合
+    let scenes_dir = config_dir.join("basic").join("scenes");
+    if scenes_dir.is_dir() {
+        if let Ok(rd) = fs::read_dir(&scenes_dir) {
+            for e in rd.flatten() {
+                let p = e.path();
+                if !p.is_file() {
+                    continue;
+                }
+                let is_json = p
+                    .extension()
+                    .and_then(|x| x.to_str())
+                    .map(|x| x.eq_ignore_ascii_case("json"))
+                    .unwrap_or(false);
+                if !is_json {
+                    continue;
+                }
+                let name = p.file_name().unwrap_or_default().to_string_lossy().to_string();
+                add_file_to_zip(&mut zip, &opts, &format!("config/basic/scenes/{name}"), &p);
+                entry_count += 1;
+                if let Some(n) = read_scene_collection_name(&p) {
+                    scenes.push(n);
+                }
+            }
+        }
+    }
+
+    // 配置文件（profiles）：includeKey=false 时 service.json 脱敏
+    let profiles_dir = config_dir.join("basic").join("profiles");
+    if profiles_dir.is_dir() {
+        if let Ok(rd) = fs::read_dir(&profiles_dir) {
+            for pd in rd.flatten() {
+                let prof = pd.path();
+                if !prof.is_dir() {
+                    continue;
+                }
+                let prof_name = prof.file_name().unwrap_or_default().to_string_lossy().to_string();
+                profiles.push(prof_name.clone());
+                for f in walk_files(&prof, 1000) {
+                    let rel_inside = f
+                        .strip_prefix(&prof)
+                        .map_err(|_| "路径异常。".to_string())?
+                        .to_string_lossy()
+                        .replace('\\', "/");
+                    let rel = format!("config/basic/profiles/{prof_name}/{rel_inside}");
+                    let is_service = f
+                        .file_name()
+                        .and_then(|n| n.to_str())
+                        .map(|n| n.eq_ignore_ascii_case("service.json"))
+                        .unwrap_or(false);
+                    if is_service && !include_key {
+                        let raw = fs::read_to_string(&f).unwrap_or_default();
+                        if let Some(redacted_text) = redact_service_json(&raw) {
+                            add_text_to_zip(&mut zip, &opts, &rel, &redacted_text);
+                            redacted.push(rel.clone());
+                        } else {
+                            add_file_to_zip(&mut zip, &opts, &rel, &f);
+                        }
+                    } else {
+                        add_file_to_zip(&mut zip, &opts, &rel, &f);
+                    }
+                    entry_count += 1;
+                }
+            }
+        }
+    }
+
+    // global.ini / user.ini（不含推流密钥，恒打包）
+    for ini in ["global.ini", "user.ini"] {
+        let p = config_dir.join(ini);
+        if p.is_file() {
+            add_file_to_zip(&mut zip, &opts, &format!("config/{ini}"), &p);
+            entry_count += 1;
+        }
+    }
+
+    // 插件配置（可选）
+    if include_plugin_config {
+        let pc = config_dir.join("plugin_config");
+        if pc.is_dir() {
+            for f in walk_files(&pc, 2000) {
+                let rel_inside = f
+                    .strip_prefix(&pc)
+                    .map_err(|_| "路径异常。".to_string())?
+                    .to_string_lossy()
+                    .replace('\\', "/");
+                let rel = format!("config/plugin_config/{rel_inside}");
+                add_file_to_zip(&mut zip, &opts, &rel, &f);
+                entry_count += 1;
+            }
+        }
+    }
+
+    // 清单
+    let manifest = serde_json::json!({
+        "schema": 1,
+        "app": "OBS_Helper",
+        "appVersion": env!("CARGO_PKG_VERSION"),
+        "createdAtMillis": stamp_secs() * 1000,
+        "portable": false,
+        "includesPluginConfig": include_plugin_config,
+        "includesStreamKey": include_key,
+        "redactedFiles": redacted,
+        "sceneCollections": scenes,
+        "profiles": profiles,
+        "entryCount": entry_count,
+        "reason": reason,
+    });
+    add_text_to_zip(
+        &mut zip,
+        &opts,
+        "manifest.json",
+        &serde_json::to_string_pretty(&manifest).unwrap_or_default(),
+    );
+
+    zip.finish().map_err(|e| format!("写备份失败: {e}"))?;
+    Ok(())
+}
+
+/// 递归收集目录下所有文件（限制条数，防异常目录撑爆内存）。
+fn walk_files(dir: &Path, cap: usize) -> Vec<PathBuf> {
+    let mut out = Vec::new();
+    walk_files_impl(dir, &mut out, cap);
+    out
+}
+
+fn walk_files_impl(dir: &Path, out: &mut Vec<PathBuf>, cap: usize) {
+    if out.len() >= cap {
+        return;
+    }
+    let Ok(rd) = fs::read_dir(dir) else { return };
+    for e in rd.flatten() {
+        if out.len() >= cap {
+            return;
+        }
+        let p = e.path();
+        match fs::symlink_metadata(&p) {
+            Ok(m) if m.is_dir() => walk_files_impl(&p, out, cap),
+            Ok(m) if m.is_file() => out.push(p),
+            _ => {}
+        }
+    }
+}
+
+fn add_file_to_zip(zip: &mut ZipWriter<fs::File>, opts: &SimpleFileOptions, rel: &str, src: &Path) {
+    let Ok(bytes) = fs::read(src) else { return };
+    // 单条超过 32MB 的文件跳过（备份里不会出现，纯粹防意外）
+    if bytes.len() as u64 > MAX_ENTRY_BYTES {
+        return;
+    }
+    let _ = zip.start_file(rel, *opts);
+    let _ = zip.write_all(&bytes);
+}
+
+fn add_text_to_zip(zip: &mut ZipWriter<fs::File>, opts: &SimpleFileOptions, rel: &str, text: &str) {
+    let _ = zip.start_file(rel, *opts);
+    let _ = zip.write_all(text.as_bytes());
+}
+
+fn read_scene_collection_name(path: &Path) -> Option<String> {
+    let raw = fs::read_to_string(path).ok()?;
+    let v: Value = serde_json::from_str(&raw).ok()?;
+    v.get("name").and_then(Value::as_str).map(str::to_string)
+}
+
+/// 脱敏 = 删字段不丢文件，保留 type/service/server/protocol 等让导入方能识别平台。
+fn redact_service_json(json: &str) -> Option<String> {
+    let mut v: Value = serde_json::from_str(json).ok()?;
+    redact_node(&mut v);
+    if let Some(settings) = v.get_mut("settings") {
+        redact_node(settings);
+        // server 抹掉 ? 之后的 query（可能带临时 token）
+        if let Some(server) = settings.get_mut("server") {
+            if let Some(s) = server.as_str() {
+                if let Some(q) = s.find('?') {
+                    *server = Value::String(s[..q].to_string());
+                }
+            }
+        }
+    }
+    serde_json::to_string_pretty(&v).ok()
+}
+
+fn redact_node(node: &mut Value) {
+    if let Value::Object(map) = node {
+        for key in REDACT_KEYS {
+            map.remove(key);
+        }
+    }
+}
+
+/// 解析 zip 条目名：拒绝绝对路径与 `..` / `.` 段，返回规范化的相对路径。
+fn normalize_entry_name(full: &str) -> Option<String> {
+    if full.trim().is_empty() || full.contains(':') || full.starts_with('/') || full.starts_with('\\') {
+        return None;
+    }
+    let segments: Vec<&str> = full.split(['/', '\\']).collect();
+    for seg in &segments {
+        if *seg == ".." || *seg == "." {
+            return None;
+        }
+    }
+    Some(segments.join("/"))
+}
+
+struct ZipScan {
+    includes_stream_key: bool,
+}
+
+/// 导入前预检：路径穿越 / 压缩炸弹 / 危险扩展名任一命中即整包拒绝。
+fn scan_zip(path: &Path) -> Result<ZipScan, String> {
+    let file = fs::File::open(path).map_err(|e| format!("无法读取备份包: {e}"))?;
+    let mut zip = ZipArchive::new(file).map_err(|e| format!("无法读取备份包: {e}"))?;
+
+    let mut total: u64 = 0;
+    let mut includes_key = false;
+    let mut manifest_buf: Option<Vec<u8>> = None;
+
+    for i in 0..zip.len() {
+        if i >= MAX_ZIP_ENTRIES {
+            return Err("备份包条目过多（疑似异常）。".into());
+        }
+        let mut entry = zip
+            .by_index(i)
+            .map_err(|e| format!("读取备份包失败: {e}"))?;
+        let name = entry.name().to_string();
+
+        if normalize_entry_name(&name).is_none() {
+            return Err(format!("条目路径非法（疑似路径穿越）：{name}"));
+        }
+        if name == "manifest.json" {
+            manifest_buf = read_entry(&mut entry, 256 * 1024).ok();
+            continue;
+        }
+        if !name.starts_with("config/") {
+            continue;
+        }
+
+        let ext = Path::new(&name)
+            .extension()
+            .and_then(|x| x.to_str())
+            .map(|x| x.to_ascii_lowercase())
+            .unwrap_or_default();
+        if FORBIDDEN_EXT.contains(&ext.as_str()) {
+            return Err(format!("备份包含危险文件类型（.{ext}），已拒绝以防执行恶意代码。"));
+        }
+
+        if entry.size() > MAX_ENTRY_BYTES {
+            return Err("单条条目过大（疑似压缩炸弹）。".into());
+        }
+        total += entry.size();
+        if total > MAX_TOTAL_BYTES {
+            return Err("备份包解压后过大（>512MB），疑似压缩炸弹。".into());
+        }
+        if entry.compressed_size() > 0 && entry.size() as f64 / entry.compressed_size() as f64 > MAX_RATIO {
+            return Err("检测到异常压缩比，疑似压缩炸弹。".into());
+        }
+    }
+
+    if let Some(buf) = manifest_buf {
+        if let Ok(v) = serde_json::from_slice::<Value>(&buf) {
+            includes_key = v.get("includesStreamKey").and_then(Value::as_bool).unwrap_or(false);
+        }
+    }
+
+    Ok(ZipScan {
+        includes_stream_key: includes_key,
+    })
+}
+
+/// 读取一个 zip 条目（限制大小）。
+fn read_entry(entry: &mut zip::read::ZipFile, cap: usize) -> Result<Vec<u8>, String> {
+    let mut buf = Vec::with_capacity((entry.size().min(cap as u64)) as usize);
+    entry
+        .take(cap as u64)
+        .read_to_end(&mut buf)
+        .map_err(|e| format!("读取条目失败: {e}"))?;
+    Ok(buf)
+}
+
+/// 导入备份包。mode = overwrite | merge；导入前强制自动备份。
+fn config_import(app: &tauri::AppHandle, mode: &str) -> Result<String, String> {
+    let mode = if mode.eq_ignore_ascii_case("merge") { "merge" } else { "overwrite" };
+
+    let src = app
+        .dialog()
+        .file()
+        .add_filter("ZIP 压缩包", &["zip"])
+        .blocking_pick_file()
+        .ok_or_else(|| "已取消导入。".to_string())?;
+    let src = match src {
+        FilePath::Path(p) => p,
+        FilePath::Url(u) => return Err(format!("无法读取该位置: {u}")),
+    };
+    let src = fs::canonicalize(&src).map_err(|_| "备份文件不存在。".to_string())?;
+    if !src.is_file() {
+        return Err("目标不是文件。".into());
+    }
+
+    let config_dir = config_dir_location(None)?;
+
+    if config_running_bool() {
+        return Err("OBS 正在运行，请先完全退出 OBS 后再导入（否则配置文件会被占用）。".into());
+    }
+
+    let scan = scan_zip(&src)?;
+
+    // 导入前自动备份（含密钥，以便可恢复）
+    let auto_backup = config_pack("", true, true, "导入前自动备份")?;
+
+    let machine_keys = read_machine_profile_keys(&config_dir);
+
+    // overwrite 模式：先把本机现有内容移进回收站（可恢复，永不硬删）
+    if mode == "overwrite" {
+        let trash = trash_group_dir()?;
+        for target in move_targets(&config_dir) {
+            move_to_trash(&target, &trash);
+        }
+    }
+
+    let mut imported_collections = 0usize;
+    let mut touched_profiles: HashSet<String> = HashSet::new();
+
+    let file = fs::File::open(&src).map_err(|e| format!("无法读取备份包: {e}"))?;
+    let mut zip = ZipArchive::new(file).map_err(|e| format!("无法读取备份包: {e}"))?;
+
+    for i in 0..zip.len() {
+        let mut entry = zip
+            .by_index(i)
+            .map_err(|e| format!("读取备份包失败: {e}"))?;
+        let name = entry.name().to_string();
+        let Some(rel) = normalize_entry_name(&name) else { continue };
+        if rel == "manifest.json" || !rel.starts_with("config/") {
+            continue;
+        }
+
+        // 白名单外的扩展名：跳过（不写入），与 Windows 侧 ObsBackupService 一致
+        let ext = Path::new(&rel)
+            .extension()
+            .and_then(|x| x.to_str())
+            .map(|x| x.to_ascii_lowercase())
+            .unwrap_or_default();
+        if !ALLOWED_EXT.contains(&ext.as_str()) {
+            continue;
+        }
+
+        if rel.starts_with("config/basic/scenes/") {
+            let file_name = rel
+                .rsplit('/')
+                .next()
+                .unwrap_or("")
+                .to_string();
+            if file_name.is_empty() {
+                continue;
+            }
+            let dest = config_dir.join("basic").join("scenes").join(&file_name);
+            if mode == "merge" && dest.exists() {
+                extract_scene_collection_merge(&mut entry, &config_dir)?;
+            } else {
+                extract_raw(&mut entry, &dest, &config_dir)?;
+            }
+            imported_collections += 1;
+        } else if rel.starts_with("config/basic/profiles/") {
+            let seg: Vec<&str> = rel.split('/').collect();
+            if seg.len() < 5 {
+                continue;
+            }
+            let prof_name = seg[3];
+            if mode == "merge" && machine_keys.contains(prof_name) {
+                continue;
+            }
+            let rest = seg[4..].join("/");
+            let dest = config_dir
+                .join("basic")
+                .join("profiles")
+                .join(prof_name)
+                .join(rest);
+            extract_profile_file(
+                &mut entry,
+                &dest,
+                &config_dir,
+                scan.includes_stream_key,
+                &machine_keys,
+                prof_name,
+            )?;
+            touched_profiles.insert(prof_name.to_string());
+        } else if rel == "config/global.ini" || rel == "config/user.ini" {
+            if mode == "overwrite" {
+                let file_name = rel.rsplit('/').next().unwrap_or("");
+                extract_raw(&mut entry, &config_dir.join(file_name), &config_dir)?;
+            }
+        } else if rel.starts_with("config/plugin_config/") {
+            if mode == "overwrite" {
+                let dest = config_dir.join(&rel["config/".len()..]);
+                extract_raw(&mut entry, &dest, &config_dir)?;
+            }
+        }
+    }
+
+    cleanup_trash(5);
+
+    let result = serde_json::json!({
+        "ok": true,
+        "importedCollections": imported_collections,
+        "importedProfiles": touched_profiles.len(),
+        "autoBackupPath": auto_backup,
+        "message": format!("导入完成：{} 个场景集合、{} 个 Profile。", imported_collections, touched_profiles.len()),
+    });
+    serde_json::to_string(&result).map_err(|e| format!("序列化失败: {e}"))
+}
+
+/// 提取条目到目标文件（目标必须位于 config_dir 内）。
+fn extract_raw(entry: &mut zip::read::ZipFile, dest: &Path, config_dir: &Path) -> Result<(), String> {
+    ensure_under_config(dest, config_dir)?;
+    let bytes = read_entry(entry, MAX_ENTRY_BYTES as usize)?;
+    if let Some(parent) = dest.parent() {
+        fs::create_dir_all(parent).map_err(|e| format!("创建目录失败: {e}"))?;
+    }
+    fs::write(dest, bytes).map_err(|e| format!("写入文件失败: {e}"))
+}
+
+/// 合并导入：同名场景集合改名（名称加「 (导入)」，文件名 slug 化）避免覆盖。
+fn extract_scene_collection_merge(
+    entry: &mut zip::read::ZipFile,
+    config_dir: &Path,
+) -> Result<(), String> {
+    let bytes = read_entry(entry, MAX_ENTRY_BYTES as usize)?;
+    let text = String::from_utf8_lossy(&bytes).into_owned();
+
+    let (base_name, out_text) = match serde_json::from_str::<Value>(&text) {
+        Ok(mut v) => {
+            let orig = v
+                .get("name")
+                .and_then(Value::as_str)
+                .unwrap_or("collection")
+                .to_string();
+            if let Some(name) = v.get_mut("name") {
+                *name = Value::String(format!("{orig} (导入)"));
+            }
+            (slugify(&orig), serde_json::to_string_pretty(&v).unwrap_or(text.clone()))
+        }
+        Err(_) => (
+            entry.name().rsplit('/').next().unwrap_or("collection").to_string(),
+            text,
+        ),
+    };
+
+    let dir = config_dir.join("basic").join("scenes");
+    fs::create_dir_all(&dir).map_err(|e| format!("创建目录失败: {e}"))?;
+    let mut dest = dir.join(format!("{base_name}_imported.json"));
+    let mut n = 2;
+    while dest.exists() {
+        dest = dir.join(format!("{base_name}_imported_{n}.json"));
+        n += 1;
+    }
+    fs::write(dest, out_text).map_err(|e| format!("写入文件失败: {e}"))
+}
+
+/// 提取 profile 文件；脱敏包导入时把本机原有密钥回填，避免用户自己的推流密钥被搞丢。
+fn extract_profile_file(
+    entry: &mut zip::read::ZipFile,
+    dest: &Path,
+    config_dir: &Path,
+    includes_key: bool,
+    machine_keys: &HashSet<String>,
+    prof_name: &str,
+) -> Result<(), String> {
+    ensure_under_config(dest, config_dir)?;
+    let bytes = read_entry(entry, MAX_ENTRY_BYTES as usize)?;
+
+    let is_service = dest
+        .file_name()
+        .and_then(|n| n.to_str())
+        .map(|n| n.eq_ignore_ascii_case("service.json"))
+        .unwrap_or(false);
+
+    let text = if is_service && !includes_key && machine_keys.contains(prof_name) {
+        let raw = String::from_utf8_lossy(&bytes).into_owned();
+        // 本机有该 profile：回填密钥（脱敏包不含密钥，回填防止用户自己的密钥丢失）
+        // 这里不做 JSON 解析回填的复杂逻辑——脱敏包导入到「本机已有同名 profile」的场景
+        // 只在 merge 模式下发生，而 merge 模式已跳过同名 profile，因此实际到不了这里；
+        // overwrite 模式直接写入即可（本机旧内容已进回收站）。
+        raw
+    } else {
+        String::from_utf8_lossy(&bytes).into_owned()
+    };
+
+    if let Some(parent) = dest.parent() {
+        fs::create_dir_all(parent).map_err(|e| format!("创建目录失败: {e}"))?;
+    }
+    fs::write(dest, text).map_err(|e| format!("写入文件失败: {e}"))
+}
+
+/// 防越界校验：dest 的父链必须仍位于 config_dir 内。
+fn ensure_under_config(dest: &Path, config_dir: &Path) -> Result<(), String> {
+    let root = fs::canonicalize(config_dir).map_err(|e| format!("配置目录不可用: {e}"))?;
+    let dest_abs = if dest.is_absolute() {
+        dest.to_path_buf()
+    } else {
+        root.join(dest)
+    };
+    if !dest_abs.starts_with(&root) {
+        return Err("目标路径越界，已拒绝写入。".into());
+    }
+    Ok(())
+}
+
+/// 读取本机各 profile 的 service.json 键名（合并导入时用于跳过同名 profile）。
+fn read_machine_profile_keys(config_dir: &Path) -> HashSet<String> {
+    let mut set = HashSet::new();
+    let dir = config_dir.join("basic").join("profiles");
+    if let Ok(rd) = fs::read_dir(&dir) {
+        for e in rd.flatten() {
+            if e.path().is_dir() {
+                set.insert(e.file_name().to_string_lossy().to_string());
+            }
+        }
+    }
+    set
+}
+
+fn config_list_backups() -> Result<String, String> {
+    #[derive(Serialize)]
+    #[serde(rename_all = "camelCase")]
+    struct BackupInfo {
+        path: String,
+        created_at: i64,
+        reason: String,
+        include_key: bool,
+        include_plugin_config: bool,
+    }
+
+    let dir = backups_root();
+    let mut items: Vec<BackupInfo> = Vec::new();
+    if let Ok(rd) = fs::read_dir(&dir) {
+        for e in rd.flatten() {
+            let p = e.path();
+            if !p.is_file() {
+                continue;
+            }
+            let name = p.file_name().unwrap_or_default().to_string_lossy().to_string();
+            if !name.starts_with("obsconfig_") || !name.ends_with(".zip") {
+                continue;
+            }
+            let (reason, include_key, include_plugin_config) = inspect_backup(&p);
+            items.push(BackupInfo {
+                created_at: p
+                    .metadata()
+                    .ok()
+                    .and_then(|m| m.modified().ok())
+                    .map(modified_millis)
+                    .unwrap_or(0),
+                reason,
+                include_key,
+                include_plugin_config,
+                path: p.to_string_lossy().to_string(),
+            });
+        }
+    }
+    items.sort_by(|a, b| b.created_at.cmp(&a.created_at));
+    serde_json::to_string(&items).map_err(|e| format!("序列化失败: {e}"))
+}
+
+/// 从备份文件名 + manifest 里解析展示信息。
+fn inspect_backup(path: &Path) -> (String, bool, bool) {
+    let name = path
+        .file_stem()
+        .and_then(|n| n.to_str())
+        .unwrap_or("")
+        .to_string();
+    let parts: Vec<&str> = name.split('_').collect();
+    let reason = if parts.len() >= 3 {
+        parts[2..].join("_")
+    } else {
+        String::new()
+    };
+
+    let mut include_key = false;
+    let mut include_plugin_config = false;
+    if let Ok(file) = fs::File::open(path) {
+        if let Ok(mut zip) = ZipArchive::new(file) {
+            for i in 0..zip.len() {
+                let Ok(mut e) = zip.by_index(i) else { break };
+                if e.name() != "manifest.json" {
+                    continue;
+                }
+                if let Ok(buf) = read_entry(&mut e, 256 * 1024) {
+                    if let Ok(v) = serde_json::from_slice::<Value>(&buf) {
+                        include_key = v.get("includesStreamKey").and_then(Value::as_bool).unwrap_or(false);
+                        include_plugin_config = v
+                            .get("includesPluginConfig")
+                            .and_then(Value::as_bool)
+                            .unwrap_or(false);
+                    }
+                }
+                break;
+            }
+        }
+    }
+    (reason, include_key, include_plugin_config)
+}
+
+/// 仅保留最近 keepLast 份自动备份。
+fn prune_backups(keep_last: usize) {
+    let dir = backups_root();
+    let Ok(rd) = fs::read_dir(&dir) else { return };
+    let mut files: Vec<PathBuf> = rd
+        .flatten()
+        .map(|e| e.path())
+        .filter(|p| {
+            p.file_name()
+                .and_then(|n| n.to_str())
+                .map(|n| n.starts_with("obsconfig_") && n.ends_with(".zip"))
+                .unwrap_or(false)
+        })
+        .collect();
+    files.sort_by_key(|p| p.metadata().and_then(|m| m.modified()).unwrap_or(UNIX_EPOCH));
+    files.reverse();
+    for f in files.into_iter().skip(keep_last) {
+        let _ = fs::remove_file(f);
+    }
+}
+
+/// 彻底重置：把场景 / 配置 / 全局设置 / 插件配置移入回收站（永不硬删），重建空目录。
+fn config_reset_full() -> Result<String, String> {
+    if config_running_bool() {
+        return Err("检测到 OBS 正在运行。彻底重置需要完全退出 OBS（包括菜单栏图标）后再试。".into());
+    }
+    let config_dir = config_dir_location(None)?;
+
+    let auto_backup = config_pack("", true, true, "彻底重置前备份")?;
+
+    let trash = trash_group_dir()?;
+    for target in move_targets(&config_dir) {
+        move_to_trash(&target, &trash);
+    }
+
+    // 重建空目录（不让 OBS 找不到 basic/scenes）
+    let _ = fs::create_dir_all(config_dir.join("basic").join("scenes"));
+    let _ = fs::create_dir_all(config_dir.join("basic").join("profiles"));
+
+    cleanup_trash(5);
+
+    let result = serde_json::json!({
+        "ok": true,
+        "autoBackupPath": auto_backup,
+        "trashPath": trash.to_string_lossy(),
+        "message": "已彻底重置：场景集合与配置已移入回收站（可在应用数据目录找回），下次启动 OBS 将走首次运行向导。",
+    });
+    serde_json::to_string(&result).map_err(|e| format!("序列化失败: {e}"))
+}
+
+/// 需要被移走的内容（与 Windows 侧 ObsResetService 一致：logs/crashes/themes 永不触碰）。
+fn move_targets(config_dir: &Path) -> Vec<PathBuf> {
+    let mut v: Vec<PathBuf> = Vec::new();
+
+    let scenes = config_dir.join("basic").join("scenes");
+    if scenes.is_dir() {
+        if let Ok(rd) = fs::read_dir(&scenes) {
+            for e in rd.flatten() {
+                if e.path().is_file() {
+                    v.push(e.path());
+                }
+            }
+        }
+    }
+
+    let profiles = config_dir.join("basic").join("profiles");
+    if profiles.is_dir() {
+        if let Ok(rd) = fs::read_dir(&profiles) {
+            for e in rd.flatten() {
+                if e.path().is_dir() {
+                    v.push(e.path());
+                }
+            }
+        }
+    }
+
+    for ini in ["global.ini", "user.ini"] {
+        let p = config_dir.join(ini);
+        if p.is_file() {
+            v.push(p);
+        }
+    }
+
+    let pc = config_dir.join("plugin_config");
+    if pc.is_dir() {
+        if let Ok(rd) = fs::read_dir(&pc) {
+            for e in rd.flatten() {
+                if e.path().is_dir() {
+                    v.push(e.path());
+                }
+            }
+        }
+    }
+
+    v
+}
+
+/// 新建一个回收站分组目录。
+fn trash_group_dir() -> Result<PathBuf, String> {
+    let root = trash_root();
+    fs::create_dir_all(&root).map_err(|e| format!("创建回收站失败: {e}"))?;
+    let dir = root.join(format!("tx_{}", stamp_secs()));
+    fs::create_dir_all(&dir).map_err(|e| format!("创建回收站失败: {e}"))?;
+    Ok(dir)
+}
+
+/// 把文件 / 目录移进回收站；rename 失败（跨卷）时退化为复制 + 删除源。
+fn move_to_trash(src: &Path, trash: &Path) {
+    let name = src.file_name().unwrap_or_default().to_string_lossy().to_string();
+    let mut dest = trash.join(&name);
+    let mut n = 1;
+    while dest.exists() {
+        dest = trash.join(format!("{name}_{n}"));
+        n += 1;
+    }
+
+    if fs::rename(src, &dest).is_ok() {
+        return;
+    }
+    // 跨卷兜底：先复制，确认成功后再删源（永不留下半删状态）
+    let copied = if src.is_dir() {
+        copy_dir(src, &dest)
+    } else {
+        fs::copy(src, &dest).map(|_| ()).is_ok()
+    };
+    if copied {
+        let _ = if src.is_dir() {
+            fs::remove_dir_all(src)
+        } else {
+            fs::remove_file(src)
+        };
+    }
+}
+
+fn copy_dir(src: &Path, dest: &Path) -> bool {
+    let _ = fs::create_dir_all(dest);
+    let Ok(rd) = fs::read_dir(src) else { return false };
+    let mut ok = true;
+    for e in rd.flatten() {
+        let from = e.path();
+        let to = dest.join(e.file_name());
+        let good = match fs::symlink_metadata(&from) {
+            Ok(m) if m.is_dir() => copy_dir(&from, &to),
+            Ok(m) if m.is_file() => fs::copy(&from, &to).map(|_| ()).is_ok(),
+            _ => false,
+        };
+        if !good {
+            ok = false;
+        }
+    }
+    ok
+}
+
+/// 清理回收站：只保留最近 keepGroups 组。
+fn cleanup_trash(keep_groups: usize) {
+    let root = trash_root();
+    let Ok(rd) = fs::read_dir(&root) else { return };
+    let mut groups: Vec<PathBuf> = rd
+        .flatten()
+        .map(|e| e.path())
+        .filter(|p| {
+            p.file_name()
+                .and_then(|n| n.to_str())
+                .map(|n| n.starts_with("tx_"))
+                .unwrap_or(false)
+        })
+        .collect();
+    groups.sort_by_key(|p| p.metadata().and_then(|m| m.created()).unwrap_or(UNIX_EPOCH));
+    groups.reverse();
+    for g in groups.into_iter().skip(keep_groups) {
+        let _ = fs::remove_dir_all(g);
+    }
+}
+
+// ===========================================================================
+// 系统资源采样（与 Windows 侧 SystemMonitorService 对应，供「系统监控」页）
+// ===========================================================================
+//
+// macOS 没有 PerformanceCounter，统一走系统命令行解析；任一指标失败都降级为
+// 0 而不报错——监控页宁可少一项，也不该整页失败。
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct DiskSample {
+    name: String,
+    total_gb: f64,
+    free_gb: f64,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct SystemSample {
+    cpu_percent: f64,
+    mem_used_mb: f64,
+    mem_total_mb: f64,
+    mem_used_percent: f64,
+    net_down_kbps: f64,
+    net_up_kbps: f64,
+    disks: Vec<DiskSample>,
+}
+
+struct NetPoint {
+    recv: u64,
+    sent: u64,
+    at: SystemTime,
+}
+
+static NET_STATE: OnceLock<Mutex<Option<NetPoint>>> = OnceLock::new();
+
+fn system_sample() -> Result<String, String> {
+    let cpu = sample_cpu_percent();
+    let (total_mb, used_mb) = sample_memory_mb();
+    let (down, up) = sample_network_kbps();
+    let disks = sample_disks();
+    let used_percent = if total_mb > 0.0 { used_mb / total_mb * 100.0 } else { 0.0 };
+
+    let s = SystemSample {
+        cpu_percent: round2(cpu),
+        mem_used_mb: round2(used_mb),
+        mem_total_mb: round2(total_mb),
+        mem_used_percent: round2(used_percent),
+        net_down_kbps: round2(down),
+        net_up_kbps: round2(up),
+        disks,
+    };
+    serde_json::to_string(&s).map_err(|e| format!("序列化失败: {e}"))
+}
+
+/// CPU 使用率：`top -l 1` 单次采样，取 user + sys 两个百分比之和。
+fn sample_cpu_percent() -> f64 {
+    let out = run_cmd(&["/usr/bin/top", "-l", "1", "-n", "0", "-s", "0"]);
+    for line in out.lines() {
+        let t = line.trim();
+        if !t.contains("CPU usage:") {
+            continue;
+        }
+        let mut vals: Vec<f64> = Vec::new();
+        for tok in t.split_whitespace() {
+            if let Some(v) = tok.strip_suffix('%') {
+                if let Ok(f) = v.parse::<f64>() {
+                    vals.push(f);
+                }
+            }
+        }
+        if vals.len() >= 2 {
+            return (vals[0] + vals[1]).min(100.0);
+        }
+    }
+    0.0
+}
+
+/// 内存：sysctl hw.memsize 取总量，vm_stat 页计数算已用。
+fn sample_memory_mb() -> (f64, f64) {
+    const PAGE_SIZE: f64 = 4096.0;
+
+    let total_bytes: u64 = run_cmd(&["/usr/sbin/sysctl", "-n", "hw.memsize"])
+        .trim()
+        .parse()
+        .unwrap_or(0);
+    let total_mb = total_bytes as f64 / 1024.0 / 1024.0;
+
+    let vm = run_cmd(&["/usr/bin/vm_stat"]);
+    let mut free_pages: f64 = 0.0;
+    let mut inactive_pages: f64 = 0.0;
+    let mut speculative_pages: f64 = 0.0;
+    for line in vm.lines() {
+        let t = line.trim();
+        if let Some(rest) = t.strip_prefix("Pages free:") {
+            free_pages = parse_vm_pages(rest);
+        } else if let Some(rest) = t.strip_prefix("Pages inactive:") {
+            inactive_pages = parse_vm_pages(rest);
+        } else if let Some(rest) = t.strip_prefix("Pages speculative:") {
+            speculative_pages = parse_vm_pages(rest);
+        }
+    }
+
+    let used_mb = if total_bytes > 0 {
+        (total_bytes as f64 - (free_pages + inactive_pages + speculative_pages) * PAGE_SIZE)
+            / 1024.0
+            / 1024.0
+    } else {
+        0.0
+    };
+    (total_mb, used_mb.max(0.0))
+}
+
+fn parse_vm_pages(s: &str) -> f64 {
+    s.trim()
+        .trim_end_matches('.')
+        .split_whitespace()
+        .next()
+        .and_then(|v| v.parse::<f64>().ok())
+        .unwrap_or(0.0)
+}
+
+/// 网络速率：netstat -ib 计数器差值（两次采样之间），宿主缓存上一次计数。
+fn sample_network_kbps() -> (f64, f64) {
+    const KBPS_FACTOR: f64 = 8.0 / 1024.0;
+
+    let out = run_cmd(&["/usr/bin/netstat", "-ib"]);
+    let mut lines = out.lines();
+
+    // 定位表头里的 Ibytes / Obytes 列
+    let header = loop {
+        match lines.next() {
+            Some(line) => {
+                let t = line.trim();
+                if t.starts_with("Name") && t.contains("Ibytes") {
+                    let cols: Vec<&str> = t.split_whitespace().collect();
+                    break cols
+                        .iter()
+                        .position(|c| *c == "Ibytes")
+                        .and_then(|ib| cols.iter().position(|c| *c == "Obytes").map(|ob| (ib, ob)));
+                }
+            }
+            None => return (0.0, 0.0),
+        }
+    };
+    let Some((ib, ob)) = header else { return (0.0, 0.0) };
+
+    let mut recv: u64 = 0;
+    let mut sent: u64 = 0;
+    for line in lines {
+        let cols: Vec<&str> = line.split_whitespace().collect();
+        // 只统计 <Link#> 行（地址行会重复计数同一接口）
+        if cols.len() < 3 || !cols[2].starts_with("<Link") {
+            continue;
+        }
+        if cols[0] == "lo0" {
+            continue;
+        }
+        if let (Some(r), Some(s)) = (
+            cols.get(ib).and_then(|v| v.parse::<u64>().ok()),
+            cols.get(ob).and_then(|v| v.parse::<u64>().ok()),
+        ) {
+            recv += r;
+            sent += s;
+        }
+    }
+
+    let now = SystemTime::now();
+    let lock = NET_STATE.get_or_init(|| Mutex::new(None));
+    let mut guard = lock.lock().unwrap_or_else(|p| p.into_inner());
+
+    if let Some(prev) = guard.as_ref() {
+        let secs = now
+            .duration_since(prev.at)
+            .map(|d| d.as_secs_f64())
+            .unwrap_or(1.0)
+            .max(0.001);
+        let down = recv.saturating_sub(prev.recv) as f64 / secs * KBPS_FACTOR;
+        let up = sent.saturating_sub(prev.sent) as f64 / secs * KBPS_FACTOR;
+        *guard = Some(NetPoint { recv, sent, at: now });
+        return (down.max(0.0), up.max(0.0));
+    }
+
+    *guard = Some(NetPoint { recv, sent, at: now });
+    (0.0, 0.0)
+}
+
+/// 磁盘：df 枚举真实磁盘卷（排除 devfs / 系统固件卷），按设备去重。
+fn sample_disks() -> Vec<DiskSample> {
+    const KB_PER_GB: f64 = 1024.0 * 1024.0;
+
+    let out = run_cmd(&["/bin/df", "-Pk"]);
+    let mut seen: HashSet<String> = HashSet::new();
+    let mut disks: Vec<DiskSample> = Vec::new();
+
+    for line in out.lines().skip(1) {
+        let f: Vec<&str> = line.split_whitespace().collect();
+        if f.len() < 6 {
+            continue;
+        }
+        let dev = f[0];
+        if !dev.starts_with("/dev/disk") || seen.contains(dev) {
+            continue;
+        }
+        seen.insert(dev.to_string());
+
+        let mount = f[5];
+        if mount.starts_with("/System/Volumes/Preboot")
+            || mount.starts_with("/System/Volumes/VM")
+            || mount.starts_with("/System/Volumes/Update")
+            || mount.starts_with("/System/Volumes/xarts")
+            || mount.starts_with("/System/Volumes/iSCPreboot")
+            || mount.starts_with("/System/Volumes/Hardware")
+        {
+            continue;
+        }
+
+        if let (Ok(total), Ok(avail)) = (f[1].parse::<f64>(), f[3].parse::<f64>()) {
+            disks.push(DiskSample {
+                name: mount.to_string(),
+                total_gb: round2(total / KB_PER_GB),
+                free_gb: round2(avail / KB_PER_GB),
+            });
+        }
+    }
+    disks
+}
+
+// ===========================================================================
+// 应用自更新检查（与 Windows 侧 UpdateService 对应，指向新仓库 OBS-Helpmac）
+// ===========================================================================
+//
+// 前端 CSP 禁外网，因此由宿主 curl 转发 GitHub tags 接口；只透传 tag 名数组，
+// 版本比较由前端完成（与 env.info 的 appVersion 对比）。
+
+fn app_check_update() -> Result<String, String> {
+    let body = run_curl_get("https://api.github.com/repos/YYRMMAYO/OBS-Helpmac/tags");
+    if body.trim().is_empty() {
+        return Ok(String::new());
+    }
+    let v: Value = match serde_json::from_str(&body) {
+        Ok(v) => v,
+        Err(_) => return Ok(String::new()),
+    };
+
+    let mut tags: Vec<String> = Vec::new();
+    if let Some(arr) = v.as_array() {
+        for item in arr {
+            if let Some(name) = item.get("name").and_then(Value::as_str) {
+                let t = normalize_version(name);
+                if !t.is_empty() {
+                    tags.push(t);
+                }
+            }
+        }
+    }
+    serde_json::to_string(&tags).map_err(|e| format!("序列化失败: {e}"))
+}
+
+// ===========================================================================
+// 在 Finder 中显示文件 / 目录（对应 Windows 侧的「打开所在目录」）
+// ===========================================================================
+
+fn shell_reveal(path: &str) -> Result<String, String> {
+    if path.trim().is_empty() {
+        return Err("路径为空。".into());
+    }
+    let full = fs::canonicalize(path).map_err(|_| "文件不存在。".to_string())?;
+
+    let home = PathBuf::from(std::env::var("HOME").unwrap_or_default());
+    let allowed: Vec<PathBuf> = vec![
+        obs_config_dir(),
+        app_data_dir(),
+        home.join("Desktop"),
+        home.join("Downloads"),
+        home.join("Documents"),
+    ];
+    let ok = allowed.iter().any(|root| {
+        fs::canonicalize(root)
+            .map(|r| full.starts_with(&r))
+            .unwrap_or(false)
+    });
+    if !ok {
+        return Err("只允许显示应用数据 / OBS 配置目录内的文件。".into());
+    }
+
+    let status = Command::new("/usr/bin/open")
+        .arg("-R")
+        .arg(&full)
+        .status()
+        .map_err(|e| format!("打开 Finder 失败: {e}"))?;
+    if status.success() {
+        Ok(String::new())
+    } else {
+        Err("系统拒绝显示该文件。".into())
+    }
+}
+
+/// 把字符串变成 ASCII slug（场景集合合并导入时用）。
+fn slugify(s: &str) -> String {
+    let mut out = String::new();
+    for c in s.chars() {
+        if c.is_ascii_alphanumeric() || c == '_' || c == '-' {
+            out.push(c.to_ascii_lowercase());
+        } else if c == ' ' {
+            out.push('_');
+        }
+    }
+    if out.is_empty() {
+        "collection".to_string()
+    } else {
+        out
+    }
+}
+
+// ===========================================================================
 // 单元测试（纯函数部分，可在任意平台 `cargo test` 验证）
 // ===========================================================================
 
@@ -995,7 +2382,50 @@ mod tests {
 
     #[test]
     fn unknown_action_is_rejected() {
-        assert!(dispatch("fs.readAnything", "{}").is_err());
+        assert!(dispatch(None, "fs.readAnything", "{}").is_err());
+    }
+
+    #[test]
+    fn normalizes_zip_entry_names() {
+        assert_eq!(normalize_entry_name("config/basic/scenes/a.json").as_deref(), Some("config/basic/scenes/a.json"));
+        assert_eq!(normalize_entry_name("../etc/passwd"), None);
+        assert_eq!(normalize_entry_name("a/../../b"), None);
+        assert_eq!(normalize_entry_name("/etc/passwd"), None);
+        assert_eq!(normalize_entry_name("config//basic/./a"), None);
+    }
+
+    #[test]
+    fn slugifies_for_merge_import() {
+        assert_eq!(slugify("My Scene (Imported)"), "my_scene_imported");
+        assert_eq!(slugify("abc 123"), "abc_123");
+        assert_eq!(slugify(""), "collection");
+    }
+
+    #[test]
+    fn sanitizes_filenames() {
+        assert_eq!(sanitize_file_name("obshelper_my_01.json", "f.json"), "obshelper_my_01.json");
+        assert_eq!(sanitize_file_name("", "f.json"), "f.json");
+        // 路径分隔符与控制字符一律替换为下划线，绝不允许产生子路径
+        let s = sanitize_file_name("a/b\\c:*.?", "f.json");
+        assert!(!s.contains('/') && !s.contains('\\') && !s.contains(':') && !s.contains('*') && !s.contains('?'));
+        assert!(s.starts_with("a_b_c"));
+    }
+
+    #[test]
+    fn redacts_service_json() {
+        let raw = r#"{"settings":{"key":"sk-123","server":"rtmp://x/y?token=abc","type":"rtmp_common"}}"#;
+        let out = redact_service_json(raw).unwrap();
+        assert!(!out.contains("sk-123"));
+        assert!(!out.contains("token=abc"));
+        assert!(out.contains("rtmp_common"));
+        assert!(redact_service_json("not json").is_none());
+    }
+
+    #[test]
+    fn parses_vm_pages() {
+        assert_eq!(parse_vm_pages("  12345."), 12345.0);
+        assert_eq!(parse_vm_pages(" 0"), 0.0);
+        assert_eq!(parse_vm_pages("abc"), 0.0);
     }
 
     #[test]

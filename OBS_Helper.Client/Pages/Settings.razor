@@ -95,8 +95,30 @@
     </section>
 
     <section class="block">
+        <h3>OBS 配置管理</h3>
+        <p class="muted small">备份 / 导出 / 导入 OBS 配置，轻度或彻底重置。所有写操作前都会自动备份，可回滚。</p>
+        <a class="btn btn-ghost" href="obsconfig" role="button">🗂️ 打开配置管理</a>
+    </section>
+
+    <section class="block">
+        <h3>检查更新</h3>
+        <p class="muted small">当前版本：<strong>@_appVersion</strong></p>
+        @if (!string.IsNullOrEmpty(_updateMessage))
+        {
+            <p class="muted small">@_updateMessage</p>
+        }
+        @if (_updateAvailable)
+        {
+            <a class="btn btn-accent" href="https://github.com/YYRMMAYO/OBS-Helpmac/releases" target="_blank" rel="noopener noreferrer" role="button">⬇️ 前往下载新版本</a>
+        }
+        <div class="template-actions" style="margin-top:8px">
+            <button class="btn btn-ghost small" type="button" disabled="@_checking" @onclick="CheckUpdate">检查更新</button>
+        </div>
+    </section>
+
+    <section class="block">
         <h3>关于</h3>
-        <p class="muted small">OBS 直播排障助手 · 版本 1.1.0</p>
+        <p class="muted small">OBS 直播排障助手 · 版本 <span>@_appVersion</span></p>
         <p class="muted small">离线优先的本地排障工具：UI 与数据随包发布，默认不发起任何网络请求。仅在「AI 诊断引擎」中手动开启云端大模型后，才会由桌面壳代发 HTTPS 请求，密钥经系统密钥库加密保存。</p>
         <p class="muted small">官方文档：<a href="https://obsproject.com/zh-cn/docs" target="_blank" rel="noopener noreferrer">obsproject.com/zh-cn/docs</a></p>
     </section>
@@ -109,6 +131,10 @@
     private string apiKeyValue = "";
     private bool savingKey;
     private string keyStatus = "";
+    private string _appVersion = "—";
+    private string? _updateMessage;
+    private bool _updateAvailable;
+    private bool _checking;
 
     protected override async Task OnInitializedAsync()
     {
@@ -117,6 +143,65 @@
         cloudUrl = AiSettings.Settings.CloudUrl;
         cloudKeyName = AiSettings.Settings.CloudSecretKeyName;
         cloudModel = AiSettings.Settings.CloudModel;
+        if (Host.IsAvailable)
+        {
+            var env = await Host.GetEnvironmentAsync();
+            if (!string.IsNullOrEmpty(env.AppVersion)) _appVersion = env.AppVersion;
+        }
+    }
+
+    private async Task CheckUpdate()
+    {
+        if (_checking) return;
+        _checking = true;
+        _updateMessage = null;
+        _updateAvailable = false;
+        try
+        {
+            var tags = await Host.CheckAppUpdateAsync();
+            if (tags is null || tags.Count == 0)
+            {
+                _updateMessage = "检查失败：网络不可达或尚未发布版本。";
+                return;
+            }
+            var current = ParseVersion(_appVersion);
+            var latest = tags
+                .Select(ParseVersion)
+                .Where(v => v is not null)
+                .Max();
+            if (latest is null || current is null)
+            {
+                _updateMessage = $"最新发布版本：{tags[0]}（当前版本解析失败，请手动核对）。";
+                return;
+            }
+            if (latest > current)
+            {
+                _updateAvailable = true;
+                _updateMessage = $"发现新版本 {latest}（当前 {current}）。";
+            }
+            else
+            {
+                _updateMessage = $"已是最新版本（{current}）。";
+            }
+        }
+        catch (Exception)
+        {
+            _updateMessage = "检查失败：宿主不可用。请在桌面客户端中操作。";
+        }
+        finally
+        {
+            _checking = false;
+        }
+    }
+
+    private static Version? ParseVersion(string v)
+    {
+        var m = System.Text.RegularExpressions.Regex.Match(v?.Trim() ?? "", @"^\s*[vV]?\s*(\d+)\.(\d+)(?:\.(\d+))?");
+        if (!m.Success) return null;
+        var major = int.Parse(m.Groups[1].Value);
+        var minor = int.Parse(m.Groups[2].Value);
+        var build = m.Groups[3].Success ? int.Parse(m.Groups[3].Value) : 0;
+        return new Version(major, minor, build);
     }
 
     private Task SetMode(DiagnosticEngineMode mode) => AiSettings.SetModeAsync(mode);

@@ -282,4 +282,239 @@ public sealed class HostBridge
             return false;
         }
     }
+
+    // ------------------------------------------------------------ 场景模板导出
+
+    /// <summary>把场景模板 JSON 导出到用户选择的位置（宿主弹原生保存对话框）。取消返回 null。</summary>
+    public async Task<string?> ExportTemplateAsync(string filename, string json)
+    {
+        try
+        {
+            var path = await InvokeAsync("template.export", new { filename, json });
+            return string.IsNullOrWhiteSpace(path) ? null : path;
+        }
+        catch (Exception)
+        {
+            return null;
+        }
+    }
+
+    // ------------------------------------------------------------ 配置管理
+
+    /// <summary>定位 OBS 配置目录；overridePath 非空时为手动指定。</summary>
+    public async Task<HostConfigLocation?> LocateObsConfigAsync(string? overridePath = null)
+    {
+        try
+        {
+            var json = await InvokeAsync("config.locate", new { @override = overridePath ?? "" });
+            return JsonSerializer.Deserialize<HostConfigLocation>(json, JsonOpts);
+        }
+        catch (Exception)
+        {
+            return null;
+        }
+    }
+
+    /// <summary>检测 OBS 是否正在运行（彻底重置 / 导入的前置条件）。</summary>
+    public async Task<bool> IsObsRunningAsync()
+    {
+        try
+        {
+            var json = await InvokeAsync("config.running");
+            using var doc = JsonDocument.Parse(json);
+            return doc.RootElement.TryGetProperty("running", out var v) && v.GetBoolean();
+        }
+        catch (Exception)
+        {
+            return false;
+        }
+    }
+
+    /// <summary>打包 OBS 配置为 zip。targetPath 为空时自动落到应用备份目录，返回实际路径。</summary>
+    public async Task<string?> PackObsConfigAsync(string targetPath, bool includeKey, bool includePluginConfig, string reason)
+    {
+        try
+        {
+            var path = await InvokeAsync("config.pack", new { targetPath, includeKey, includePluginConfig, reason });
+            return string.IsNullOrWhiteSpace(path) ? null : path;
+        }
+        catch (Exception)
+        {
+            return null;
+        }
+    }
+
+    /// <summary>导出 OBS 配置到用户选择的位置（宿主弹原生保存对话框）。取消返回 null。</summary>
+    public async Task<string?> ExportObsConfigAsync(bool includeKey, bool includePluginConfig)
+    {
+        try
+        {
+            var path = await InvokeAsync("config.export", new { includeKey, includePluginConfig });
+            return string.IsNullOrWhiteSpace(path) ? null : path;
+        }
+        catch (Exception)
+        {
+            return null;
+        }
+    }
+
+    /// <summary>从用户选择的 zip 导入 OBS 配置（宿主弹原生打开对话框）。mode = overwrite | merge。</summary>
+    public async Task<HostImportResult?> ImportObsConfigAsync(string mode)
+    {
+        try
+        {
+            var json = await InvokeAsync("config.import", new { mode });
+            return JsonSerializer.Deserialize<HostImportResult>(json, JsonOpts);
+        }
+        catch (Exception)
+        {
+            return null;
+        }
+    }
+
+    /// <summary>列出应用备份目录下的全部备份（按创建时间倒序）。</summary>
+    public async Task<List<HostBackupInfo>> ListObsBackupsAsync()
+    {
+        try
+        {
+            var json = await InvokeAsync("config.listBackups");
+            return JsonSerializer.Deserialize<List<HostBackupInfo>>(json, JsonOpts) ?? new();
+        }
+        catch (Exception)
+        {
+            return new();
+        }
+    }
+
+    /// <summary>彻底重置 OBS 配置（移入回收站，永不硬删）。</summary>
+    public async Task<HostResetResult?> ResetObsConfigFullAsync()
+    {
+        try
+        {
+            var json = await InvokeAsync("config.resetFull");
+            return JsonSerializer.Deserialize<HostResetResult>(json, JsonOpts);
+        }
+        catch (Exception)
+        {
+            return null;
+        }
+    }
+
+    // ------------------------------------------------------------ 系统资源采样
+
+    /// <summary>拉取一次系统资源采样（CPU / 内存 / 网络 / 磁盘）。</summary>
+    public async Task<HostSystemSample?> GetSystemSampleAsync()
+    {
+        try
+        {
+            var json = await InvokeAsync("system.sample");
+            return JsonSerializer.Deserialize<HostSystemSample>(json, JsonOpts);
+        }
+        catch (Exception)
+        {
+            return null;
+        }
+    }
+
+    // ------------------------------------------------------------ 应用更新检查
+
+    /// <summary>查询本应用（新仓库 OBS-Helpmac）的 GitHub tags；失败或离线返回 null。</summary>
+    public async Task<List<string>?> CheckAppUpdateAsync()
+    {
+        try
+        {
+            var json = await InvokeAsync("app.checkUpdate");
+            if (string.IsNullOrWhiteSpace(json)) return null;
+            return JsonSerializer.Deserialize<List<string>>(json, JsonOpts);
+        }
+        catch (Exception)
+        {
+            return null;
+        }
+    }
+
+    // ------------------------------------------------------------ Finder 显示
+
+    /// <summary>在 Finder 中显示指定文件 / 目录（仅限应用数据与 OBS 配置目录）。</summary>
+    public async Task<bool> RevealInFinderAsync(string path)
+    {
+        try
+        {
+            await InvokeAsync("shell.reveal", new { path });
+            return true;
+        }
+        catch (Exception)
+        {
+            return false;
+        }
+    }
+}
+
+/// <summary>OBS 配置目录定位结果。</summary>
+public sealed class HostConfigLocation
+{
+    public string ConfigDir { get; set; } = "";
+    public bool Exists { get; set; }
+    public bool Portable { get; set; }
+    public string Source { get; set; } = "";
+}
+
+/// <summary>备份目录里的一条备份记录。</summary>
+public sealed class HostBackupInfo
+{
+    public string Path { get; set; } = "";
+    /// <summary>创建时间（Unix 毫秒）。</summary>
+    public long CreatedAt { get; set; }
+    public string Reason { get; set; } = "";
+    public bool IncludeKey { get; set; }
+    public bool IncludePluginConfig { get; set; }
+
+    public DateTime CreatedAtLocal => CreatedAt <= 0
+        ? DateTime.MinValue
+        : DateTimeOffset.FromUnixTimeMilliseconds(CreatedAt).LocalDateTime;
+
+    public string CreatedAtText => CreatedAtLocal == DateTime.MinValue ? "—" : CreatedAtLocal.ToString("yyyy-MM-dd HH:mm");
+}
+
+/// <summary>配置导入结果。</summary>
+public sealed class HostImportResult
+{
+    public bool Ok { get; set; }
+    public int ImportedCollections { get; set; }
+    public int ImportedProfiles { get; set; }
+    public string? AutoBackupPath { get; set; }
+    public string? Message { get; set; }
+}
+
+/// <summary>彻底重置结果。</summary>
+public sealed class HostResetResult
+{
+    public bool Ok { get; set; }
+    public string? AutoBackupPath { get; set; }
+    public string? TrashPath { get; set; }
+    public string? Message { get; set; }
+}
+
+/// <summary>一次系统资源采样。</summary>
+public sealed class HostSystemSample
+{
+    public double CpuPercent { get; set; }
+    public double MemUsedMb { get; set; }
+    public double MemTotalMb { get; set; }
+    public double MemUsedPercent { get; set; }
+    public double NetDownKbps { get; set; }
+    public double NetUpKbps { get; set; }
+    public List<HostDiskSample> Disks { get; set; } = new();
+
+    /// <summary>剩余空间最小的一块盘（用于磁盘预警）。</summary>
+    public HostDiskSample? LowestDisk => Disks.Count == 0 ? null : Disks.OrderBy(d => d.FreeGb).First();
+}
+
+/// <summary>磁盘采样。</summary>
+public sealed class HostDiskSample
+{
+    public string Name { get; set; } = "";
+    public double TotalGb { get; set; }
+    public double FreeGb { get; set; }
+    public double FreePercent => TotalGb > 0 ? FreeGb / TotalGb * 100.0 : 0;
 }

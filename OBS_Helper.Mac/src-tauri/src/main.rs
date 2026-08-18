@@ -24,6 +24,7 @@ use tauri::WebviewUrl;
 
 fn main() {
     tauri::Builder::default()
+        .plugin(tauri_plugin_dialog::init())
         .invoke_handler(tauri::generate_handler![host::host_invoke])
         .setup(|app| {
             // 以编程方式创建窗口，并挂载导航白名单（替代 Tauri v1 的 set_navigation_handler）。

@@ -5,6 +5,7 @@ using OBS_Helper.Client.Services;
 using OBS_Helper.Client.Services.Ai;
 using OBS_Helper.Client.Services.Host;
 using OBS_Helper.Client.Services.Obs;
+using OBS_Helper.Client.Services.ObsConfig;
 
 var builder = WebAssemblyHostBuilder.CreateDefault(args);
 builder.RootComponents.Add<App>("#app");
@@ -43,5 +44,9 @@ builder.Services.AddSingleton<ObsToolRegistry>();
 builder.Services.AddSingleton<LocalDiagnosticEngine>();
 builder.Services.AddSingleton<CloudDiagnosticEngine>();
 builder.Services.AddSingleton<DiagnosticOrchestrator>();
+
+// —— 新增：场景模板 + OBS 配置管理（Windows 版功能同步） ——
+builder.Services.AddSingleton<SceneTemplateService>();
+builder.Services.AddSingleton<ObsConfigService>();
 
 await builder.Build().RunAsync();

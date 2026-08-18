@@ -571,3 +571,36 @@ body { font-size: 1rem; line-height: 1.6; }
 .md pre code { background: none; border: none; padding: 0; font-size: 13px; white-space: pre; }
 .md blockquote { margin: 12px 0; padding: 10px 14px; border-left: 4px solid var(--brand); background: var(--surface-2); border-radius: 0 var(--radius-sm) var(--radius-sm) 0; color: var(--muted); }
 .md hr { border: none; border-top: 1px solid var(--border); margin: 18px 0; }
+
+/* ============ 新增页面：场景模板 / 系统监控 / 配置管理 ============ */
+
+.page-head { margin-bottom: 14px; }
+.page-head h1 { margin: 0 0 4px; font-size: 22px; }
+.page-head p { margin: 0; }
+.page-head .back { display: inline-block; margin-top: 8px; }
+
+.template-card .template-head { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 8px; }
+.template-icon { font-size: 26px; line-height: 1.2; }
+.template-card h3 { margin: 0; }
+.template-canvas { margin: 6px 0; }
+.template-pills { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 8px; }
+.pill { background: var(--surface-2); border: 1px solid var(--border); color: var(--muted); border-radius: 999px; padding: 3px 10px; font-size: 12px; }
+.pill-warn { color: #b7791f; border-color: #e0a106; }
+.template-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+
+.status-bar { display: flex; align-items: center; gap: 8px; white-space: pre-line; }
+
+.chart-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; margin-bottom: 12px; }
+.chart-block h3 { margin-bottom: 6px; }
+.chart-svg { width: 100%; height: 44px; display: block; }
+
+.disk-row { display: flex; align-items: center; gap: 12px; padding: 6px 0; }
+.disk-name { flex: 0 0 110px; font-weight: 600; font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.disk-bar-track { flex: 1; height: 10px; background: var(--surface-2); border: 1px solid var(--border); border-radius: 999px; overflow: hidden; }
+.disk-bar { height: 100%; background: var(--brand); border-radius: 999px; transition: width .4s ease; }
+
+.backup-row { display: flex; align-items: center; gap: 8px; padding: 4px 0; }
+.manual-row { display: flex; gap: 8px; flex: 1; flex-wrap: wrap; }
+.manual-row .search-input { flex: 1; min-width: 220px; }
+.check-label { display: inline-flex; align-items: center; gap: 4px; font-size: 13px; color: var(--muted); }
+.backup-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }

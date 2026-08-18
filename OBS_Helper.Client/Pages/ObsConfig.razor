@@ -1,0 +1,317 @@
+@page "/obsconfig"
+@inject ObsConfigService Config
+@inject HostBridge Host
+@inject IJSRuntime JS
+@using OBS_Helper.Client.Services.ObsConfig
+@using OBS_Helper.Client.Services.Host
+
+<PageTitle>OBS 配置管理</PageTitle>
+
+<div class="page-head">
+    <h1>🗂️ OBS 配置管理</h1>
+    <p class="muted">备份 / 导出 / 导入 / 重置。所有写操作都会先自动备份，误操作可回滚；「彻底重置」永不硬删，旧文件进入回收站。</p>
+    <a class="back" href="settings">← 返回设置</a>
+</div>
+
+<section class="block">
+    <h3>配置目录</h3>
+    @if (_location is null)
+    {
+        <p class="muted">正在检测…</p>
+    }
+    else if (_location.Exists)
+    {
+        <p class="small"><strong>配置目录：</strong>@_location.ConfigDir</p>
+        <p class="muted small">标准安装版，配置位于 ~/Library/Application Support/obs-studio。</p>
+    }
+    else
+    {
+        <p class="warn-text">未找到 OBS 配置目录，请在下方手动指定（仅当 OBS 装在非标准位置时）。</p>
+    }
+
+    <div class="set-row">
+        <span class="set-label">手动指定目录</span>
+        <div class="manual-row">
+            <input class="search-input" @bind="_manualPath" placeholder="例如 /Users/you/Library/Application Support/obs-studio" />
+            <button class="btn btn-ghost small" type="button" @onclick="SaveManualPath">保存</button>
+            <button class="btn btn-ghost small" type="button" @onclick="Relocate">重新检测</button>
+        </div>
+    </div>
+</section>
+
+<section class="block">
+    <div class="block-head">
+        <h3>备份</h3>
+        <div class="backup-actions">
+            <label class="check-label">
+                <input type="checkbox" @bind="_includeKey" /> 含推流密钥
+            </label>
+            <button class="btn btn-ghost small" type="button" disabled="@_busy" @onclick="CreateBackup">创建备份</button>
+            <button class="btn btn-ghost small" type="button" disabled="@_busy" @onclick="ExportBackup">导出 ZIP…</button>
+        </div>
+    </div>
+
+    @if (_backups.Count == 0)
+    {
+        <p class="muted">暂无本地备份记录。</p>
+    }
+    else
+    {
+        <p class="muted small">共 @_backups.Count 条自动备份：</p>
+        @foreach (var b in _backups.Take(10))
+        {
+            <div class="backup-row">
+                <span class="muted small">@b.CreatedAtText — @(string.IsNullOrEmpty(b.Reason) ? "备份" : b.Reason)</span>
+                <span class="badge-pf">@(b.IncludeKey ? "含密钥" : "脱敏")</span>
+                @if (Host.IsAvailable)
+                {
+                    <button class="btn btn-ghost small" type="button" @onclick="() => RevealAsync(b.Path)">Finder 显示</button>
+                }
+            </div>
+        }
+        @if (_backups.Count > 10)
+        {
+            <p class="muted small">（还有 @(_backups.Count - 10) 条更早的备份）</p>
+        }
+    }
+</section>
+
+<section class="block">
+    <h3>导入</h3>
+    <p class="muted small">从备份 ZIP 恢复配置。导入前会自动创建当前配置的备份；OBS 需已退出。</p>
+    <div class="template-actions">
+        <button class="btn btn-accent small" type="button" disabled="@_busy" @onclick="ImportOverwrite">覆盖导入…</button>
+        <button class="btn btn-ghost small" type="button" disabled="@_busy" @onclick="ImportMerge">合并导入…</button>
+    </div>
+</section>
+
+<section class="block">
+    <h3>重置</h3>
+    <p class="muted small">轻度重置：不删任何旧数据，通过 obs-websocket 新建干净配置集合「初始设置 (OBS 助手)」并切过去（需已连接 OBS）。</p>
+    <div class="template-actions">
+        <button class="btn btn-ghost small" type="button" disabled="@_busy" @onclick="LightReset">轻度重置</button>
+    </div>
+    <p class="muted small" style="margin-top:12px">彻底重置：把场景 / 配置 / 插件设置移入回收站（可恢复），恢复 OBS 首次运行状态。需完全退出 OBS（包括菜单栏图标）。</p>
+    <div class="template-actions">
+        <button class="btn btn-danger small" type="button" disabled="@_busy" @onclick="FullReset">彻底重置…</button>
+    </div>
+</section>
+
+@if (!string.IsNullOrEmpty(_statusIcon))
+{
+    <div class="block warn-block status-bar">
+        <span aria-hidden="true">@_statusIcon</span>
+        <span>@_statusText</span>
+    </div>
+}
+
+@code {
+    private HostConfigLocation? _location;
+    private List<HostBackupInfo> _backups = new();
+    private string _manualPath = "";
+    private bool _includeKey = true;
+    private bool _busy;
+    private string? _statusIcon;
+    private string? _statusText;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await ReloadAsync();
+    }
+
+    private async Task ReloadAsync()
+    {
+        _location = await Config.LocateAsync();
+        _backups = await Config.ListBackupsAsync();
+        StateHasChanged();
+    }
+
+    private async Task Relocate()
+    {
+        _manualPath = "";
+        _location = await Config.LocateAsync();
+        ShowStatus("✅", "已重新检测 OBS 配置目录。");
+    }
+
+    private async Task SaveManualPath()
+    {
+        if (string.IsNullOrWhiteSpace(_manualPath))
+        {
+            ShowStatus("⚠️", "请输入配置目录路径。");
+            return;
+        }
+        _location = await Config.LocateAsync(_manualPath.Trim());
+        ShowStatus("✅", $"已手动指定配置目录：{_manualPath.Trim()}");
+    }
+
+    private async Task CreateBackup()
+    {
+        _busy = true;
+        try
+        {
+            var path = await Config.CreateBackupAsync("手动创建", _includeKey, true);
+            if (string.IsNullOrEmpty(path))
+                ShowStatus("❌", "备份失败：未找到本机 OBS 配置目录，或宿主不可用。");
+            else
+            {
+                ShowStatus("✅", $"备份已创建：{path}");
+                _backups = await Config.ListBackupsAsync();
+            }
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+
+    private async Task ExportBackup()
+    {
+        _busy = true;
+        try
+        {
+            var path = await Config.ExportAsync(_includeKey, true);
+            if (string.IsNullOrEmpty(path))
+                ShowStatus("ℹ️", "已取消导出，或宿主不可用。");
+            else
+                ShowStatus("✅", $"已导出到：{path}");
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+
+    private Task ImportOverwrite() => ImportAsync("overwrite");
+    private Task ImportMerge() => ImportAsync("merge");
+
+    private async Task ImportAsync(string mode)
+    {
+        if (!Host.IsAvailable)
+        {
+            ShowStatus("⚠️", "当前没有桌面宿主，无法导入。请在桌面客户端中操作。");
+            return;
+        }
+        var running = await Config.IsRunningAsync();
+        if (running)
+        {
+            ShowStatus("⚠️", "检测到 OBS 正在运行，请先完全退出 OBS（包括菜单栏图标）后再导入。");
+            return;
+        }
+
+        var label = mode == "merge" ? "合并" : "覆盖";
+        var confirmed = await JS.InvokeAsync<bool>("confirm", $"导入并{label}配置\n\n将用选中的备份 ZIP 以「{label}」模式导入 OBS 配置。导入前会自动创建当前配置的备份。\n\n确认继续？");
+        if (!confirmed) return;
+
+        _busy = true;
+        ShowStatus("⏳", "正在导入，请稍候…");
+        try
+        {
+            var result = await Config.ImportAsync(mode);
+            if (result is null)
+                ShowStatus("❌", "导入失败：宿主不可用或已取消。");
+            else if (result.Ok)
+            {
+                var msg = $"✅ {result.Message}";
+                if (!string.IsNullOrEmpty(result.AutoBackupPath))
+                    msg += $"\n\n导入前的自动备份：{result.AutoBackupPath}";
+                ShowStatus("✅", msg);
+            }
+            else
+                ShowStatus("❌", $"导入失败：{result.Message}");
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+
+    private async Task LightReset()
+    {
+        if (!Host.IsAvailable)
+        {
+            ShowStatus("⚠️", "当前没有桌面宿主，无法操作。请在桌面客户端中运行。");
+            return;
+        }
+        var confirmed = await JS.InvokeAsync<bool>("confirm",
+            "轻度重置\n\n将在 OBS 中新建一个名为「初始设置 (OBS 助手)」的干净配置集合，重置分辨率到 1920×1080@30，并切换过去。原有配置不会被删除。\n\n操作前会自动备份当前配置，确认继续？");
+        if (!confirmed) return;
+
+        _busy = true;
+        ShowStatus("⏳", "正在执行轻度重置…");
+        try
+        {
+            var (ok, message, autoBackup) = await Config.LightResetAsync(msg => { ShowStatus("⏳", msg); });
+            if (ok)
+            {
+                var full = "✅ " + message;
+                if (!string.IsNullOrEmpty(autoBackup)) full += $"\n\n自动备份：{autoBackup}";
+                ShowStatus("✅", full);
+            }
+            else
+            {
+                ShowStatus("❌", message);
+            }
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+
+    private async Task FullReset()
+    {
+        if (!Host.IsAvailable)
+        {
+            ShowStatus("⚠️", "当前没有桌面宿主，无法操作。请在桌面客户端中运行。");
+            return;
+        }
+        var running = await Config.IsRunningAsync();
+        if (running)
+        {
+            ShowStatus("⚠️", "检测到 OBS 正在运行。彻底重置需要完全退出 OBS（包括菜单栏图标）后再试。");
+            return;
+        }
+
+        var confirmed = await JS.InvokeAsync<bool>("confirm",
+            "⚠️ 彻底重置 OBS\n\n将删除当前所有场景、Profile、插件设置与 global.ini，恢复到第一次安装 OBS 时的空白状态。旧文件会移入回收站（可恢复），操作前会自动创建一份完整备份。\n\n确认继续？");
+        if (!confirmed) return;
+        var confirmed2 = await JS.InvokeAsync<bool>("confirm", "再次确认 — 彻底重置\n\n此操作不可撤销（备份除外）。\n\n真的要继续吗？");
+        if (!confirmed2) return;
+
+        _busy = true;
+        ShowStatus("⏳", "正在执行彻底重置…");
+        try
+        {
+            var result = await Config.ResetFullAsync();
+            if (result is null)
+                ShowStatus("❌", "重置失败：宿主不可用。");
+            else if (result.Ok)
+            {
+                var msg = $"✅ {result.Message}";
+                if (!string.IsNullOrEmpty(result.AutoBackupPath))
+                    msg += $"\n\n完整备份已保存至：{result.AutoBackupPath}";
+                ShowStatus("✅", msg);
+                _backups = await Config.ListBackupsAsync();
+            }
+            else
+                ShowStatus("❌", $"重置失败：{result.Message}");
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+
+    private async Task RevealAsync(string path)
+    {
+        var ok = await Host.RevealInFinderAsync(path);
+        if (!ok) ShowStatus("ℹ️", "无法在 Finder 中定位该文件，请按路径手动查找。");
+    }
+
+    private void ShowStatus(string icon, string text)
+    {
+        _statusIcon = icon;
+        _statusText = text;
+        StateHasChanged();
+    }
+}

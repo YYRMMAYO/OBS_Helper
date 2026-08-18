@@ -1,0 +1,204 @@
+@page "/template"
+@inject SceneTemplateService Templates
+@inject ObsConnectionService Obs
+@inject HostBridge Host
+@inject IJSRuntime JS
+@using OBS_Helper.Client.Models.ObsConfig
+@using OBS_Helper.Client.Services.ObsConfig
+@using OBS_Helper.Client.Services.Obs
+@using OBS_Helper.Client.Services.Host
+
+<PageTitle>场景模板</PageTitle>
+
+<div class="page-head">
+    <h1>🧩 场景模板</h1>
+    <p class="muted">6 套内置直播间模板。已连接 OBS 时可一键「落地」；未连接时可导出为标准场景集合 JSON，手动放入 OBS 场景目录。</p>
+</div>
+
+@if (_loading)
+{
+    <div class="empty">正在加载模板…</div>
+}
+else if (_templates.Count == 0)
+{
+    <div class="empty">@(_loadError ?? "没有可用的模板数据。")</div>
+}
+else
+{
+    @foreach (var t in _templates)
+    {
+        <section class="block template-card">
+            <div class="template-head">
+                <span class="template-icon" aria-hidden="true">@(string.IsNullOrEmpty(t.Icon) ? "🧩" : t.Icon)</span>
+                <div>
+                    <h3>@t.Title</h3>
+                    @if (!string.IsNullOrEmpty(t.Summary))
+                    {
+                        <p class="muted small">@t.Summary</p>
+                    }
+                </div>
+            </div>
+
+            <p class="muted small template-canvas">
+                画布 @t.Canvas.BaseWidth×@t.Canvas.BaseHeight → 输出 @t.Canvas.OutputWidth×@t.Canvas.OutputHeight · @t.Canvas.FpsNumerator FPS
+            </p>
+
+            <div class="template-pills">
+                <span class="pill">场景 ×@t.Scenes.Count</span>
+                <span class="pill">来源 ×@t.Scenes.Sum(s => s.Sources.Count)</span>
+                @{
+                    var placeholders = t.Scenes.Sum(s => s.Sources.Count(x => x.Placeholder is not null));
+                    if (placeholders > 0)
+                    {
+                        <span class="pill pill-warn">待补 ×@placeholders</span>
+                    }
+                }
+            </div>
+
+            @{
+                var hotkeys = t.Scenes.Where(s => !string.IsNullOrWhiteSpace(s.Hotkey)).Select(s => $"{s.Hotkey} {s.Name}").ToList();
+                var transitionInfo = $"{t.Transition} {t.TransitionDurationMs}ms";
+                if (hotkeys.Count > 0) transitionInfo += $" · 快捷键 {string.Join(" / ", hotkeys)}";
+            }
+            <p class="muted small">场景切换：@transitionInfo</p>
+
+            @if (t.Canvas.BaseWidth < t.Canvas.BaseHeight)
+            {
+                <p class="warn-text">⚠️ 竖屏模板：落地后请确认 OBS 视频设置已改为竖屏分辨率，否则画面将会拉伸变形。</p>
+            }
+
+            @if (!string.IsNullOrEmpty(t.Notes))
+            {
+                <p class="muted small">@t.Notes</p>
+            }
+
+            <div class="template-actions">
+                <button class="btn btn-accent small" type="button" disabled="@_busy" @onclick="() => ApplyAsync(t.Id, t.Title)">落地到 OBS</button>
+                <button class="btn btn-ghost small" type="button" disabled="@_busy" @onclick="() => ExportAsync(t.Id, t.Title)">导出场景集合 JSON</button>
+            </div>
+        </section>
+    }
+}
+
+@if (!string.IsNullOrEmpty(_statusIcon))
+{
+    <div class="block warn-block status-bar">
+        <span aria-hidden="true">@_statusIcon</span>
+        <span>@_statusText</span>
+        @if (!string.IsNullOrEmpty(_exportedPath) && Host.IsAvailable)
+        {
+            <button class="btn btn-ghost small" type="button" @onclick="RevealAsync">在 Finder 中显示</button>
+        }
+    </div>
+}
+
+@code {
+    private List<SceneTemplate> _templates = new();
+    private string? _loadError;
+    private bool _loading = true;
+    private bool _busy;
+    private string? _statusIcon;
+    private string? _statusText;
+    private string? _exportedPath;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _loading = true;
+        _templates = (await Templates.LoadAsync()).ToList();
+        _loadError = Templates.LoadError;
+        _loading = false;
+    }
+
+    private async Task ApplyAsync(string id, string title)
+    {
+        if (_busy) return;
+        var t = _templates.FirstOrDefault(x => x.Id == id);
+        if (t is null) return;
+
+        if (!Obs.IsConnected)
+        {
+            ShowStatus("⚠️", "尚未连接 OBS。请先去「OBS 控制台」连上 obs-websocket 后再试，或改用「导出场景集合 JSON」离线使用。");
+            return;
+        }
+
+        var confirmed = await JS.InvokeAsync<bool>("confirm",
+            $"落地模板「{title}」\n\n将在 OBS 中新建一个干净的配置集合并切换过去，为你创建 {t.Scenes.Count} 个场景、{t.Scenes.Sum(s => s.Sources.Count)} 个来源。设备 / 文件 / URL 类来源需您后续手动补齐。\n\n确认继续？");
+        if (!confirmed) return;
+
+        _busy = true;
+        ShowStatus("⏳", "正在落地，请稍候…");
+        try
+        {
+            var result = await Templates.ApplyAsync(id, applyCanvas: true, msg => ShowStatus("⏳", msg));
+            if (result.Ok)
+            {
+                var msg = $"✅ 模板「{title}」已落地！共创建 {result.Created} 个来源";
+                if (result.Skipped > 0) msg += $"（{result.Skipped} 个已跳过）";
+                if (result.Placeholders.Count > 0)
+                    msg += "\n\n还需手动补齐：\n  · " + string.Join("\n  · ", result.Placeholders);
+                ShowStatus("✅", msg);
+            }
+            else
+            {
+                ShowStatus("❌", $"模板落地失败：{result.Error ?? "未知错误"}");
+            }
+        }
+        catch (Exception ex)
+        {
+            ShowStatus("❌", $"模板落地时发生异常：{ex.Message}");
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+
+    private async Task ExportAsync(string id, string title)
+    {
+        if (_busy) return;
+        var t = _templates.FirstOrDefault(x => x.Id == id);
+        if (t is null) return;
+
+        _busy = true;
+        _exportedPath = null;
+        ShowStatus("⏳", "正在生成场景集合 JSON…");
+        try
+        {
+            var path = await Templates.ExportAsync(id, msg => ShowStatus("⏳", msg));
+            if (string.IsNullOrEmpty(path))
+            {
+                if (Host.IsAvailable)
+                    ShowStatus("ℹ️", "已取消导出。");
+                else
+                    ShowStatus("❌", "当前没有桌面宿主（如在浏览器中预览），无法保存文件。请直接在桌面客户端中使用。");
+            }
+            else
+            {
+                _exportedPath = path;
+                ShowStatus("✅", $"已导出到：{path}\n请将 obshelper_*.json 放入 OBS 的 basic/scenes/ 目录（或直接导入）。");
+            }
+        }
+        catch (Exception ex)
+        {
+            ShowStatus("❌", $"导出失败：{ex.Message}");
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+
+    private async Task RevealAsync()
+    {
+        if (string.IsNullOrEmpty(_exportedPath)) return;
+        var ok = await Host.RevealInFinderAsync(_exportedPath);
+        if (!ok) ShowStatus("ℹ️", "无法在 Finder 中定位该文件，请按上方路径手动查找。");
+    }
+
+    private void ShowStatus(string icon, string text)
+    {
+        _statusIcon = icon;
+        _statusText = text;
+        StateHasChanged();
+    }
+}

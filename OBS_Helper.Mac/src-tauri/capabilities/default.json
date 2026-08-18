@@ -1,9 +1,10 @@
 {
   "$schema": "../gen/schemas/desktop-schema.json",
   "identifier": "default",
-  "description": "默认能力：允许主窗口运行前端页面。",
+  "description": "默认能力：允许主窗口运行前端页面，并允许原生文件对话框（导出 / 导入备份与场景模板）。",
   "windows": ["main"],
   "permissions": [
-    "core:default"
+    "core:default",
+    "dialog:default"
   ]
 }

@@ -1,0 +1,393 @@
+[
+  {
+    "id": "gaming",
+    "title": "游戏直播",
+    "summary": "游戏画面 + 摄像头 + 麦克风，横屏 1080p60 开播即用。",
+    "icon": "🎮",
+    "portrait": false,
+    "notes": "游戏源默认按窗口 / 显示器捕获回退；摄像头与麦克风需你在 OBS 里选设备。",
+    "canvas": { "baseWidth": 1920, "baseHeight": 1080, "outputWidth": 1920, "outputHeight": 1080, "fpsNumerator": 60, "fpsDenominator": 1 },
+    "transition": "淡入淡出",
+    "transitionDurationMs": 300,
+    "scenes": [
+      {
+        "name": "游戏直播中",
+        "transitionDurationMs": 300,
+        "hotkey": "Ctrl+1",
+        "sources": [
+          { "name": "背景色", "inputKind": "color_source_v3", "zOrder": 0, "enabled": true,
+            "settings": { "color": 4278190080 },
+            "transform": { "posX": 0, "posY": 0, "boundsType": "OBS_BOUNDS_SCALE_OUTER", "boundsWidth": 1920, "boundsHeight": 1080, "alignment": 0 } },
+          { "name": "游戏画面", "inputKind": "game_capture", "zOrder": 1, "enabled": true,
+            "fallbackKinds": ["window_capture", "monitor_capture"],
+            "placeholder": { "kind": "window", "hint": "选择要捕获的游戏窗口或显示器" },
+            "transform": { "posX": 0, "posY": 0, "boundsType": "OBS_BOUNDS_SCALE_OUTER", "boundsWidth": 1920, "boundsHeight": 1080, "alignment": 0 } },
+          { "name": "摄像头", "inputKind": "dshow_input", "zOrder": 2, "enabled": true,
+            "fallbackKinds": ["dshow_video_source"],
+            "placeholder": { "kind": "device", "hint": "选择你的摄像头设备" },
+            "transform": { "posX": 1490, "posY": 835, "boundsType": "OBS_BOUNDS_TO_WIDTH", "boundsWidth": 400, "alignment": 5 } },
+          { "name": "我的麦克风", "inputKind": "wasapi_input_capture", "zOrder": 3, "enabled": true, "shared": true,
+            "placeholder": { "kind": "device", "hint": "选择你的麦克风" } },
+          { "name": "桌面音频", "inputKind": "wasapi_output_capture", "zOrder": 4, "enabled": true,
+            "placeholder": { "kind": "device", "hint": "选择桌面 / 系统声音" } },
+          { "name": "直播标题", "inputKind": "text_gdiplus_v3", "zOrder": 5, "enabled": true,
+            "fallbackKinds": ["text_ft2_source_v3"],
+            "settings": { "text": "游戏直播中 · 欢迎来到直播间", "font": { "face": "微软雅黑", "size": 48 }, "color": 4294967295 },
+            "transform": { "posX": 60, "posY": 40, "boundsType": "OBS_BOUNDS_NONE", "alignment": 5 } }
+        ]
+      },
+      {
+        "name": "暂停一下",
+        "transitionDurationMs": 500,
+        "hotkey": "Ctrl+2",
+        "sources": [
+          { "name": "背景色", "inputKind": "color_source_v3", "zOrder": 0, "enabled": true,
+            "settings": { "color": 4278650880 },
+            "transform": { "posX": 0, "posY": 0, "boundsType": "OBS_BOUNDS_SCALE_OUTER", "boundsWidth": 1920, "boundsHeight": 1080, "alignment": 0 } },
+          { "name": "摄像头", "inputKind": "dshow_input", "zOrder": 1, "enabled": true, "shared": true,
+            "fallbackKinds": ["dshow_video_source"],
+            "placeholder": { "kind": "device", "hint": "选择你的摄像头设备" },
+            "transform": { "posX": 760, "posY": 340, "boundsType": "OBS_BOUNDS_TO_WIDTH", "boundsWidth": 400, "alignment": 0 } },
+          { "name": "我的麦克风", "inputKind": "wasapi_input_capture", "zOrder": 2, "enabled": true, "shared": true },
+          { "name": "稍候片刻", "inputKind": "text_gdiplus_v3", "zOrder": 3, "enabled": true,
+            "fallbackKinds": ["text_ft2_source_v3"],
+            "settings": { "text": "稍候片刻，马上回来～", "font": { "face": "微软雅黑", "size": 72 }, "color": 4294967295 },
+            "transform": { "posX": 960, "posY": 220, "boundsType": "OBS_BOUNDS_NONE", "alignment": 0 } }
+        ]
+      }
+    ]
+  },
+
+  {
+    "id": "vertical-selling",
+    "title": "竖屏口播带货",
+    "summary": "竖屏 1080×1920 口播场景，主摄像头填满，商品图 / 标题 / 口播词就位。",
+    "icon": "📱",
+    "portrait": true,
+    "notes": "注意：本模板会把 OBS 全局画布改成 1080×1920（竖屏）。切回横屏直播时，请在 OBS「设置 → 视频」里把画布改回 1920×1080。",
+    "canvas": { "baseWidth": 1080, "baseHeight": 1920, "outputWidth": 1080, "outputHeight": 1920, "fpsNumerator": 30, "fpsDenominator": 1 },
+    "transition": "淡入淡出",
+    "transitionDurationMs": 300,
+    "scenes": [
+      {
+        "name": "口播主画面",
+        "transitionDurationMs": 300,
+        "hotkey": "Ctrl+1",
+        "sources": [
+          { "name": "背景色", "inputKind": "color_source_v3", "zOrder": 0, "enabled": true,
+            "settings": { "color": 4292935679 },
+            "transform": { "posX": 0, "posY": 0, "boundsType": "OBS_BOUNDS_SCALE_OUTER", "boundsWidth": 1080, "boundsHeight": 1920, "alignment": 0 } },
+          { "name": "主摄像头", "inputKind": "dshow_input", "zOrder": 1, "enabled": true,
+            "fallbackKinds": ["dshow_video_source"],
+            "placeholder": { "kind": "device", "hint": "选择你的竖屏前置 / 外接摄像头" },
+            "transform": { "posX": 540, "posY": 960, "boundsType": "OBS_BOUNDS_SCALE_OUTER", "boundsWidth": 1080, "boundsHeight": 1920, "alignment": 0 } },
+          { "name": "商品图", "inputKind": "image_source", "zOrder": 2, "enabled": false,
+            "settings": { "file": "" },
+            "placeholder": { "kind": "file", "hint": "选择要展示的商品图片（默认隐藏，需要时点开）" },
+            "transform": { "posX": 540, "posY": 960, "boundsType": "OBS_BOUNDS_SCALE_OUTER", "boundsWidth": 1080, "boundsHeight": 1920, "alignment": 0 } },
+          { "name": "顶部条", "inputKind": "text_gdiplus_v3", "zOrder": 3, "enabled": true,
+            "fallbackKinds": ["text_ft2_source_v3"],
+            "settings": { "text": "🔥 限时福利进行中", "font": { "face": "微软雅黑", "size": 52 }, "color": 4294967295 },
+            "transform": { "posX": 40, "posY": 60, "boundsType": "OBS_BOUNDS_NONE", "alignment": 5 } },
+          { "name": "活动标题", "inputKind": "text_gdiplus_v3", "zOrder": 4, "enabled": true,
+            "fallbackKinds": ["text_ft2_source_v3"],
+            "settings": { "text": "今日爆款 · 点击左下小黄车", "font": { "face": "微软雅黑", "size": 64 }, "color": 4294967295 },
+            "transform": { "posX": 540, "posY": 1680, "boundsType": "OBS_BOUNDS_NONE", "alignment": 0 } },
+          { "name": "滚动口播词", "inputKind": "text_gdiplus_v3", "zOrder": 5, "enabled": true,
+            "fallbackKinds": ["text_ft2_source_v3"],
+            "settings": { "text": "关注主播不迷路 · 下单立享优惠", "font": { "face": "微软雅黑", "size": 44 }, "color": 4294967295 },
+            "transform": { "posX": 540, "posY": 1780, "boundsType": "OBS_BOUNDS_NONE", "alignment": 0 } },
+          { "name": "我的麦克风", "inputKind": "wasapi_input_capture", "zOrder": 6, "enabled": true, "shared": true,
+            "placeholder": { "kind": "device", "hint": "选择你的麦克风" } }
+        ]
+      },
+      {
+        "name": "等待开播",
+        "transitionDurationMs": 500,
+        "hotkey": "Ctrl+2",
+        "sources": [
+          { "name": "背景色", "inputKind": "color_source_v3", "zOrder": 0, "enabled": true,
+            "settings": { "color": 4278650880 },
+            "transform": { "posX": 0, "posY": 0, "boundsType": "OBS_BOUNDS_SCALE_OUTER", "boundsWidth": 1080, "boundsHeight": 1920, "alignment": 0 } },
+          { "name": "主摄像头", "inputKind": "dshow_input", "zOrder": 1, "enabled": true, "shared": true,
+            "fallbackKinds": ["dshow_video_source"],
+            "placeholder": { "kind": "device", "hint": "选择你的摄像头设备" },
+            "transform": { "posX": 540, "posY": 760, "boundsType": "OBS_BOUNDS_TO_WIDTH", "boundsWidth": 700, "alignment": 0 } },
+          { "name": "我的麦克风", "inputKind": "wasapi_input_capture", "zOrder": 2, "enabled": true, "shared": true },
+          { "name": "马上开播", "inputKind": "text_gdiplus_v3", "zOrder": 3, "enabled": true,
+            "fallbackKinds": ["text_ft2_source_v3"],
+            "settings": { "text": "马上开播，先关注一波～", "font": { "face": "微软雅黑", "size": 60 }, "color": 4294967295 },
+            "transform": { "posX": 540, "posY": 1500, "boundsType": "OBS_BOUNDS_NONE", "alignment": 0 } }
+        ]
+      }
+    ]
+  },
+
+  {
+    "id": "duo-guest",
+    "title": "双人连麦",
+    "summary": "主播 + 嘉宾左右分屏，适合访谈 / 双人联动。",
+    "icon": "👥",
+    "portrait": false,
+    "notes": "嘉宾画面默认用窗口捕获（WGC）；若抓取不到，可在 OBS 里改用显示器捕获。",
+    "canvas": { "baseWidth": 1920, "baseHeight": 1080, "outputWidth": 1920, "outputHeight": 1080, "fpsNumerator": 30, "fpsDenominator": 1 },
+    "transition": "淡入淡出",
+    "transitionDurationMs": 300,
+    "scenes": [
+      {
+        "name": "双人对话",
+        "transitionDurationMs": 300,
+        "hotkey": "Ctrl+1",
+        "sources": [
+          { "name": "背景色", "inputKind": "color_source_v3", "zOrder": 0, "enabled": true,
+            "settings": { "color": 4278650880 },
+            "transform": { "posX": 0, "posY": 0, "boundsType": "OBS_BOUNDS_SCALE_OUTER", "boundsWidth": 1920, "boundsHeight": 1080, "alignment": 0 } },
+          { "name": "主播画面", "inputKind": "dshow_input", "zOrder": 1, "enabled": true,
+            "fallbackKinds": ["dshow_video_source"],
+            "placeholder": { "kind": "device", "hint": "选择主播摄像头" },
+            "transform": { "posX": 30, "posY": 278, "boundsType": "OBS_BOUNDS_TO_WIDTH", "boundsWidth": 930, "alignment": 5 } },
+          { "name": "嘉宾画面", "inputKind": "window_capture", "zOrder": 2, "enabled": true,
+            "fallbackKinds": ["monitor_capture", "dshow_input"],
+            "settings": { "method": 2 },
+            "placeholder": { "kind": "window", "hint": "选择嘉宾的窗口（已设为 WGC 捕获）" },
+            "transform": { "posX": 960, "posY": 278, "boundsType": "OBS_BOUNDS_TO_WIDTH", "boundsWidth": 930, "alignment": 5 } },
+          { "name": "主播名条", "inputKind": "text_gdiplus_v3", "zOrder": 3, "enabled": true,
+            "fallbackKinds": ["text_ft2_source_v3"],
+            "settings": { "text": "主播", "font": { "face": "微软雅黑", "size": 40 }, "color": 4294967295 },
+            "transform": { "posX": 40, "posY": 250, "boundsType": "OBS_BOUNDS_NONE", "alignment": 5 } },
+          { "name": "嘉宾名条", "inputKind": "text_gdiplus_v3", "zOrder": 4, "enabled": true,
+            "fallbackKinds": ["text_ft2_source_v3"],
+            "settings": { "text": "嘉宾", "font": { "face": "微软雅黑", "size": 40 }, "color": 4294967295 },
+            "transform": { "posX": 970, "posY": 250, "boundsType": "OBS_BOUNDS_NONE", "alignment": 5 } },
+          { "name": "话题标题", "inputKind": "text_gdiplus_v3", "zOrder": 5, "enabled": true,
+            "fallbackKinds": ["text_ft2_source_v3"],
+            "settings": { "text": "本期话题：……", "font": { "face": "微软雅黑", "size": 48 }, "color": 4294967295 },
+            "transform": { "posX": 960, "posY": 40, "boundsType": "OBS_BOUNDS_NONE", "alignment": 0 } },
+          { "name": "我的麦克风", "inputKind": "wasapi_input_capture", "zOrder": 6, "enabled": true, "shared": true,
+            "placeholder": { "kind": "device", "hint": "选择主播麦克风" } },
+          { "name": "嘉宾麦克风", "inputKind": "wasapi_input_capture", "zOrder": 7, "enabled": true,
+            "placeholder": { "kind": "device", "hint": "选择嘉宾麦克风" } }
+        ]
+      },
+      {
+        "name": "单人特写",
+        "transitionDurationMs": 300,
+        "hotkey": "Ctrl+2",
+        "sources": [
+          { "name": "背景色", "inputKind": "color_source_v3", "zOrder": 0, "enabled": true,
+            "settings": { "color": 4278190080 },
+            "transform": { "posX": 0, "posY": 0, "boundsType": "OBS_BOUNDS_SCALE_OUTER", "boundsWidth": 1920, "boundsHeight": 1080, "alignment": 0 } },
+          { "name": "主播画面", "inputKind": "dshow_input", "zOrder": 1, "enabled": true, "shared": true,
+            "fallbackKinds": ["dshow_video_source"],
+            "placeholder": { "kind": "device", "hint": "选择主播摄像头" },
+            "transform": { "posX": 540, "posY": 540, "boundsType": "OBS_BOUNDS_SCALE_OUTER", "boundsWidth": 1280, "boundsHeight": 720, "alignment": 0 } },
+          { "name": "我的麦克风", "inputKind": "wasapi_input_capture", "zOrder": 2, "enabled": true, "shared": true },
+          { "name": "单人特写标题", "inputKind": "text_gdiplus_v3", "zOrder": 3, "enabled": true,
+            "fallbackKinds": ["text_ft2_source_v3"],
+            "settings": { "text": "主播单独聊几句", "font": { "face": "微软雅黑", "size": 56 }, "color": 4294967295 },
+            "transform": { "posX": 960, "posY": 80, "boundsType": "OBS_BOUNDS_NONE", "alignment": 0 } }
+        ]
+      }
+    ]
+  },
+
+  {
+    "id": "teaching",
+    "title": "教学录屏",
+    "summary": "显示器捕获为主，讲师摄像头小窗 + 章节标题，适合课程录制。",
+    "icon": "📚",
+    "portrait": false,
+    "notes": "默认捕获主显示器；多显示器时请在 OBS 里切换显示器索引。",
+    "canvas": { "baseWidth": 1920, "baseHeight": 1080, "outputWidth": 1920, "outputHeight": 1080, "fpsNumerator": 30, "fpsDenominator": 1 },
+    "transition": "淡入淡出",
+    "transitionDurationMs": 300,
+    "scenes": [
+      {
+        "name": "屏幕讲解",
+        "transitionDurationMs": 300,
+        "hotkey": "Ctrl+1",
+        "sources": [
+          { "name": "屏幕", "inputKind": "monitor_capture", "zOrder": 0, "enabled": true,
+            "placeholder": { "kind": "window", "hint": "选择要捕获的显示器" },
+            "transform": { "posX": 0, "posY": 0, "boundsType": "OBS_BOUNDS_SCALE_OUTER", "boundsWidth": 1920, "boundsHeight": 1080, "alignment": 0 } },
+          { "name": "讲师头像", "inputKind": "dshow_input", "zOrder": 1, "enabled": true,
+            "fallbackKinds": ["dshow_video_source"],
+            "placeholder": { "kind": "device", "hint": "选择讲师摄像头" },
+            "transform": { "posX": 1900, "posY": 1060, "boundsType": "OBS_BOUNDS_TO_WIDTH", "boundsWidth": 320, "alignment": 10 } },
+          { "name": "章节标题", "inputKind": "text_gdiplus_v3", "zOrder": 2, "enabled": true,
+            "fallbackKinds": ["text_ft2_source_v3"],
+            "settings": { "text": "第 1 章 · 开篇", "font": { "face": "微软雅黑", "size": 44 }, "color": 4294967295 },
+            "transform": { "posX": 40, "posY": 40, "boundsType": "OBS_BOUNDS_NONE", "alignment": 5 } },
+          { "name": "我的麦克风", "inputKind": "wasapi_input_capture", "zOrder": 3, "enabled": true, "shared": true,
+            "placeholder": { "kind": "device", "hint": "选择讲师麦克风" } },
+          { "name": "系统声音", "inputKind": "wasapi_output_capture", "zOrder": 4, "enabled": true,
+            "placeholder": { "kind": "device", "hint": "选择系统声音（课件音频）" } }
+        ]
+      },
+      {
+        "name": "课件全屏",
+        "transitionDurationMs": 300,
+        "hotkey": "Ctrl+2",
+        "sources": [
+          { "name": "屏幕", "inputKind": "monitor_capture", "zOrder": 0, "enabled": true, "shared": true,
+            "placeholder": { "kind": "window", "hint": "选择要捕获的显示器" },
+            "transform": { "posX": 0, "posY": 0, "boundsType": "OBS_BOUNDS_SCALE_OUTER", "boundsWidth": 1920, "boundsHeight": 1080, "alignment": 0 } },
+          { "name": "章节标题", "inputKind": "text_gdiplus_v3", "zOrder": 1, "enabled": true, "shared": true,
+            "fallbackKinds": ["text_ft2_source_v3"],
+            "settings": { "text": "课件放映中", "font": { "face": "微软雅黑", "size": 44 }, "color": 4294967295 },
+            "transform": { "posX": 40, "posY": 40, "boundsType": "OBS_BOUNDS_NONE", "alignment": 5 } }
+        ]
+      },
+      {
+        "name": "休息中",
+        "transitionDurationMs": 500,
+        "hotkey": "Ctrl+3",
+        "sources": [
+          { "name": "背景色", "inputKind": "color_source_v3", "zOrder": 0, "enabled": true,
+            "settings": { "color": 4278650880 },
+            "transform": { "posX": 0, "posY": 0, "boundsType": "OBS_BOUNDS_SCALE_OUTER", "boundsWidth": 1920, "boundsHeight": 1080, "alignment": 0 } },
+          { "name": "休息一下", "inputKind": "text_gdiplus_v3", "zOrder": 1, "enabled": true,
+            "fallbackKinds": ["text_ft2_source_v3"],
+            "settings": { "text": "休息一下，喝口水马上回来", "font": { "face": "微软雅黑", "size": 64 }, "color": 4294967295 },
+            "transform": { "posX": 960, "posY": 540, "boundsType": "OBS_BOUNDS_NONE", "alignment": 0 } },
+          { "name": "我的麦克风", "inputKind": "wasapi_input_capture", "zOrder": 2, "enabled": false, "shared": true }
+        ]
+      }
+    ]
+  },
+
+  {
+    "id": "radio-idle",
+    "title": "电台待机",
+    "summary": "电台 / 音乐直播的待机与开麦两套画面，底图 + 半透明遮罩 + 滚动曲目。",
+    "icon": "📻",
+    "portrait": false,
+    "notes": "背景音乐用 ffmpeg 循环播放本地音频；「正在播放」支持读取文本文件（OBS 文本源 read_from_file）。",
+    "canvas": { "baseWidth": 1920, "baseHeight": 1080, "outputWidth": 1920, "outputHeight": 1080, "fpsNumerator": 30, "fpsDenominator": 1 },
+    "transition": "淡入淡出",
+    "transitionDurationMs": 500,
+    "scenes": [
+      {
+        "name": "电台待机",
+        "transitionDurationMs": 500,
+        "hotkey": "Ctrl+1",
+        "sources": [
+          { "name": "底图", "inputKind": "image_source", "zOrder": 0, "enabled": true,
+            "settings": { "file": "" },
+            "placeholder": { "kind": "file", "hint": "选择电台背景图" },
+            "transform": { "posX": 0, "posY": 0, "boundsType": "OBS_BOUNDS_SCALE_OUTER", "boundsWidth": 1920, "boundsHeight": 1080, "alignment": 0 } },
+          { "name": "半透明遮罩", "inputKind": "color_source_v3", "zOrder": 1, "enabled": true,
+            "settings": { "color": 2147483648 },
+            "transform": { "posX": 0, "posY": 0, "boundsType": "OBS_BOUNDS_SCALE_OUTER", "boundsWidth": 1920, "boundsHeight": 1080, "alignment": 0 } },
+          { "name": "电台名", "inputKind": "text_gdiplus_v3", "zOrder": 2, "enabled": true,
+            "fallbackKinds": ["text_ft2_source_v3"],
+            "settings": { "text": "夜航电台 · FM 永远在线", "font": { "face": "微软雅黑", "size": 64 }, "color": 4294967295 },
+            "transform": { "posX": 960, "posY": 360, "boundsType": "OBS_BOUNDS_NONE", "alignment": 0 } },
+          { "name": "正在播放", "inputKind": "text_gdiplus_v3", "zOrder": 3, "enabled": true,
+            "fallbackKinds": ["text_ft2_source_v3"],
+            "settings": { "text": "", "read_from_file": true, "file": "" },
+            "placeholder": { "kind": "file", "hint": "选择「正在播放」文本文件（OBS 会定时读取）" },
+            "transform": { "posX": 960, "posY": 520, "boundsType": "OBS_BOUNDS_NONE", "alignment": 0 } },
+          { "name": "背景音乐", "inputKind": "ffmpeg_source", "zOrder": 4, "enabled": true, "shared": true,
+            "settings": { "input": "", "is_local_file": true, "looping": true },
+            "placeholder": { "kind": "file", "hint": "选择循环播放的背景音乐文件" } },
+          { "name": "我的麦克风", "inputKind": "wasapi_input_capture", "zOrder": 5, "enabled": false, "shared": true,
+            "placeholder": { "kind": "device", "hint": "选择主播麦克风（待机时默认静音关闭）" } }
+        ]
+      },
+      {
+        "name": "主播开麦",
+        "transitionDurationMs": 300,
+        "hotkey": "Ctrl+2",
+        "sources": [
+          { "name": "底图", "inputKind": "image_source", "zOrder": 0, "enabled": true, "shared": true,
+            "settings": { "file": "" },
+            "placeholder": { "kind": "file", "hint": "选择电台背景图" },
+            "transform": { "posX": 0, "posY": 0, "boundsType": "OBS_BOUNDS_SCALE_OUTER", "boundsWidth": 1920, "boundsHeight": 1080, "alignment": 0 } },
+          { "name": "半透明遮罩", "inputKind": "color_source_v3", "zOrder": 1, "enabled": true, "shared": true,
+            "settings": { "color": 2147483648 },
+            "transform": { "posX": 0, "posY": 0, "boundsType": "OBS_BOUNDS_SCALE_OUTER", "boundsWidth": 1920, "boundsHeight": 1080, "alignment": 0 } },
+          { "name": "主播画面", "inputKind": "dshow_input", "zOrder": 2, "enabled": true,
+            "fallbackKinds": ["dshow_video_source"],
+            "placeholder": { "kind": "device", "hint": "选择主播摄像头" },
+            "transform": { "posX": 1490, "posY": 835, "boundsType": "OBS_BOUNDS_TO_WIDTH", "boundsWidth": 400, "alignment": 5 } },
+          { "name": "电台名", "inputKind": "text_gdiplus_v3", "zOrder": 3, "enabled": true, "shared": true,
+            "fallbackKinds": ["text_ft2_source_v3"],
+            "settings": { "text": "夜航电台 · 正在直播", "font": { "face": "微软雅黑", "size": 64 }, "color": 4294967295 },
+            "transform": { "posX": 960, "posY": 360, "boundsType": "OBS_BOUNDS_NONE", "alignment": 0 } },
+          { "name": "背景音乐", "inputKind": "ffmpeg_source", "zOrder": 4, "enabled": true, "shared": true },
+          { "name": "我的麦克风", "inputKind": "wasapi_input_capture", "zOrder": 5, "enabled": true, "shared": true,
+            "placeholder": { "kind": "device", "hint": "选择主播麦克风" } }
+        ]
+      }
+    ]
+  },
+
+  {
+    "id": "show-triple",
+    "title": "开播/BRB/下播三件套",
+    "summary": "开播倒计时、马上回来 BRB、今天下播三套待机屏，大字文案就位。",
+    "icon": "🎬",
+    "portrait": false,
+    "notes": "倒计时网页源默认隐藏，需要时取消隐藏并填入你的倒计时页面 URL 即可。",
+    "canvas": { "baseWidth": 1920, "baseHeight": 1080, "outputWidth": 1920, "outputHeight": 1080, "fpsNumerator": 30, "fpsDenominator": 1 },
+    "transition": "淡入淡出",
+    "transitionDurationMs": 300,
+    "scenes": [
+      {
+        "name": "开播倒计时",
+        "transitionDurationMs": 500,
+        "hotkey": "Ctrl+1",
+        "sources": [
+          { "name": "底色", "inputKind": "color_source_v3", "zOrder": 0, "enabled": true,
+            "settings": { "color": 4279257088 },
+            "transform": { "posX": 0, "posY": 0, "boundsType": "OBS_BOUNDS_SCALE_OUTER", "boundsWidth": 1920, "boundsHeight": 1080, "alignment": 0 } },
+          { "name": "开播文案", "inputKind": "text_gdiplus_v3", "zOrder": 1, "enabled": true,
+            "fallbackKinds": ["text_ft2_source_v3"],
+            "settings": { "text": "直播即将开始", "font": { "face": "微软雅黑", "size": 96 }, "color": 4294967295 },
+            "transform": { "posX": 960, "posY": 460, "boundsType": "OBS_BOUNDS_NONE", "alignment": 0 } },
+          { "name": "倒计时网页", "inputKind": "browser_source", "zOrder": 2, "enabled": false,
+            "settings": { "url": "", "width": 1920, "height": 1080 },
+            "placeholder": { "kind": "url", "hint": "填入你的倒计时网页 URL（默认隐藏）" },
+            "transform": { "posX": 0, "posY": 0, "boundsType": "OBS_BOUNDS_SCALE_OUTER", "boundsWidth": 1920, "boundsHeight": 1080, "alignment": 0 } },
+          { "name": "等待音乐", "inputKind": "ffmpeg_source", "zOrder": 3, "enabled": true, "shared": true,
+            "settings": { "input": "", "is_local_file": true, "looping": true },
+            "placeholder": { "kind": "file", "hint": "选择等待音乐" } },
+          { "name": "我的麦克风", "inputKind": "wasapi_input_capture", "zOrder": 4, "enabled": false, "shared": true,
+            "placeholder": { "kind": "device", "hint": "选择麦克风（倒计时时默认关闭）" } }
+        ]
+      },
+      {
+        "name": "马上回来 BRB",
+        "transitionDurationMs": 300,
+        "hotkey": "Ctrl+2",
+        "sources": [
+          { "name": "底色", "inputKind": "color_source_v3", "zOrder": 0, "enabled": true,
+            "settings": { "color": 4279257088 },
+            "transform": { "posX": 0, "posY": 0, "boundsType": "OBS_BOUNDS_SCALE_OUTER", "boundsWidth": 1920, "boundsHeight": 1080, "alignment": 0 } },
+          { "name": "BRB 文案", "inputKind": "text_gdiplus_v3", "zOrder": 1, "enabled": true,
+            "fallbackKinds": ["text_ft2_source_v3"],
+            "settings": { "text": "马上回来 BRB", "font": { "face": "微软雅黑", "size": 96 }, "color": 4294967295 },
+            "transform": { "posX": 960, "posY": 540, "boundsType": "OBS_BOUNDS_NONE", "alignment": 0 } },
+          { "name": "等待音乐", "inputKind": "ffmpeg_source", "zOrder": 2, "enabled": true, "shared": true },
+          { "name": "我的麦克风", "inputKind": "wasapi_input_capture", "zOrder": 3, "enabled": false, "shared": true }
+        ]
+      },
+      {
+        "name": "今天到这里",
+        "transitionDurationMs": 500,
+        "hotkey": "Ctrl+3",
+        "sources": [
+          { "name": "底色", "inputKind": "color_source_v3", "zOrder": 0, "enabled": true,
+            "settings": { "color": 4279257088 },
+            "transform": { "posX": 0, "posY": 0, "boundsType": "OBS_BOUNDS_SCALE_OUTER", "boundsWidth": 1920, "boundsHeight": 1080, "alignment": 0 } },
+          { "name": "下播文案", "inputKind": "text_gdiplus_v3", "zOrder": 1, "enabled": true,
+            "fallbackKinds": ["text_ft2_source_v3"],
+            "settings": { "text": "今天直播到此结束，明天见！", "font": { "face": "微软雅黑", "size": 84 }, "color": 4294967295 },
+            "transform": { "posX": 960, "posY": 540, "boundsType": "OBS_BOUNDS_NONE", "alignment": 0 } },
+          { "name": "等待音乐", "inputKind": "ffmpeg_source", "zOrder": 2, "enabled": true, "shared": true }
+        ]
+      }
+    ]
+  }
+]

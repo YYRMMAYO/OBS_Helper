@@ -1,0 +1,36 @@
+<svg class="chart-svg" viewBox="0 0 200 44" preserveAspectRatio="none" role="img" aria-hidden="true">
+    <polyline
+        points="@BuildPoints()"
+        fill="none"
+        stroke="@Color"
+        stroke-width="1.5"
+        stroke-linecap="round"
+        stroke-linejoin="round" />
+</svg>
+
+@code {
+    [Parameter] public IReadOnlyList<double> Values { get; set; } = Array.Empty<double>();
+    [Parameter] public string Color { get; set; } = "var(--brand)";
+
+    private string BuildPoints()
+    {
+        if (Values.Count == 0) return "";
+        var n = Values.Count;
+        var min = Values.Min();
+        var max = Values.Max();
+        var span = max - min;
+        if (span < 1e-6) { min = 0; max = 1; span = 1; }
+        // 上下留 8% 余量，避免曲线贴边
+        var pad = span * 0.08;
+        min -= pad; max += pad; span = max - min;
+
+        var pts = new string[n];
+        for (var i = 0; i < n; i++)
+        {
+            var x = (double)i / (n - 1) * 200;
+            var y = 44 - (Values[i] - min) / span * 40 - 2;
+            pts[i] = $"{x.ToString("0.0", System.Globalization.CultureInfo.InvariantCulture)},{y.ToString("0.0", System.Globalization.CultureInfo.InvariantCulture)}";
+        }
+        return string.Join(" ", pts);
+    }
+}

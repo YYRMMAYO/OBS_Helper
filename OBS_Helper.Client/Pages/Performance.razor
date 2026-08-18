@@ -1,0 +1,162 @@
+@page "/performance"
+@inject HostBridge Host
+@inject ObsConnectionService Obs
+@using OBS_Helper.Client.Services.Host
+@using OBS_Helper.Client.Services.Obs
+@using OBS_Helper.Client.Components
+
+<PageTitle>系统监控</PageTitle>
+
+<div class="page-head">
+    <h1>📊 系统监控</h1>
+    <p class="muted">CPU / 内存 / 网络 / 磁盘实时曲线（1 秒采样，最近 2 分钟）+ OBS 渲染状态。</p>
+</div>
+
+@if (!Host.IsAvailable)
+{
+    <div class="block warn-block">
+        <p>⚠️ 当前没有桌面宿主（如在浏览器中预览），无法采集系统资源。请在桌面客户端中打开本应用。</p>
+    </div>
+}
+
+<div class="stat-grid">
+    <div class="stat">
+        <div class="stat-val">@(FormatPercent(_sample?.CpuPercent))</div>
+        <div class="stat-label">CPU 使用率</div>
+    </div>
+    <div class="stat">
+        <div class="stat-val">@(FormatPercent(_sample?.MemUsedPercent))</div>
+        <div class="stat-label">内存使用率</div>
+    </div>
+    <div class="stat">
+        <div class="stat-val">@(FormatNet(_sample?.NetDownKbps))</div>
+        <div class="stat-label">下行速率</div>
+    </div>
+    <div class="stat">
+        <div class="stat-val @(LowDiskWarn ? "stat-warn" : "")">@(FormatGb(_sample?.LowestDisk?.FreeGb))</div>
+        <div class="stat-label">最低磁盘剩余</div>
+    </div>
+</div>
+
+<div class="chart-grid">
+    <div class="block chart-block">
+        <h3>CPU %</h3>
+        <SvgChart Values="_cpuHist" Color="var(--brand)" />
+    </div>
+    <div class="block chart-block">
+        <h3>内存 %</h3>
+        <SvgChart Values="_memHist" Color="var(--brand)" />
+    </div>
+    <div class="block chart-block">
+        <h3>下行 Kbps</h3>
+        <SvgChart Values="_downHist" Color="#2e86de" />
+    </div>
+    <div class="block chart-block">
+        <h3>上行 Kbps</h3>
+        <SvgChart Values="_upHist" Color="#00a885" />
+    </div>
+</div>
+
+@if (_sample?.Disks is { Count: > 0 })
+{
+    <section class="block">
+        <h3>磁盘</h3>
+        @foreach (var d in _sample.Disks)
+        {
+            <div class="disk-row">
+                <span class="disk-name">@d.Name</span>
+                <div class="disk-bar-track">
+                    <div class="disk-bar" style="width:@(Math.Clamp(100 - d.FreePercent, 0, 100).ToString("0.0", System.Globalization.CultureInfo.InvariantCulture))%"></div>
+                </div>
+                <span class="muted small">剩余 @d.FreeGb.ToString("0.0", System.Globalization.CultureInfo.InvariantCulture) G / @d.TotalGb.ToString("0.0", System.Globalization.CultureInfo.InvariantCulture) G</span>
+            </div>
+        }
+    </section>
+}
+
+<section class="block">
+    <h3>OBS 渲染状态</h3>
+    @if (Obs.IsConnected)
+    {
+        <p class="muted small">已连接 OBS @Obs.Profile.ObsVersion</p>
+        <div class="stat-grid">
+            <div class="stat">
+                <div class="stat-val">@Obs.Stats.ActiveFps.ToString("0.0", System.Globalization.CultureInfo.InvariantCulture)</div>
+                <div class="stat-label">渲染帧率 FPS</div>
+            </div>
+            <div class="stat">
+                <div class="stat-val @(Obs.Stats.RenderSkipRatio > 0.05 ? "stat-crit" : "")">@((Obs.Stats.RenderSkipRatio * 100).ToString("0.##", System.Globalization.CultureInfo.InvariantCulture))%</div>
+                <div class="stat-label">渲染丢帧</div>
+            </div>
+            <div class="stat">
+                <div class="stat-val @(Obs.Stats.OutputSkipRatio > 0.05 ? "stat-crit" : "")">@((Obs.Stats.OutputSkipRatio * 100).ToString("0.##", System.Globalization.CultureInfo.InvariantCulture))%</div>
+                <div class="stat-label">输出丢帧</div>
+            </div>
+        </div>
+    }
+    else
+    {
+        <p class="muted">未连接 OBS。连接后这里会显示渲染帧率、丢帧率与 OBS 报告的性能数据。</p>
+    }
+</section>
+
+@code {
+    private const int ChartPoints = 120;
+    private readonly List<double> _cpuHist = new();
+    private readonly List<double> _memHist = new();
+    private readonly List<double> _downHist = new();
+    private readonly List<double> _upHist = new();
+    private HostSystemSample? _sample;
+    private System.Threading.Timer? _timer;
+    private bool _busy;
+
+    private bool LowDiskWarn => _sample?.LowestDisk is { } d && d.FreeGb < 10;
+
+    protected override void OnInitialized()
+    {
+        _timer = new System.Threading.Timer(_ => _ = TickAsync(), null, 500, 1000);
+    }
+
+    private async Task TickAsync()
+    {
+        if (_busy) return;
+        _busy = true;
+        try
+        {
+            if (!Host.IsAvailable) return;
+            var s = await Host.GetSystemSampleAsync();
+            if (s is null) return;
+            _sample = s;
+            Push(_cpuHist, s.CpuPercent);
+            Push(_memHist, s.MemUsedPercent);
+            Push(_downHist, s.NetDownKbps);
+            Push(_upHist, s.NetUpKbps);
+            await InvokeAsync(StateHasChanged);
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+
+    private static void Push(List<double> list, double value)
+    {
+        list.Add(value);
+        if (list.Count > ChartPoints) list.RemoveAt(0);
+    }
+
+    private static string FormatPercent(double? v) => v is null ? "—" : v.Value.ToString("0.0", System.Globalization.CultureInfo.InvariantCulture) + "%";
+
+    private static string FormatNet(double? kbps) => kbps is null ? "—"
+        : kbps.Value >= 1024
+            ? (kbps.Value / 1024).ToString("0.0", System.Globalization.CultureInfo.InvariantCulture) + " Mbps"
+            : kbps.Value.ToString("0", System.Globalization.CultureInfo.InvariantCulture) + " Kbps";
+
+    private static string FormatGb(double? gb) => gb is null ? "—" : gb.Value.ToString("0.0", System.Globalization.CultureInfo.InvariantCulture) + " G";
+
+    public void Dispose()
+    {
+        _timer?.Dispose();
+        _timer = null;
+    }
+}

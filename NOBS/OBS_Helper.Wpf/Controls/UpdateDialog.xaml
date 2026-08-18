@@ -38,9 +38,37 @@
               CornerRadius="{DynamicResource CornerRadiusMd}"
               Padding="12,10" Margin="0,14,0,0">
         <StackPanel>
-          <TextBlock Text="请选择下载方式"
+          <TextBlock Text="请选择更新方式"
                      FontSize="{DynamicResource FontSizeXs}"
                      Foreground="{DynamicResource MutedBrush}" Margin="0,0,0,8" />
+
+          <!-- 方式〇：增量更新（推荐） -->
+          <TextBlock TextWrapping="Wrap" FontSize="{DynamicResource FontSizeBase}"
+                     Foreground="{DynamicResource TextBrush}" LineHeight="21">
+            <Run Text="方式〇 · 增量更新（推荐，下载小）：" FontWeight="SemiBold" />
+          </TextBlock>
+          <TextBlock TextWrapping="Wrap" FontSize="{DynamicResource FontSizeSm}"
+                     Foreground="{DynamicResource MutedBrush}" Margin="0,4,0,0" LineHeight="20">
+            只下载自上一版本以来的变更文件，完成后自动重启应用完成升级；安装版需一次管理员授权。
+          </TextBlock>
+          <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
+            <Button x:Name="DeltaButton" Style="{StaticResource PrimaryButton}"
+                    Content="增量更新全部功能" MinWidth="170" Click="OnDeltaUpdate" />
+            <Button x:Name="KbOnlyButton" Style="{StaticResource SecondaryButton}"
+                    Content="仅更新知识库" MinWidth="120" Margin="10,0,0,0" Click="OnKbOnlyUpdate" />
+          </StackPanel>
+          <TextBlock x:Name="KbStatusText" TextWrapping="Wrap"
+                     FontSize="{DynamicResource FontSizeSm}"
+                     Foreground="{DynamicResource MutedBrush}" Margin="0,6,0,0" />
+          <StackPanel x:Name="DeltaProgressPanel" Visibility="Collapsed" Margin="0,10,0,0">
+            <ProgressBar x:Name="DeltaProgressBar" Style="{StaticResource AppProgressBar}"
+                         Minimum="0" Maximum="100" Value="0" />
+            <TextBlock x:Name="DeltaStatusText" TextWrapping="Wrap"
+                       FontSize="{DynamicResource FontSizeSm}"
+                       Foreground="{DynamicResource MutedBrush}" Margin="0,6,0,0" />
+          </StackPanel>
+
+          <Border Style="{StaticResource HLine}" Margin="0,14,0,10" />
 
           <!-- 方式一：蓝奏云网盘（浏览器打开） -->
           <TextBlock TextWrapping="Wrap" FontSize="{DynamicResource FontSizeBase}"

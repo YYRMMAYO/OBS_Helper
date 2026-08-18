@@ -117,6 +117,43 @@ public partial class MainWindow : Window
 
         // 启动后静默检查一次更新：有新版才弹窗，失败/无更新一律不打扰。
         _ = RunStartupUpdateCheckAsync();
+
+        // 启动后静默维护：知识库分离更新（节流 6h，自动应用）+ 旧安装包清理。
+        _ = RunStartupMaintenanceAsync();
+    }
+
+    /// <summary>
+    /// 启动静默维护（fire-and-forget）：
+    /// <list type="bullet">
+    ///   <item>知识库：后台拉取最新版，有新版本自动写入本地数据目录并热重载（不弹窗，仅 Toast）；</item>
+    ///   <item>安装包：延迟数秒后清理各下载位置的旧安装包（每类保留最新一份）。</item>
+    /// </list>
+    /// 全部失败静默，不影响启动与正常使用。
+    /// </summary>
+    private static async Task RunStartupMaintenanceAsync()
+    {
+        try
+        {
+            var (updated, newVersion, _) = await AppServices.Kb.RefreshAsync(manual: false).ConfigureAwait(false);
+            if (updated)
+            {
+                AppServices.Problems.Reload();
+                AppServices.Toast.Show($"知识库已更新到 v{newVersion}", "ok");
+            }
+        }
+        catch (Exception)
+        {
+            // 知识库更新属于锦上添花，任何异常都不得打断主流程
+        }
+
+        try
+        {
+            AppServices.Cleanup.RunAtStartup();
+        }
+        catch (Exception)
+        {
+            // 清理失败无碍
+        }
     }
 
     /// <summary>
@@ -130,7 +167,12 @@ public partial class MainWindow : Window
             var result = await AppServices.Updates.CheckAsync();
             if (result.Status == UpdateCheckStatus.UpdateAvailable)
             {
-                UpdateDialog.Show(result.CurrentVersion, result.LatestVersion);
+                var choice = UpdateDialog.Show(result.CurrentVersion, result.LatestVersion);
+                if (choice == UpdateDialogResult.Applying)
+                {
+                    // 增量更新已就绪：退出应用，让自举进程完成文件替换后自动重启
+                    Application.Current?.Shutdown();
+                }
             }
         }
         catch (Exception)

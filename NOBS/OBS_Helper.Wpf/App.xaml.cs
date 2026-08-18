@@ -214,6 +214,16 @@ public partial class App : Application
 
     protected override void OnStartup(StartupEventArgs e)
     {
+        // 更新自举模式（--apply-update）：无窗口跑完替换即退出。
+        // 必须放在单实例判断之前——自举进程是「旧进程已退出、新进程尚未拉起」间隙的过渡角色，
+        // 不抢单实例锁，也不能因为锁冲突被拦下。
+        if (e.Args.Contains(Services.Update.UpdaterBootstrap.ArgFlag, StringComparer.OrdinalIgnoreCase))
+        {
+            Services.Update.UpdaterBootstrap.Run(e.Args);
+            Shutdown();
+            return;
+        }
+
         // 单实例守卫：已有实例在运行则唤起其窗口并退出本进程，杜绝多开。
         // 必须在创建任何窗口之前判断，否则闪一个窗口再关掉会很难看。
         if (!TryAcquireSingleInstance())
@@ -226,6 +236,9 @@ public partial class App : Application
         // 本进程持有单实例锁：顺带清理历史版本 / 崩溃残留的同名进程，同一时刻只保留一个。
         // 清理是后台杂活（可能等待被杀进程退出最多 3 秒），后台执行不阻塞首屏（P3-1）。
         Task.Run(() => KillStrayInstances()).FireAndForget("Startup", "清理残留实例");
+
+        // 增量更新自举后遗留的临时文件（pending 目录 / *.old），新版本首次启动时顺手清掉。
+        Task.Run(Services.Update.UpdaterBootstrap.CleanupResidue).FireAndForget("Startup", "清理更新残留");
 
         // 未处理异常：先写日志、再提示报错码，而不是直接闪退
         DispatcherUnhandledException += OnDispatcherUnhandledException;

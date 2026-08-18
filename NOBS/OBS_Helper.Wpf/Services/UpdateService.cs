@@ -257,6 +257,12 @@ public sealed class UpdateService
         public bool IsOk => Error is null && !string.IsNullOrEmpty(SetupAssetUrl);
     }
 
+    /// <summary>GitHub Release 上某个命名资产的信息（tag + 下载地址）。失败时 Error 非空。</summary>
+    public sealed record GitHubAssetInfo(string? Tag, string? AssetUrl, string? Error)
+    {
+        public bool IsOk => Error is null && !string.IsNullOrEmpty(AssetUrl);
+    }
+
     /// <summary>
     /// 查询 GitHub 最新 Release，从中找出安装包资产（OBS_Helper_Setup_*.exe）的下载地址。
     ///
@@ -321,14 +327,21 @@ public sealed class UpdateService
     /// <summary>在 Release 的 assets 里找安装包（OBS_Helper_Setup_*.exe）的下载地址。</summary>
     private static string? FindSetupAssetUrl(JsonElement release)
     {
+        return FindAssetUrl(release, name =>
+            name.StartsWith("OBS_Helper_Setup_", StringComparison.OrdinalIgnoreCase)
+            && name.EndsWith(".exe", StringComparison.OrdinalIgnoreCase));
+    }
+
+    /// <summary>在 Release 的 assets 里找第一个匹配命名规则的资产下载地址。</summary>
+    private static string? FindAssetUrl(JsonElement release, Func<string, bool> match)
+    {
         if (!release.TryGetProperty("assets", out var assets) || assets.ValueKind != JsonValueKind.Array) return null;
 
         foreach (var asset in assets.EnumerateArray())
         {
             var name = asset.TryGetProperty("name", out var n) ? n.GetString() : "";
             if (string.IsNullOrEmpty(name)) continue;
-            if (!name.StartsWith("OBS_Helper_Setup_", StringComparison.OrdinalIgnoreCase)) continue;
-            if (!name.EndsWith(".exe", StringComparison.OrdinalIgnoreCase)) continue;
+            if (!match(name)) continue;
 
             if (asset.TryGetProperty("browser_download_url", out var u))
             {
@@ -337,6 +350,78 @@ public sealed class UpdateService
             }
         }
         return null;
+    }
+
+    // ------------------------------------------------------------ 增量包 / 知识库资产
+
+    /// <summary>
+    /// 查询 GitHub 最新 Release 中的「增量更新包」（OBS_Helper_Update_&lt;ver&gt;.zip）下载地址。
+    /// 遍历全部 Release，取「版本号最高且确实带增量包资产」的一条；找不到返回 Error。
+    /// 永不抛异常。
+    /// </summary>
+    public async Task<GitHubAssetInfo> GetLatestDeltaPackageAsync()
+    {
+        return await FindNamedAssetAsync(
+            name => name.StartsWith("OBS_Helper_Update_", StringComparison.OrdinalIgnoreCase)
+                 && name.EndsWith(".zip", StringComparison.OrdinalIgnoreCase),
+            "GitHub 上还没有发布过增量更新包。").ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// 查询 GitHub 最新 Release 中的「独立知识库文件」（OBS_Helper_Knowledge_&lt;ver&gt;.json）下载地址。
+    /// 作为 raw.githubusercontent 通道失败时的兜底。永不抛异常。
+    /// </summary>
+    public async Task<GitHubAssetInfo> GetLatestKbAssetAsync()
+    {
+        return await FindNamedAssetAsync(
+            name => name.StartsWith("OBS_Helper_Knowledge_", StringComparison.OrdinalIgnoreCase)
+                 && name.EndsWith(".json", StringComparison.OrdinalIgnoreCase),
+            "GitHub 上还没有发布过独立知识库文件。").ConfigureAwait(false);
+    }
+
+    /// <summary>遍历全部 Release，取「版本号最高且带指定命名资产」的一条；找不到返回 Error。</summary>
+    private async Task<GitHubAssetInfo> FindNamedAssetAsync(Func<string, bool> match, string notFoundMessage)
+    {
+        try
+        {
+            using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(15));
+            using var resp = await Http.GetAsync(ReleasesApi, cts.Token).ConfigureAwait(false);
+            resp.EnsureSuccessStatusCode();
+
+            var body = await resp.Content.ReadAsStringAsync(cts.Token).ConfigureAwait(false);
+            using var doc = JsonDocument.Parse(body);
+
+            Version? best = null;
+            string? bestTag = null;
+            string? bestUrl = null;
+
+            foreach (var rel in doc.RootElement.EnumerateArray())
+            {
+                var tag = rel.TryGetProperty("tag_name", out var tagProp) ? tagProp.GetString() : null;
+                if (string.IsNullOrWhiteSpace(tag)) continue;
+                var v = ParseVersion(tag);
+                if (v is null) continue;
+
+                var url = FindAssetUrl(rel, match);
+                if (string.IsNullOrEmpty(url)) continue;
+
+                if (best is null || v > best)
+                {
+                    best = v;
+                    bestTag = tag;
+                    bestUrl = url;
+                }
+            }
+
+            if (bestTag is null || string.IsNullOrEmpty(bestUrl))
+                return new GitHubAssetInfo(null, null, notFoundMessage);
+
+            return new GitHubAssetInfo(bestTag, bestUrl, null);
+        }
+        catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException or JsonException)
+        {
+            return new GitHubAssetInfo(null, null, ex.Message);
+        }
     }
 
     /// <summary>

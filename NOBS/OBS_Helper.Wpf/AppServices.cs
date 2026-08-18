@@ -4,6 +4,7 @@ using OBS_Helper.Wpf.Services.Host;
 using OBS_Helper.Wpf.Services.Obs;
 using OBS_Helper.Wpf.Services.ObsConfig;
 using OBS_Helper.Wpf.Services.Shell;
+using OBS_Helper.Wpf.Services.Update;
 
 namespace OBS_Helper.Wpf;
 
@@ -32,6 +33,9 @@ public static class AppServices
     private static readonly Lazy<SceneTemplateService> _templates = new(() => new SceneTemplateService(Obs, ObsPaths));
 
     private static readonly Lazy<UpdateService> _updates = new(() => new UpdateService());
+    private static readonly Lazy<IncrementalUpdateService> _delta = new(() => new IncrementalUpdateService());
+    private static readonly Lazy<KnowledgeBaseUpdater> _kb = new(() => new KnowledgeBaseUpdater());
+    private static readonly Lazy<InstallerCleanupService> _cleanup = new(() => new InstallerCleanupService());
 
     // 后台 / 遥控能力
     private static readonly Lazy<TrayService> _tray = new(() => new TrayService(Obs, Store));
@@ -69,6 +73,9 @@ public static class AppServices
 
     public static AiSettingsService AiSettings => _aiSettings.Value;
     public static UpdateService Updates => _updates.Value;
+    public static IncrementalUpdateService Delta => _delta.Value;
+    public static KnowledgeBaseUpdater Kb => _kb.Value;
+    public static InstallerCleanupService Cleanup => _cleanup.Value;
     public static ObsToolRegistry Tools => _tools.Value;
     public static LocalDiagnosticEngine LocalEngine => _localEngine.Value;
     public static CloudDiagnosticEngine CloudEngine => _cloudEngine.Value;

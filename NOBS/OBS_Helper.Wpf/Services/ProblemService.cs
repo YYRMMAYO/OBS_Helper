@@ -3,6 +3,7 @@ using System.Reflection;
 using System.Text;
 using System.Text.Json;
 using OBS_Helper.Wpf.Models;
+using OBS_Helper.Wpf.Services.Update;
 
 namespace OBS_Helper.Wpf.Services;
 
@@ -28,6 +29,33 @@ public sealed class ProblemService
     /// <summary>数据加载失败时的错误信息（供 UI 展示报错码）。</summary>
     public string? LoadError { get; private set; }
 
+    /// <summary>当前知识库版本号（problems.json 的 version 字段）；未加载或读取失败时为空串。</summary>
+    public string Version => _data?.Version ?? "";
+
+    /// <summary>当前数据源：外部覆盖文件（知识库分离更新后）或内置种子。</summary>
+    public string DataSource => _usingExternal ? "external" : "embedded";
+
+    private bool _usingExternal;
+
+    /// <summary>
+    /// 清除缓存，下次读取时重新加载。知识库分离更新完成后调用，
+    /// 让已打开的页面（分类 / 详情 / 搜索）拿到新数据。
+    /// </summary>
+    public void Reload()
+    {
+        _lock.Wait();
+        try
+        {
+            _data = null;
+            _usingExternal = false;
+            LoadError = null;
+        }
+        finally
+        {
+            _lock.Release();
+        }
+    }
+
     public async Task<ProblemData> GetDataAsync()
     {
         if (_data is not null) return _data;
@@ -36,13 +64,46 @@ public sealed class ProblemService
         try
         {
             if (_data is not null) return _data;
-            _data = await Task.Run(LoadEmbedded).ConfigureAwait(false);
+            _data = await Task.Run(LoadData).ConfigureAwait(false);
             return _data;
         }
         finally
         {
             _lock.Release();
         }
+    }
+
+    /// <summary>
+    /// 加载策略：优先读本地覆盖文件（%LocalAppData%\OBS_Helper\data\problems.json，
+    /// 由知识库分离更新写入）；不存在 / 损坏时回退内嵌种子。两者都失败才返回空数据。
+    /// </summary>
+    private ProblemData LoadData()
+    {
+        // 外部覆盖文件优先（知识库可独立更新，不需要随应用发版）
+        try
+        {
+            var externalPath = KnowledgeBaseUpdater.KbFile;
+            if (File.Exists(externalPath))
+            {
+                var raw = File.ReadAllText(externalPath);
+                var data = JsonSerializer.Deserialize<ProblemData>(raw, JsonOpts);
+                if (data is not null && data.Problems.Count > 0)
+                {
+                    _usingExternal = true;
+                    return data;
+                }
+                // 外部文件损坏 → 记录并回退内置
+                LoadError = "external-kb-invalid";
+            }
+        }
+        catch (Exception)
+        {
+            LoadError = Errors.ErrorCodes.DataLoadFailed;
+        }
+
+        var embedded = LoadEmbedded();
+        _usingExternal = false;
+        return embedded;
     }
 
     private ProblemData LoadEmbedded()

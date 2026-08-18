@@ -26,6 +26,12 @@
     <Compile Include="..\OBS_Helper.Wpf\Services\Ai\DiagnosticSeverityMapper.cs" Link="Linked\DiagnosticSeverityMapper.cs" />
     <Compile Include="..\OBS_Helper.Wpf\Services\Markdown\MarkdownRenderer.cs" Link="Linked\MarkdownRenderer.cs" />
     <Compile Include="..\OBS_Helper.Wpf\Services\UpdateService.cs" Link="Linked\UpdateService.cs" />
+    <Compile Include="..\OBS_Helper.Wpf\Services\Update\UpdateManifest.cs" Link="Linked\Update\UpdateManifest.cs" />
+    <Compile Include="..\OBS_Helper.Wpf\Services\Update\DeltaBuilder.cs" Link="Linked\Update\DeltaBuilder.cs" />
+    <Compile Include="..\OBS_Helper.Wpf\Services\Update\FileHasher.cs" Link="Linked\Update\FileHasher.cs" />
+    <Compile Include="..\OBS_Helper.Wpf\Services\Update\InstallerCleanup.cs" Link="Linked\Update\InstallerCleanup.cs" />
+    <Compile Include="..\OBS_Helper.Wpf\Services\Update\KbVersion.cs" Link="Linked\Update\KbVersion.cs" />
+    <Compile Include="..\OBS_Helper.Wpf\Services\Update\UpdatePaths.cs" Link="Linked\Update\UpdatePaths.cs" />
   </ItemGroup>
 
 </Project>

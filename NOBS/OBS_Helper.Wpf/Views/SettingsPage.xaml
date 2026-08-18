@@ -510,9 +510,13 @@
           <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
             <Button x:Name="CheckUpdateButton" Content="检查更新" Style="{StaticResource SecondaryButton}"
                     Margin="0,0,10,0" Click="OnCheckUpdate" />
+            <Button x:Name="CheckKbButton" Content="检查知识库更新" Style="{StaticResource SecondaryButton}"
+                    Margin="0,0,10,0" Click="OnCheckKbUpdate" />
             <TextBlock x:Name="UpdateStatusText" Style="{StaticResource CaptionText}"
                        VerticalAlignment="Center" Text="尚未检查" />
           </StackPanel>
+          <TextBlock x:Name="KbStatusText" Style="{StaticResource CaptionText}"
+                     Margin="2,0,0,12" Text="—" />
 
           <TextBlock Style="{StaticResource MutedText}"
                      Text="离线优先的本地排障工具：界面与问题库随包发布，默认不发起任何网络请求。仅在进行更新检查（启动时自动静默检查一次，或点击上方按钮手动检查）或手动开启「免费 AI」/「云端大模型」后，才会由本应用直接发起 HTTPS 请求，密钥全程只在本机加密存储与请求头之间流转。" />

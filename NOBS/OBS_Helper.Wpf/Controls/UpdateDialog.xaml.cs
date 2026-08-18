@@ -1,6 +1,8 @@
 using System.Diagnostics;
 using System.Windows;
+using System.Windows.Controls;
 using OBS_Helper.Wpf.Services;
+using OBS_Helper.Wpf.Services.Update;
 
 namespace OBS_Helper.Wpf.Controls;
 
@@ -37,6 +39,9 @@ public partial class UpdateDialog : Window
             : $"最新版本 V{latest.Major}.{latest.Minor}.{latest.Build}";
         dlg.TitleText.Text = latest is null ? "发现新版本" : $"发现新版本 V{latest.Major}.{latest.Minor}.{latest.Build}";
         dlg.PasswordText.Text = UpdateService.UpdatePassword;
+
+        // 展示当前知识库版本（异步刷新，失败静默）
+        _ = dlg.RefreshKbStatusAsync();
 
         // Owner 未显示时 CenterOwner 会退化到屏幕左上，兜底居中屏幕
         if (dlg.Owner is null || !dlg.Owner.IsVisible)
@@ -186,18 +191,164 @@ public partial class UpdateDialog : Window
         }
     }
 
+    // ------------------------------------------------------------ 方式〇：增量更新（全部功能）
+
+    /// <summary>
+    /// 增量更新流程：
+    /// 1) 从 GitHub Release 定位增量包（OBS_Helper_Update_&lt;ver&gt;.zip）资产；
+    /// 2) 下载 → 解压 → 逐文件 SHA-256 校验 → 检查基准版本兼容；
+    /// 3) 启动自举进程（安装版自动提权），随后关闭弹窗并退出应用，由自举进程完成替换与重启。
+    /// 任一步失败都回退提示，不自动下载整包（避免误操作）。
+    /// </summary>
+    private async void OnDeltaUpdate(object sender, RoutedEventArgs e)
+    {
+        SetDownloading(true);
+
+        try
+        {
+            var info = await AppServices.Updates.GetLatestDeltaPackageAsync();
+            if (!info.IsOk)
+            {
+                SetDeltaStatus($"暂无可用的增量包：{info.Error}（可改用完整安装包。）");
+                SetDownloading(false);
+                return;
+            }
+
+            var target = UpdateService.ParseVersion(info.Tag);
+            if (target is not null && _currentVersion is not null && target <= _currentVersion)
+            {
+                SetDeltaStatus($"GitHub 最新版本 {target} 不高于当前版本，无需更新。");
+                SetDownloading(false);
+                return;
+            }
+
+            SetDeltaStatus(target is null
+                ? "正在从 GitHub 下载增量包…"
+                : $"正在从 GitHub 下载增量包（升级到 V{target}）…");
+
+            var progress = new Progress<(long Received, long? Total)>(p =>
+            {
+                DeltaProgressPanel.Visibility = Visibility.Visible;
+                if (p.Total is > 0)
+                {
+                    DeltaProgressBar.Visibility = Visibility.Visible;
+                    DeltaProgressBar.Value = Math.Min(100, p.Received * 100.0 / p.Total.Value);
+                    DeltaStatusText.Text = $"正在下载… {FormatMb(p.Received)} / {FormatMb(p.Total.Value)}";
+                }
+                else
+                {
+                    DeltaProgressBar.Visibility = Visibility.Collapsed;
+                    DeltaStatusText.Text = $"正在下载… {FormatMb(p.Received)}";
+                }
+            });
+
+            var (manifest, error) = await AppServices.Delta.PrepareDeltaAsync(info.AssetUrl!, progress);
+            if (manifest is null)
+            {
+                SetDeltaStatus(error ?? "增量包准备失败，请改用完整安装包。");
+                SetDownloading(false);
+                return;
+            }
+
+            var (launched, launchError) = AppServices.Delta.LaunchBootstrap(manifest);
+            if (!launched)
+            {
+                SetDeltaStatus(launchError ?? "启动更新进程失败。");
+                IncrementalUpdateService.ClearPending();
+                SetDownloading(false);
+                return;
+            }
+
+            _result = UpdateDialogResult.Applying;
+            Close();
+
+            // 调用方（MainWindow / SettingsPage）看到 Applying 后退出应用，
+            // 自举进程随后完成文件替换并拉起新版本。
+        }
+        catch (Exception ex)
+        {
+            SetDeltaStatus("增量更新出错：" + ex.Message);
+            SetDownloading(false);
+        }
+    }
+
+    // ------------------------------------------------------------ 知识库单独更新
+
+    private async void OnKbOnlyUpdate(object sender, RoutedEventArgs e)
+    {
+        KbOnlyButton.IsEnabled = false;
+        KbStatusText.Text = "正在检查知识库…";
+
+        try
+        {
+            var (updated, newVersion, message) = await AppServices.Kb.RefreshAsync(manual: true);
+            if (updated)
+            {
+                AppServices.Problems.Reload();
+                KbStatusText.Text = $"知识库已更新到 v{newVersion}";
+                KbStatusText.SetResourceReference(TextBlock.ForegroundProperty, "OkBrush");
+            }
+            else if (message is not null)
+            {
+                KbStatusText.Text = message;
+                KbStatusText.SetResourceReference(TextBlock.ForegroundProperty, "WarnBrush");
+            }
+            else
+            {
+                KbStatusText.Text = $"知识库已是最新（v{newVersion}）";
+                KbStatusText.SetResourceReference(TextBlock.ForegroundProperty, "OkBrush");
+            }
+        }
+        catch (Exception ex)
+        {
+            KbStatusText.Text = "知识库检查失败：" + ex.Message;
+            KbStatusText.SetResourceReference(TextBlock.ForegroundProperty, "WarnBrush");
+        }
+        finally
+        {
+            KbOnlyButton.IsEnabled = true;
+        }
+    }
+
+    /// <summary>展示当前生效的知识库版本（外部覆盖文件或内置种子）。</summary>
+    private async Task RefreshKbStatusAsync()
+    {
+        try
+        {
+            var data = await AppServices.Problems.GetDataAsync();
+            KbStatusText.Text = string.IsNullOrEmpty(data.Version)
+                ? "知识库版本未知"
+                : $"当前知识库 v{data.Version}";
+        }
+        catch (Exception)
+        {
+            // 读取失败不打扰
+        }
+    }
+
+    private void SetDeltaStatus(string text)
+    {
+        DeltaProgressPanel.Visibility = Visibility.Visible;
+        DeltaProgressBar.Visibility = Visibility.Collapsed;
+        DeltaStatusText.Text = text;
+    }
+
     private void SetDownloading(bool downloading)
     {
+        DeltaButton.IsEnabled = !downloading;
+        KbOnlyButton.IsEnabled = !downloading;
         LanzouButton.IsEnabled = !downloading;
         GithubDownloadButton.IsEnabled = !downloading;
         ReleasePageButton.IsEnabled = !downloading;
         LaterButton.IsEnabled = !downloading;
-        // 状态区域在下载开始时即展开（进度条只在真正下载时显示）
-        GithubProgressPanel.Visibility = Visibility.Visible;
-        GithubProgressBar.Visibility = downloading ? Visibility.Visible : Visibility.Collapsed;
+
+        // 结束时复位两个进度条；面板显隐由各流程自己的状态方法控制
         if (!downloading)
         {
             GithubProgressBar.Value = 0;
+            GithubProgressBar.Visibility = Visibility.Collapsed;
+            DeltaProgressBar.Value = 0;
+            DeltaProgressBar.Visibility = Visibility.Collapsed;
         }
     }
 
@@ -226,4 +377,7 @@ public enum UpdateDialogResult
 
     /// <summary>打开 GitHub Release 页。</summary>
     Repo,
+
+    /// <summary>增量更新已就绪：应用即将退出，由自举进程完成替换并重启。</summary>
+    Applying,
 }

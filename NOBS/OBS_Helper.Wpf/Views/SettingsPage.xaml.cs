@@ -819,7 +819,12 @@ public partial class SettingsPage : UserControl, INavigationAware
                 // 弹窗本身（XAML/下载）出错也要兜底，别让 async void 把整个应用带崩
                 try
                 {
-                    UpdateDialog.Show(result.CurrentVersion, result.LatestVersion);
+                    var choice = UpdateDialog.Show(result.CurrentVersion, result.LatestVersion);
+                    if (choice == UpdateDialogResult.Applying)
+                    {
+                        // 增量更新已就绪：退出应用，自举进程完成替换后自动重启
+                        Application.Current?.Shutdown();
+                    }
                 }
                 catch (Exception ex)
                 {
@@ -836,6 +841,46 @@ public partial class SettingsPage : UserControl, INavigationAware
         finally
         {
             CheckUpdateButton.IsEnabled = true;
+        }
+    }
+
+    // ------------------------------------------------------------ 知识库分离更新
+
+    /// <summary>手动检查并应用知识库更新（绕过启动节流，立即联网拉取）。</summary>
+    private async void OnCheckKbUpdate(object sender, RoutedEventArgs e)
+    {
+        CheckKbButton.IsEnabled = false;
+        KbStatusText.Text = "正在检查知识库…";
+
+        try
+        {
+            var (updated, newVersion, message) = await AppServices.Kb.RefreshAsync(manual: true);
+            if (updated)
+            {
+                AppServices.Problems.Reload();
+                await RefreshAboutAsync(); // 问题库版本 / 更新日期显示同步刷新
+                KbStatusText.Text = $"知识库已更新到 v{newVersion}";
+                KbStatusText.SetResourceReference(TextBlock.ForegroundProperty, "OkBrush");
+            }
+            else if (message is not null)
+            {
+                KbStatusText.Text = message;
+                KbStatusText.SetResourceReference(TextBlock.ForegroundProperty, "WarnBrush");
+            }
+            else
+            {
+                KbStatusText.Text = $"知识库已是最新（v{newVersion}）";
+                KbStatusText.SetResourceReference(TextBlock.ForegroundProperty, "OkBrush");
+            }
+        }
+        catch (Exception ex)
+        {
+            KbStatusText.Text = "知识库检查失败：" + ex.Message;
+            KbStatusText.SetResourceReference(TextBlock.ForegroundProperty, "WarnBrush");
+        }
+        finally
+        {
+            CheckKbButton.IsEnabled = true;
         }
     }
 

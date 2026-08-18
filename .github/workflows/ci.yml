@@ -26,6 +26,10 @@ jobs:
         with:
           dotnet-version: '10.0.x'
 
+      - name: Run unit tests
+        run: dotnet test NOBS/OBS_Helper.Wpf.Tests/OBS_Helper.Wpf.Tests.csproj -c Release
+        shell: pwsh
+
       - name: Install Inno Setup 6
         run: choco install innosetup -y
         shell: bash

@@ -9,6 +9,7 @@ using OBS_Helper.Wpf.Errors;
 using OBS_Helper.Wpf.Models.ObsConfig;
 using OBS_Helper.Wpf.Navigation;
 using OBS_Helper.Wpf.Services.ObsConfig;
+using OBS_Helper.Wpf.Services.Plugins;
 
 namespace OBS_Helper.Wpf.Views;
 
@@ -33,6 +34,8 @@ public partial class TemplatePage : UserControl, INavigationAware
 
     public async Task OnNavigatedToAsync(object? parameter)
     {
+        // 依赖标注用的体检结果每次进入都重扫（只读、毫秒级），保证「已装/未装」状态新鲜
+        _depScan = null;
         await LoadTemplatesAsync();
         BuildCards();
     }
@@ -145,6 +148,9 @@ public partial class TemplatePage : UserControl, INavigationAware
             counts.Children.Add(BuildPill($"待补 ×{placeholders}", "WarnBrush"));
         stack.Children.Add(counts);
 
+        // --- 推荐插件依赖标注（P2-2）：对照本机体检结果显示「已安装 / 未安装」
+        AddPluginRequirementRow(t, stack);
+
         // --- 场景设置：过渡 + 快捷键
         var hotkeys = t.Scenes.Where(s => !string.IsNullOrWhiteSpace(s.Hotkey)).Select(s => $"{s.Hotkey} {s.Name}").ToList();
         var transitionInfo = $"{t.Transition} {t.TransitionDurationMs}ms";
@@ -235,6 +241,118 @@ public partial class TemplatePage : UserControl, INavigationAware
         return pill;
     }
 
+    // ---------------------------------------------------- 插件依赖标注（P2-2）
+
+    private LocalPluginScanResult? _depScan;
+
+    /// <summary>确保本机体检结果可用（页面内缓存一次）。</summary>
+    private LocalPluginScanResult? EnsureDepScan()
+    {
+        try { _depScan ??= AppServices.PluginScanner.Scan(); }
+        catch (Exception) { _depScan ??= new LocalPluginScanResult(); }
+        return _depScan;
+    }
+
+    private static bool IsRequirementInstalled(TemplatePluginRequirement req,
+        PluginEntry? entry, LocalPluginScanResult? scan)
+    {
+        if (entry is null || scan is null) return false;
+        return scan.Plugins.Any(ip =>
+            string.Equals(ip.CatalogId, entry.Id, StringComparison.OrdinalIgnoreCase) ||
+            entry.Dlls.Any(alias =>
+                !string.IsNullOrWhiteSpace(alias) &&
+                string.Equals(alias.Trim(), ip.Stem, StringComparison.OrdinalIgnoreCase)));
+    }
+
+    /// <summary>对照体检结果，返回模板缺失的推荐插件（名称 + 用途说明）。</summary>
+    private List<(string Name, string Reason)> GetMissingRequirements(SceneTemplate t)
+    {
+        var missing = new List<(string, string)>();
+        if (t.RequiresPlugins.Count == 0) return missing;
+
+        var catalog = AppServices.PluginCatalog.GetData();
+        var scan = t.RequiresPlugins.Count > 0 ? EnsureDepScan() : null;
+
+        foreach (var req in t.RequiresPlugins)
+        {
+            var entry = PluginCatalogCore.FindById(catalog, req.Id);
+            if (!IsRequirementInstalled(req, entry, scan))
+                missing.Add((entry?.Name ?? req.Id, req.Reason));
+        }
+        return missing;
+    }
+
+    /// <summary>在卡片上显示推荐插件行：已安装绿标；未安装黄标，可点击跳转插件广场对应卡片。</summary>
+    private void AddPluginRequirementRow(SceneTemplate t, StackPanel stack)
+    {
+        if (t.RequiresPlugins.Count == 0) return;
+
+        var catalog = AppServices.PluginCatalog.GetData();
+        var scan = EnsureDepScan();
+
+        var row = new WrapPanel { Margin = new Thickness(0, 0, 0, 6) };
+        var label = new TextBlock
+        {
+            Text = "🧩 推荐插件：",
+            VerticalAlignment = VerticalAlignment.Center,
+            Margin = new Thickness(0, 0, 2, 8)
+        };
+        label.SetResourceReference(TextBlock.FontSizeProperty, "FontSizeXs");
+        label.SetResourceReference(TextBlock.ForegroundProperty, "MutedBrush");
+        row.Children.Add(label);
+
+        foreach (var req in t.RequiresPlugins)
+        {
+            var entry = PluginCatalogCore.FindById(catalog, req.Id);
+            var name = entry?.Name ?? req.Id;
+            var installed = IsRequirementInstalled(req, entry, scan);
+
+            var text = new TextBlock
+            {
+                Text = installed ? $"{name} ✓已安装" : $"{name} ⚠未安装 →",
+                FontWeight = FontWeights.SemiBold,
+                VerticalAlignment = VerticalAlignment.Center
+            };
+            text.SetResourceReference(TextBlock.FontSizeProperty, "FontSizeXs");
+            text.SetResourceReference(TextBlock.ForegroundProperty, installed ? "OkBrush" : "WarnBrush");
+
+            var pill = new Border
+            {
+                Style = (Style)Application.Current.FindResource("Pill"),
+                Margin = new Thickness(0, 0, 8, 8),
+                Child = text,
+                ToolTip = installed
+                    ? $"用途：{req.Reason}"
+                    : $"用途：{req.Reason}。点击前往插件广场查看与下载"
+            };
+
+            if (!installed && entry is not null)
+            {
+                var btn = new Button
+                {
+                    Style = (Style)Application.Current.FindResource("LinkButton"),
+                    Content = pill,
+                    Padding = new Thickness(0),
+                    Tag = entry.Id
+                };
+                btn.Click += OnMissingPluginClick;
+                row.Children.Add(btn);
+            }
+            else
+            {
+                row.Children.Add(pill);
+            }
+        }
+
+        stack.Children.Add(row);
+    }
+
+    private void OnMissingPluginClick(object sender, RoutedEventArgs e)
+    {
+        if (sender is Button { Tag: string id } && !string.IsNullOrEmpty(id))
+            AppServices.Navigation?.Navigate(Routes.Plugins, id);
+    }
+
     // -------------------------------------------------------------- 操作
 
     private async void OnApplyClick(object sender, RoutedEventArgs e)
@@ -251,9 +369,18 @@ public partial class TemplatePage : UserControl, INavigationAware
             return;
         }
 
+        var confirmMsg = $"将在 OBS 中新建一个干净的配置集合并切换过去，为你创建 {t.Scenes.Count} 个场景、{t.Scenes.Sum(s => s.Sources.Count)} 个来源。设备 / 文件 / URL 类来源需您后续手动补齐。";
+
+        // P2-2：落地前对照本机体检结果提示缺失的推荐插件（不阻断）
+        var missing = GetMissingRequirements(t);
+        if (missing.Count > 0)
+        {
+            confirmMsg += $"\n\n注意：未检测到推荐插件 {string.Join("、", missing.Select(m => m.Name))}（{string.Join("；", missing.Select(m => m.Reason))}）。模板仍可落地，相关能力可稍后补装。";
+        }
+
         if (!ConfirmDialog.Show(
                 $"落地模板「{t.Title}」",
-                $"将在 OBS 中新建一个干净的配置集合并切换过去，为你创建 {t.Scenes.Count} 个场景、{t.Scenes.Sum(s => s.Sources.Count)} 个来源。设备 / 文件 / URL 类来源需您后续手动补齐。\n\n确认继续？",
+                confirmMsg + "\n\n确认继续？",
                 "落地", "取消"))
         {
             return;

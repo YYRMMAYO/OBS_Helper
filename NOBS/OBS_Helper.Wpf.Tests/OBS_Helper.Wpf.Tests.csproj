@@ -32,6 +32,8 @@
     <Compile Include="..\OBS_Helper.Wpf\Services\Update\InstallerCleanup.cs" Link="Linked\Update\InstallerCleanup.cs" />
     <Compile Include="..\OBS_Helper.Wpf\Services\Update\KbVersion.cs" Link="Linked\Update\KbVersion.cs" />
     <Compile Include="..\OBS_Helper.Wpf\Services\Update\UpdatePaths.cs" Link="Linked\Update\UpdatePaths.cs" />
+    <Compile Include="..\OBS_Helper.Wpf\Services\Plugins\PluginCatalog.cs" Link="Linked\Plugins\PluginCatalog.cs" />
+    <Compile Include="..\OBS_Helper.Wpf\Services\Plugins\PluginScannerCore.cs" Link="Linked\Plugins\PluginScannerCore.cs" />
   </ItemGroup>
 
 </Project>

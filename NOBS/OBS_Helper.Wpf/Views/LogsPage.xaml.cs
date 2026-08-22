@@ -8,6 +8,7 @@ using OBS_Helper.Wpf.Errors;
 using OBS_Helper.Wpf.Navigation;
 using OBS_Helper.Wpf.Services.Host;
 using OBS_Helper.Wpf.Services.Obs;
+using OBS_Helper.Wpf.Services.Plugins;
 
 namespace OBS_Helper.Wpf.Views;
 
@@ -183,9 +184,64 @@ public partial class LogsPage : UserControl, INavigationAware
     /// <summary>规则匹配是逐行正则，8MB 日志能跑上百毫秒，放后台线程免得界面卡住。</summary>
     private async Task AnalyzeAsync(string text, string name)
     {
-        _report = await Task.Run(() => AppServices.Analyzer.Analyze(text, name));
+        _report = await Task.Run(() =>
+        {
+            var report = AppServices.Analyzer.Analyze(text, name);
+            AppendAiPluginCostFinding(report);
+            return report;
+        }).ConfigureAwait(true);
         AppServices.Orchestrator.LatestReport = _report;
         RenderReport();
+    }
+
+    /// <summary>
+    /// P1-2 联动：日志存在渲染 / 编码滞后，且本机体检查到已安装的 AI 类插件时，
+    /// 追加一条「AI 插件开销」提示，把掉帧与 AI 推理的固定开销关联起来。
+    /// </summary>
+    private static void AppendAiPluginCostFinding(ObsLogReport report)
+    {
+        try
+        {
+            var perfHit = report.Findings.Any(f =>
+                f.Code is "LOG-STAT-RENDER" or "LOG-STAT-ENCODE"
+                        or "LOG-RENDER-LAG" or "LOG-ENC-OVERLOAD");
+            if (!perfHit) return;
+
+            var scan = AppServices.PluginScanner.Scan();
+            var catalog = AppServices.PluginCatalog.GetData();
+
+            var aiInstalled = new List<string>();
+            foreach (var installed in scan.Plugins)
+            {
+                var entry = PluginCatalogCore.MatchByDll(catalog, installed.FileName);
+                if (entry is { HasAiCost: true } && !aiInstalled.Contains(entry.Name))
+                    aiInstalled.Add(entry.Name);
+            }
+
+            if (aiInstalled.Count == 0) return;
+
+            report.Findings.Add(new LogFinding
+            {
+                Code = "LOG-AI-COST",
+                Severity = LogSeverity.Warning,
+                Title = $"检测到 AI 插件可能加剧掉帧：{string.Join("、", aiInstalled)}",
+                Suggestion = "AI 插件的实时推理有固定开销（抠像约 +5~15% CPU / 100~300MB 内存，字幕约 +5~10% CPU / 200~500MB）。" +
+                             "排查掉帧时可先临时停用对应滤镜对比验证；确需使用请降低模型档位、改用 GPU 推理，并关闭其他高占用程序。",
+                Evidence = "本机体检测到上述 AI 插件已安装，同时日志中存在渲染 / 编码滞后记录。",
+                FirstLine = 0
+            });
+
+            // 与分析器保持同一排序口径：严重度优先，其次命中次数
+            report.Findings.Sort((a, b) =>
+            {
+                var bySeverity = ((int)b.Severity).CompareTo((int)a.Severity);
+                return bySeverity != 0 ? bySeverity : b.Occurrences.CompareTo(a.Occurrences);
+            });
+        }
+        catch (Exception)
+        {
+            // 联动提示失败不影响日志分析主流程
+        }
     }
 
     // ---------------------------------------------------------- 结果渲染
@@ -267,6 +323,34 @@ public partial class LogsPage : UserControl, INavigationAware
         suggestion.Margin = new Thickness(0, 8, 0, 0);
         body.Children.Add(suggestion);
 
+        // P0-2：插件嫌疑联动 —— 能对上广场条目的给跳转按钮，否则展示嫌疑模块名
+        if (!string.IsNullOrEmpty(f.SuspectModule))
+        {
+            var entry = PluginCatalogCore.MatchByDll(AppServices.PluginCatalog.GetData(), f.SuspectModule);
+            if (entry is not null)
+            {
+                var pluginLink = new Button
+                {
+                    Content = $"🧩 在插件广场查看「{entry.Name}」→",
+                    Tag = entry.Id,
+                    Style = TryFindResource("LinkButton") as Style,
+                    HorizontalAlignment = HorizontalAlignment.Left,
+                    Margin = new Thickness(0, 8, 0, 0),
+                    ToolTip = "查看该插件的介绍、本机安装状态与官方下载"
+                };
+                pluginLink.Click += OnOpenPlugin;
+                body.Children.Add(pluginLink);
+            }
+            else
+            {
+                var moduleText = MakeText($"嫌疑模块：{f.SuspectModule}（未收录于插件广场，可先更新或安全模式排查）",
+                    "FontSizeXs", "MutedBrush");
+                moduleText.Margin = new Thickness(0, 6, 0, 0);
+                moduleText.TextWrapping = TextWrapping.Wrap;
+                body.Children.Add(moduleText);
+            }
+        }
+
         if (!string.IsNullOrEmpty(f.ProblemId))
         {
             var link = new Button
@@ -330,6 +414,13 @@ public partial class LogsPage : UserControl, INavigationAware
     {
         if (sender is Button { Tag: string id } && !string.IsNullOrEmpty(id))
             AppServices.Navigation?.Navigate(Routes.Problem, id);
+    }
+
+    /// <summary>P0-2：跳转到插件广场并定位到对应插件卡片。</summary>
+    private void OnOpenPlugin(object sender, RoutedEventArgs e)
+    {
+        if (sender is Button { Tag: string id } && !string.IsNullOrEmpty(id))
+            AppServices.Navigation?.Navigate(Routes.Plugins, id);
     }
 
     // -------------------------------------------------------------- 杂项

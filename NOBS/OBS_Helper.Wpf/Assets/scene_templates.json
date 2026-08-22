@@ -443,6 +443,12 @@
           }
         ]
       }
+    ],
+    "requiresPlugins": [
+      {
+        "id": "aitum-vertical",
+        "reason": "横竖屏同播与联动切换"
+      }
     ]
   },
   {
@@ -696,6 +702,12 @@
             }
           }
         ]
+      }
+    ],
+    "requiresPlugins": [
+      {
+        "id": "droidcam-obs",
+        "reason": "用手机做第二机位（可选）"
       }
     ]
   },
@@ -2107,6 +2119,12 @@
           }
         ]
       }
+    ],
+    "requiresPlugins": [
+      {
+        "id": "audio-monitor",
+        "reason": "双人分轨监听与输出（可选）"
+      }
     ]
   },
   {
@@ -2274,6 +2292,12 @@
             }
           }
         ]
+      }
+    ],
+    "requiresPlugins": [
+      {
+        "id": "aitum-vertical",
+        "reason": "竖屏双画布录制"
       }
     ]
   },

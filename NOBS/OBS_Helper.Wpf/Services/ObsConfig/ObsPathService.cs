@@ -225,6 +225,12 @@ public sealed class ObsPathService
         return null;
     }
 
+    /// <summary>
+    /// 探测 OBS 安装目录（进程 MainModule → 注册表卸载项 → 默认路径）。
+    /// V2.2 起对插件体检开放（只读使用）；探测失败返回 null。
+    /// </summary>
+    public static string? TryDetectInstallDir() => DetectInstallDir();
+
     private static string? DetectInstallDir()
     {
         // 信号①：运行中进程的安装目录

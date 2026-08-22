@@ -846,7 +846,7 @@ public partial class SettingsPage : UserControl, INavigationAware
 
     // ------------------------------------------------------------ 知识库分离更新
 
-    /// <summary>手动检查并应用知识库更新（绕过启动节流，立即联网拉取）。</summary>
+    /// <summary>手动检查并应用知识库更新（绕过启动节流，立即联网拉取）。问题库与插件目录两条通道都查。</summary>
     private async void OnCheckKbUpdate(object sender, RoutedEventArgs e)
     {
         CheckKbButton.IsEnabled = false;
@@ -871,6 +871,22 @@ public partial class SettingsPage : UserControl, INavigationAware
             {
                 KbStatusText.Text = $"知识库已是最新（v{newVersion}）";
                 KbStatusText.SetResourceReference(TextBlock.ForegroundProperty, "OkBrush");
+            }
+
+            // 插件目录（V2.2 P0-3）：与问题库同通道，手动检查时一并刷新
+            var (pluginsUpdated, pluginsVersion, pluginsMessage) = await AppServices.Kb.RefreshPluginsAsync(manual: true);
+            if (pluginsUpdated)
+            {
+                AppServices.PluginCatalog.Reload();
+                var prefix = KbStatusText.Text.Length > 0 ? KbStatusText.Text + "；" : "";
+                KbStatusText.Text = prefix + $"插件目录已更新到 v{pluginsVersion}";
+                KbStatusText.SetResourceReference(TextBlock.ForegroundProperty, "OkBrush");
+            }
+            else if (pluginsMessage is not null && message is null)
+            {
+                // 问题库正常而插件目录通道异常时补充提示
+                KbStatusText.Text += $"；插件目录：{pluginsMessage}";
+                KbStatusText.SetResourceReference(TextBlock.ForegroundProperty, "WarnBrush");
             }
         }
         catch (Exception ex)

@@ -3,6 +3,7 @@ using OBS_Helper.Wpf.Services.Ai;
 using OBS_Helper.Wpf.Services.Host;
 using OBS_Helper.Wpf.Services.Obs;
 using OBS_Helper.Wpf.Services.ObsConfig;
+using OBS_Helper.Wpf.Services.Plugins;
 using OBS_Helper.Wpf.Services.Shell;
 using OBS_Helper.Wpf.Services.Update;
 
@@ -36,6 +37,13 @@ public static class AppServices
     private static readonly Lazy<IncrementalUpdateService> _delta = new(() => new IncrementalUpdateService());
     private static readonly Lazy<KnowledgeBaseUpdater> _kb = new(() => new KnowledgeBaseUpdater());
     private static readonly Lazy<InstallerCleanupService> _cleanup = new(() => new InstallerCleanupService());
+
+    // 插件生态（V2.2）：目录数据 / 本机体检 / Releases 查新 / 关注提醒
+    private static readonly Lazy<PluginCatalogService> _pluginCatalog = new(() => new PluginCatalogService());
+    private static readonly Lazy<LocalPluginScanner> _pluginScanner = new(() => new LocalPluginScanner());
+    private static readonly Lazy<PluginReleaseService> _pluginReleases = new(() => new PluginReleaseService());
+    private static readonly Lazy<PluginWatchService> _pluginWatch =
+        new(() => new PluginWatchService(Store, () => _pluginCatalog.Value.GetData(), _pluginReleases.Value));
 
     // 后台 / 遥控能力
     private static readonly Lazy<TrayService> _tray = new(() => new TrayService(Obs, Store));
@@ -76,6 +84,12 @@ public static class AppServices
     public static IncrementalUpdateService Delta => _delta.Value;
     public static KnowledgeBaseUpdater Kb => _kb.Value;
     public static InstallerCleanupService Cleanup => _cleanup.Value;
+
+    // 插件生态（V2.2）
+    public static PluginCatalogService PluginCatalog => _pluginCatalog.Value;
+    public static LocalPluginScanner PluginScanner => _pluginScanner.Value;
+    public static PluginReleaseService PluginReleases => _pluginReleases.Value;
+    public static PluginWatchService PluginWatch => _pluginWatch.Value;
     public static ObsToolRegistry Tools => _tools.Value;
     public static LocalDiagnosticEngine LocalEngine => _localEngine.Value;
     public static CloudDiagnosticEngine CloudEngine => _cloudEngine.Value;

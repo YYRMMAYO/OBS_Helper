@@ -45,6 +45,7 @@ public partial class MainWindow : Window
             [Routes.Diagnostic] = (NavDiagnostic, "智能诊断", "连上 OBS 后一键体检"),
             [Routes.Setup] = (NavSetup, "直播搭建", "从零到开播的完整流程"),
             [Routes.Templates] = (NavTemplates, "场景模板", "一键搭好整套场景与来源"),
+            [Routes.Plugins] = (NavPlugins, "插件广场", "常用 OBS 插件分类导航，直达官方下载"),
             [Routes.Console] = (NavConsole, "OBS 控制台", "远程控制场景、录制与推流"),
             [Routes.Performance] = (NavPerformance, "系统监控", "CPU / 内存 / 网络 / 磁盘实时曲线"),
             [Routes.Guide] = (NavGuide, "排障指引", "通用排查思路与速查手册"),
@@ -77,6 +78,7 @@ public partial class MainWindow : Window
         _nav.Register(Routes.Diagnostic, () => new DiagnosticPage());
         _nav.Register(Routes.Setup, () => new SetupPage());
         _nav.Register(Routes.Templates, () => new TemplatePage());
+        _nav.Register(Routes.Plugins, () => new PluginsPage());
         _nav.Register(Routes.Console, () => new ConsolePage());
         _nav.Register(Routes.Performance, () => new PerformancePage());
         _nav.Register(Routes.Guide, () => new GuidePage());
@@ -146,6 +148,37 @@ public partial class MainWindow : Window
             // 知识库更新属于锦上添花，任何异常都不得打断主流程
         }
 
+        // 插件目录分离更新（V2.2 P0-3）：与问题库同机制，更新后让插件广场下次进入时重建
+        try
+        {
+            var (pluginsUpdated, pluginsVersion, _) = await AppServices.Kb.RefreshPluginsAsync(manual: false).ConfigureAwait(false);
+            if (pluginsUpdated)
+            {
+                AppServices.PluginCatalog.Reload();
+                AppServices.Toast.Show($"插件目录已更新到 v{pluginsVersion}", "ok");
+            }
+        }
+        catch (Exception)
+        {
+            // 同上：静默失败
+        }
+
+        // 关注插件的静默查新（V2.2 P2-1）：节流 24h，有新版本仅 Toast 不弹窗
+        try
+        {
+            var updates = await AppServices.PluginWatch.CheckForUpdatesAsync().ConfigureAwait(false);
+            if (updates.Count > 0)
+            {
+                var names = string.Join("、", updates.Take(3).Select(u => $"{u.PluginName} {u.NewTag}"));
+                if (updates.Count > 3) names += $" 等 {updates.Count} 个";
+                AppServices.Toast.Show($"关注的插件有新版本：{names}", "info");
+            }
+        }
+        catch (Exception)
+        {
+            // 静默失败
+        }
+
         try
         {
             AppServices.Cleanup.RunAtStartup();
@@ -182,7 +215,7 @@ public partial class MainWindow : Window
     }
 
     /// <summary>
-    /// 自动化自检：遍历全部 13 个路由（含带参数的分类页 / 问题详情页），
+    /// 自动化自检：遍历全部 15 个路由（含带参数的分类页 / 问题详情页），
     /// 捕获 XAML 解析、构造函数、OnNavigatedToAsync 各阶段异常，汇总写入 <c>selftest_result.txt</c>。
     /// 这是「编译通过但运行时才炸」类错误（尤其 <c>{Static|Dynamic}Resource</c> 拼错）最有效的拦截手段。
     /// </summary>
@@ -203,12 +236,14 @@ public partial class MainWindow : Window
             (Routes.Diagnostic, null),
             (Routes.Setup, null),
             (Routes.Templates, null),
+            (Routes.Plugins, null),
             (Routes.Console, null),
             (Routes.Performance, null),
             (Routes.Guide, null),
             (Routes.Settings, null),
             (Routes.Category, firstCategory),
             (Routes.Problem, firstProblem),
+            (Routes.Plugins, "localvocal"),
             (Routes.Logs, null),
             (Routes.ObsConfig, null),
         };

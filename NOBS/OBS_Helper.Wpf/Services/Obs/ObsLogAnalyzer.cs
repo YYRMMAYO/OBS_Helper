@@ -23,6 +23,11 @@ public sealed class LogFinding
     public string Suggestion { get; init; } = "";
     /// <summary>关联到离线知识库中的问题条目 id，便于一键跳转到分步方案。</summary>
     public string? ProblemId { get; init; }
+    /// <summary>
+    /// 命中插件类线索时提取出的嫌疑模块名（如 foo.dll）。
+    /// 用于与本地插件体检结果 / 插件广场目录联动，给出「跳转查看」入口。
+    /// </summary>
+    public string? SuspectModule { get; set; }
     /// <summary>同类命中次数。</summary>
     public int Occurrences { get; set; } = 1;
     /// <summary>首次出现的行号（从 1 开始）。</summary>
@@ -134,6 +139,11 @@ public sealed class ObsLogAnalyzer
     private static readonly Regex ReRenderLag = new(@"lagged frames due to rendering lag[^:]*:\s*(\d+)\s*\(([\d.]+)%\)", Opts);
     private static readonly Regex ReEncodeLag = new(@"skipped frames due to encoding lag[^:]*:\s*(\d+)(?:/(\d+))?\s*\(([\d.]+)%\)", Opts);
     private static readonly Regex ReNetDrop = new(@"dropped frames due to insufficient bandwidth[^:]*:\s*(\d+)\s*\(([\d.]+)%\)", Opts);
+
+    // 插件嫌疑模块提取（P0-2：日志 × 插件联动）
+    private static readonly Regex ReDlopen = new(@"os_dlopen\s*\(\s*['""“”]?([^)'""“”]+)", Opts);
+    private static readonly Regex ReModuleNotLoaded = new(@"(?:Module|插件)\s+'([^']+)'\s+(?:not loaded|未加载|加载失败)", Opts);
+    private static readonly Regex RePluginLoadFail = new(@"Failed to load (?:the )?'?([^'""，。\n]+?)'?\s+plugin", Opts);
 
     // ------------------------------------------------------------------ 规则表
 
@@ -248,9 +258,21 @@ public sealed class ObsLogAnalyzer
         // —— 插件 / 崩溃 ——
         new() {
             Code = "LOG-PLUGIN", Severity = LogSeverity.Warning, ProblemId = "cr-plugin",
-            Pattern = new Regex(@"os_dlopen\(.*\) failed|Module '.*' not loaded|Failed to load '.*' plugin|LoadLibrary failed", Opts),
+            Pattern = new Regex(@"os_dlopen\(.*\)\s*failed|os_dlopen.*(?:failed|could not|无法|拒绝|找不到)|Module '.*' not loaded|Failed to load '.*' plugin|LoadLibrary failed", Opts),
             Title = "插件加载失败",
-            Suggestion = "插件与 OBS 大版本不匹配是最常见原因；用「安全模式」启动确认，再逐个更新或移除插件。"
+            Suggestion = "插件与 OBS 大版本不匹配是最常见原因；用「安全模式」启动确认，再逐个更新或移除插件。可在「插件」页的本机体检面板核对已装插件版本。"
+        },
+        new() {
+            Code = "LOG-PLUGIN-STREAMFX", Severity = LogSeverity.Info, ProblemId = "cr-streamfx",
+            Pattern = new Regex(@"streamfx", Opts),
+            Title = "日志中出现 StreamFX（已停止维护的插件）",
+            Suggestion = "StreamFX 已实质停更，在 OBS 30+ 上兼容性持续恶化，是老教程用户的高频故障源；建议迁移到单一职责轻量插件（模糊用 Composite Blur、遮罩用 Advanced Masks 等），详见知识库条目。"
+        },
+        new() {
+            Code = "LOG-PLUGIN-MULTI-RTMP", Severity = LogSeverity.Info, ProblemId = "st-multi-rtmp",
+            Pattern = new Regex(@"obs-multi-rtmp|multi[_ -]?rtmp", Opts),
+            Title = "使用了 obs-multi-rtmp 多路推流插件",
+            Suggestion = "该插件在新版 OBS 上有带宽骤降 / 编码过载 / 杀软误报的零星报告；多路推流不稳时优先评估 Aitum Multistream（维护活跃），详见知识库条目。"
         },
         new() {
             Code = "LOG-VCREDIST", Severity = LogSeverity.Critical, ProblemId = "cr-vcredist",
@@ -339,7 +361,10 @@ public sealed class ObsLogAnalyzer
 
             // 用规则表匹配已知故障特征（一行可能同时命中多条，全部记录）
             if (found.Count < MaxFindings)
-                MatchRules(line, lineNo, found);
+            {
+                foreach (var rule in Rules)
+                    MatchRules(rule, line, lineNo, found);
+            }
         }
 
         report.Summary.TotalLines = lineNo;
@@ -364,31 +389,79 @@ public sealed class ObsLogAnalyzer
     }
 
     /// <summary>用规则表匹配一行：命中则聚合计数或新建 finding。</summary>
-    private static void MatchRules(string line, int lineNo, Dictionary<string, LogFinding> found)
+    private static void MatchRules(LogRule rule, string line, int lineNo, Dictionary<string, LogFinding> found)
     {
-        foreach (var rule in Rules)
-        {
-            if (!rule.Pattern.IsMatch(line)) continue;
+        if (!rule.Pattern.IsMatch(line)) return;
 
-            if (found.TryGetValue(rule.Code, out var existing))
+        if (found.TryGetValue(rule.Code, out var existing))
+        {
+            existing.Occurrences++;
+            // 首次命中行没提取到嫌疑模块时，后续行补上（插件类线索跨多行出现很常见）
+            if (existing.SuspectModule is null)
             {
-                existing.Occurrences++;
+                var late = ExtractSuspectModule(rule, line);
+                if (late is not null) existing.SuspectModule = late;
             }
-            else
-            {
-                found[rule.Code] = new LogFinding
-                {
-                    Code = rule.Code,
-                    Severity = rule.Severity,
-                    Title = rule.Title,
-                    Suggestion = rule.Suggestion,
-                    ProblemId = rule.ProblemId,
-                    Evidence = Trim(line),
-                    FirstLine = lineNo
-                };
-            }
-            // 一行可能同时命中多条规则（例如同时含 failed 与 NVENC），全部记录
         }
+        else
+        {
+            found[rule.Code] = new LogFinding
+            {
+                Code = rule.Code,
+                Severity = rule.Severity,
+                Title = rule.Title,
+                Suggestion = rule.Suggestion,
+                ProblemId = rule.ProblemId,
+                Evidence = Trim(line),
+                SuspectModule = ExtractSuspectModule(rule, line),
+                FirstLine = lineNo
+            };
+        }
+        // 一行可能同时命中多条规则（例如同时含 failed 与 NVENC），全部记录
+    }
+
+    /// <summary>
+    /// 从命中的日志行里提取「嫌疑插件 / 模块」名（P0-2）。
+    /// 只对插件加载失败与崩溃肇事模块两类线索提取；提取不到返回 null。
+    /// </summary>
+    private static string? ExtractSuspectModule(LogRule rule, string line)
+    {
+        if (rule.Code == "LOG-CRASH-MODULE")
+        {
+            // 该规则的 Pattern 自带两个捕获组：faulting module … / Exception Module Name …
+            var m = rule.Pattern.Match(line);
+            if (!m.Success) return null;
+            for (var g = 1; g < m.Groups.Count; g++)
+            {
+                if (m.Groups[g].Success && m.Groups[g].Value.Length > 0)
+                {
+                    var name = CleanModuleName(m.Groups[g].Value);
+                    if (name.Length > 0) return name;
+                }
+            }
+            return null;
+        }
+
+        if (rule.Code != "LOG-PLUGIN") return null;
+
+        foreach (var rx in new[] { ReDlopen, ReModuleNotLoaded, RePluginLoadFail })
+        {
+            var m = rx.Match(line);
+            if (!m.Success) continue;
+            var name = CleanModuleName(m.Groups[1].Value);
+            if (!string.IsNullOrEmpty(name)) return name;
+        }
+        return null;
+    }
+
+    /// <summary>把捕获到的模块路径 / 名称清洗成纯文件名（去路径、去引号与标点）。</summary>
+    private static string CleanModuleName(string raw)
+    {
+        var s = raw.Trim().Trim('"', '\'', '`', ',', '.', ';', ':', ')', ']'); 
+        var slash = Math.Max(s.LastIndexOf('/'), s.LastIndexOf('\\'));
+        if (slash >= 0) s = s[(slash + 1)..];
+        s = s.Trim();
+        return s.Length == 0 || s.IndexOf(' ') >= 0 ? "" : s;
     }
 
     // ------------------------------------------------------- 环境信息逐行提取

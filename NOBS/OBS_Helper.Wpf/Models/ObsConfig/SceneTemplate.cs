@@ -18,6 +18,15 @@ public sealed class SceneTemplate
     /// <summary>默认场景切换过渡时长（毫秒）。</summary>
     public int TransitionDurationMs { get; set; } = 300;
     public List<TemplateScene> Scenes { get; set; } = new();
+    /// <summary>推荐 / 依赖的插件（V2.2 P2-2）：落地前对照本机体检结果标注是否已装，缺失给跳转。</summary>
+    public List<TemplatePluginRequirement> RequiresPlugins { get; set; } = new();
+}
+
+/// <summary>模板对一个插件的依赖（当前均为可选推荐：缺失不阻断落地，仅提示）。</summary>
+public sealed class TemplatePluginRequirement
+{
+    public string Id { get; set; } = "";
+    public string Reason { get; set; } = "";
 }
 
 public sealed class CanvasSpec

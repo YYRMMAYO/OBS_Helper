@@ -379,6 +379,18 @@ public sealed class UpdateService
             "GitHub 上还没有发布过独立知识库文件。").ConfigureAwait(false);
     }
 
+    /// <summary>
+    /// 查询 GitHub 最新 Release 中的「插件目录文件」（OBS_Helper_Plugins_&lt;ver&gt;.json）下载地址。
+    /// 插件知识库 raw 通道失败时的兜底（V2.2 P0-3）。永不抛异常。
+    /// </summary>
+    public async Task<GitHubAssetInfo> GetLatestPluginsAssetAsync()
+    {
+        return await FindNamedAssetAsync(
+            name => name.StartsWith("OBS_Helper_Plugins_", StringComparison.OrdinalIgnoreCase)
+                 && name.EndsWith(".json", StringComparison.OrdinalIgnoreCase),
+            "GitHub 上还没有发布过插件目录文件。").ConfigureAwait(false);
+    }
+
     /// <summary>遍历全部 Release，取「版本号最高且带指定命名资产」的一条；找不到返回 Error。</summary>
     private async Task<GitHubAssetInfo> FindNamedAssetAsync(Func<string, bool> match, string notFoundMessage)
     {

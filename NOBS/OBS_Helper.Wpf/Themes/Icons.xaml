@@ -85,6 +85,11 @@
     M12,4 L20,8.5 L12,13 L4,8.5 Z M4,12 L12,16.5 L20,12 M4,15.5 L12,20 L20,15.5
   </StreamGeometry>
 
+  <!-- 插件：拼图块 -->
+  <StreamGeometry x:Key="IconGeomPlugins" PresentationOptions:Freeze="True">
+    M5,10 H8 A2.5,2.5 0 0 1 13,10 H19 V12 A2.5,2.5 0 0 1 19,17 V20 H5 Z
+  </StreamGeometry>
+
   <!-- 控制台：显示器 -->
   <StreamGeometry x:Key="IconGeomConsole" PresentationOptions:Freeze="True">
     M4,5 H20 V16 H4 Z M9,20 H15 M12,16 V20

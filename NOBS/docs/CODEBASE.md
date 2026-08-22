@@ -154,9 +154,22 @@ NOBS/
 | `Views/ObsConfigPage.xaml(.cs)` | 412 | OBS 配置管理页（备份/恢复/重置/定位）。 |
 | `Views/TemplatePage.xaml(.cs)` | 343 | 场景模板页（在线落地 / 离线导出）。 |
 | `Views/SettingsPage.xaml(.cs)` | 786 | 设置页（AI、连接、热键、外观、更新等全部设置）。 |
-| `Views/SetupPage.xaml(.cs)` | 220 | 新手搭建流程六步引导。 |
+| `Views/SetupPage.xaml(.cs)` | 220 | 新手搭建流程六步引导 + 竖屏 / 多平台进阶向导（V2.2）。 |
+| `Views/PluginsPage.xaml(.cs)` | 800 | 插件广场：目录热更新 + 本机体检 + 下载角标 + AI 预算提示 + 关注（V2.2）。 |
+| `Views/SetupWizardWindow.xaml(.cs)` | 250 | 分步向导窗口（竖屏双画布 / 多平台推流，V2.2）。 |
 | `Views/GuidePage.xaml(.cs)` | 95 | 使用指引（随包资源）。 |
 | `Views/MiniControlWindow.xaml(.cs)` | 106 | 迷你小窗（精简控制）。 |
+
+### 2.6 Plugins（插件生态服务，V2.2）
+
+| 文件 | 职责 |
+|---|---|
+| `Services/Plugins/PluginCatalog.cs` | 目录模型与纯逻辑：JSON 解析、DLL 名匹配、分类分组、repo 归一化。 |
+| `Services/Plugins/PluginCatalogService.cs` | 目录数据访问（外部覆盖文件优先，内嵌种子兜底，可热重载）。 |
+| `Services/Plugins/PluginScannerCore.cs` | 本机插件扫描纯逻辑（枚举 DLL + 版本信息，只读）。 |
+| `Services/Plugins/LocalPluginScanner.cs` | OBS 安装目录候选定位与体检入口（复用 ObsPathService 探测）。 |
+| `Services/Plugins/PluginReleaseService.cs` | GitHub Releases 最新版本查询（内存 + 磁盘双层缓存、在途合并、失败静默）。 |
+| `Services/Plugins/PluginWatchService.cs` | 关注插件启动静默查新（24h 节流，仅 Toast）。 |
 
 ### 2.6 导航 / 错误码
 
@@ -173,8 +186,9 @@ NOBS/
 | `Themes/Controls.xaml` | 通用控件样式（按钮/卡片/输入框等）。 |
 | `Themes/Icons.xaml` | 品牌 SVG 矢量图标（DrawingImage）。 |
 | `Assets/appicon.ico` | 应用图标。 |
-| `Assets/problems.json` | 离线知识库（问题库）。 |
-| `Assets/scene_templates.json` | 场景模板数据。 |
+| `Assets/problems.json` | 离线知识库（问题库，独立热更新 v1.6）。 |
+| `Assets/plugins.json` | 插件广场目录（V2.2 外置数据，独立热更新）。 |
+| `Assets/scene_templates.json` | 场景模板数据（含推荐插件依赖标注）。 |
 | `Assets/troubleshooting.md` | 疑难排查 Markdown 指引。 |
 | `Assets/free_ai_key.json` | 内置免费 AI 密钥（构建期注入，不入库，见 .gitignore）。 |
 

@@ -45,7 +45,8 @@ public sealed class LocalDiagnosticEngine
                     Severity = DiagnosticSeverityMapper.Map(f.Severity),
                     Source = "日志分析",
                     Reason = f.Occurrences > 1 ? $"日志中命中 {f.Occurrences} 次" : "日志中命中",
-                    Evidence = f.Evidence
+                    Evidence = f.Evidence,
+                    SuspectModule = f.SuspectModule ?? ""
                 };
                 if (!string.IsNullOrEmpty(f.ProblemId))
                 {

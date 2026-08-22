@@ -53,6 +53,9 @@ public static class Routes
 
     /// <summary>系统资源监控页（一级导航）。</summary>
     public const string Performance = "performance";
+
+    /// <summary>OBS 插件广场：常用插件的分类导航与官方下载跳转（一级导航）。</summary>
+    public const string Plugins = "plugins";
 }
 
 /// <summary>

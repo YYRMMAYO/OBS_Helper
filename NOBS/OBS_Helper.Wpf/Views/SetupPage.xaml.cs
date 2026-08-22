@@ -62,6 +62,7 @@ public partial class SetupPage : UserControl, INavigationAware
         {
             _chromeBuilt = true;
             BuildFlow();
+            BuildWizards();
             BuildPlatformChips();
         }
 
@@ -157,6 +158,80 @@ public partial class SetupPage : UserControl, INavigationAware
         if (slash < 0) AppServices.Navigation.Navigate(href);
         else AppServices.Navigation.Navigate(href[..slash], href[(slash + 1)..]);
     }
+
+    // ---------------------------------------------------------- 进阶向导（P1-3）
+
+    /// <summary>两条进阶向导入口：竖屏双画布 / 多平台同时推流，点开分步向导窗口。</summary>
+    private void BuildWizards()
+    {
+        AddWizardCard(SetupWizards.Vertical,
+            "Aitum Vertical 双画布 · 横竖同播 · 约 10 分钟");
+        AddWizardCard(SetupWizards.MultiStream,
+            "多平台并发推流 · 独立码率 · 带宽预算 70%");
+    }
+
+    private void AddWizardCard(WizardDefinition def, string meta)
+    {
+        var icon = new TextBlock
+        {
+            Text = def.Icon,
+            FontSize = 26,
+            VerticalAlignment = VerticalAlignment.Center
+        };
+
+        var title = new TextBlock
+        {
+            Text = def.Title + " 向导",
+            FontWeight = FontWeights.SemiBold,
+            TextWrapping = TextWrapping.Wrap
+        };
+        title.SetResourceReference(TextBlock.FontSizeProperty, "FontSizeBase");
+        title.SetResourceReference(TextBlock.ForegroundProperty, "TextBrush");
+
+        var metaText = new TextBlock
+        {
+            Text = meta,
+            Margin = new Thickness(0, 4, 0, 0),
+            TextWrapping = TextWrapping.Wrap
+        };
+        metaText.SetResourceReference(TextBlock.FontSizeProperty, "FontSizeXs");
+        metaText.SetResourceReference(TextBlock.ForegroundProperty, "MutedBrush");
+
+        var body = new StackPanel { Margin = new Thickness(12, 10, 12, 11), VerticalAlignment = VerticalAlignment.Center };
+        body.Children.Add(title);
+        body.Children.Add(metaText);
+
+        var grid = new Grid();
+        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        Grid.SetColumn(icon, 0);
+        Grid.SetColumn(body, 1);
+        var chevron = new TextBlock { Text = "›", VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(6, 0, 0, 0) };
+        chevron.SetResourceReference(TextBlock.FontSizeProperty, "FontSizeXl");
+        chevron.SetResourceReference(TextBlock.ForegroundProperty, "MutedBrush");
+        Grid.SetColumn(chevron, 2);
+        grid.Children.Add(icon);
+        grid.Children.Add(body);
+        grid.Children.Add(chevron);
+
+        var button = new Button
+        {
+            Style = (Style)FindResource("CardButton"),
+            Content = grid,
+            Tag = def.Id,
+            MinWidth = 300,
+            Margin = new Thickness(0, 0, 10, 10)
+        };
+        button.Click += (_, _) =>
+        {
+            var win = new SetupWizardWindow(def) { Owner = Window.GetWindow(this) };
+            win.ShowDialog();
+        };
+
+        WizardPanel.Children.Add(button);
+    }
+
 
     // ---------------------------------------------------------- 平台筛选
 

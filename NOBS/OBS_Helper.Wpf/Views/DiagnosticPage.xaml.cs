@@ -217,6 +217,26 @@ public partial class DiagnosticPage : UserControl, INavigationAware
             body.Children.Add(link);
         }
 
+        // P0-2：嫌疑插件联动 —— 日志线索定位到具体插件时给「插件广场」跳转
+        if (!string.IsNullOrEmpty(it.SuspectModule))
+        {
+            var entry = Services.Plugins.PluginCatalogCore.MatchByDll(
+                AppServices.PluginCatalog.GetData(), it.SuspectModule);
+            if (entry is not null)
+            {
+                var pluginLink = new Button
+                {
+                    Content = $"🧩 在插件广场查看「{entry.Name}」→",
+                    Tag = entry.Id,
+                    Style = TryFindResource("LinkButton") as Style,
+                    HorizontalAlignment = HorizontalAlignment.Left,
+                    Margin = new Thickness(0, 8, 0, 0)
+                };
+                pluginLink.Click += OnOpenPlugin;
+                body.Children.Add(pluginLink);
+            }
+        }
+
         var card = new Border
         {
             Style = TryFindResource("CardTight") as Style,
@@ -305,6 +325,13 @@ public partial class DiagnosticPage : UserControl, INavigationAware
     {
         if (sender is Button { Tag: string id } && !string.IsNullOrEmpty(id))
             AppServices.Navigation?.Navigate(Routes.Problem, id);
+    }
+
+    /// <summary>P0-2：跳转插件广场并定位嫌疑插件。</summary>
+    private void OnOpenPlugin(object sender, RoutedEventArgs e)
+    {
+        if (sender is Button { Tag: string id } && !string.IsNullOrEmpty(id))
+            AppServices.Navigation?.Navigate(Routes.Plugins, id);
     }
 
     private void OnOpenLogs(object sender, RoutedEventArgs e)

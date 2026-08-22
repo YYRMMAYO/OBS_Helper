@@ -74,6 +74,7 @@
             <RadioButton x:Name="NavDiagnostic" Style="{StaticResource NavTabButton}" Content="诊断"   Tag="{StaticResource IconGeomDiagnostic}" Checked="OnNavChecked" />
             <RadioButton x:Name="NavSetup"      Style="{StaticResource NavTabButton}" Content="搭建"   Tag="{StaticResource IconGeomSetup}"      Checked="OnNavChecked" />
             <RadioButton x:Name="NavTemplates" Style="{StaticResource NavTabButton}" Content="模板"   Tag="{StaticResource IconGeomTemplates}" Checked="OnNavChecked" />
+            <RadioButton x:Name="NavPlugins"   Style="{StaticResource NavTabButton}" Content="插件"   Tag="{StaticResource IconGeomPlugins}"   Checked="OnNavChecked" />
             <RadioButton x:Name="NavConsole"    Style="{StaticResource NavTabButton}" Content="控制台" Tag="{StaticResource IconGeomConsole}"    Checked="OnNavChecked" />
             <RadioButton x:Name="NavPerformance" Style="{StaticResource NavTabButton}" Content="监控"   Tag="{StaticResource IconGeomPerformance}" Checked="OnNavChecked" />
             <RadioButton x:Name="NavGuide"      Style="{StaticResource NavTabButton}" Content="指引"   Tag="{StaticResource IconGeomGuide}"      Checked="OnNavChecked" />

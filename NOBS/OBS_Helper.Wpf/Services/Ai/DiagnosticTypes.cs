@@ -23,6 +23,12 @@ public sealed class DiagnosticItem
     /// <summary>证据原文（已脱敏），云端路径也只放脱敏内容。</summary>
     public string Evidence { get; set; } = "";
 
+    /// <summary>
+    /// 嫌疑插件 / 模块名（V2.2 P0-2）：日志线索命中插件加载失败或崩溃肇事模块时提取。
+    /// UI 据此给出「在插件广场查看」的跳转入口；空表示无嫌疑模块。
+    /// </summary>
+    public string SuspectModule { get; set; } = "";
+
     /// <summary>知识库分步方案的标题列表。</summary>
     public List<string> Steps { get; set; } = new();
 

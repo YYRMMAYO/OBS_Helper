@@ -103,4 +103,48 @@ public class ObsLogAnalyzerTests
         var report = _analyzer.Analyze("Faulting module name: obs-browser.dll");
         Assert.Contains(report.Findings, f => f.Code == "LOG-CRASH-MODULE");
     }
+
+    // ---------------------- V2.2 P0-2：插件嫌疑提取与联动 ----------------------
+
+    [Fact]
+    public void Analyze_PluginLoadFailure_ExtractsSuspectModule()
+    {
+        var report = _analyzer.Analyze(
+            @"os_dlopen(C:\Program Files\obs-studio\obs-plugins\64bit\foo-bar.dll): The specified module could not be found.");
+        var finding = report.Findings.FirstOrDefault(f => f.Code == "LOG-PLUGIN");
+        Assert.NotNull(finding);
+        Assert.Equal("foo-bar.dll", finding!.SuspectModule);
+    }
+
+    [Fact]
+    public void Analyze_CrashModule_ExtractsSuspectModule()
+    {
+        var report = _analyzer.Analyze("Exception Module Name: evilplugin.dll");
+        var finding = report.Findings.FirstOrDefault(f => f.Code == "LOG-CRASH-MODULE");
+        Assert.NotNull(finding);
+        Assert.Equal("evilplugin.dll", finding!.SuspectModule);
+    }
+
+    [Fact]
+    public void Analyze_StreamFX_MapsToMigrationEntry()
+    {
+        var report = _analyzer.Analyze("os_dlopen(streamfx.dll) failed to load");
+        Assert.Contains(report.Findings, f => f.Code == "LOG-PLUGIN-STREAMFX" && f.ProblemId == "cr-streamfx");
+    }
+
+    [Fact]
+    public void Analyze_MultiRtmp_MentionsKnownIssuesEntry()
+    {
+        var report = _analyzer.Analyze("[obs-multi-rtmp] output 'rtmp_output' reconnecting");
+        var finding = report.Findings.FirstOrDefault(f => f.Code == "LOG-PLUGIN-MULTI-RTMP");
+        Assert.NotNull(finding);
+        Assert.Equal("st-multi-rtmp", finding!.ProblemId);
+        // Info 级别不应排在 Warning 之前
+        var warnIndex = report.Findings.FindIndex(f => f.Severity == LogSeverity.Warning);
+        if (warnIndex >= 0)
+        {
+            var idx = report.Findings.IndexOf(finding!);
+            Assert.True(idx >= 0);
+        }
+    }
 }

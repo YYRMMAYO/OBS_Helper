@@ -1,6 +1,6 @@
 {
- "version": "1.5",
- "updated": "2026-08-19",
+ "version": "1.6",
+ "updated": "2026-08-22",
  "categories": [
   {
    "id": "black-screen",
@@ -6231,7 +6231,137 @@
      "url": "https://tsight.io/articles/10161700"
     }
    ]
+  },
+  {
+   "id": "cr-streamfx",
+   "category": "crash",
+   "title": "StreamFX 停更导致的功能失效 / 崩溃（替代迁移指南）",
+   "platforms": [
+    "Windows",
+    "macOS"
+   ],
+   "severity": "常见",
+   "symptoms": [
+    "安装 StreamFX 后 OBS 启动崩溃或插件无法加载",
+    "OBS 大版本升级后 StreamFX 滤镜全部消失或报错",
+    "日志出现 os_dlopen(streamfx) failed / 模块加载失败"
+   ],
+   "causes": [
+    "StreamFX 项目已实质停更，与 OBS 30+ 的 API 不再跟进兼容",
+    "老教程仍在推荐安装，装完即遇到新版 OBS 兼容性问题",
+    "其单一功能早已有维护活跃的轻量插件可以平替"
+   ],
+   "steps": [
+    {
+     "title": "先卸载 StreamFX 再排查",
+     "detail": "安全模式（--safe-mode）启动确认崩溃由它引起后，直接卸载 StreamFX；不要在停更版本上反复重试。",
+     "level": "基础"
+    },
+    {
+     "title": "模糊 → Composite Blur",
+     "detail": "Dual Kawase 高质量模糊，性能好效果佳，是 StreamFX 模糊功能的社区接棒者。",
+     "level": "基础"
+    },
+    {
+     "title": "遮罩 / 形状裁剪 → Advanced Masks",
+     "detail": "形状、渐变、图像遮罩全覆盖，圆角摄像头与异形画面都能做。",
+     "level": "基础"
+    },
+    {
+     "title": "描边辉光投影 → Stroke Glow Shadow",
+     "detail": "三合一滤镜，摄像头画面精致质感一步到位。",
+     "level": "进阶"
+    },
+    {
+     "title": "自定义着色器 → obs-shaderfilter",
+     "detail": "需要 StreamFX 着色器玩法的，用 exeldro 的 shaderfilter 加载社区着色器。",
+     "level": "进阶"
+    }
+   ],
+   "tips": [
+    "迁移前先备份场景集合：工具 → 场景集合管理器导出一份，避免滤镜参数丢失",
+    "到「插件」页的本机体检面板确认 StreamFX 已移除干净再逐个补装替代插件"
+   ],
+   "related": [
+    "cr-plugin",
+    "cr-safe-mode"
+   ],
+   "links": [
+    {
+     "title": "Exeldro 插件作品集（Move / Shader 系列等）",
+     "url": "https://github.com/exeldro"
+    },
+    {
+     "title": "Composite Blur（模糊替代）",
+     "url": "https://github.com/FiniteSingularity/obs-composite-blur"
+    },
+    {
+     "title": "Advanced Masks（遮罩替代）",
+     "url": "https://github.com/FiniteSingularity/obs-advanced-masks"
+    }
+   ]
+  },
+  {
+   "id": "st-multi-rtmp",
+   "category": "setup",
+   "title": "obs-multi-rtmp 多平台推流不稳（带宽骤降 / 编码过载 / 杀软误报）与替代方案",
+   "platforms": [
+    "Windows",
+    "macOS"
+   ],
+   "severity": "常见",
+   "symptoms": [
+    "同时推多平台时总带宽骤降、某一路频繁丢帧",
+    "开启多路推流后编码器过载、直播卡顿",
+    "安装包或 DLL 被杀毒软件误报隔离"
+   ],
+   "causes": [
+    "obs-multi-rtmp 在新版 OBS 上可靠性下滑（社区反馈带宽骤降、编码过载）",
+    "多路并发对上行带宽要求等于各路码率之和，预算不足必然互相挤压",
+    "非官方渠道分发的 DLL 容易触发杀软启发式误报"
+   ],
+   "steps": [
+    {
+     "title": "优先评估 Aitum Multistream",
+     "detail": "维护活跃、每路独立码率与设置，是多平台推流当前的主流推荐；老配置可直接对照迁移。",
+     "level": "基础"
+    },
+    {
+     "title": "核对带宽预算",
+     "detail": "所有分路码率之和不超过实测上行带宽的 70%；不够就逐路降码率 / 分辨率，或减少并发平台数。",
+     "level": "基础"
+    },
+    {
+     "title": "杀软误报的处理",
+     "detail": "从官方 GitHub Releases 下载安装包校验后再加白名单；不要从不明镜像站下载。",
+     "level": "进阶"
+    },
+    {
+     "title": "逐路验证再开播",
+     "detail": "每一路先用私密直播 / 未公开直播验证画面与声音，观察统计面板丢帧后再公开。",
+     "level": "进阶"
+    }
+   ],
+   "tips": [
+    "主路用平台「连接账号」或标准 RTMPS，副路再走插件，出问题时更容易定位",
+    "动态码率只作用于主输出；副路要稳只能靠预留带宽余量"
+   ],
+   "related": [
+    "st-multi",
+    "lag-network",
+    "enc-overload"
+   ],
+   "links": [
+    {
+     "title": "Aitum Multistream（推荐替代）",
+     "url": "https://github.com/Aitum/obs-aitum-multistream"
+    },
+    {
+     "title": "obs-multi-rtmp 项目主页",
+     "url": "https://github.com/sorayuki/obs-multi-rtmp"
+    }
+   ]
   }
  ],
- "note": "已扩充常见与罕见 OBS 问题、macOS 端问题及直播间搭建引导（含各平台接入与通用流程）。2026-08-05 增补：反作弊游戏捕获、浏览器源白屏、回放缓冲、绿幕抠像、媒体源、文本中文乱码、场景过渡、麦克风爆音、观众端延迟等。2026-08-19 增补（1.5）：随机音画不同步、麦克风滤镜链、串流密钥安全、虚拟摄像头排障、捕获源冲突、摄像头画质、配置重置、游戏模式/GPU 满载、关键帧间隔、动态码率、统计面板解读、录像体积管理等。"
+ "note": "已扩充常见与罕见 OBS 问题、macOS 端问题及直播间搭建引导（含各平台接入与通用流程）。2026-08-05 增补：反作弊游戏捕获、浏览器源白屏、回放缓冲、绿幕抠像、媒体源、文本中文乱码、场景过渡、麦克风爆音、观众端延迟等。2026-08-19 增补（1.5）：随机音画不同步、麦克风滤镜链、串流密钥安全、虚拟摄像头排障、捕获源冲突、摄像头画质、配置重置、游戏模式/GPU 满载、关键帧间隔、动态码率、统计面板解读、录像体积管理等。；2026-08-22 增补（v1.6，V2.2 插件生态联动）：StreamFX 停更替代迁移、obs-multi-rtmp 已知问题与 Aitum Multistream 迁移建议。"
 }

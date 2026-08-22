@@ -11,6 +11,9 @@
       <TextBlock Style="{StaticResource SectionTitle}" Text="搭建流程" Margin="0,18,0,10" />
       <StackPanel x:Name="FlowPanel" />
 
+      <TextBlock Style="{StaticResource SectionTitle}" Text="进阶向导" Margin="0,18,0,10" />
+      <WrapPanel x:Name="WizardPanel" />
+
       <TextBlock Style="{StaticResource SectionTitle}" Text="选择平台 / 场景" Margin="0,18,0,10" />
       <WrapPanel x:Name="PlatformPanel" />
 

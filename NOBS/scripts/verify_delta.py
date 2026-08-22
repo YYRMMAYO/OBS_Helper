@@ -19,6 +19,11 @@ import sys
 import tempfile
 import zipfile
 
+# Windows 控制台默认 GBK/cp936，打印 PASS ✅ 等字符会 UnicodeEncodeError，统一强制 UTF-8 输出
+for _stream in (sys.stdout, sys.stderr):
+    if hasattr(_stream, "reconfigure"):
+        _stream.reconfigure(encoding="utf-8", errors="replace")
+
 
 def sha(path: str) -> str:
     h = hashlib.sha256()

@@ -34,6 +34,9 @@
 
   <!-- 【自定义背景 v1.10】内容区背景默认值（运行时由 AppearanceService 覆盖）：默认即 Surface2 -->
   <SolidColorBrush PresentationOptions:Freeze="True" x:Key="ContentBackgroundBrush" Color="#f4f4fb" />
+  <!-- 图片层默认空值：未设置自定义图片时 Image.Source 解析为 null（与缺失键时 XAML 默认行为一致），
+       同时让 check_resources.py 的全量资源体检能对上这个运行时注入键 -->
+  <x:Null x:Key="ContentBackgroundImage" />
   <SolidColorBrush PresentationOptions:Freeze="True" x:Key="ContentBackgroundDim" Color="#00000000" />
 
   <SolidColorBrush PresentationOptions:Freeze="True" x:Key="DangerBrush" Color="#c62828" />

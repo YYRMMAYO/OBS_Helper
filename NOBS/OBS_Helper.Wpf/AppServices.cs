@@ -40,7 +40,9 @@ public static class AppServices
 
     // 插件生态（V2.2）：目录数据 / 本机体检 / Releases 查新 / 关注提醒
     private static readonly Lazy<PluginCatalogService> _pluginCatalog = new(() => new PluginCatalogService());
-    private static readonly Lazy<LocalPluginScanner> _pluginScanner = new(() => new LocalPluginScanner());
+    // 体检的安装目录探测走 ObsPathService 实例方法：优先尊重「OBS 配置管理」手动指定的目录（V2.3）
+    private static readonly Lazy<LocalPluginScanner> _pluginScanner =
+        new(() => new LocalPluginScanner(() => _obsPaths.Value.TryDetectInstallDirForScan()));
     private static readonly Lazy<PluginReleaseService> _pluginReleases = new(() => new PluginReleaseService());
     private static readonly Lazy<PluginWatchService> _pluginWatch =
         new(() => new PluginWatchService(Store, () => _pluginCatalog.Value.GetData(), _pluginReleases.Value));

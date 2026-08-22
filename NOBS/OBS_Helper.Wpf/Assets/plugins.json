@@ -1,15 +1,15 @@
 {
-  "version": "1.0",
+  "version": "1.1",
   "updated": "2026-08-22",
-  "note": "插件广场目录（V2.2 起从页内静态数组外置到知识库通道）：链接全部指向 GitHub 官方仓库或 OBS 官方论坛，收录前逐一验证可达性（2026-08 全部 200）。本文件走与 problems.json 完全一致的分离热更新通道，链接失效或新插件上架无需发版即可修复。dlls 字段用于「本地插件体检」把已装 DLL 匹配回广场条目（文件名主干、小写、可多个别名）；aiCost* 仅 AI 类插件填写，来自各项目 README 的公开开销说明。",
+  "note": "插件广场目录（V2.2 起从页内静态数组外置到知识库通道）：链接全部指向 GitHub 官方仓库或 OBS 官方论坛，收录前逐一验证可达性。V2.3 起界面统一纯文字风格、不再渲染 icon 字段（字段保留兼容旧数据），目录扩充到 38 个条目；本机体检同步支持全盘安装位置与 Steam 多库扫描。本文件走与 problems.json 完全一致的分离热更新通道，链接失效或新插件上架无需发版即可修复。dlls 字段用于「本地插件体检」把已装 DLL 匹配回广场条目（文件名主干、小写、可多个别名）；aiCost* 仅 AI 类插件填写，来自各项目 README 的公开开销说明。",
   "categories": [
-    { "key": "auto", "label": "自动化", "icon": "🤖" },
-    { "key": "fx", "label": "视觉特效", "icon": "✨" },
-    { "key": "ai", "label": "AI 智能", "icon": "🧠" },
-    { "key": "audio", "label": "音频", "icon": "🎙️" },
-    { "key": "multi", "label": "多平台 / 竖屏", "icon": "📱" },
-    { "key": "record", "label": "录制 / 后期", "icon": "🎬" },
-    { "key": "input", "label": "输入 / 互动", "icon": "🎮" }
+    { "key": "auto", "label": "自动化", "icon": "" },
+    { "key": "fx", "label": "视觉特效", "icon": "" },
+    { "key": "ai", "label": "AI 智能", "icon": "" },
+    { "key": "audio", "label": "音频", "icon": "" },
+    { "key": "multi", "label": "多平台 / 竖屏", "icon": "" },
+    { "key": "record", "label": "录制 / 后期", "icon": "" },
+    { "key": "input", "label": "输入 / 互动", "icon": "" }
   ],
   "plugins": [
     {
@@ -58,6 +58,33 @@
       "url": "https://github.com/exeldro/obs-scene-collection-manager",
       "repo": "exeldro/obs-scene-collection-manager",
       "dlls": ["scene-collection-manager"]
+    },
+    {
+      "id": "source-switcher",
+      "name": "Source Switcher",
+      "category": "auto",
+      "desc": "按定时、热键或条件在一组来源间自动轮播切换，适合多机位与广告轮播。",
+      "url": "https://github.com/exeldro/obs-source-switcher",
+      "repo": "exeldro/obs-source-switcher",
+      "dlls": ["source-switcher"]
+    },
+    {
+      "id": "media-controls",
+      "name": "Media Controls",
+      "category": "auto",
+      "desc": "独立控制面板：播放 / 暂停 / 跳转所有媒体来源，导播时不用翻场景找按钮。",
+      "url": "https://github.com/exeldro/obs-media-controls",
+      "repo": "exeldro/obs-media-controls",
+      "dlls": ["media-controls"]
+    },
+    {
+      "id": "urlsource",
+      "name": "URL Source",
+      "category": "auto",
+      "desc": "从 URL / API 拉取数据生成文本或图片：股价、比分、天气、弹幕接口都能上屏。",
+      "url": "https://github.com/royshil/obs-urlsource",
+      "repo": "royshil/obs-urlsource",
+      "dlls": ["urlsource"]
     },
     {
       "id": "shaderfilter",
@@ -123,6 +150,24 @@
       "dlls": ["source-clone"]
     },
     {
+      "id": "freeze-filter",
+      "name": "Freeze Filter",
+      "category": "fx",
+      "desc": "一键冻结来源当前画面：断线、切换间隙时保住「体面画面」的保险丝。",
+      "url": "https://github.com/exeldro/obs-freeze-filter",
+      "repo": "exeldro/obs-freeze-filter",
+      "dlls": ["freeze-filter"]
+    },
+    {
+      "id": "retro-effects",
+      "name": "Retro Effects",
+      "category": "fx",
+      "desc": "CRT / VHS / 故障艺术复古特效，性能开销远低于同类着色器方案。",
+      "url": "https://github.com/FiniteSingularity/obs-retro-effects",
+      "repo": "FiniteSingularity/obs-retro-effects",
+      "dlls": ["retro-effects"]
+    },
+    {
       "id": "backgroundremoval",
       "name": "Background Removal",
       "category": "ai",
@@ -159,6 +204,17 @@
       "aiCostMem": "+50~200MB 内存"
     },
     {
+      "id": "auto-subtitle",
+      "name": "Auto Subtitle",
+      "category": "ai",
+      "badge": "AI",
+      "desc": "讯飞语音识别实时中文字幕，国内网络直连稳定，中文直播字幕首选。",
+      "url": "https://github.com/summershrimp/obs-auto-subtitle",
+      "repo": "summershrimp/obs-auto-subtitle",
+      "dlls": ["auto-subtitle", "obs-auto-subtitle", "auto_subtitle"],
+      "aiCostCpu": "开销极低（云端识别，本地仅采集音频）"
+    },
+    {
       "id": "audio-monitor",
       "name": "Audio Monitor",
       "category": "audio",
@@ -184,6 +240,15 @@
       "url": "https://github.com/univrsal/tuna",
       "repo": "univrsal/tuna",
       "dlls": ["tuna"]
+    },
+    {
+      "id": "waveform",
+      "name": "Waveform",
+      "category": "audio",
+      "desc": "高精度实时音频波形可视化，支持多通道与自定义外观，比频谱更细腻。",
+      "url": "https://github.com/phandasm/waveform",
+      "repo": "phandasm/waveform",
+      "dlls": ["waveform"]
     },
     {
       "id": "aitum-vertical",
@@ -232,6 +297,24 @@
       "dlls": ["obs-teleport"]
     },
     {
+      "id": "source-dock",
+      "name": "Source Dock",
+      "category": "multi",
+      "desc": "把任一来源投到独立窗口：双屏监看摄像头 / 游戏画面，导播台式工作流。",
+      "url": "https://github.com/exeldro/obs-source-dock",
+      "repo": "exeldro/obs-source-dock",
+      "dlls": ["source-dock"]
+    },
+    {
+      "id": "spout2",
+      "name": "Spout2 输入输出",
+      "category": "multi",
+      "desc": "Spout2 GPU 纹理互通：与 TouchDesigner、Resolume 等视觉软件零损耗互传画面。",
+      "url": "https://github.com/Off-World-Live/obs-spout2-plugin",
+      "repo": "Off-World-Live/obs-spout2-plugin",
+      "dlls": ["win-spout", "spout2"]
+    },
+    {
       "id": "source-record",
       "name": "Source Record",
       "category": "record",
@@ -249,6 +332,15 @@
       "url": "https://github.com/exeldro/obs-source-copy",
       "repo": "exeldro/obs-source-copy",
       "dlls": ["source-copy"]
+    },
+    {
+      "id": "replay-source",
+      "name": "Replay Source",
+      "category": "record",
+      "desc": "回放缓冲即时重播：赛事、高光时刻一键回放刚发生的画面。",
+      "url": "https://github.com/exeldro/obs-replay-source",
+      "repo": "exeldro/obs-replay-source",
+      "dlls": ["replay-source"]
     },
     {
       "id": "input-overlay",

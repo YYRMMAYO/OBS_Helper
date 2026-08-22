@@ -226,7 +226,7 @@ public partial class DiagnosticPage : UserControl, INavigationAware
             {
                 var pluginLink = new Button
                 {
-                    Content = $"🧩 在插件广场查看「{entry.Name}」→",
+                    Content = $"在插件广场查看「{entry.Name}」→",
                     Tag = entry.Id,
                     Style = TryFindResource("LinkButton") as Style,
                     HorizontalAlignment = HorizontalAlignment.Left,

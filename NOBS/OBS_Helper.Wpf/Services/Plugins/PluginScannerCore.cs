@@ -94,3 +94,95 @@ public static class PluginScannerCore
         return "";
     }
 }
+
+/// <summary>
+/// 扫描候选目录构建的纯逻辑部分（V2.3，可单测）：把「实际 OBS 安装目录 / 常见安装根 /
+/// Steam 多库目录 / 用户级插件目录」合并成有序去重的候选清单。不做任何 IO 与注册表访问。
+///
+/// 背景：V2.2 只探测 %ProgramFiles%（通常在 C 盘）——OBS 装在 D/E 盘或 Steam 非默认库时
+/// 本机体检会漏扫。V2.3 改为多信号定位，具体探测由 <see cref="LocalPluginScanner"/> 完成。
+/// </summary>
+public static class PluginScanLocations
+{
+    /// <summary>
+    /// 合并各来源候选并按优先级排序去重：
+    /// 实际安装目录 → 各安装根下的 obs-plugins\64bit → Steam 库目录 → 用户级插件目录。
+    /// 空白输入直接忽略；存在性检查交给调用方（ScanDirectories 会跳过不存在的目录）。
+    /// </summary>
+    public static List<(string Dir, string Label)> BuildCandidates(
+        string? installDir,
+        IEnumerable<string> obsInstallRoots,
+        IEnumerable<string> steamObsPluginDirs,
+        string? userPluginsDir)
+    {
+        var list = new List<(string Dir, string Label)>();
+
+        if (!string.IsNullOrWhiteSpace(installDir))
+            list.Add((Path.Combine(installDir, "obs-plugins", "64bit"), "install"));
+
+        foreach (var root in obsInstallRoots)
+        {
+            if (!string.IsNullOrWhiteSpace(root))
+                list.Add((Path.Combine(root, "obs-plugins", "64bit"), "install"));
+        }
+
+        foreach (var steamDir in steamObsPluginDirs)
+        {
+            if (!string.IsNullOrWhiteSpace(steamDir))
+                list.Add((steamDir, "install"));
+        }
+
+        if (!string.IsNullOrWhiteSpace(userPluginsDir))
+            list.Add((userPluginsDir, "user"));
+
+        // 大小写不敏感去重，保留首次出现顺序（优先级语义）
+        var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        return list.Where(c => seen.Add(c.Dir)).ToList();
+    }
+
+    /// <summary>
+    /// 给定一组盘符根（如 C:\、D:\），产出每个盘上的常见 OBS 安装根候选
+    /// （Program Files / Program Files (x86) / 盘根目录三种布局）。只拼路径，不做存在性检查。
+    /// </summary>
+    public static List<string> GetStandardObsRoots(IEnumerable<string> driveRoots)
+    {
+        var roots = new List<string>();
+        foreach (var drive in driveRoots)
+        {
+            if (string.IsNullOrWhiteSpace(drive)) continue;
+            roots.Add(Path.Combine(drive, "Program Files", "obs-studio"));
+            roots.Add(Path.Combine(drive, "Program Files (x86)", "obs-studio"));
+            roots.Add(Path.Combine(drive, "obs-studio"));
+        }
+        return roots;
+    }
+
+    /// <summary>
+    /// 解析 Steam 的 <c>steamapps/libraryfolders.vdf</c>，返回全部库路径（含默认库）。
+    /// VDF 里路径以 <c>\\</c> 转义（如 <c>"D:\\SteamLibrary"</c>），统一还原为 Windows 路径。
+    /// </summary>
+    public static List<string> ParseSteamLibraryPaths(string? vdfContent)
+    {
+        var result = new List<string>();
+        if (string.IsNullOrWhiteSpace(vdfContent)) return result;
+
+        try
+        {
+            foreach (System.Text.RegularExpressions.Match m in
+                     System.Text.RegularExpressions.Regex.Matches(
+                         vdfContent, "\"path\"\\s+\"([^\"]+)\"",
+                         System.Text.RegularExpressions.RegexOptions.IgnoreCase))
+            {
+                // 还原 VDF 转义：\\ → \；顺带把可能的正斜杠统一为反斜杠
+                var p = m.Groups[1].Value.Replace("\\\\", "\\").Replace('/', '\\');
+                if (!string.IsNullOrWhiteSpace(p) && !result.Contains(p, StringComparer.OrdinalIgnoreCase))
+                    result.Add(p);
+            }
+        }
+        catch (Exception)
+        {
+            // 解析失败按无库处理
+        }
+        return result;
+    }
+}

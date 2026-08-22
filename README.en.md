@@ -10,7 +10,7 @@
 [![Platform](https://img.shields.io/badge/Platform-Windows_10%2F11-0078D6.svg)]()
 [![.NET](https://img.shields.io/badge/.NET-10-512BD4.svg)]()
 [![Stack](https://img.shields.io/badge/Stack-WPF_%2F_C%23-239120.svg)]()
-[![Release](https://img.shields.io/badge/Release-2.1.1-38bdf8.svg)](https://github.com/YYRMMAYO/OBS_Helper/releases)
+[![Release](https://img.shields.io/badge/Release-2.3.0-38bdf8.svg)](https://github.com/YYRMMAYO/OBS_Helper/releases)
 [![Offline](https://img.shields.io/badge/offline--first-2ea44f.svg)]()
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
@@ -22,7 +22,7 @@
 >
 > This is the **native WPF rewrite** of the original Blazor + WebView2 version (source lives in [`NOBS/`](NOBS/)). The browser engine is gone, startup is instant, and it ships as a single self-contained folder.
 >
-> **Since V2.1, updates are incremental and the knowledge base is updated independently**: only changed files are downloaded (the 2.0 → 2.1.1 delta is just 1.27 MB), and the issue database can be upgraded on its own without waiting for a new release.
+> **Since V2.2 there's a built-in plugin directory**: 38 curated plugins with direct GitHub Releases downloads, a read-only scan of locally installed plugins (with multi-drive OBS install detection), and log-analysis links that jump straight to the suspect plugin. **Since V2.1, updates are incremental and knowledge bases update independently**: only changed files are downloaded, and both the issue database and the plugin catalog can be upgraded without waiting for a new release.
 
 ---
 
@@ -30,14 +30,15 @@
 
 | | |
 |---|---|
-| **110 fixes, fully offline** | A built-in knowledge base of **110 curated issues across 10 categories** (v1.5) — symptoms, root causes, step-by-step fixes, tips and related questions. Steps are checkable and your progress is remembered. The **knowledge base updates independently** from the app. |
-| **Incremental updates** | Since V2.1 the in-app "incremental update" downloads only changed files — the 2.0 → 2.1.1 delta is just **1.27 MB** (vs 52 MB full installer); every file is SHA-256 verified, with automatic fallback to the full installer; installed versions auto-elevate, swap files and restart. |
+| **112 fixes, fully offline** | A built-in knowledge base of **112 curated issues across 10 categories** (v1.6) — symptoms, root causes, step-by-step fixes, tips and related questions. Steps are checkable and your progress is remembered. The **knowledge base updates independently** from the app. |
+| **Plugin square + local plugin health check** | **38 curated plugins** across 7 categories (links verified one by one), each card linking straight to its GitHub Releases; a **read-only scan** of locally installed plugins locates the OBS install directory across all drives — registry (multi-view + HKCU + DisplayIcon fallback), per-drive standard layouts and Steam libraries — so non-C-drive installs are never missed. Log analysis can link a suspect module straight to its plugin card. |
+| **Incremental updates** | Since V2.1 the in-app "incremental update" downloads only changed files (the 2.2 → 2.3.0 delta is about **1.3 MB**); every file is SHA-256 verified, with automatic fallback to the full installer; installed versions auto-elevate, swap files and restart. |
 | **Auto-cleanup of installers** | On startup the app scans temp / Downloads / Desktop folders and deletes old OBS_Helper installers & delta packages (newest kept per kind), only ever touching `OBS_Helper_*` files. |
 | **Free AI diagnostics, zero setup** | No API key, no sign-up, no configuration. Two built-in free channels (Zhipu for mainland China, Pollinations worldwide), rate-limited **locally** to protect the free service, with automatic fallback to the offline engine. |
 | **Remote-control your OBS** | Switch scenes, toggle sources, mute audio, start/stop recording, streaming and the virtual camera, schedule stops, and open your recording folder — from the console page, the system tray, a global hotkey, or a mini always-on-top window. |
 | **Hotkeys for everything** | `Ctrl+Alt+R` record · `Ctrl+Alt+S` stream · `Ctrl+Alt+C` virtual camera · `Ctrl+Alt+M` mini window · `Ctrl+Alt+O` show/hide — every key is rebindable or can be disabled. |
-| **Deep log analysis** | Offline parsing of OBS logs with **23 rules + 3 quantitative ratios** — and logs are **sanitized** before anything leaves your machine. |
-| **One-click scene templates** | 6 built-in stream presets (gaming, vertical shopping, duo talk, teaching, radio standby, go-live trio) that deploy scenes, sources and transitions into OBS in a single click. |
+| **Deep log analysis** | Offline parsing of OBS logs with **23 rules + 3 quantitative ratios** — and logs are **sanitized** before anything leaves your machine. Dropped-frame / crash clues can be linked to a suspect plugin and jumped straight to its card. |
+| **One-click scene templates** | 6 built-in stream presets (gaming, vertical shopping, duo talk, teaching, radio standby, go-live trio) that deploy scenes, sources and transitions into OBS in a single click. Templates annotate recommended plugins and flag missing ones against the local scan. |
 | **Privacy-first** | Preferences are plain JSON with no credentials; passwords & API keys get **double encryption** (AES-256-GCM + DPAPI). Nothing is sent anywhere unless you explicitly trigger a diagnostic. |
 | **Zero third-party dependencies** | Native WPF on .NET 10, no NuGet packages, no WebView2 — the `obs-websocket` protocol is implemented by hand. One self-contained folder, instant startup. |
 
@@ -45,11 +46,18 @@
 
 ### Learn & troubleshoot
 
-- **Knowledge base** — 10 categories, 110 issues (v1.5), each with symptoms / root causes / step-by-step fixes / tips / related questions; steps are checkable and progress is remembered
-- **Independent knowledge-base updates** — decoupled from the app version: silent auto-update at startup (6h throttled), a "Check KB updates" button in Settings, and an "Update knowledge base only" option in the update dialog; GitHub raw primary channel + Release asset fallback
+- **Knowledge base** — 10 categories, 112 issues (v1.6), each with symptoms / root causes / step-by-step fixes / tips / related questions; steps are checkable and progress is remembered
+- **Independent knowledge-base updates** — issue database and plugin catalog are decoupled from the app version: silent auto-update at startup (6h throttled), a "Check KB updates" button in Settings, and an "Update knowledge base only" option in the update dialog; GitHub raw primary channel + Release asset fallback
 - **Instant search** — matches across titles, symptoms and causes as you type
 - **Ask me anything** — describe the problem in plain words and get the most likely issue
 - **Troubleshooting guide** — a quick-reference manual of general debugging approaches
+
+### Plugin square
+
+- **Curated plugin directory** — 7 categories × 38 curated plugins (automation / visual FX / AI / audio / multi-platform & vertical / recording / input), externally hot-updatable: link fixes and new entries ship without a new release
+- **Local plugin health check (read-only)** — scans installed DLLs & versions and marks "catalogued / uncatalogued"; the OBS install directory is located via multiple signals — running process, registry uninstall keys (HKLM dual view + HKCU, DisplayIcon fallback), standard layouts on every fixed drive, and Steam library folders — plus portable installs, per-user plugin folders and a manually specified directory
+- **Direct downloads** — every card links to the latest GitHub Releases with a "latest vX.Y.Z" badge; "watch" a plugin for silent startup checks (Toast only)
+- **Log × plugin correlation** — log analysis extracts failed/crashing modules and links them to catalog cards; AI plugins carry public cost estimates with live performance-budget hints
 
 ### Diagnose
 
@@ -103,7 +111,7 @@ The app only goes online when you **explicitly** enable the free-AI or cloud dia
   - **Full installer**: Lanzou or in-app download of the complete package
 
 > Windows 10 / 11. No WebView2, no .NET runtime install, no administrator rights required.
-> Users on 2.0 / 2.1.0 can jump straight to 2.1.1 via the in-app incremental update.
+> Users on 2.1.x / 2.2.x can jump straight to 2.3.0 via the in-app incremental update.
 
 ## Building from Source
 
@@ -134,11 +142,11 @@ python scripts\verify_delta.py --old PAKE\windows\OBS_Helper_Portable_2.0.0.zip 
 
 Artifacts land in `NOBS\PAKE\windows\`:
 
-- `OBS_Helper_Setup_2.1.1.exe` — installer
-- `OBS_Helper_Portable_2.1.1.zip` — unzip-and-run portable build
-- `OBS_Helper_Update_2.1.1.zip` — incremental update package (contains `update_manifest.json`, used by the in-app updater)
-- `OBS_Helper_Manifest_2.1.1.json` — full file manifest (SHA-256) for verification
-- `OBS_Helper_Portable_2.1.1.exe` — single-file build (with `-SingleFile`)
+- `OBS_Helper_Setup_2.3.0.exe` — installer
+- `OBS_Helper_Portable_2.3.0.zip` — unzip-and-run portable build
+- `OBS_Helper_Update_2.3.0.zip` — incremental update package (contains `update_manifest.json`, used by the in-app updater)
+- `OBS_Helper_Manifest_2.3.0.json` — full file manifest (SHA-256) for verification
+- `OBS_Helper_Portable_2.3.0.exe` — single-file build (with `-SingleFile`)
 - `manifests/manifest_<ver>.json` — per-version manifest archive (delta diff base)
 
 ## Project Structure
@@ -150,19 +158,20 @@ NOBS/
     MainWindow.xaml(.cs)   Left nav + top bar + page host, route registration
     AppServices.cs         Composition root: lazy singletons, manual wiring
     Navigation/            Minimal router (route name -> page factory, cache + back stack)
-    Views/                 13 pages
+    Views/                 14 pages
     Controls/              Shared controls & value converters
     Themes/                Palette.xaml + Controls.xaml style library
     Models/                knowledge base, obs-websocket protocol, OBS config models
     Services/
       Host/                HostBridge (DPAPI, log reading, AI relay), LocalStore
       Obs/                 WebSocket client, connection service, log analysis, sanitizer
-      ObsConfig/           OBS config discovery, backup/export/import, reset, scene-template deploy
+      ObsConfig/           OBS config discovery (multi-signal install detection across drives), backup/export/import, reset, scene-template deploy
+      Plugins/             plugin square: catalog / local health-check scanner / release checks / watch service
       Update/              incremental update (manifest / self-bootstrap), independent KB updates, installer auto-cleanup
       Ai/                  local / free / cloud diagnostic engines & orchestration (incl. free-tier rate limiter)
       Shell/               tray, global hotkeys, auto scene switcher, timers, system monitor
       Markdown/            troubleshooting guide markdown parser
-    Assets/                problems.json (embedded seed, overridable by external file at runtime), troubleshooting.md, scene_templates.json, icons
+    Assets/                problems.json / plugins.json (embedded seeds, overridable by external files at runtime), troubleshooting.md, scene_templates.json, icons
   build.ps1                Windows build & packaging script (installer / portable / delta / manifest)
   scripts/verify_delta.py  delta-package release verifier (simulated upgrade + full SHA-256 diff)
 ```

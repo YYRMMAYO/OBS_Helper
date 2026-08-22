@@ -15,9 +15,6 @@
                    Text="精选社区维护活跃的常用插件，点击卡片用浏览器打开项目主页；安装后重启 OBS 生效。" />
 
         <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center" Margin="18,0,0,0">
-          <TextBlock Text="🔍" FontSize="{DynamicResource FontSizeSm}"
-                     Foreground="{DynamicResource MutedBrush}" VerticalAlignment="Center"
-                     Margin="0,0,6,0" />
           <TextBox x:Name="SearchBox" Style="{StaticResource AppTextBox}"
                    Width="200" Padding="10,6"
                    ToolTip="输入名称或功能关键词，筛选下方插件"
@@ -36,16 +33,15 @@
             </Grid.ColumnDefinitions>
 
             <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
-              <TextBlock Text="🩺" FontSize="{DynamicResource FontSizeBase}" VerticalAlignment="Center" />
               <TextBlock x:Name="HealthTitleText" Style="{StaticResource BodyText}" FontWeight="SemiBold"
-                         VerticalAlignment="Center" Margin="8,0,0,0" Text="本机已装插件体检（只读）" />
+                         VerticalAlignment="Center" Text="本机已装插件体检（只读）" />
             </StackPanel>
 
             <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
               <Button x:Name="HealthToggleButton" Style="{StaticResource LinkButton}"
                       Click="OnToggleHealthClick" Content="展开" />
               <Button x:Name="HealthRefreshButton" Style="{StaticResource LinkButton}" Margin="12,0,0,0"
-                      Click="OnRescanClick" Content="↻ 重新扫描" ToolTip="只读重新扫描本机已装插件" />
+                      Click="OnRescanClick" Content="重新扫描" ToolTip="只读重新扫描本机已装插件（含非 C 盘安装位置）" />
             </StackPanel>
           </Grid>
 

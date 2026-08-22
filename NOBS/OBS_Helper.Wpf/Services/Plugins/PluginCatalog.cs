@@ -114,7 +114,7 @@ public static class PluginCatalogCore
         // 数据里出现但 categories 未声明的分类：聚合为一个兜底组，避免条目消失
         var orphans = catalog.Plugins.Where(p => !known.Contains(p.Category)).ToList();
         if (orphans.Count > 0)
-            result.Add((new PluginCategoryDef { Key = "_other", Label = "其他", Icon = "📦" }, orphans));
+            result.Add((new PluginCategoryDef { Key = "_other", Label = "其他" }, orphans));
 
         return result;
     }

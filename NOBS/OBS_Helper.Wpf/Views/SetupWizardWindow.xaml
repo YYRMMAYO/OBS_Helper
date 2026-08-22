@@ -21,11 +21,9 @@
             BorderBrush="{DynamicResource LineBrush}" BorderThickness="0,0,0,1" Padding="20,16">
       <StackPanel>
         <StackPanel Orientation="Horizontal">
-          <TextBlock x:Name="IconText" Text="🧭" FontSize="{DynamicResource FontSizeXl}"
-                     VerticalAlignment="Center" />
           <TextBlock x:Name="TitleText" Text="" FontWeight="Bold"
                      FontSize="{DynamicResource FontSizeLg}" VerticalAlignment="Center"
-                     Margin="10,0,0,0" Foreground="{DynamicResource TextBrush}" />
+                     Foreground="{DynamicResource TextBrush}" />
         </StackPanel>
         <TextBlock x:Name="IntroText" Text="" TextWrapping="Wrap" Margin="0,8,0,0"
                    Style="{StaticResource MutedText}" />

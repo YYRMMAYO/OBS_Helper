@@ -152,7 +152,7 @@ public partial class PluginsPage : UserControl, INavigationAware
         {
             Style = (Style)FindResource("SegmentButton"),
             GroupName = "PluginCategory",
-            Content = "🌐 全部",
+            Content = "全部",
             Tag = "all",
             IsChecked = true
         };
@@ -165,7 +165,8 @@ public partial class PluginsPage : UserControl, INavigationAware
             {
                 Style = (Style)FindResource("SegmentButton"),
                 GroupName = "PluginCategory",
-                Content = $"{category.Icon} {category.Label}",
+                // 分类不渲染知识库自带的图标字段：本页统一纯文字风格，也避免外部目录数据把 emoji 带回界面
+                Content = category.Label,
                 Tag = category.Key
             };
             chip.Checked += OnCategoryChecked;
@@ -234,7 +235,7 @@ public partial class PluginsPage : UserControl, INavigationAware
     private void SetHealthBusy(bool busy)
     {
         HealthRefreshButton.IsEnabled = !busy;
-        HealthRefreshButton.Content = busy ? "扫描中…" : "↻ 重新扫描";
+        HealthRefreshButton.Content = busy ? "扫描中…" : "重新扫描";
     }
 
     private void OnRescanClick(object sender, RoutedEventArgs e) => _ = EnsureScanAsync(force: true);
@@ -267,7 +268,7 @@ public partial class PluginsPage : UserControl, INavigationAware
         {
             HealthHintText.Text = scan.ObsInstallFound
                 ? "未在常见目录发现第三方插件 DLL。"
-                : "未检测到 OBS 安装目录；若为便携版或自定义路径，请先在「设置 → OBS 配置管理」中手动指定目录后重试。";
+                : "未检测到 OBS 安装目录（已尝试全盘常见位置与 Steam 库）；若为自定义路径，请先在「设置 → OBS 配置管理」中手动指定目录后重试。";
             HealthHintText.Visibility = Visibility.Visible;
             HealthTitleText.Text = "本机已装插件体检（只读）· 未发现插件";
             return;
@@ -431,7 +432,7 @@ public partial class PluginsPage : UserControl, INavigationAware
 
             var sectionTitle = new TextBlock
             {
-                Text = $"{category.Icon} {category.Label}",
+                Text = category.Label,
                 Style = (Style)FindResource("SectionTitle"),
                 Margin = new Thickness(2, 14, 0, 8)
             };
@@ -563,7 +564,7 @@ public partial class PluginsPage : UserControl, INavigationAware
         {
             var costs = new[] { plugin.AiCostCpu, plugin.AiCostMem }.Where(s => !string.IsNullOrWhiteSpace(s));
             var costLine = "开销参考：" + string.Join(" · ", costs);
-            if (!string.IsNullOrEmpty(_aiBudgetHint)) costLine += $"\n⚠ {_aiBudgetHint}";
+            if (!string.IsNullOrEmpty(_aiBudgetHint)) costLine += $"\n{_aiBudgetHint}";
 
             var costText = new TextBlock
             {
@@ -590,7 +591,7 @@ public partial class PluginsPage : UserControl, INavigationAware
             var downloadBtn = new Button
             {
                 Style = (Style)TryFindResource("SecondaryButton"),
-                Content = "⬇ 下载",
+                Content = "下载",
                 Padding = new Thickness(10, 4, 10, 5),
                 Tag = downloadUrl,
                 ToolTip = "打开 GitHub Releases 最新版下载页"
@@ -710,7 +711,7 @@ public partial class PluginsPage : UserControl, INavigationAware
     private void RefreshWatchVisual(Button watchBtn, string pluginId)
     {
         var watched = AppServices.PluginWatch.IsWatched(pluginId);
-        watchBtn.Content = watched ? "★ 已关注" : "☆ 关注";
+        watchBtn.Content = watched ? "已关注" : "+ 关注";
     }
 
     private void OnWatchToggleClick(object sender, RoutedEventArgs e)

@@ -25,7 +25,7 @@ public sealed record WizardDefinition(string Id, string Icon, string Title, stri
 public static class SetupWizards
 {
     public static readonly WizardDefinition Vertical = new(
-        "vertical", "📱", "竖屏 9:16 双画布",
+        "vertical", "", "竖屏 9:16 双画布",
         "用 Aitum Vertical 插件在同一个 OBS 里加一块竖屏画布：横屏推流、竖屏录制/推流互不打架。全程约 10 分钟。",
         [
             new("安装 Aitum Vertical",
@@ -47,7 +47,7 @@ public static class SetupWizards
         ]);
 
     public static readonly WizardDefinition MultiStream = new(
-        "multistream", "📡", "多平台同时推流",
+        "multistream", "", "多平台同时推流",
         "一个 OBS 同时推 B 站 / 抖音 / Twitch 等多个平台。核心约束只有一条：所有分路码率之和不超过实测上行带宽的 70%。",
         [
             new("选择多路方案",
@@ -81,7 +81,6 @@ public partial class SetupWizardWindow : Window
         InitializeComponent();
         _def = def;
 
-        IconText.Text = def.Icon;
         TitleText.Text = def.Title;
         Title = $"搭建向导 · {def.Title}";
         IntroText.Text = def.Intro;
@@ -170,7 +169,7 @@ public partial class SetupWizardWindow : Window
             var b = new Button
             {
                 Style = (Style)TryFindResource("LinkButton"),
-                Content = "📄 查看知识库条目 →",
+                Content = "查看知识库条目 →",
                 Tag = step.ProblemId,
                 ToolTip = "打开对应的分步排障方案"
             };
@@ -187,7 +186,7 @@ public partial class SetupWizardWindow : Window
                 {
                     Style = (Style)TryFindResource("LinkButton"),
                     Margin = new Thickness(16, 0, 0, 0),
-                    Content = $"🧩 插件广场：{entry.Name} →",
+                    Content = $"插件广场：{entry.Name} →",
                     Tag = entry.Id,
                     ToolTip = "跳转到插件广场该插件的卡片"
                 };

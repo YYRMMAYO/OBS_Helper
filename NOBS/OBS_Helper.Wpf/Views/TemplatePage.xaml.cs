@@ -90,17 +90,20 @@ public partial class TemplatePage : UserControl, INavigationAware
 
         var stack = new StackPanel();
 
-        // --- 头部：图标 + 标题 + 摘要
+        // --- 头部：图标 + 标题 + 摘要（模板数据未带图标时不再兜底 emoji，直接省略图标列）
         var header = new DockPanel { Margin = new Thickness(0, 0, 0, 10) };
-        var icon = new TextBlock
+        if (!string.IsNullOrEmpty(t.Icon))
         {
-            Text = string.IsNullOrEmpty(t.Icon) ? "🧩" : t.Icon,
-            FontSize = 24,
-            VerticalAlignment = VerticalAlignment.Center,
-            Margin = new Thickness(0, 0, 10, 0)
-        };
-        DockPanel.SetDock(icon, Dock.Left);
-        header.Children.Add(icon);
+            var icon = new TextBlock
+            {
+                Text = t.Icon,
+                FontSize = 24,
+                VerticalAlignment = VerticalAlignment.Center,
+                Margin = new Thickness(0, 0, 10, 0)
+            };
+            DockPanel.SetDock(icon, Dock.Left);
+            header.Children.Add(icon);
+        }
 
         var titleStack = new StackPanel();
         var title = new TextBlock
@@ -171,7 +174,7 @@ public partial class TemplatePage : UserControl, INavigationAware
         {
             var portraitWarn = new TextBlock
             {
-                Text = "⚠️ 竖屏模板：落地后请确认 OBS 视频设置已改为竖屏分辨率，否则画面将会拉伸变形。",
+                Text = "竖屏模板：落地后请确认 OBS 视频设置已改为竖屏分辨率，否则画面将会拉伸变形。",
                 TextWrapping = TextWrapping.Wrap,
                 Margin = new Thickness(0, 0, 0, 8)
             };
@@ -293,7 +296,7 @@ public partial class TemplatePage : UserControl, INavigationAware
         var row = new WrapPanel { Margin = new Thickness(0, 0, 0, 6) };
         var label = new TextBlock
         {
-            Text = "🧩 推荐插件：",
+            Text = "推荐插件：",
             VerticalAlignment = VerticalAlignment.Center,
             Margin = new Thickness(0, 0, 2, 8)
         };
@@ -309,7 +312,7 @@ public partial class TemplatePage : UserControl, INavigationAware
 
             var text = new TextBlock
             {
-                Text = installed ? $"{name} ✓已安装" : $"{name} ⚠未安装 →",
+                Text = installed ? $"{name} ✓已安装" : $"{name} 未安装 →",
                 FontWeight = FontWeights.SemiBold,
                 VerticalAlignment = VerticalAlignment.Center
             };

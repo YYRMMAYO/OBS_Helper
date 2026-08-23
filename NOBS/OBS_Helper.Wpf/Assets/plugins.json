@@ -1,7 +1,7 @@
 {
-  "version": "1.2",
+  "version": "1.3",
   "updated": "2026-08-23",
-  "note": "插件广场目录（V2.2 起从页内静态数组外置到知识库通道）：链接全部指向 GitHub 官方仓库，收录前逐一验证可达性。v1.2 目录扩充到 46 个条目，新增「工具 / 排障」分类并收录 OBS 排障助手 Dock 版（本软件的 OBS 停靠面板插件）；另新增 Win Capture Audio、Dynamic Delay、Scene Notes Dock、Face Tracker、PTZ Controls、RTSP Server、Zoom to Mouse 七个精选。本文件走与 problems.json 完全一致的分离热更新通道，链接失效或新插件上架无需发版即可修复。dlls 字段用于「本地插件体检」把已装 DLL 匹配回广场条目（文件名主干、小写、可多个别名；Lua 脚本类条目可为空数组）；aiCost* 仅 AI 类插件填写，来自各项目 README 的公开开销说明。",
+  "note": "插件广场目录（V2.2 起从页内静态数组外置到知识库通道）：链接全部指向 GitHub 官方仓库，收录前逐一验证可达性。v1.3 目录扩充到 57 个条目：新增 obs-detect、Soundboard、Countdown Timer、Scale to Sound、3D Effect、Recursion Effect、Browser Transition、HTML Source、Device Switcher、Time Shift、Color Monitor 十一个精选（其中 3D Effect 为 StreamFX 停更后的 3D 变换替代品）。本文件走与 problems.json 完全一致的分离热更新通道，链接失效或新插件上架无需发版即可修复。dlls 字段用于「本地插件体检」把已装 DLL 匹配回广场条目（文件名主干、小写、可多个别名；Lua 脚本类条目可为空数组）；aiCost* 仅 AI 类插件填写，来自各项目 README 的公开开销说明。",
   "categories": [
     { "key": "tool", "label": "工具 / 排障", "icon": "" },
     { "key": "auto", "label": "自动化", "icon": "" },
@@ -442,6 +442,109 @@
       "url": "https://github.com/mmlTools/zoominator",
       "repo": "mmlTools/zoominator",
       "dlls": ["zoominator"]
+    },
+    {
+      "id": "obs-detect",
+      "name": "OBS Detect",
+      "category": "ai",
+      "badge": "AI",
+      "desc": "AI 目标检测：识别人物、物体并按检测结果自动联动场景或滤镜，与 Background Removal 同源团队维护。",
+      "url": "https://github.com/occ-ai/obs-detect",
+      "repo": "occ-ai/obs-detect",
+      "dlls": ["obs-detect"],
+      "aiCostCpu": "+5~15% CPU / GPU 推理",
+      "aiCostMem": "+200~500MB 内存"
+    },
+    {
+      "id": "soundboard",
+      "name": "Soundboard",
+      "category": "input",
+      "badge": "热门",
+      "desc": "热键音效板：把音效、罐头笑声、梗音频绑定到按键一键触发，互动直播气氛利器。",
+      "url": "https://github.com/cg2121/obs-soundboard",
+      "repo": "cg2121/obs-soundboard",
+      "dlls": ["soundboard", "obs-soundboard"]
+    },
+    {
+      "id": "countdown-timer",
+      "name": "Countdown Timer",
+      "category": "auto",
+      "desc": "专业倒计时来源：开播倒数、抽奖、Subathon 计时，支持暂停续走与文本格式自定义。",
+      "url": "https://github.com/ashmanix/obs-plugin-countdown",
+      "repo": "ashmanix/obs-plugin-countdown",
+      "dlls": ["countdown", "obs-plugin-countdown"]
+    },
+    {
+      "id": "scale-to-sound",
+      "name": "Scale to Sound",
+      "category": "fx",
+      "desc": "音量驱动画面缩放：说话时头像随声音弹跳放大，无需动效软件即可做出「会呼吸」的摄像头。",
+      "url": "https://github.com/dimtpap/obs-scale-to-sound",
+      "repo": "dimtpap/obs-scale-to-sound",
+      "dlls": ["scale-to-sound"]
+    },
+    {
+      "id": "3d-effect",
+      "name": "3D Effect",
+      "category": "fx",
+      "desc": "3D 变换滤镜：透视旋转、倾斜、翻转摄像头或任意来源；StreamFX 停更后官方推荐的替代品。",
+      "url": "https://github.com/exeldro/obs-3d-effect",
+      "repo": "exeldro/obs-3d-effect",
+      "dlls": ["obs-3d-effect", "3d-effect"]
+    },
+    {
+      "id": "recursion-effect",
+      "name": "Recursion Effect",
+      "category": "fx",
+      "desc": "递归无限镜像特效：画中画套娃、空间隧道感转场，赛博风格直播常用。",
+      "url": "https://github.com/exeldro/obs-recursion-effect",
+      "repo": "exeldro/obs-recursion-effect",
+      "dlls": ["recursion-effect"]
+    },
+    {
+      "id": "browser-transition",
+      "name": "Browser Transition",
+      "category": "fx",
+      "desc": "HTML 动画转场：用网页动画文件做场景切换效果，社区海量免费转场素材即装即用。",
+      "url": "https://github.com/exeldro/obs-browser-transition",
+      "repo": "exeldro/obs-browser-transition",
+      "dlls": ["browser-transition", "obs-browser-transition"]
+    },
+    {
+      "id": "html-source",
+      "name": "HTML Source",
+      "category": "auto",
+      "desc": "本地 HTML/CSS/JS 渲染为来源：做动态字幕条、数据看板比浏览器源更轻，支持实时刷新。",
+      "url": "https://github.com/exeldro/obs-html-source",
+      "repo": "exeldro/obs-html-source",
+      "dlls": ["html-source", "obs-html-source"]
+    },
+    {
+      "id": "device-switcher",
+      "name": "Device Switcher",
+      "category": "tool",
+      "desc": "采集设备断连自动切换备用来源：摄像头掉线瞬间切出占位画面，避免直播翻车黑屏。",
+      "url": "https://github.com/exeldro/obs-device-switcher",
+      "repo": "exeldro/obs-device-switcher",
+      "dlls": ["device-switcher", "obs-device-switcher"]
+    },
+    {
+      "id": "time-shift",
+      "name": "Time Shift",
+      "category": "audio",
+      "desc": "音视频时间轴平移滤镜：采集卡、蓝牙耳机导致的音画不同步毫秒级对齐。",
+      "url": "https://github.com/exeldro/obs-time-shift",
+      "repo": "exeldro/obs-time-shift",
+      "dlls": ["time-shift", "obs-time-shift"]
+    },
+    {
+      "id": "color-monitor",
+      "name": "Color Monitor",
+      "category": "tool",
+      "desc": "广播级监看工具：波形图、矢量示波器、直方图，调色与曝光校准的专业依据。",
+      "url": "https://github.com/norihiro/obs-color-monitor",
+      "repo": "norihiro/obs-color-monitor",
+      "dlls": ["color-monitor", "obs-color-monitor"]
     }
   ]
 }

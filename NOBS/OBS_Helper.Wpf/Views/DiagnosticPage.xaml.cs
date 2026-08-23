@@ -327,6 +327,114 @@ public partial class DiagnosticPage : UserControl, INavigationAware
             AppServices.Navigation?.Navigate(Routes.Problem, id);
     }
 
+    // ------------------------------------------------------ 录前自检（C1，只读）
+
+    private bool _preflightRunning;
+
+    private async void OnPreflightRun(object sender, RoutedEventArgs e)
+    {
+        if (_preflightRunning) return;
+        _preflightRunning = true;
+
+        var btn = (Button)sender;
+        btn.IsEnabled = false;
+        btn.Content = "检查中…";
+
+        try
+        {
+            var report = await AppServices.Preflight.RunAsync();
+            RenderPreflight(report);
+        }
+        catch (Exception)
+        {
+            AppServices.Toast.Show("录前自检失败，请稍后重试", "warn");
+        }
+        finally
+        {
+            _preflightRunning = false;
+            btn.IsEnabled = true;
+            btn.Content = "一键自检";
+        }
+    }
+
+    private void RenderPreflight(Services.Obs.PreflightReport report)
+    {
+        PreflightList.Children.Clear();
+
+        var head = report.FailCount > 0
+            ? $"发现问题 {report.FailCount} 项 · 建议 {report.WarnCount} 项"
+            : report.WarnCount > 0
+                ? $"无阻塞问题，{report.WarnCount} 项可优化"
+                : "全部通过";
+        var headText = MakeText(head, "FontSizeSm",
+            report.FailCount > 0 ? "DangerBrush" : report.WarnCount > 0 ? "WarnBrush" : "OkBrush");
+        headText.FontWeight = FontWeights.SemiBold;
+        PreflightList.Children.Add(headText);
+
+        foreach (var item in report.Items)
+        {
+            PreflightList.Children.Add(BuildPreflightRow(item));
+        }
+    }
+
+    private FrameworkElement BuildPreflightRow(Services.Obs.PreflightItem item)
+    {
+        var fgKey = item.Status switch
+        {
+            Services.Obs.PreflightStatus.Ok => "OkBrush",
+            Services.Obs.PreflightStatus.Warn => "WarnBrush",
+            Services.Obs.PreflightStatus.Fail => "DangerBrush",
+            _ => "MutedBrush"
+        };
+
+        var statusText = MakeText(item.StatusText, "FontSizeXs", fgKey, wrap: false);
+        statusText.FontWeight = FontWeights.SemiBold;
+        var statusPill = new Border
+        {
+            Style = TryFindResource("Pill") as Style,
+            MinWidth = 52,
+            Margin = new Thickness(0, 0, 10, 0),
+            VerticalAlignment = VerticalAlignment.Top,
+            Child = statusText
+        };
+        statusPill.SetResourceReference(Border.BackgroundProperty, "Surface2Brush");
+
+        var body = new StackPanel();
+        var title = MakeText(item.Title, "FontSizeBase", "TextBrush");
+        title.FontWeight = FontWeights.SemiBold;
+        body.Children.Add(title);
+
+        if (!string.IsNullOrEmpty(item.Detail))
+        {
+            var detail = MakeText(item.Detail, "FontSizeSm", "MutedBrush");
+            detail.Margin = new Thickness(0, 3, 0, 0);
+            body.Children.Add(detail);
+        }
+
+        if (!string.IsNullOrEmpty(item.ProblemId))
+        {
+            var link = new Button
+            {
+                Content = "查看分步方案 →",
+                Tag = item.ProblemId,
+                Style = TryFindResource("LinkButton") as Style,
+                HorizontalAlignment = HorizontalAlignment.Left,
+                Margin = new Thickness(0, 4, 0, 0)
+            };
+            link.Click += OnOpenProblem;
+            body.Children.Add(link);
+        }
+
+        var grid = new Grid { Margin = new Thickness(0, 8, 0, 0) };
+        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        Grid.SetColumn(statusPill, 0);
+        Grid.SetColumn(body, 1);
+        grid.Children.Add(statusPill);
+        grid.Children.Add(body);
+        return grid;
+    }
+
     /// <summary>P0-2：跳转插件广场并定位嫌疑插件。</summary>
     private void OnOpenPlugin(object sender, RoutedEventArgs e)
     {

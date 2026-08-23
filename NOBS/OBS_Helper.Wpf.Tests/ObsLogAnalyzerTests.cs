@@ -147,4 +147,119 @@ public class ObsLogAnalyzerTests
             Assert.True(idx >= 0);
         }
     }
+
+    // ------------- V2.5 B1/B2/B3/A1：掉帧分诊 / 编码分诊 / 双显卡 / 版本联动 -------------
+
+    [Fact]
+    public void Analyze_DropTriage_PicksDominantCategory()
+    {
+        var input =
+            "lagged frames due to rendering lag: 10 (0.1%)\n" +
+            "skipped frames due to encoding lag: 800/10000 (8.0%)\n" +
+            "dropped frames due to insufficient bandwidth: 20 (0.2%)\n";
+        var report = _analyzer.Analyze(input);
+        var triage = report.Findings.FirstOrDefault(f => f.Code == "LOG-DROP-DOMINANT");
+        Assert.NotNull(triage);
+        Assert.Contains("编码滞后", triage!.Title);
+        Assert.Equal("enc-overload", triage.ProblemId);
+    }
+
+    [Fact]
+    public void Analyze_DropTriage_AbsentWhenRatiosTiny()
+    {
+        var report = _analyzer.Analyze(
+            "dropped frames due to insufficient bandwidth: 1 (0.01%)\n");
+        Assert.DoesNotContain(report.Findings, f => f.Code == "LOG-DROP-DOMINANT");
+    }
+
+    [Fact]
+    public void Analyze_EncoderTriage_X264WithNvidia_RecommendsNvenc()
+    {
+        var input =
+            "CPU Name: AMD Ryzen 9 5900X\n" +
+            "Loading up D3D11 on adapter NVIDIA GeForce RTX 3070\n" +
+            "fps:  60/1\n" +
+            "[obs_x264] bitrate: 6000\n" +
+            "encoding overloaded\n";
+        var report = _analyzer.Analyze(input);
+        var triage = report.Findings.FirstOrDefault(f => f.Code == "LOG-TRIAGE-ENCODE");
+        Assert.NotNull(triage);
+        Assert.Contains("NVENC", triage!.Suggestion);
+        Assert.Equal(LogSeverity.Info, triage.Severity);
+        Assert.Equal("enc-overload", triage.ProblemId);
+    }
+
+    [Fact]
+    public void Analyze_EncoderTriage_Nvenc_SuggestsPresetAndFpsCap()
+    {
+        var input =
+            "[jim_nvenc] bitrate: 9000\n" +
+            "skipped frames due to encoding lag: 500/10000 (5.0%)\n";
+        var report = _analyzer.Analyze(input);
+        var triage = report.Findings.FirstOrDefault(f => f.Code == "LOG-TRIAGE-ENCODE");
+        Assert.NotNull(triage);
+        Assert.Contains("P5", triage!.Suggestion);
+        Assert.Contains("锁", triage.Suggestion);
+    }
+
+    [Fact]
+    public void Analyze_DualGpu_IntegratedChosen_Warns()
+    {
+        var input =
+            "Loading up D3D11 on adapter Intel(R) UHD Graphics 770\n" +
+            "Loading up D3D11 on adapter NVIDIA GeForce RTX 4060\n";
+        var report = _analyzer.Analyze(input);
+        var dual = report.Findings.FirstOrDefault(f => f.Code == "LOG-GPU-DUAL");
+        Assert.NotNull(dual);
+        Assert.Equal("bs-dualgpu", dual!.ProblemId);
+        Assert.Equal(LogSeverity.Warning, dual.Severity);
+        // 适配器清单应被收集
+        Assert.Equal(2, report.Summary.Adapters.Count);
+    }
+
+    [Fact]
+    public void Analyze_DualGpu_DiscreteChosen_InfoConfirmation()
+    {
+        var input =
+            "Loading up D3D11 on adapter NVIDIA GeForce RTX 4060\n" +
+            "Loading up D3D11 on adapter Intel(R) UHD Graphics 770\n";
+        var report = _analyzer.Analyze(input);
+        Assert.DoesNotContain(report.Findings, f => f.Code == "LOG-GPU-DUAL");
+        Assert.Contains(report.Findings, f => f.Code == "LOG-GPU-DUAL-OK");
+    }
+
+    [Fact]
+    public void Analyze_PluginLoadFailure_LowObsVersion_AddsUpgradeHint()
+    {
+        var input =
+            "OBS 32.2.0 (64-bit, windows)\n" +
+            "os_dlopen(C:\\plugins\\foo.dll): The specified module could not be found.\n";
+        var report = _analyzer.Analyze(input);
+        var hint = report.Findings.FirstOrDefault(f => f.Code == "LOG-PLUGIN-OBSVER");
+        Assert.NotNull(hint);
+        Assert.Equal("cr-plugin-load", hint!.ProblemId);
+        Assert.Contains("32.2.2", hint.Title);
+    }
+
+    [Fact]
+    public void Analyze_PluginLoadFailure_HighObsVersion_NoHint()
+    {
+        var input =
+            "OBS 32.2.2 (64-bit, windows)\n" +
+            "os_dlopen(C:\\plugins\\foo.dll): The specified module could not be found.\n";
+        var report = _analyzer.Analyze(input);
+        Assert.DoesNotContain(report.Findings, f => f.Code == "LOG-PLUGIN-OBSVER");
+    }
+
+    [Theory]
+    [InlineData("31.1.1", -1)]
+    [InlineData("32.2.2", 0)]
+    [InlineData("33.0.0", 1)]
+    public void TryParseVersion_ComparesAgainstFixVersion(string version, int expectedSign)
+    {
+        var v = ObsLogAnalyzer.TryParseVersion(version);
+        Assert.NotNull(v);
+        var cmp = ObsLogAnalyzer.CompareVersions(v!, ObsLogAnalyzer.PluginLoadFixVersion);
+        Assert.Equal(expectedSign, Math.Sign(cmp));
+    }
 }

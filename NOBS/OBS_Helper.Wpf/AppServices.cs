@@ -32,6 +32,8 @@ public static class AppServices
     private static readonly Lazy<ObsBackupService> _obsBackups = new(() => new ObsBackupService(ObsPaths));
     private static readonly Lazy<ObsResetService> _obsReset = new(() => new ObsResetService(ObsPaths, ObsBackups, Obs));
     private static readonly Lazy<SceneTemplateService> _templates = new(() => new SceneTemplateService(Obs, ObsPaths));
+    // 录前自检（C1，只读）：读 OBS 配置检查录制格式 / 路径 / 编码器 / 音频设置
+    private static readonly Lazy<PreflightCheckService> _preflight = new(() => new PreflightCheckService(ObsPaths));
 
     private static readonly Lazy<UpdateService> _updates = new(() => new UpdateService());
     private static readonly Lazy<IncrementalUpdateService> _delta = new(() => new IncrementalUpdateService());
@@ -80,6 +82,7 @@ public static class AppServices
     public static ObsBackupService ObsBackups => _obsBackups.Value;
     public static ObsResetService ObsReset => _obsReset.Value;
     public static SceneTemplateService Templates => _templates.Value;
+    public static PreflightCheckService Preflight => _preflight.Value;
 
     public static AiSettingsService AiSettings => _aiSettings.Value;
     public static UpdateService Updates => _updates.Value;

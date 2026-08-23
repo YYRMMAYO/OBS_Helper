@@ -31,6 +31,19 @@ public partial class PluginsPage : UserControl, INavigationAware
         ("occ-ai 系列", "抠像、字幕、降噪等 AI 插件全家桶", "https://github.com/occ-ai"),
     };
 
+    /// <summary>
+    /// StreamFX 迁移矩阵（B4）：常用功能 → 广场内的替代插件 id。
+    /// 替代品均为维护活跃的单一职责插件，id 必须与 plugins.json 保持一致。
+    /// </summary>
+    private static readonly (string Usage, string PluginId)[] StreamFxMigrations =
+    {
+        ("背景模糊 / 景深虚化", "composite-blur"),
+        ("形状 / 渐变遮罩（圆角摄像头等）", "advanced-masks"),
+        ("3D 变换 / 透视旋转", "3d-effect"),
+        ("描边 / 辉光 / 投影", "stroke-glow-shadow"),
+        ("CRT / VHS 复古特效", "retro-effects"),
+    };
+
     private PluginCatalogData _catalog = new();
     private string _builtVersion = "";
     private string _activeCategory = "all";
@@ -64,6 +77,7 @@ public partial class PluginsPage : UserControl, INavigationAware
             CategoryPanel.Children.Clear();
             ListHost.Children.Clear();
             BuildResourceCards();
+            BuildMigrationPanel();
             BuildCategoryChips();
             _builtVersion = data.Version ?? "";
             // 目录换版后 chips 已重建为「全部」，分类状态同步复位，避免 UI 与实际过滤不一致
@@ -142,6 +156,65 @@ public partial class PluginsPage : UserControl, INavigationAware
 
             ResourceHost.Children.Add(button);
         }
+    }
+
+    // ---------------------------------------------------------- StreamFX 迁移矩阵（B4）
+
+    /// <summary>
+    /// 构建「从 StreamFX 平滑迁移」面板。目录里找不到对应替代插件时自动隐藏整块，
+    /// 避免外置目录热更新后出现死链接。
+    /// </summary>
+    private void BuildMigrationPanel()
+    {
+        MigrationList.Children.Clear();
+
+        var rows = 0;
+        foreach (var (usage, pluginId) in StreamFxMigrations)
+        {
+            var entry = PluginCatalogCore.FindById(_catalog, pluginId);
+            if (entry is null) continue;
+            rows++;
+
+            var usageText = new TextBlock
+            {
+                Text = usage,
+                VerticalAlignment = VerticalAlignment.Center
+            };
+            usageText.SetResourceReference(TextBlock.FontSizeProperty, "FontSizeSm");
+            usageText.SetResourceReference(TextBlock.ForegroundProperty, "TextBrush");
+
+            var arrow = new TextBlock
+            {
+                Text = "→",
+                VerticalAlignment = VerticalAlignment.Center,
+                Margin = new Thickness(8, 0, 0, 0)
+            };
+            arrow.SetResourceReference(TextBlock.FontSizeProperty, "FontSizeSm");
+            arrow.SetResourceReference(TextBlock.ForegroundProperty, "MutedBrush");
+
+            var linkText = new TextBlock { Text = entry.Name, FontWeight = FontWeights.SemiBold };
+            linkText.SetResourceReference(TextBlock.FontSizeProperty, "FontSizeSm");
+            linkText.SetResourceReference(TextBlock.ForegroundProperty, "BrandBrush");
+
+            var link = new Button
+            {
+                Style = (Style)TryFindResource("LinkButton"),
+                Content = linkText,
+                Tag = entry.Id,
+                VerticalAlignment = VerticalAlignment.Center,
+                ToolTip = "在下方广场中定位该替代插件"
+            };
+            link.Click += OnLocateFromHealthClick;
+
+            var row = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 4, 0, 4) };
+            row.Children.Add(usageText);
+            row.Children.Add(arrow);
+            row.Children.Add(link);
+
+            MigrationList.Children.Add(row);
+        }
+
+        MigrationPanel.Visibility = rows > 0 ? Visibility.Visible : Visibility.Collapsed;
     }
 
     // ---------------------------------------------------------- 分类 chips

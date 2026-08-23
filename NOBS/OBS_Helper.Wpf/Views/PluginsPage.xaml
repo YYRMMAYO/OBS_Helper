@@ -57,6 +57,18 @@
       <TextBlock Style="{StaticResource SectionTitle}" Text="官方与社区入口" Margin="2,16,0,8" />
       <WrapPanel x:Name="ResourceHost" />
 
+      <!-- 从 StreamFX 平滑迁移（B4）：内容行由代码构建，点击直达对应替代插件卡片 -->
+      <Border x:Name="MigrationPanel" Style="{StaticResource SoftPanel}" Margin="0,4,0,0" Padding="14,12"
+              Visibility="Collapsed">
+        <StackPanel>
+          <TextBlock Style="{StaticResource BodyText}" FontWeight="SemiBold"
+                     Text="从 StreamFX 平滑迁移（该插件已停止维护）" />
+          <TextBlock Style="{StaticResource MutedText}" Margin="0,5,0,0" TextWrapping="Wrap"
+                     Text="StreamFX 在 OBS 30+ 上兼容性持续恶化，是老教程用户的高频故障源。以下单一职责轻量插件可逐一替代其常用功能，全部维护活跃：" />
+          <StackPanel x:Name="MigrationList" Margin="0,8,0,0" />
+        </StackPanel>
+      </Border>
+
       <!-- 分类筛选 chips -->
       <WrapPanel x:Name="CategoryPanel" Margin="0,6,0,2" />
 

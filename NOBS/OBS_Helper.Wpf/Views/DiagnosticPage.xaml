@@ -81,6 +81,27 @@
         </StackPanel>
       </Border>
 
+      <!-- ============================================ 录前自检（C1，只读） -->
+      <Border Style="{StaticResource Card}" Margin="0,14,0,0">
+        <StackPanel>
+          <Grid>
+            <Grid.ColumnDefinitions>
+              <ColumnDefinition Width="*" />
+              <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+
+            <TextBlock Grid.Column="0" Style="{StaticResource SectionTitle}" Text="录前自检（只读）" />
+            <Button x:Name="PreflightButton" Grid.Column="1" Style="{StaticResource SecondaryButton}"
+                    VerticalAlignment="Center" Content="一键自检" Click="OnPreflightRun" />
+          </Grid>
+
+          <TextBlock Style="{StaticResource MutedText}" Margin="0,4,0,0" TextWrapping="Wrap"
+                     Text="开播 / 开录前自动核对 OBS 配置：录制格式是否防崩溃的 MKV、录制路径与磁盘空间、编码器、音频采样率与麦克风设置。只读不改任何文件。" />
+
+          <StackPanel x:Name="PreflightList" Margin="0,10,0,0" />
+        </StackPanel>
+      </Border>
+
       <!-- ============================================ 快速自检清单 -->
       <Border Style="{StaticResource Card}" Margin="0,14,0,0">
         <StackPanel>

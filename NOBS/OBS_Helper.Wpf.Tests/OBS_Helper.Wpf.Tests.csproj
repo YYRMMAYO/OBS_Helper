@@ -21,6 +21,7 @@
     <Compile Include="..\OBS_Helper.Wpf\Services\Obs\ObsAuth.cs" Link="Linked\ObsAuth.cs" />
     <Compile Include="..\OBS_Helper.Wpf\Services\Obs\LogSanitizer.cs" Link="Linked\LogSanitizer.cs" />
     <Compile Include="..\OBS_Helper.Wpf\Services\Obs\ObsLogAnalyzer.cs" Link="Linked\ObsLogAnalyzer.cs" />
+    <Compile Include="..\OBS_Helper.Wpf\Services\Obs\PreflightCheckCore.cs" Link="Linked\PreflightCheckCore.cs" />
     <Compile Include="..\OBS_Helper.Wpf\Services\Obs\ObsReconnectPolicy.cs" Link="Linked\ObsReconnectPolicy.cs" />
     <Compile Include="..\OBS_Helper.Wpf\Services\Ai\DiagnosticSeverity.cs" Link="Linked\DiagnosticSeverity.cs" />
     <Compile Include="..\OBS_Helper.Wpf\Services\Ai\DiagnosticSeverityMapper.cs" Link="Linked\DiagnosticSeverityMapper.cs" />

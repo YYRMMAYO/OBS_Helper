@@ -62,6 +62,12 @@ public sealed class ObsLogSummary
     public int WarningLines { get; set; }
     public int ErrorLines { get; set; }
 
+    /// <summary>
+    /// 日志中枚举到的全部显卡适配器名（去重，最多 8 个）。
+    /// 用于双显卡环境判断（B3）：OBS 实际选用的适配器 vs 机内其他适配器。
+    /// </summary>
+    public List<string> Adapters { get; } = new();
+
     /// <summary>渲染滞后帧占比（0~1）。</summary>
     public double RenderLagRatio { get; set; }
     /// <summary>编码滞后跳帧占比（0~1）。</summary>
@@ -260,7 +266,7 @@ public sealed class ObsLogAnalyzer
             Code = "LOG-PLUGIN", Severity = LogSeverity.Warning, ProblemId = "cr-plugin",
             Pattern = new Regex(@"os_dlopen\(.*\)\s*failed|os_dlopen.*(?:failed|could not|无法|拒绝|找不到)|Module '.*' not loaded|Failed to load '.*' plugin|LoadLibrary failed", Opts),
             Title = "插件加载失败",
-            Suggestion = "插件与 OBS 大版本不匹配是最常见原因；用「安全模式」启动确认，再逐个更新或移除插件。可在「插件」页的本机体检面板核对已装插件版本。"
+            Suggestion = "先把 OBS 升级到 32.2.2 或更高（32.2 首发的 Windows 插件加载变更曾导致带依赖的插件首启失败，补丁版已修复），再逐个更新或重装报错插件。可用「安全模式」启动确认，并在「插件」页的本机体检面板核对已装插件版本。"
         },
         new() {
             Code = "LOG-PLUGIN-STREAMFX", Severity = LogSeverity.Info, ProblemId = "cr-streamfx",
@@ -371,6 +377,10 @@ public sealed class ObsLogAnalyzer
         report.SanitizedText = string.Join('\n', sanitizedLines);
 
         AppendQuantitativeFindings(report, found);
+        AppendDropTriage(report, found);          // B2：掉帧三分类主因判定
+        AppendEncoderTriage(report, found);       // B1：编码过载按当前设置分诊
+        AppendGpuAdapterFindings(report, found);  // B3：双显卡错位检测
+        AppendPluginObsVersionHint(report, found);// A1：插件加载失败 × OBS 版本联动
 
         report.Findings = found.Values
             .OrderByDescending(f => (int)f.Severity)
@@ -486,6 +496,19 @@ public sealed class ObsLogAnalyzer
             s.Gpu = m.Groups[1].Value.Trim();
         }
 
+        // B3：收集日志中枚举到的全部适配器（去重，上限 8 个），供双显卡错位检测
+        if (line.Contains("adapter", StringComparison.OrdinalIgnoreCase)
+            && (m = ReGpu.Match(line)).Success)
+        {
+            var adapterName = m.Groups[1].Value.Trim();
+            if (adapterName.Length > 0 &&
+                !s.Adapters.Contains(adapterName, StringComparer.OrdinalIgnoreCase) &&
+                s.Adapters.Count < 8)
+            {
+                s.Adapters.Add(adapterName);
+            }
+        }
+
         if (s.BaseResolution.Length == 0 && (m = ReBaseRes.Match(line)).Success) s.BaseResolution = m.Groups[1].Value;
         if (s.OutputResolution.Length == 0 && (m = ReOutRes.Match(line)).Success) s.OutputResolution = m.Groups[1].Value;
         if (s.Fps.Length == 0 && (m = ReFps.Match(line)).Success) s.Fps = NormalizeFps(m.Groups[1].Value);
@@ -566,4 +589,249 @@ public sealed class ObsLogAnalyzer
 
     private static string Trim(string line)
         => line.Length <= MaxEvidenceLength ? line : line[..MaxEvidenceLength] + "…";
+
+    // --------------------------------------- B1/B2/B3/A1：分诊与联动（V2.5）
+
+    /// <summary>丢帧三分类 → 对应知识库条目。</summary>
+    private static readonly (string Code, string Label, string ProblemId, string Fix)[] DropKinds =
+    {
+        ("LOG-STAT-RENDER",  "渲染滞后", "lag-skip",
+         "GPU 渲染跟不上：降画布分辨率/帧率、关掉吃显卡的程序、减少浏览器源与滤镜。"),
+        ("LOG-STAT-ENCODE",  "编码滞后", "enc-overload",
+         "编码器跟不上：x264 预设调快或改用硬件编码，必要时下调输出分辨率。"),
+        ("LOG-STAT-NETWORK", "网络丢帧", "lag-network",
+         "上行带宽不足：码率降到实测上行 60~70%，优先有线网络，可开动态码率。"),
+    };
+
+    private static double RatioOf(ObsLogSummary s, string code) => code switch
+    {
+        "LOG-STAT-RENDER" => s.RenderLagRatio,
+        "LOG-STAT-ENCODE" => s.EncodingLagRatio,
+        _ => s.NetworkDropRatio
+    };
+
+    private static LogSeverity DropSeverity(double ratio) => ratio switch
+    {
+        >= 0.05 => LogSeverity.Critical,
+        >= 0.01 => LogSeverity.Error,
+        _ => LogSeverity.Warning
+    };
+
+    /// <summary>
+    /// B2 掉帧主因判定：OBS 的三类丢帧统计病因完全不同（GPU / 编码器 / 网络），
+    /// 占比最高的一项即主因。生成一条「先治哪里」的结论，避免用户按错误方向折腾。
+    /// </summary>
+    private static void AppendDropTriage(ObsLogReport report, Dictionary<string, LogFinding> found)
+    {
+        var s = report.Summary;
+        var meaningful = DropKinds
+            .Select(k => (Kind: k, Ratio: RatioOf(s, k.Code)))
+            .Where(x => x.Ratio > 0.005)
+            .ToList();
+        if (meaningful.Count == 0) return;
+
+        var dominant = meaningful.OrderByDescending(x => x.Ratio).First().Kind;
+        var evidence = string.Join("；", meaningful.Select(x => $"{x.Kind.Label} {x.Ratio * 100:0.##}%"));
+        var maxRatio = meaningful.Max(x => x.Ratio);
+
+        found["LOG-DROP-DOMINANT"] = new LogFinding
+        {
+            Code = "LOG-DROP-DOMINANT",
+            Severity = DropSeverity(maxRatio),
+            Title = $"掉帧主因判定：{dominant.Label}占比最高",
+            Suggestion = dominant.Fix + " 三类丢帧的病因互不相同，请先处理主因再复测，不要同时改一堆设置。",
+            ProblemId = dominant.ProblemId,
+            Evidence = $"OBS 统计：{evidence}",
+            FirstLine = 0
+        };
+    }
+
+    /// <summary>显卡厂商提示（B1 分诊用）：能从日志判断出厂商时给出具体编码器名。</summary>
+    private static (string Vendor, string EncoderName)? GpuVendorHint(ObsLogSummary s)
+    {
+        var gpu = s.Gpu + " " + s.Cpu;
+        if (gpu.Contains("nvidia", StringComparison.OrdinalIgnoreCase) ||
+            gpu.Contains("geforce", StringComparison.OrdinalIgnoreCase))
+            return ("NVIDIA", "NVIDIA NVENC H.264");
+        if (gpu.Contains("radeon", StringComparison.OrdinalIgnoreCase) ||
+            gpu.Contains("amd", StringComparison.OrdinalIgnoreCase))
+            return ("AMD", "AMD AMF H.264");
+        if (gpu.Contains("intel", StringComparison.OrdinalIgnoreCase))
+            return ("Intel", "Intel Quick Sync (QSV)");
+        return null;
+    }
+
+    /// <summary>
+    /// B1 编码过载分诊：结合日志头部解析出的编码器 / 显卡 / 帧率 / 分辨率，
+    /// 生成按当前设置定制的处理顺序，而不是一句放之四海皆准的「降低设置」。
+    /// </summary>
+    private static void AppendEncoderTriage(ObsLogReport report, Dictionary<string, LogFinding> found)
+    {
+        var s = report.Summary;
+        if (!found.ContainsKey("LOG-ENC-OVERLOAD") && s.EncodingLagRatio < 0.01) return;
+
+        var steps = new List<string>();
+        var enc = s.VideoEncoder.ToLowerInvariant();
+
+        if (enc.Length == 0 || enc.Contains("x264"))
+        {
+            var hw = GpuVendorHint(s);
+            steps.Add(hw is null
+                ? "第 1 步：改用显卡硬件编码（设置 → 输出 → 编码器选 NVENC / QSV / AMF 之一），把编码负载从 CPU 挪走。"
+                : $"第 1 步：检测到 {hw.Value.Vendor} 显卡，改用 {hw.Value.EncoderName} 硬件编码（设置 → 输出 → 编码器），把编码负载从 CPU 挪走。");
+            steps.Add("第 2 步：若必须用 x264，把预设调到 veryfast / superfast（设置 → 输出 → 预设）。");
+        }
+        else if (enc.Contains("nvenc") || enc.Contains("jim"))
+        {
+            steps.Add("第 1 步：NVENC 预设从 P7 降到 P5 或 P4（设置 → 输出 → 预设），吞吐提升明显、画质损失小。");
+            steps.Add("第 2 步：把游戏帧率锁到略低于显示器刷新率（如 144Hz 锁 138），给 OBS 合成与编码留出 GPU 余量。");
+        }
+        else if (enc.Contains("qsv") || enc.Contains("amf"))
+        {
+            steps.Add("第 1 步：确认显卡驱动为最新版，硬件编码器的性能修复通常随驱动发布。");
+            steps.Add("第 2 步：若游戏已占满 GPU，同样需要锁帧或降档输出分辨率。");
+        }
+
+        if (double.TryParse(s.Fps, NumberStyles.Float, CultureInfo.InvariantCulture, out var fps) && fps >= 50)
+            steps.Add($"第 {steps.Count + 1} 步：当前帧率 {s.Fps}，降到 30 可直接减半编码工作量（观众端几乎无感）。");
+
+        if (TryParseHeight(s.OutputResolution, out var h) && h >= 1000)
+            steps.Add($"第 {steps.Count + 1} 步：当前输出分辨率 {s.OutputResolution}，降到 1280x720 是最立竿见影的一步。");
+
+        steps.Add($"第 {steps.Count + 1} 步：清理重复捕获与不用的浏览器源；浏览器源长时间直播要定期刷新防内存膨胀。");
+
+        found["LOG-TRIAGE-ENCODE"] = new LogFinding
+        {
+            Code = "LOG-TRIAGE-ENCODE",
+            Severity = LogSeverity.Info,
+            Title = "编码过载分诊：按当前设置生成的处理顺序",
+            Suggestion = string.Join("\n", steps),
+            ProblemId = "enc-overload",
+            Evidence = $"当前设置：编码器 {(string.IsNullOrEmpty(s.VideoEncoder) ? "未知" : s.VideoEncoder)}" +
+                       $" · 帧率 {(string.IsNullOrEmpty(s.Fps) ? "未知" : s.Fps)}" +
+                       $" · 输出分辨率 {(string.IsNullOrEmpty(s.OutputResolution) ? "未知" : s.OutputResolution)}",
+            FirstLine = 0
+        };
+    }
+
+    /// <summary>解析 "1920x1080" 形式的高度值。</summary>
+    private static bool TryParseHeight(string? resolution, out int height)
+    {
+        height = 0;
+        var x = resolution?.IndexOf('x');
+        if (x is null || x <= 0) return false;
+        return int.TryParse(resolution![(x.Value + 1)..], NumberStyles.Integer, CultureInfo.InvariantCulture, out height);
+    }
+
+    // ------------------------------------------------ B3：双显卡错位检测
+
+    /// <summary>与 LOG-GPU-HYBRID 同源的核显命名特征。</summary>
+    private static readonly Regex ReIntegratedGpu =
+        new(@"Intel\(R\)\s+(?:UHD|HD Graphics|Iris)|AMD Radeon\(TM\) Graphics\b", Opts);
+
+    private static readonly Regex ReDiscreteGpu =
+        new(@"NVIDIA|GeForce|Quadro|Radeon RX|Radeon\(TM\) RX|Arc\b", Opts);
+
+    private static bool IsIntegrated(string name) => !string.IsNullOrEmpty(name) && ReIntegratedGpu.IsMatch(name);
+    private static bool IsDiscrete(string name) => !string.IsNullOrEmpty(name) && ReDiscreteGpu.IsMatch(name);
+
+    /// <summary>
+    /// B3 双显卡错位：日志枚举出 ≥2 个适配器时，检查 OBS 实际选用的适配器。
+    /// 用核显渲染而独显在位 → 警告（关联既有知识库条目 bs-dualgpu）；
+    /// 已用独显 → 给一条确认级提示，让用户放心排除这个变量。
+    /// </summary>
+    private static void AppendGpuAdapterFindings(ObsLogReport report, Dictionary<string, LogFinding> found)
+    {
+        var s = report.Summary;
+        var adapters = s.Adapters
+            .Where(a => !string.IsNullOrWhiteSpace(a))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .Take(4)
+            .ToList();
+        if (adapters.Count < 2 || string.IsNullOrEmpty(s.Gpu)) return;
+
+        var others = adapters.Where(a => !a.Equals(s.Gpu, StringComparison.OrdinalIgnoreCase)).ToList();
+        var adapterText = string.Join("；", adapters);
+
+        if (IsIntegrated(s.Gpu) && others.Any(IsDiscrete))
+        {
+            found["LOG-GPU-DUAL"] = new LogFinding
+            {
+                Code = "LOG-GPU-DUAL",
+                Severity = LogSeverity.Warning,
+                Title = "双显卡错位：OBS 正在使用集成显卡渲染",
+                Suggestion = "Windows「设置 → 系统 → 显示 → 显卡」里为 OBS 选择「高性能 GPU」，或在 NVIDIA / AMD 控制面板中单独指定；改完后完全退出并重启 OBS。详见知识库「笔记本双显卡」条目。",
+                ProblemId = "bs-dualgpu",
+                Evidence = $"日志适配器：{adapterText}（OBS 选用：{s.Gpu}）",
+                FirstLine = 0
+            };
+        }
+        else if (IsDiscrete(s.Gpu) && others.Any(IsIntegrated))
+        {
+            found["LOG-GPU-DUAL-OK"] = new LogFinding
+            {
+                Code = "LOG-GPU-DUAL-OK",
+                Severity = LogSeverity.Info,
+                Title = "双显卡环境确认：OBS 已使用独立显卡渲染",
+                Suggestion = "本机为双显卡环境，OBS 当前跑在独显上，无需处理；若游戏捕获黑屏，再检查游戏所在 GPU 与捕获方式。",
+                ProblemId = "bs-dualgpu",
+                Evidence = $"日志适配器：{adapterText}（OBS 选用：{s.Gpu}）",
+                FirstLine = 0
+            };
+        }
+    }
+
+    // ------------------------------------------------ A1：插件失败 × OBS 版本联动
+
+    /// <summary>32.2 首发的 Windows 插件加载问题在此补丁版修复。</summary>
+    internal static readonly int[] PluginLoadFixVersion = { 32, 2, 2 };
+
+    /// <summary>把 "31.1.1" / "30.0.0-beta1" 形式的版本号解析成整数段，解析失败返回 null。</summary>
+    internal static int[]? TryParseVersion(string? version)
+    {
+        if (string.IsNullOrWhiteSpace(version)) return null;
+        var head = version.Trim().Split('-')[0];
+        var parts = head.Split('.');
+        var result = new List<int>(parts.Length);
+        foreach (var p in parts)
+        {
+            if (!int.TryParse(p, NumberStyles.Integer, CultureInfo.InvariantCulture, out var n)) return null;
+            result.Add(n);
+        }
+        return result.Count == 0 ? null : result.ToArray();
+    }
+
+    internal static int CompareVersions(int[] a, int[] b)
+    {
+        for (var i = 0; i < Math.Max(a.Length, b.Length); i++)
+        {
+            var av = i < a.Length ? a[i] : 0;
+            var bv = i < b.Length ? b[i] : 0;
+            if (av != bv) return av.CompareTo(bv);
+        }
+        return 0;
+    }
+
+    /// <summary>
+    /// A1 联动：出现插件加载失败、且日志版本低于修复补丁版（32.2.2）时，
+    /// 单独提示「先升级 OBS」这条最高性价比解法，避免用户先去折腾重装插件。
+    /// </summary>
+    private static void AppendPluginObsVersionHint(ObsLogReport report, Dictionary<string, LogFinding> found)
+    {
+        if (!found.ContainsKey("LOG-PLUGIN")) return;
+
+        var v = TryParseVersion(report.Summary.ObsVersion);
+        if (v is null || CompareVersions(v, PluginLoadFixVersion) >= 0) return;
+
+        found["LOG-PLUGIN-OBSVER"] = new LogFinding
+        {
+            Code = "LOG-PLUGIN-OBSVER",
+            Severity = LogSeverity.Info,
+            Title = $"插件加载失败且 OBS 版本（{report.Summary.ObsVersion}）低于修复补丁版 32.2.2",
+            Suggestion = "先把 OBS 升级到 32.2.2 或更高（设置 → 一般 → 检查更新，或官网重装）：32.2 首发的 Windows 插件加载变更导致的首启失败已在该补丁版修复，升级后再重装报错的插件即可。",
+            ProblemId = "cr-plugin-load",
+            Evidence = $"OBS 版本 {report.Summary.ObsVersion} < 32.2.2，且日志存在插件加载失败记录",
+            FirstLine = 0
+        };
+    }
 }

@@ -1,8 +1,9 @@
 {
-  "version": "1.1",
-  "updated": "2026-08-22",
-  "note": "插件广场目录（V2.2 起从页内静态数组外置到知识库通道）：链接全部指向 GitHub 官方仓库或 OBS 官方论坛，收录前逐一验证可达性。V2.3 起界面统一纯文字风格、不再渲染 icon 字段（字段保留兼容旧数据），目录扩充到 38 个条目；本机体检同步支持全盘安装位置与 Steam 多库扫描。本文件走与 problems.json 完全一致的分离热更新通道，链接失效或新插件上架无需发版即可修复。dlls 字段用于「本地插件体检」把已装 DLL 匹配回广场条目（文件名主干、小写、可多个别名）；aiCost* 仅 AI 类插件填写，来自各项目 README 的公开开销说明。",
+  "version": "1.2",
+  "updated": "2026-08-23",
+  "note": "插件广场目录（V2.2 起从页内静态数组外置到知识库通道）：链接全部指向 GitHub 官方仓库，收录前逐一验证可达性。v1.2 目录扩充到 46 个条目，新增「工具 / 排障」分类并收录 OBS 排障助手 Dock 版（本软件的 OBS 停靠面板插件）；另新增 Win Capture Audio、Dynamic Delay、Scene Notes Dock、Face Tracker、PTZ Controls、RTSP Server、Zoom to Mouse 七个精选。本文件走与 problems.json 完全一致的分离热更新通道，链接失效或新插件上架无需发版即可修复。dlls 字段用于「本地插件体检」把已装 DLL 匹配回广场条目（文件名主干、小写、可多个别名；Lua 脚本类条目可为空数组）；aiCost* 仅 AI 类插件填写，来自各项目 README 的公开开销说明。",
   "categories": [
+    { "key": "tool", "label": "工具 / 排障", "icon": "" },
     { "key": "auto", "label": "自动化", "icon": "" },
     { "key": "fx", "label": "视觉特效", "icon": "" },
     { "key": "ai", "label": "AI 智能", "icon": "" },
@@ -12,6 +13,79 @@
     { "key": "input", "label": "输入 / 互动", "icon": "" }
   ],
   "plugins": [
+    {
+      "id": "helper-dock",
+      "name": "OBS 排障助手（Dock 版）",
+      "category": "tool",
+      "badge": "推荐",
+      "desc": "本软件的官方 OBS 停靠面板插件（C++ / Qt6 原生）：体检、日志分析、设置体检、系统信息四大页签，本地离线对齐官方 Log Analyzer 规则集，支持「元凶插件」一键禁用。",
+      "url": "https://github.com/YYRMMAYO/OBS_Helper_Plugin",
+      "repo": "YYRMMAYO/OBS_Helper_Plugin",
+      "dlls": ["obs-helper-dock"]
+    },
+    {
+      "id": "win-capture-audio",
+      "name": "Win Capture Audio",
+      "category": "audio",
+      "desc": "按应用程序直接捕获游戏声音，不用开「侦听此设备」：桌面噪音不再混进人声轨，游戏语音分离刚需。",
+      "url": "https://github.com/bozbez/win-capture-audio",
+      "repo": "bozbez/win-capture-audio",
+      "dlls": ["win-capture-audio"]
+    },
+    {
+      "id": "dynamic-delay",
+      "name": "Dynamic Delay",
+      "category": "audio",
+      "desc": "音频动态延迟补偿滤镜：按信号有无自动加延迟对齐画面，远程连线与采集卡音画微调利器。",
+      "url": "https://github.com/exeldro/obs-dynamic-delay",
+      "repo": "exeldro/obs-dynamic-delay",
+      "dlls": ["dynamic-delay"]
+    },
+    {
+      "id": "scene-notes-dock",
+      "name": "Scene Notes Dock",
+      "category": "auto",
+      "desc": "给每个场景挂一块独立备注板：提词、流程、待办随手记，切换场景时自动跟随显示。",
+      "url": "https://github.com/exeldro/obs-scene-notes-dock",
+      "repo": "exeldro/obs-scene-notes-dock",
+      "dlls": ["scene-notes-dock"]
+    },
+    {
+      "id": "face-tracker",
+      "name": "Face Tracker",
+      "category": "auto",
+      "desc": "人脸识别自动追踪：摄像头随人物移动平滑变焦居中，走动教学、开箱展示与多机位导播好用。",
+      "url": "https://github.com/norihiro/obs-face-tracker",
+      "repo": "norihiro/obs-face-tracker",
+      "dlls": ["face-tracker", "obs-face-tracker"]
+    },
+    {
+      "id": "ptz-controls",
+      "name": "PTZ Controls",
+      "category": "auto",
+      "desc": "在 OBS 内直接控制 PTZ 云台摄像机：转向预设位、变焦联动场景切换，会议录制与多机位直播刚需。",
+      "url": "https://github.com/glikely/obs-ptz",
+      "repo": "glikely/obs-ptz",
+      "dlls": ["obs-ptz", "ptz-controls"]
+    },
+    {
+      "id": "rtspserver",
+      "name": "RTSP Server",
+      "category": "multi",
+      "desc": "把 OBS 输出变成 RTSP 服务器：局域网内 VLC、手机、另一台电脑都能直接拉流监看。",
+      "url": "https://github.com/iamscottxu/obs-rtspserver",
+      "repo": "iamscottxu/obs-rtspserver",
+      "dlls": ["obs-rtspserver"]
+    },
+    {
+      "id": "zoom-to-mouse",
+      "name": "Zoom to Mouse",
+      "category": "input",
+      "desc": "Lua 脚本（无需装 DLL）：显示器捕获跟随鼠标平滑缩放聚焦，教程演示的「智能导播」，与 Zoominator 二选一。",
+      "url": "https://github.com/BlankSourceCode/obs-zoom-to-mouse",
+      "repo": "BlankSourceCode/obs-zoom-to-mouse",
+      "dlls": []
+    },
     {
       "id": "advanced-scene-switcher",
       "name": "Advanced Scene Switcher",

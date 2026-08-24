@@ -229,7 +229,8 @@
 
   <Style x:Key="PrimaryButton" TargetType="Button" BasedOn="{StaticResource BaseButton}">
     <Setter Property="Background" Value="{DynamicResource BrandBrush}" />
-    <Setter Property="Foreground" Value="White" />
+    <!-- 【v2.7.1】反衬文字走资源：浅色=白字压深底，深色=深字压亮底 -->
+    <Setter Property="Foreground" Value="{DynamicResource BrandForegroundBrush}" />
     <Setter Property="BorderThickness" Value="0" />
     <Setter Property="FontWeight" Value="SemiBold" />
     <Style.Triggers>
@@ -276,7 +277,8 @@
 
   <Style x:Key="DangerButton" TargetType="Button" BasedOn="{StaticResource BaseButton}">
     <Setter Property="Background" Value="{DynamicResource DangerBrush}" />
-    <Setter Property="Foreground" Value="White" />
+    <!-- 【v2.7.1】反衬文字走资源：深色模式深红字压亮红底，白字仅 2.8:1 不达标 -->
+    <Setter Property="Foreground" Value="{DynamicResource DangerForegroundBrush}" />
     <Setter Property="BorderThickness" Value="0" />
     <Setter Property="FontWeight" Value="SemiBold" />
     <Style.Triggers>
@@ -421,7 +423,8 @@
             <Trigger Property="IsChecked" Value="True">
               <Setter TargetName="Bd" Property="Background" Value="{DynamicResource BrandBrush}" />
               <Setter TargetName="Bd" Property="BorderBrush" Value="{DynamicResource BrandBrush}" />
-              <Setter Property="Foreground" Value="White" />
+              <!-- 【v2.7.1】选中段控件的反衬文字走资源，深色模式不再白字压亮底 -->
+              <Setter Property="Foreground" Value="{DynamicResource BrandForegroundBrush}" />
               <Setter Property="FontWeight" Value="SemiBold" />
             </Trigger>
           </ControlTemplate.Triggers>
@@ -549,7 +552,8 @@
                     Background="{DynamicResource SurfaceBrush}"
                     BorderBrush="{DynamicResource LineBrush}" BorderThickness="1.5"
                     VerticalAlignment="Center">
-              <TextBlock x:Name="Check" Text="✓" FontSize="13" FontWeight="Bold" Foreground="White"
+              <TextBlock x:Name="Check" Text="✓" FontSize="13" FontWeight="Bold"
+                         Foreground="{DynamicResource BrandForegroundBrush}"
                          HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="Collapsed" />
             </Border>
             <ContentPresenter Margin="9,0,0,0" VerticalAlignment="Center" RecognizesAccessKey="True" />

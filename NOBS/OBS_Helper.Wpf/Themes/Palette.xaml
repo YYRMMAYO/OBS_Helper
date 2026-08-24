@@ -17,12 +17,18 @@
     深浅色通用，中性色不随主题切换。
   -->
 
-  <SolidColorBrush PresentationOptions:Freeze="True" x:Key="BrandBrush" Color="#7b2ff7" />
-  <SolidColorBrush PresentationOptions:Freeze="True" x:Key="BrandDarkBrush" Color="#5a1fc4" />
-  <SolidColorBrush PresentationOptions:Freeze="True" x:Key="BrandSoftBrush" Color="#efe6ff" />
+  <!-- 【v2.7.1 强调色体系】默认品牌色 = 青瓷绿（AccentScheme.Catalog[0]），
+       运行时 AppearanceService.Apply() 会按用户选择覆盖为同名键。 -->
+  <SolidColorBrush PresentationOptions:Freeze="True" x:Key="BrandBrush" Color="#157a70" />
+  <SolidColorBrush PresentationOptions:Freeze="True" x:Key="BrandDarkBrush" Color="#105f57" />
+  <SolidColorBrush PresentationOptions:Freeze="True" x:Key="BrandSoftBrush" Color="#dcf0ec" />
   <!-- 【UI 优化 v1.10】主按钮悬停 / 按下：用真实色阶代替透明度过场，悬停更明确、按下更沉 -->
-  <SolidColorBrush PresentationOptions:Freeze="True" x:Key="BrandHoverBrush" Color="#6a1fd0" />
-  <SolidColorBrush PresentationOptions:Freeze="True" x:Key="BrandPressedBrush" Color="#4d15ad" />
+  <SolidColorBrush PresentationOptions:Freeze="True" x:Key="BrandHoverBrush" Color="#12655d" />
+  <SolidColorBrush PresentationOptions:Freeze="True" x:Key="BrandPressedBrush" Color="#0e5049" />
+  <!-- 【v2.7.1】品牌底反衬文字（运行时按主题覆盖：深色=深字压亮底） -->
+  <SolidColorBrush PresentationOptions:Freeze="True" x:Key="BrandForegroundBrush" Color="#ffffff" />
+  <SolidColorBrush PresentationOptions:Freeze="True" x:Key="DangerForegroundBrush" Color="#ffffff" />
+  <SolidColorBrush PresentationOptions:Freeze="True" x:Key="PillForegroundBrush" Color="#ffffff" />
 
   <SolidColorBrush PresentationOptions:Freeze="True" x:Key="SurfaceBrush" Color="#ffffff" />
   <SolidColorBrush PresentationOptions:Freeze="True" x:Key="Surface2Brush" Color="#f4f4fb" />

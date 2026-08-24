@@ -79,6 +79,6 @@ public partial class CategoryPage : UserControl, INavigationAware
     {
         var brush = (TryFindResource("SemanticBrush") as IValueConverter)?
             .Convert(semantic, typeof(Brush), null, CultureInfo.InvariantCulture) as Brush;
-        return brush ?? TryFindResource("BrandBrush") as Brush ?? Brushes.MediumPurple;
+        return brush ?? TryFindResource("BrandBrush") as Brush ?? Brushes.Gray;
     }
 }

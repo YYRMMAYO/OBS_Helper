@@ -205,12 +205,12 @@ public partial class ProblemPage : UserControl, INavigationAware
             badge.Child = new TextBlock
             {
                 Text = (i + 1).ToString(CultureInfo.InvariantCulture),
-                Foreground = Brushes.White,
                 FontWeight = FontWeights.Bold,
                 FontSize = 12,
                 HorizontalAlignment = HorizontalAlignment.Center,
                 VerticalAlignment = VerticalAlignment.Center
             };
+            ((TextBlock)badge.Child).SetResourceReference(TextBlock.ForegroundProperty, "BrandForegroundBrush");
 
             var titleRow = new Grid();
             titleRow.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });

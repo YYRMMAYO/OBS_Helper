@@ -85,12 +85,13 @@ public partial class SetupPage : UserControl, INavigationAware
         var noText = new TextBlock
         {
             Text = step.No,
-            Foreground = Brushes.White,
             FontWeight = FontWeights.Bold,
             HorizontalAlignment = HorizontalAlignment.Center,
             VerticalAlignment = VerticalAlignment.Center
         };
         noText.SetResourceReference(TextBlock.FontSizeProperty, "FontSizeBase");
+        // 【v2.7.1】品牌底反衬文字走资源，深色模式亮底上不再用白字
+        noText.SetResourceReference(TextBlock.ForegroundProperty, "BrandForegroundBrush");
 
         var badge = new Border
         {

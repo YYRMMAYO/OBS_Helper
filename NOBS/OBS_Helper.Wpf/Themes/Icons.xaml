@@ -19,18 +19,20 @@
     </DrawingImage.Drawing>
   </DrawingImage>
 
-  <!-- 推流状态：品牌紫信号弧（icon-stream.svg） -->
+  <!-- 推流状态：信号弧（icon-stream.svg）。
+       【v2.7.1】原硬编码品牌紫 #7b2ff7 在用户切换强调色后成为残留；
+       Freezable 不支持 DynamicResource，改用与任何强调色都不冲突的中性信息蓝。 -->
   <DrawingImage x:Key="IconStream" PresentationOptions:Freeze="True">
     <DrawingImage.Drawing>
       <DrawingGroup>
-        <GeometryDrawing Brush="#7b2ff7">
+        <GeometryDrawing Brush="#3d82d6">
           <GeometryDrawing.Geometry>
             <EllipseGeometry Center="12,12" RadiusX="2.5" RadiusY="2.5" />
           </GeometryDrawing.Geometry>
         </GeometryDrawing>
         <GeometryDrawing Geometry="M 7.5,7.5 A 7,7 0 0 0 7.5,16.5 M 16.5,7.5 A 7,7 0 0 1 16.5,16.5 M 5,5 A 11,11 0 0 0 5,19 M 19,5 A 11,11 0 0 1 19,19">
           <GeometryDrawing.Pen>
-            <Pen Brush="#7b2ff7" Thickness="2" StartLineCap="Round" EndLineCap="Round" LineJoin="Round" />
+            <Pen Brush="#3d82d6" Thickness="2" StartLineCap="Round" EndLineCap="Round" LineJoin="Round" />
           </GeometryDrawing.Pen>
         </GeometryDrawing>
       </DrawingGroup>

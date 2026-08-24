@@ -728,11 +728,12 @@ public partial class PluginsPage : UserControl, INavigationAware
         var badgeText = new TextBlock
         {
             Text = text,
-            Foreground = Brushes.White,
             FontWeight = FontWeights.SemiBold,
             Padding = new Thickness(7, 1, 7, 2)
         };
         badgeText.SetResourceReference(TextBlock.FontSizeProperty, "FontSizeXs");
+        // 【v2.7.1】彩色小标反衬文字走资源：深色模式语义色提亮后统一深字压亮底
+        badgeText.SetResourceReference(TextBlock.ForegroundProperty, "PillForegroundBrush");
 
         var badge = new Border
         {

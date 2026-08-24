@@ -1,6 +1,7 @@
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using System.Windows.Media;
 using OBS_Helper.Wpf.Controls;
 using OBS_Helper.Wpf.Errors;
 using OBS_Helper.Wpf.Models.Shell;
@@ -89,6 +90,8 @@ public partial class SettingsPage : UserControl, INavigationAware
 
             HighContrastSwitch.IsChecked = ap.Settings.HighContrast;
             ReduceMotionSwitch.IsChecked = ap.Settings.ReduceMotion;
+
+            BuildAccentSwatches();
 
             // 自定义背景（v1.10）
             var bgMode = ap.Settings.BackgroundMode;
@@ -644,6 +647,60 @@ public partial class SettingsPage : UserControl, INavigationAware
     {
         if (_syncing) return;
         AppServices.Appearance.SetReduceMotion(ReduceMotionSwitch.IsChecked == true);
+    }
+
+    // ------------------------------------------------------------ 主题色（v2.7.1 强调色）
+
+    /// <summary>按 AccentScheme.Catalog 生成色板圆点，并回填当前选中描边。</summary>
+    private void BuildAccentSwatches()
+    {
+        AccentPanel.Children.Clear();
+        foreach (var scheme in AccentScheme.Catalog)
+        {
+            var swatch = new Border
+            {
+                Width = 30,
+                Height = 30,
+                CornerRadius = new CornerRadius(8),
+                Margin = new Thickness(0, 0, 8, 8),
+                Cursor = Cursors.Hand,
+                Background = ParseHexBrush(scheme.Preview),
+                ToolTip = $"{scheme.Name}（{scheme.Preview}）",
+                Tag = scheme.Key,
+            };
+            swatch.MouseLeftButtonUp += OnAccentSwatchClick;
+            AccentPanel.Children.Add(swatch);
+        }
+        SyncAccentSelection();
+    }
+
+    /// <summary>选中项用文字色加粗描边，未选中用分隔线细描边；走 DynamicResource，主题切换即时跟随。</summary>
+    private void SyncAccentSelection()
+    {
+        var current = AppServices.Appearance.CurrentAccent.Key;
+        foreach (Border swatch in AccentPanel.Children)
+        {
+            swatch.SetResourceReference(
+                Border.BorderBrushProperty, Equals(swatch.Tag, current) ? "TextBrush" : "LineBrush");
+            swatch.BorderThickness = new Thickness(Equals(swatch.Tag, current) ? 2 : 1);
+        }
+    }
+
+    private void OnAccentSwatchClick(object sender, MouseButtonEventArgs e)
+    {
+        if (_syncing) return;
+        if (sender is Border { Tag: string key })
+        {
+            AppServices.Appearance.SetAccent(key);
+            SyncAccentSelection();
+        }
+    }
+
+    private static SolidColorBrush ParseHexBrush(string hex)
+    {
+        var brush = new SolidColorBrush((Color)ColorConverter.ConvertFromString(hex));
+        brush.Freeze();
+        return brush;
     }
 
     // ------------------------------------------------------------ 自定义背景（v1.10）

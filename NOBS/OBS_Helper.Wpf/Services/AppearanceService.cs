@@ -58,10 +58,55 @@ public sealed class AppearanceSettings
     /// <summary>背景图片的本地路径（仅 BackgroundMode=image 时生效）。</summary>
     [JsonPropertyName("bgImage")]
     public string BackgroundImage { get; set; } = "";
+
+    /// <summary>品牌强调色 key（见 AccentScheme.Catalog），默认青瓷绿。</summary>
+    [JsonPropertyName("accent")]
+    public string Accent { get; set; } = "teal";
 }
 
 /// <summary>
-/// 外观与无障碍设置。
+/// 品牌强调色方案（v2.7.1）。
+///
+/// 每套方案提供浅色 / 深色两整套色阶（基础 / 悬停 / 按下 / 柔和底 / 深变体 / 反衬文字）：
+///   - 浅色：基础色较深，与白色反衬文字对比度 ≥4.5:1；
+///   - 深色：基础色用「亮品牌色」，既保证按钮内深色反衬文字（DarkOn）可读，
+///     也让 BrandBrush 作为前景文字压在深底上时对比度 ≥4.5:1
+///     （交叉检验 P1：若沿用深基础色，Ghost/Link 等以品牌色作前景的场景会看不清）。
+/// Catalog 顺序即设置页色板展示顺序；Preview 是浅色基础色，用作色板圆点。
+/// </summary>
+public sealed record AccentScheme(
+    string Key, string Name, string Preview,
+    string LightBase, string LightHover, string LightPressed, string LightSoft, string LightDark,
+    string DarkBase, string DarkHover, string DarkPressed, string DarkSoft, string DarkDark,
+    string DarkOn)
+{
+    public static readonly AccentScheme[] Catalog =
+    [
+        new("teal", "青瓷绿", "#157a70",
+            "#157a70", "#12655d", "#0e5049", "#dcf0ec", "#105f57",
+            "#45c6b6", "#5cd4c5", "#38b7a8", "#10312d", "#86dfd3", "#06231e"),
+        new("blue", "海盐蓝", "#3d6da0",
+            "#3d6da0", "#33608f", "#274c73", "#e3edf7", "#2e567e",
+            "#6fa9dc", "#85b9e4", "#5b99cf", "#14273d", "#a3cdf0", "#0a2036"),
+        new("sage", "鼠尾草绿", "#4b7061",
+            "#4b7061", "#3f6355", "#305044", "#e4eee8", "#385648",
+            "#93bfab", "#a7cdbb", "#82b19c", "#16281f", "#b4d8c6", "#12241b"),
+        new("deepteal", "深海松石", "#0f766e",
+            "#0f766e", "#0d6560", "#0a5350", "#d7f0ec", "#0b5b55",
+            "#4ec6ba", "#64d2c7", "#41b5aa", "#0d2c29", "#90ddd4", "#06211e"),
+        new("violet", "雾紫（经典）", "#7b2ff7",
+            "#7b2ff7", "#6a1fd0", "#4d15ad", "#efe6ff", "#5a1fc4",
+            "#a685f5", "#b79df9", "#a184f0", "#2a1f47", "#cbb6fb", "#170b33"),
+    ];
+
+    public static readonly AccentScheme Default = Catalog[0];
+
+    /// <summary>按 key 取方案；未知值（旧配置损坏 / 未来版本删除）回退默认。</summary>
+    public static AccentScheme Resolve(string? key) =>
+        Catalog.FirstOrDefault(a => a.Key == key) ?? Default;
+}
+
+/// <summary>
 ///
 /// 与 Blazor 版的对应关系：原来通过 <c>&lt;html data-theme&gt;</c> 驱动 CSS 变量，
 /// WPF 版改为把同一套调色板写进 <see cref="Application.Resources"/>，
@@ -183,6 +228,16 @@ public sealed class AppearanceService : IDisposable
         SaveAndApply();
     }
 
+    /// <summary>当前生效的强调色方案（未知 key 回退默认）。</summary>
+    public AccentScheme CurrentAccent => AccentScheme.Resolve(Settings.Accent);
+
+    /// <summary>切换品牌强调色（按钮 / 选中态 / 小标等全局品牌色）。</summary>
+    public void SetAccent(string key)
+    {
+        Settings.Accent = AccentScheme.Resolve(key).Key;
+        SaveAndApply();
+    }
+
     public void SetReduceMotion(bool on)
     {
         Settings.ReduceMotion = on;
@@ -277,21 +332,31 @@ public sealed class AppearanceService : IDisposable
         var dark = IsDarkEffective;
         var hc = Settings.HighContrast;
 
-        // ---- 品牌色（深浅一致，仅 soft 底色随主题变化）
-        res["BrandBrush"] = Frozen("#7b2ff7");
-        res["BrandDarkBrush"] = Frozen("#5a1fc4");
-        res["BrandSoftBrush"] = Frozen(dark ? "#2a1f47" : "#efe6ff");
-        // 【UI 优化 v1.10】主按钮悬停 / 按下色阶：深色模式提亮，保持可辨
-        res["BrandHoverBrush"] = Frozen(dark ? "#8b4df8" : "#6a1fd0");
-        res["BrandPressedBrush"] = Frozen(dark ? "#9f6cf9" : "#4d15ad");
+        // ---- 品牌色（v2.7.1 强调色体系）：由用户在设置页选择，浅 / 深色各一套色阶。
+        // BrandBrush 既作主按钮背景（配 BrandForegroundBrush 反衬文字），也大量用作
+        // 前景文字 / 描边，因此深色模式用「亮品牌色」保证两类用途都可读（交叉检验 P1）。
+        var accent = AccentScheme.Resolve(Settings.Accent);
+        res["BrandBrush"] = Frozen(dark ? accent.DarkBase : accent.LightBase);
+        res["BrandDarkBrush"] = Frozen(dark ? accent.DarkDark : accent.LightDark);
+        res["BrandSoftBrush"] = Frozen(dark ? accent.DarkSoft : accent.LightSoft);
+        // 【UI 优化 v1.10】主按钮悬停 / 按下色阶
+        res["BrandHoverBrush"] = Frozen(dark ? accent.DarkHover : accent.LightHover);
+        res["BrandPressedBrush"] = Frozen(dark ? accent.DarkPressed : accent.LightPressed);
+        // 品牌底上的反衬文字：浅色=白字压深品牌底；深色=深字压亮品牌底
+        res["BrandForegroundBrush"] = dark ? Frozen(accent.DarkOn) : Frozen("#ffffff");
 
         // ---- 表面 / 文字 / 边框
         res["SurfaceBrush"] = Frozen(dark ? "#1b1c26" : "#ffffff");
         res["Surface2Brush"] = Frozen(dark ? "#14151d" : "#f4f4fb");
         res["Surface3Brush"] = Frozen(dark ? "#20212c" : "#ececf6");
-        res["TextBrush"] = Frozen(hc ? (dark ? "#ffffff" : "#000000") : (dark ? "#e9e9f2" : "#1c1d2b"));
-        res["MutedBrush"] = Frozen(hc ? (dark ? "#dddddd" : "#222222") : (dark ? "#9a9bb0" : "#6b6c80"));
-        res["LineBrush"] = Frozen(hc ? (dark ? "#ffffff" : "#000000") : (dark ? "#2c2d3a" : "#e6e6f0"));
+        res["TextBrush"] = Frozen(hc ? (dark ? "#ffffff" : "#000000") : (dark ? "#ececf5" : "#1c1d2b"));
+        // 【深色对比度 v2.7.1】MutedBrush 深色 #9a9bb0→#a9abbe：在 Surface(#1b1c26) 上
+        // 对比度约 6:1 → 7.5:1，弱光 / 低亮度屏幕下的次要文字不再发灰难读。
+        // 浅色同步对齐 Palette.xaml 的 #5c5d70（P3-1 结论），消除静态默认与运行时的漂移。
+        res["MutedBrush"] = Frozen(hc ? (dark ? "#e2e2e8" : "#222222") : (dark ? "#a9abbe" : "#5c5d70"));
+        // 【深色对比度 v2.7.1】LineBrush 深色 #2c2d3a→#3b3d50：边框与卡片底拉开层次
+        // （对 Surface 对比约 1.25:1 → 1.6:1），输入框 / 分隔线在深色下可辨。
+        res["LineBrush"] = Frozen(hc ? (dark ? "#ffffff" : "#000000") : (dark ? "#3b3d50" : "#e6e6f0"));
 
         // ---- 语义色（严重度 / 状态）
         // 浅色 Danger 由 #d92d20 加深为 #c62828（P2-3）：保证 Danger 文字放在 DangerSoft 底
@@ -301,6 +366,10 @@ public sealed class AppearanceService : IDisposable
         // 【UI 优化 v1.10】危险按钮悬停 / 按下色阶
         res["DangerHoverBrush"] = Frozen(dark ? "#ff8080" : "#ab2121");
         res["DangerPressedBrush"] = Frozen(dark ? "#ff9696" : "#8f1a1a");
+        // 【深色对比度 v2.7.1】危险底反衬文字：深色模式 #ff6b6b 偏亮，白字仅 2.8:1，
+        // 改用深红字压亮红底（约 6:1）；浅色维持白字压深红。
+        res["DangerForegroundBrush"] = dark ? Frozen("#340a0a") : Frozen("#ffffff");
+
         res["WarnBrush"] = Frozen(dark ? "#f5a524" : "#b54708");
         res["WarnSoftBrush"] = Frozen(dark ? "#3a2e14" : "#fef4e6");
         res["OkBrush"] = Frozen(dark ? "#3ecf8e" : "#067647");
@@ -319,6 +388,11 @@ public sealed class AppearanceService : IDisposable
         res["SemanticAzureBrush"] = Frozen(dark ? "#6fa8dc" : "#2980b9");
         res["SemanticVioletBrush"] = Frozen(dark ? "#b08cd6" : "#8e44ad");
         res["SemanticCrimsonBrush"] = Frozen(dark ? "#d96a63" : "#c0392b");
+
+        // ---- 【深色对比度 v2.7.1】彩色小标（徽标 / 色板圆点 / 分类 pill）反衬文字：
+        // 深色模式语义色整体提亮后，白字普遍掉到 3:1 以下；统一改深色字压亮底，
+        // 浅色模式维持白字（浅色语义色都偏深，白字达标）。
+        res["PillForegroundBrush"] = dark ? Frozen("#11131c") : Frozen("#ffffff");
 
         // ---- 阴影强度（用不透明度模拟 CSS 的 shadow-sm / md）
         res["ShadowOpacity"] = dark ? 0.45 : 0.10;

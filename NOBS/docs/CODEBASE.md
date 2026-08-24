@@ -85,6 +85,7 @@ NOBS/
 | `Services/ObsConfig/ObsBackupService.cs` | 736 | 配置备份（zip 打包）与导入（校验、事务恢复）。 |
 | `Services/ObsConfig/ObsResetService.cs` | 253 | 配置重置（连接态校验、场景清空）。 |
 | `Services/ObsConfig/SceneTemplateService.cs` | 824 | 场景模板：在线落地（obs-websocket 建集合/场景/来源）与离线导出（JSON）。 |
+| `Services/ObsConfig/RecordingToolsService.cs` | 220 | 录像工具（V2.6）：录像目录解析与直达、ffmpeg 探测、MKV/Hybrid MP4 → MP4 无损转封装。 |
 | `Services/ObsConfig/FileTx.cs` | 129 | 文件事务：提交 / 回滚目录级操作。 |
 
 #### 2.3.4 日志分析
@@ -106,6 +107,9 @@ NOBS/
 | `Services/BookmarkService.cs` | 150 | 收藏（书签）持久化与变更通知。 |
 | `Services/AppearanceService.cs` | 290 | 主题（深浅色）切换与持久化。 |
 | `Services/UpdateService.cs` | 406 | 更新检查（蓝奏云 + GitHub Release 双通道）、下载与安装。 |
+| `Services/Tools/BandwidthAdvisorCore.cs` | 120 | 推流带宽顾问纯逻辑（V2.6）：上行 → 码率/分辨率/帧率推荐、多路推流所需上行。 |
+| `Services/Tools/ConflictScannerCore.cs` | 110 | 冲突软件识别纯逻辑（V2.6）：已知干扰源表匹配进程名，输出风险与处置建议。 |
+| `Services/Update/ObsReleaseInfoService.cs` | 180 | OBS 新版本情报（V2.6）：GitHub 最新 Release 拉取 + 本地缓存回退，永不抛异常。 |
 | `Services/FileLogger.cs` | 104 | 文件日志（跨日滚动）。 |
 | `Services/TraceLoggerListener.cs` | 23 | Trace 输出接 FileLogger。 |
 | `Services/ToastService.cs` | 80 | 全局轻提示（统一 Toast）。 |
@@ -156,6 +160,7 @@ NOBS/
 | `Views/SettingsPage.xaml(.cs)` | 786 | 设置页（AI、连接、热键、外观、更新等全部设置）。 |
 | `Views/SetupPage.xaml(.cs)` | 220 | 新手搭建流程六步引导 + 竖屏 / 多平台进阶向导（V2.2）。 |
 | `Views/PluginsPage.xaml(.cs)` | 800 | 插件广场：目录热更新 + 本机体检 + 下载角标 + AI 预算提示 + 关注（V2.2）。 |
+| `Views/ToolboxPage.xaml(.cs)` | 330 | 工具箱（V2.6）：录像工具 / 参数处方 / 隐私清单 / 冲突扫描 / 带宽计算 / 版本情报 / 快捷键速查。 |
 | `Views/SetupWizardWindow.xaml(.cs)` | 250 | 分步向导窗口（竖屏双画布 / 多平台推流，V2.2）。 |
 | `Views/GuidePage.xaml(.cs)` | 95 | 使用指引（随包资源）。 |
 | `Views/MiniControlWindow.xaml(.cs)` | 106 | 迷你小窗（精简控制）。 |

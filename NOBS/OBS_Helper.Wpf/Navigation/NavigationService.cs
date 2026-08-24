@@ -56,6 +56,9 @@ public static class Routes
 
     /// <summary>OBS 插件广场：常用插件的分类导航与官方下载跳转（一级导航）。</summary>
     public const string Plugins = "plugins";
+
+    /// <summary>工具箱：录像工具 / 参数处方 / 隐私清单 / 冲突扫描 / 带宽计算 / 版本情报（一级导航，V2.6）。</summary>
+    public const string Toolbox = "toolbox";
 }
 
 /// <summary>

@@ -260,6 +260,18 @@ public sealed class ObsLogAnalyzer
             Title = "录制文件写入失败",
             Suggestion = "检查录制目录是否存在、是否有写权限、磁盘是否已满；录制路径避免中文与特殊字符；建议先录 MKV 再转封装。"
         },
+        new() {
+            Code = "LOG-HYBRID-MP4", Severity = LogSeverity.Info, ProblemId = "rc-hybrid-mp4",
+            Pattern = new Regex(@"hybrid[_ -]?mp4|hybrid[_ -]?mov", Opts),
+            Title = "使用 Hybrid MP4/MOV 输出（32.x 新默认格式）",
+            Suggestion = "Hybrid MP4 是 32.0 起的默认录像格式（防崩溃）。若剪辑软件 / 播放器打不开：用 文件 → 录像转封装 转 MP4，或改回 MKV 录制。详见知识库条目。"
+        },
+        new() {
+            Code = "LOG-VIRTUALCAM", Severity = LogSeverity.Error, ProblemId = "st-virtualcam",
+            Pattern = new Regex(@"virtual[_ -]?cam(?:era)?.{0,40}(?:fail(?:ed)?|error)|failed to start virtual camera", Opts),
+            Title = "虚拟摄像头启动失败",
+            Suggestion = "确认 OBS 菜单里的「启动虚拟摄像头」已开启且未被其他程序占用；Windows 更新后失效属常见回归，重装最新版 OBS 或重选设备即可恢复。详见知识库条目。"
+        },
 
         // —— 插件 / 崩溃 ——
         new() {

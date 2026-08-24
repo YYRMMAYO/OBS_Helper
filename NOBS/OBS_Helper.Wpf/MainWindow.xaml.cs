@@ -46,6 +46,7 @@ public partial class MainWindow : Window
             [Routes.Setup] = (NavSetup, "直播搭建", "从零到开播的完整流程"),
             [Routes.Templates] = (NavTemplates, "场景模板", "一键搭好整套场景与来源"),
             [Routes.Plugins] = (NavPlugins, "插件广场", "常用 OBS 插件分类导航，直达官方下载"),
+            [Routes.Toolbox] = (NavToolbox, "工具箱", "录像工具 · 冲突扫描 · 带宽计算 · 版本情报"),
             [Routes.Console] = (NavConsole, "OBS 控制台", "远程控制场景、录制与推流"),
             [Routes.Performance] = (NavPerformance, "系统监控", "CPU / 内存 / 网络 / 磁盘实时曲线"),
             [Routes.Guide] = (NavGuide, "排障指引", "通用排查思路与速查手册"),
@@ -79,6 +80,7 @@ public partial class MainWindow : Window
         _nav.Register(Routes.Setup, () => new SetupPage());
         _nav.Register(Routes.Templates, () => new TemplatePage());
         _nav.Register(Routes.Plugins, () => new PluginsPage());
+        _nav.Register(Routes.Toolbox, () => new ToolboxPage());
         _nav.Register(Routes.Console, () => new ConsolePage());
         _nav.Register(Routes.Performance, () => new PerformancePage());
         _nav.Register(Routes.Guide, () => new GuidePage());
@@ -237,6 +239,7 @@ public partial class MainWindow : Window
             (Routes.Setup, null),
             (Routes.Templates, null),
             (Routes.Plugins, null),
+            (Routes.Toolbox, null),
             (Routes.Console, null),
             (Routes.Performance, null),
             (Routes.Guide, null),

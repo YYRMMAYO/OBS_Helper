@@ -34,6 +34,18 @@ public static class BandwidthAdvisorCore
     /// <summary>多路推流的冗余系数：编码器开销 + 各平台连接波动。</summary>
     public const double MultiStreamHeadroom = 1.2;
 
+    // ---- 输入安全上限：防止异常大数值导致溢出或荒谬结论 ----
+    /// <summary>上行带宽输入上限（10Gbps），超出按此值截断。</summary>
+    public const double MaxUploadMbps = 10_000;
+    /// <summary>多路推流路数上限，超出按此值截断。</summary>
+    public const int MaxStreams = 32;
+    /// <summary>单路码率输入上限（kbps，约等于 OBS 编码器可设置的最大值量级）。</summary>
+    public const int MaxSingleBitrateKbps = 100_000;
+
+    private static double Clamp(double v, double max) => v > max ? max : v;
+    public static int ClampToInt(double v, int max)
+        => double.IsNaN(v) || v <= 0 ? 0 : (int)(v > max ? max : v);
+
     /// <summary>
     /// 按实测上行带宽推荐单路推流参数。<paramref name="uploadMbps"/> 为测速得到的上行速率（Mbps）。
     /// </summary>
@@ -41,6 +53,9 @@ public static class BandwidthAdvisorCore
     {
         if (double.IsNaN(uploadMbps) || uploadMbps <= 0)
             return BandwidthRecommendation.NotViable("请输入有效的上行带宽数值。");
+
+        // 钳制异常大的输入，避免后续整型换算溢出
+        uploadMbps = Clamp(uploadMbps, MaxUploadMbps);
 
         // 安全码率 = 上行 × 65%，向下取整到 100kbps，避免贴线
         var safeKbps = (int)(uploadMbps * 650 / 100) * 100;
@@ -79,9 +94,10 @@ public static class BandwidthAdvisorCore
 
     /// <summary>
     /// 多路推流所需上行（Mbps）：路数 × 单路码率 × 冗余系数。
+    /// 路数与单路码率会先按安全上限截断，防止异常输入导致溢出。
     /// </summary>
     public static double RequiredUploadMbps(int streams, int singleBitrateKbps, double headroom = MultiStreamHeadroom)
-        => Math.Max(streams, 0) * Math.Max(singleBitrateKbps, 0) * headroom / 1000.0;
+        => Math.Clamp(streams, 0, MaxStreams) * (double)Math.Clamp(singleBitrateKbps, 0, MaxSingleBitrateKbps) * headroom / 1000.0;
 
     /// <summary>判断当前上行能否承载多路推流。</summary>
     public static bool CanSustain(double uploadMbps, int streams, int singleBitrateKbps)
@@ -92,6 +108,10 @@ public static class BandwidthAdvisorCore
     {
         if (streams <= 0 || singleBitrateKbps <= 0)
             return "请填写有效的路数与单路码率。";
+
+        streams = Math.Clamp(streams, 1, MaxStreams);
+        singleBitrateKbps = Math.Clamp(singleBitrateKbps, 1, MaxSingleBitrateKbps);
+        uploadMbps = Clamp(uploadMbps, MaxUploadMbps);
 
         var required = RequiredUploadMbps(streams, singleBitrateKbps);
         var total = streams * singleBitrateKbps;

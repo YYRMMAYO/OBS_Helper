@@ -86,4 +86,50 @@ public class BandwidthAdvisorCoreTests
         Assert.Contains("不够用", bad);
         Assert.Contains("Restream", bad);
     }
+
+    [Fact]
+    public void Recommend_AbsurdHugeBandwidth_DoesNotThrowOrOverflow()
+    {
+        var r = BandwidthAdvisorCore.Recommend(1e300);
+        Assert.True(r.Viable);                       // 超大输入按上限截断，仍给最高档推荐
+        Assert.Equal(8000, r.BitrateKbps);
+
+        var r2 = BandwidthAdvisorCore.Recommend(double.MaxValue);
+        Assert.True(r2.Viable);
+        Assert.Equal(8000, r2.BitrateKbps);
+    }
+
+    [Fact]
+    public void RequiredUpload_ClampsInputs_NoOverflow()
+    {
+        // 超限路数 / 码率被截断到上限，不抛异常、不溢出为负
+        var required = BandwidthAdvisorCore.RequiredUploadMbps(int.MaxValue, int.MaxValue);
+        Assert.Equal(BandwidthAdvisorCore.MaxStreams * (double)BandwidthAdvisorCore.MaxSingleBitrateKbps
+                     * BandwidthAdvisorCore.MultiStreamHeadroom / 1000.0, required, precision: 6);
+    }
+
+    [Fact]
+    public void DescribeMultiStream_HugeInputs_ClampedAndStable()
+    {
+        var text = BandwidthAdvisorCore.DescribeMultiStream(1e300, int.MaxValue, int.MaxValue);
+        Assert.Contains($"{BandwidthAdvisorCore.MaxStreams} 路 × {BandwidthAdvisorCore.MaxSingleBitrateKbps}kbps", text);
+        Assert.DoesNotContain("-", text.Split('\n')[0]); // 无负数（溢出迹象）
+    }
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(-5)]
+    [InlineData(double.NaN)]
+    public void ClampToInt_InvalidValues_ReturnZero(double v)
+    {
+        Assert.Equal(0, BandwidthAdvisorCore.ClampToInt(v, 32));
+    }
+
+    [Fact]
+    public void ClampToInt_OverLimit_ClampsToMax()
+    {
+        Assert.Equal(32, BandwidthAdvisorCore.ClampToInt(1e18, 32));
+        Assert.Equal(100000, BandwidthAdvisorCore.ClampToInt(999999999, 100000));
+        Assert.Equal(7, BandwidthAdvisorCore.ClampToInt(7.9, 32));
+    }
 }

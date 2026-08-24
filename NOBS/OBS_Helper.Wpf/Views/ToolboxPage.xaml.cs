@@ -212,8 +212,8 @@ public partial class ToolboxPage : UserControl
 
         if (!double.IsNaN(upload))
         {
-            var streams = (int)Math.Max(TryParseDouble(StreamCountInput.Text), 0);
-            var bitrate = (int)Math.Max(TryParseDouble(StreamBitrateInput.Text), 0);
+            var streams = BandwidthAdvisorCore.ClampToInt(TryParseDouble(StreamCountInput.Text), BandwidthAdvisorCore.MaxStreams);
+            var bitrate = BandwidthAdvisorCore.ClampToInt(TryParseDouble(StreamBitrateInput.Text), BandwidthAdvisorCore.MaxSingleBitrateKbps);
             MultiStreamText.Text = BandwidthAdvisorCore.DescribeMultiStream(upload, streams, bitrate);
         }
     }

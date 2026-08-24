@@ -116,7 +116,7 @@
             <TextBox x:Name="UploadInput" Style="{StaticResource AppTextBox}" Width="110"
                      Text="10" TextChanged="OnBandwidthInputChanged" />
             <TextBlock x:Name="RecommendHint" Style="{StaticResource CaptionText}" Margin="12,0,0,0"
-                       VerticalAlignment="Center" Text="可在测速网站获取上行数值；直播看上行不看下行。" />
+                       VerticalAlignment="Center" Text="可在测速网站获取上行数值；直播看上行不看下行（上限 10000Mbps）。" />
           </StackPanel>
 
           <TextBlock x:Name="RecommendText" Style="{StaticResource BodyText}" Margin="0,10,0,0"
@@ -132,6 +132,8 @@
             <TextBox x:Name="StreamBitrateInput" Style="{StaticResource AppTextBox}" Width="90" Margin="8,0,0,0"
                      Text="6000" TextChanged="OnBandwidthInputChanged" />
             <TextBlock Text="kbps" VerticalAlignment="Center" Margin="6,0,0,0" Foreground="{DynamicResource MutedBrush}" />
+            <TextBlock Style="{StaticResource CaptionText}" Margin="12,0,0,0"
+                       VerticalAlignment="Center" Text="上限：32 路 × 100000kbps" />
           </StackPanel>
           <TextBlock x:Name="MultiStreamText" Style="{StaticResource BodyText}" Margin="0,10,0,0"
                      TextWrapping="Wrap" Text="" />

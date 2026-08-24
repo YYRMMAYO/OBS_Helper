@@ -109,6 +109,13 @@ NOBS/
 | `Services/UpdateService.cs` | 406 | 更新检查（蓝奏云 + GitHub Release 双通道）、下载与安装。 |
 | `Services/Tools/BandwidthAdvisorCore.cs` | 120 | 推流带宽顾问纯逻辑（V2.6）：上行 → 码率/分辨率/帧率推荐、多路推流所需上行。 |
 | `Services/Tools/ConflictScannerCore.cs` | 110 | 冲突软件识别纯逻辑（V2.6）：已知干扰源表匹配进程名，输出风险与处置建议。 |
+| `Services/Tools/DiskBenchmarkCore.cs` | - | 磁盘写入基准判定纯逻辑（V2.7）：实测吞吐 × 计划码率 → 三档结论。 |
+| `Services/Tools/EncoderAdvisorCore.cs` | - | 编码顾问纯逻辑（V2.7）：显卡型号 + 场景 → 预设 / CQP 参数组合与双编码预算。 |
+| `Services/Tools/IngestPingService.cs` | - | 推流节点 TCP 握手探测（V2.7）：候选清单、并发测 RTT、失败降级排序。 |
+| `Services/Obs/ColorCheckCore.cs` | - | 色彩体检纯逻辑（V2.7）：色彩范围 / 空间 / 格式三件套评估。 |
+| `Services/ObsConfig/ColorCheckService.cs` | - | 色彩体检服务（V2.7）：配置定位链路 + 只读读取 basic.ini。 |
+| `Services/Audio/SampleRateCheckCore.cs` | - | 音频采样率体检纯逻辑（V2.7）：OBS 与系统设备采样率一致性判定。 |
+| `Services/Audio/SampleRateCheckService.cs` | - | 采样率体检服务（V2.7）：注册表 MMDevices 只读枚举活动设备共享模式采样率。 |
 | `Services/Update/ObsReleaseInfoService.cs` | 180 | OBS 新版本情报（V2.6）：GitHub 最新 Release 拉取 + 本地缓存回退，永不抛异常。 |
 | `Services/FileLogger.cs` | 104 | 文件日志（跨日滚动）。 |
 | `Services/TraceLoggerListener.cs` | 23 | Trace 输出接 FileLogger。 |

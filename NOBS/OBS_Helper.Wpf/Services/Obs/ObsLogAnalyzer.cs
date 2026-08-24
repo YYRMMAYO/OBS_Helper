@@ -206,6 +206,12 @@ public sealed class ObsLogAnalyzer
             Title = "摄像头 / 采集卡启动失败",
             Suggestion = "确认设备没被其他软件占用；更换 USB 口（避免走 Hub）；在设备属性里把分辨率/帧率/格式改成设备原生支持的组合。"
         },
+        new() {
+            Code = "LOG-CAPTURE-CARD", Severity = LogSeverity.Error, ProblemId = "bs-capturecard",
+            Pattern = new Regex(@"decklink[^.\n]{0,60}(?:fail|error|invalid|timeout)|failed to open (?:the )?capture card", Opts),
+            Title = "采集卡（DeckLink 等）初始化失败",
+            Suggestion = "按顺序排查：重插换 USB / PCIe 供电 → 关闭采集卡自带软件的独占 → 重装最新驱动 → 升级 OBS；跨版本失效时先回退上一稳定版 OBS。详见知识库条目。"
+        },
 
         // —— 推流 / 网络 ——
         new() {
@@ -331,6 +337,28 @@ public sealed class ObsLogAnalyzer
             Pattern = new Regex(@"sample rate(?:s)?[^.\n]{0,40}(?:don't match|doesn't match|mismatch|differ)", Opts),
             Title = "音频采样率不匹配",
             Suggestion = "把所有音频设备（麦克风 / 扬声器 / 声卡）的采样率统一为 48 kHz，并在 Windows 声音设置里保持一致，可避免爆音与音画漂移。"
+        },
+        new() {
+            Code = "LOG-AUDIO-RESAMPLE", Severity = LogSeverity.Warning, ProblemId = "au-sample-mismatch",
+            Pattern = new Regex(@"\bresampl(?:ing|ed|er)\b|Failed to initialize audio resampler", Opts),
+            Title = "音频正在实时重采样",
+            Suggestion = "日志出现重采样记录说明设备与 OBS 的采样率不一致（如 44.1kHz vs 48kHz），是音质发闷与音画漂移的常见根因；把系统和 OBS 统一为 48kHz。详见知识库条目。"
+        },
+
+        // —— 色彩 / 画质（V2.7）——
+        new() {
+            Code = "LOG-COLOR-RANGE", Severity = LogSeverity.Info, ProblemId = "cf-colorrange",
+            Pattern = new Regex(@"(?:color|colour)[_ ]?range:?\s*full\b", Opts),
+            Title = "色彩范围设置为 Full（画面发灰的常见原因）",
+            Suggestion = "Full 范围在多数直播平台按 Limited 解读，观众端会发灰、对比度下降；本地播放正常不代表观众端正常。除非全链路确认为 Full，建议改回 Limited。详见知识库条目。"
+        },
+
+        // —— 推流网络补充（V2.7）——
+        new() {
+            Code = "LOG-BITRATE-DROP", Severity = LogSeverity.Warning, ProblemId = "lag-dynamic-bitrate",
+            Pattern = new Regex(@"dynamic bitrate|bitrate[^.\n]{0,30}(?:reduced|lowered|dropp?ing)", Opts),
+            Title = "推流码率被动态下调（上行波动）",
+            Suggestion = "动态码率在保护直播不中断，但频繁触发说明上行不稳：降低基础码率到实测上行的 60~70%、换有线网络，或用工具箱的节点探测换个推流入口。详见知识库条目。"
         },
 
         // —— 推流密钥泄漏风险 ——

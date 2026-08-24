@@ -37,6 +37,11 @@
     <Compile Include="..\OBS_Helper.Wpf\Services\Plugins\PluginScannerCore.cs" Link="Linked\Plugins\PluginScannerCore.cs" />
     <Compile Include="..\OBS_Helper.Wpf\Services\Tools\BandwidthAdvisorCore.cs" Link="Linked\Tools\BandwidthAdvisorCore.cs" />
     <Compile Include="..\OBS_Helper.Wpf\Services\Tools\ConflictScannerCore.cs" Link="Linked\Tools\ConflictScannerCore.cs" />
+    <Compile Include="..\OBS_Helper.Wpf\Services\Tools\EncoderAdvisorCore.cs" Link="Linked\Tools\EncoderAdvisorCore.cs" />
+    <Compile Include="..\OBS_Helper.Wpf\Services\Tools\DiskBenchmarkCore.cs" Link="Linked\Tools\DiskBenchmarkCore.cs" />
+    <Compile Include="..\OBS_Helper.Wpf\Services\Tools\IngestPingService.cs" Link="Linked\Tools\IngestPingService.cs" />
+    <Compile Include="..\OBS_Helper.Wpf\Services\Obs\ColorCheckCore.cs" Link="Linked\Obs\ColorCheckCore.cs" />
+    <Compile Include="..\OBS_Helper.Wpf\Services\Audio\SampleRateCheckCore.cs" Link="Linked\Audio\SampleRateCheckCore.cs" />
   </ItemGroup>
 
 </Project>

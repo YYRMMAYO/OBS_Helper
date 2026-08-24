@@ -135,6 +135,7 @@ public static class PreflightCheckCore
         CheckEncoder(report, ini);
         CheckSampleRate(report, ini);
         CheckMicDevices(report, ini);
+        CheckKeyframeInterval(report, ini);
     }
 
     // ------------------------------------------------------------- 各项检查
@@ -348,6 +349,74 @@ public static class PreflightCheckCore
     }
 
     // --------------------------------------------------------------- 工具
+
+    /// <summary>
+    /// 关键帧间隔检查（V2.7）：编码器设置里 keyint 为 0（让编码器自行决定）
+    /// 会产生分钟级的关键帧间隔，观众中途进入长时间模糊、拖动进度条失灵。
+    /// 键缺失按默认 2 秒处理，不制造虚假告警。
+    /// </summary>
+    private static void CheckKeyframeInterval(PreflightReport report, Dictionary<string, string> ini)
+    {
+        var entry = ini.FirstOrDefault(kv =>
+            kv.Key.EndsWith(".keyint_sec", StringComparison.OrdinalIgnoreCase) ||
+            kv.Key.EndsWith(".keyintsec", StringComparison.OrdinalIgnoreCase));
+
+        if (entry.Key is null || entry.Value.Length == 0)
+        {
+            report.Items.Add(new PreflightItem
+            {
+                Title = "关键帧间隔",
+                Status = PreflightStatus.Info,
+                Detail = "未找到自定义记录（推流默认 2 秒）。若直播中观众反馈「中途进入画面模糊」，到编码器高级设置里确认该项。"
+            });
+            return;
+        }
+
+        if (!int.TryParse(entry.Value, System.Globalization.NumberStyles.Integer,
+                System.Globalization.CultureInfo.InvariantCulture, out var sec))
+        {
+            report.Items.Add(new PreflightItem
+            {
+                Title = "关键帧间隔",
+                Status = PreflightStatus.Info,
+                Detail = $"读到非数值记录「{entry.Value}」，建议在设置 → 输出里核对一遍。"
+            });
+            return;
+        }
+
+        if (sec > 0 && sec <= 4)
+        {
+            report.Items.Add(new PreflightItem
+            {
+                Title = "关键帧间隔",
+                Status = PreflightStatus.Ok,
+                Detail = $"{sec} 秒，符合平台共识值（2 秒上下）。"
+            });
+            return;
+        }
+
+        if (sec == 0)
+        {
+            report.Items.Add(new PreflightItem
+            {
+                Title = "关键帧间隔设为 0（自动）",
+                Status = PreflightStatus.Warn,
+                Detail = "0 表示交给编码器决定，实际可能几分钟才一个关键帧：观众中途进入会长时间模糊，平台录制 / 拖动进度条也会异常。" +
+                         "\n建议：设置 → 输出 → 关键帧间隔固定为 2 秒。",
+                ProblemId = "lag-keyint"
+            });
+            return;
+        }
+
+        report.Items.Add(new PreflightItem
+        {
+            Title = "关键帧间隔偏大",
+            Status = PreflightStatus.Warn,
+            Detail = $"当前 {sec} 秒：间隔越长，观众中途进入的模糊恢复越慢。" +
+                     "\n建议：设置 → 输出 → 关键帧间隔改为 2 秒。",
+            ProblemId = "lag-keyint"
+        });
+    }
 
     /// <summary>按优先级取第一个非空值（键名已由 ParseIni 小写化）。</summary>
     private static string FirstValue(Dictionary<string, string> ini, params string[] keys)

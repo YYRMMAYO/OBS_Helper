@@ -5,7 +5,7 @@
     <StackPanel Margin="22,18,22,26">
 
       <TextBlock Style="{StaticResource MutedText}"
-                 Text="录屏与直播的实用工具合集：录像文件管理、参数处方、隐私清单、冲突软件扫描、推流带宽计算与 OBS 新版本情报。所有检查均为只读，不会改动你的 OBS 配置。" />
+                 Text="录屏与直播的实用工具合集：录像文件管理、参数处方、隐私清单、冲突软件扫描、推流带宽计算、色彩 / 采样率 / 磁盘 / 编码体检与节点探测。所有检查均为只读，不会改动你的 OBS 配置。" />
 
       <!-- ================================================== 录像工具 -->
       <TextBlock Style="{StaticResource SectionTitle}" Text="录像工具" Margin="0,16,0,10" />
@@ -137,6 +137,119 @@
           </StackPanel>
           <TextBlock x:Name="MultiStreamText" Style="{StaticResource BodyText}" Margin="0,10,0,0"
                      TextWrapping="Wrap" Text="" />
+        </StackPanel>
+      </Border>
+
+      <!-- ================================================== 色彩体检（V2.7） -->
+      <TextBlock Style="{StaticResource SectionTitle}" Text="色彩体检" Margin="0,20,0,10" />
+      <Border Style="{StaticResource Card}" Padding="14">
+        <StackPanel>
+          <StackPanel Orientation="Horizontal">
+            <Button Content="检查色彩设置" Style="{StaticResource PrimaryButton}" Click="OnRunColorCheck" />
+            <TextBlock x:Name="ColorSummaryText" Style="{StaticResource CaptionText}"
+                       Margin="12,0,0,0" VerticalAlignment="Center"
+                       Text="画面发灰 / 泛白多半是色彩范围或色彩空间设置不当，只读检查当前 Profile 的配置。" />
+          </StackPanel>
+          <ItemsControl x:Name="ColorCheckList" Margin="0,10,0,0">
+            <ItemsControl.ItemTemplate>
+              <DataTemplate>
+                <Border Style="{StaticResource SoftPanel}" Padding="10,8" Margin="0,0,0,8">
+                  <StackPanel>
+                    <TextBlock FontWeight="SemiBold" Foreground="{DynamicResource TextBrush}" Text="{Binding Title}" />
+                    <TextBlock Style="{StaticResource MutedText}" Margin="0,4,0,0" TextWrapping="Wrap" Text="{Binding Detail}" />
+                  </StackPanel>
+                </Border>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+        </StackPanel>
+      </Border>
+
+      <!-- ================================================== 音频采样率体检（V2.7） -->
+      <TextBlock Style="{StaticResource SectionTitle}" Text="音频采样率体检" Margin="0,20,0,10" />
+      <Border Style="{StaticResource Card}" Padding="14">
+        <StackPanel>
+          <StackPanel Orientation="Horizontal">
+            <Button Content="检查采样率一致性" Style="{StaticResource PrimaryButton}" Click="OnRunSampleRateCheck" />
+            <TextBlock x:Name="SampleRateSummaryText" Style="{StaticResource CaptionText}"
+                       Margin="12,0,0,0" VerticalAlignment="Center"
+                       Text="音质发闷、爆音、音画漂移的典型根因：系统设备与 OBS 的采样率不一致。" />
+          </StackPanel>
+          <TextBlock x:Name="SampleRateText" Style="{StaticResource BodyText}" Margin="0,10,0,0"
+                     TextWrapping="Wrap" Visibility="Collapsed" />
+        </StackPanel>
+      </Border>
+
+      <!-- ================================================== 磁盘写入基准（V2.7） -->
+      <TextBlock Style="{StaticResource SectionTitle}" Text="磁盘写入基准" Margin="0,20,0,10" />
+      <Border Style="{StaticResource Card}" Padding="14">
+        <StackPanel>
+          <StackPanel Orientation="Horizontal">
+            <Button Content="测试录像盘写入速度" Style="{StaticResource PrimaryButton}" Click="OnRunDiskBenchmark" />
+            <TextBlock Text="计划录像码率：" Margin="12,0,0,0" VerticalAlignment="Center" Foreground="{DynamicResource TextBrush}" />
+            <TextBox x:Name="DiskBitrateInput" Style="{StaticResource AppTextBox}" Width="90"
+                     Text="20000" />
+            <TextBlock Text="kbps" Margin="6,0,0,0" VerticalAlignment="Center" Foreground="{DynamicResource MutedBrush}" />
+          </StackPanel>
+          <TextBlock x:Name="DiskBenchmarkText" Style="{StaticResource BodyText}" Margin="0,10,0,0"
+                     TextWrapping="Wrap"
+                     Text="向录像目录写入 256MB 临时文件测顺序写速度，对照码率需求给出结论，测完立即删除临时文件。「编码正常但录像卡顿」多半是磁盘写入不足。" />
+        </StackPanel>
+      </Border>
+
+      <!-- ================================================== 编码顾问（V2.7） -->
+      <TextBlock Style="{StaticResource SectionTitle}" Text="编码顾问" Margin="0,20,0,10" />
+      <Border Style="{StaticResource Card}" Padding="14">
+        <StackPanel>
+          <StackPanel Orientation="Horizontal">
+            <Button Content="按我的显卡生成参数" Style="{StaticResource PrimaryButton}" Click="OnRunEncoderAdvice" />
+            <CheckBox x:Name="DualEncodeCheck" Content="边播边录（双编码）" Margin="14,0,0,0"
+                      VerticalAlignment="Center" Foreground="{DynamicResource TextBrush}" />
+          </StackPanel>
+          <TextBox x:Name="EncoderAdviceText" Style="{StaticResource AppCodeBox}" Margin="0,10,0,0"
+                   IsReadOnly="True" TextWrapping="Wrap" MaxHeight="220" VerticalScrollBarVisibility="Auto"
+                   FontFamily="Consolas" Visibility="Collapsed" />
+        </StackPanel>
+      </Border>
+
+      <!-- ================================================== 推流节点探测（V2.7） -->
+      <TextBlock Style="{StaticResource SectionTitle}" Text="推流节点延迟探测" Margin="0,20,0,10" />
+      <Border Style="{StaticResource Card}" Padding="14">
+        <StackPanel>
+          <StackPanel Orientation="Horizontal">
+            <Button Content="测试候选节点" Style="{StaticResource PrimaryButton}" Click="OnRunIngestPing" />
+            <TextBlock Text="自定义地址（可选）：" Margin="12,0,0,0" VerticalAlignment="Center" Foreground="{DynamicResource TextBrush}" />
+            <TextBox x:Name="CustomHostInput" Style="{StaticResource AppTextBox}" Width="220"
+                     ToolTip="格式：host 或 host:port，留空则只测内置候选" />
+          </StackPanel>
+          <ItemsControl x:Name="IngestList" Margin="0,10,0,0">
+            <ItemsControl.ItemTemplate>
+              <DataTemplate>
+                <Border Style="{StaticResource SoftPanel}" Padding="10,8" Margin="0,0,0,8">
+                  <StackPanel Orientation="Horizontal">
+                    <TextBlock Text="{Binding Target.Label}" Foreground="{DynamicResource TextBrush}" MinWidth="170" />
+                    <TextBlock Text="{Binding Target.Host}" Style="{StaticResource MutedText}" MinWidth="250" />
+                    <TextBlock Text="{Binding RttText}" FontWeight="SemiBold" Margin="10,0,0,0" Foreground="{DynamicResource TextBrush}" />
+                  </StackPanel>
+                </Border>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+          <TextBlock x:Name="IngestHintText" Style="{StaticResource CaptionText}" Margin="0,4,0,0"
+                     TextWrapping="Wrap"
+                     Text="ping 低只是必要条件：入围节点请各实推 10 分钟，比较状态栏丢帧后再定。结果按 RTT 升序排列。" />
+        </StackPanel>
+      </Border>
+
+      <!-- ================================================== 浏览器源健康检查（V2.7） -->
+      <TextBlock Style="{StaticResource SectionTitle}" Text="浏览器源健康检查" Margin="0,20,0,10" />
+      <Border Style="{StaticResource Card}" Padding="14">
+        <StackPanel>
+          <TextBlock Style="{StaticResource BodyText}" TextWrapping="Wrap"
+                     Text="告警挂件空白 / 弹幕面板卡住时按这张清单处理：&#x0a;1. 把挂件 URL 复制到普通浏览器打开：打不开 = URL 已过期，回告警后台重新生成并更新到 OBS&#x0a;2. URL 有效 → 右键来源「刷新」；仍不行删除该来源重建并粘贴新 URL&#x0a;3. 多个面板都异常 → 完全退出 OBS 后清理内置浏览器缓存（下方按钮可直达目录），重启 OBS&#x0a;4. 自定义浏览器 Dock 没有刷新入口：移除后重新添加同地址等效强制重载（详见知识库条目）" />
+          <StackPanel Orientation="Horizontal" Margin="0,12,0,0">
+            <Button Content="打开 OBS 配置目录" Style="{StaticResource SecondaryButton}" Click="OnOpenObsConfigDir" />
+          </StackPanel>
         </StackPanel>
       </Border>
 

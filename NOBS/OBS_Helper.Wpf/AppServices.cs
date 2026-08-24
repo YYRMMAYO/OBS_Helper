@@ -1,5 +1,6 @@
 using OBS_Helper.Wpf.Services;
 using OBS_Helper.Wpf.Services.Ai;
+using OBS_Helper.Wpf.Services.Audio;
 using OBS_Helper.Wpf.Services.Host;
 using OBS_Helper.Wpf.Services.Obs;
 using OBS_Helper.Wpf.Services.ObsConfig;
@@ -38,6 +39,9 @@ public static class AppServices
     // 录像工具 / 冲突软件扫描 / OBS 新版本情报（V2.6 工具箱）
     private static readonly Lazy<RecordingToolsService> _recTools = new(() => new RecordingToolsService(ObsPaths));
     private static readonly Lazy<ObsReleaseInfoService> _obsRelease = new(() => new ObsReleaseInfoService());
+    // 色彩体检 / 音频采样率体检（V2.7 工具箱）
+    private static readonly Lazy<ColorCheckService> _colorCheck = new(() => new ColorCheckService(ObsPaths));
+    private static readonly Lazy<SampleRateCheckService> _sampleRateCheck = new(() => new SampleRateCheckService(ObsPaths));
 
     private static readonly Lazy<UpdateService> _updates = new(() => new UpdateService());
     private static readonly Lazy<IncrementalUpdateService> _delta = new(() => new IncrementalUpdateService());
@@ -90,6 +94,9 @@ public static class AppServices
     public static RecordingToolsService RecordingTools => _recTools.Value;
     // 冲突扫描为纯逻辑核心 + 页面侧进程枚举，无独立服务实例
     public static ObsReleaseInfoService ObsRelease => _obsRelease.Value;
+    // 色彩 / 采样率体检（V2.7）；磁盘测速、编码顾问、节点探测为纯静态核心，页面直接调用
+    public static ColorCheckService ColorCheck => _colorCheck.Value;
+    public static SampleRateCheckService SampleRateCheck => _sampleRateCheck.Value;
 
     public static AiSettingsService AiSettings => _aiSettings.Value;
     public static UpdateService Updates => _updates.Value;

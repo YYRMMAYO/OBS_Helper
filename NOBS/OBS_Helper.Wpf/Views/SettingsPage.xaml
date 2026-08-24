@@ -233,8 +233,20 @@
                      Text="点窗口右上角 ✕ 时隐藏到托盘而不是退出；从托盘菜单「退出」才会真正结束程序。" />
 
           <CheckBox x:Name="NotifyStateSwitch" Style="{StaticResource AppSwitch}"
-                    Content="录制 / 推流状态变化时弹出系统通知" Margin="0,14,0,0"
-                    Checked="OnShellSettingToggled" Unchecked="OnShellSettingToggled" />
+                     Content="录制 / 推流状态变化时弹出系统通知" Margin="0,14,0,0"
+                     Checked="OnShellSettingToggled" Unchecked="OnShellSettingToggled" />
+
+          <CheckBox x:Name="RecordWatchdogSwitch" Style="{StaticResource AppSwitch}"
+                     Content="录制守护（断连 / 卡死时强提醒）"
+                     Checked="OnShellSettingToggled" Unchecked="OnShellSettingToggled" />
+          <TextBlock Style="{StaticResource CaptionText}" Margin="52,5,0,0" TextWrapping="Wrap"
+                     Text="直播 / 录制中若与 OBS 断连、OBS 疑似无响应或重连后录制丢失，立即弹托盘强提醒，避免「录完才发现是空文件」。" />
+
+          <CheckBox x:Name="RealtimeLogAlertSwitch" Style="{StaticResource AppSwitch}"
+                     Content="实时日志预警（掉帧 / 过载 / 断流）"
+                     Checked="OnShellSettingToggled" Unchecked="OnShellSettingToggled" />
+          <TextBlock Style="{StaticResource CaptionText}" Margin="52,5,0,0" TextWrapping="Wrap"
+                     Text="后台只读尾随 OBS 最新日志，直播中出现丢帧、编码过载、断流等特征时托盘提醒；同类告警 90 秒内不重复。" />
 
           <Border Style="{StaticResource HLine}" Margin="0,16,0,0" />
 

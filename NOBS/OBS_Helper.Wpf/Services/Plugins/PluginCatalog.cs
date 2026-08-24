@@ -29,6 +29,14 @@ public sealed class PluginEntry
     public string AiCostCpu { get; set; } = "";
     public string AiCostMem { get; set; } = "";
 
+    /// <summary>
+    /// 已知问题插件标注（V2.8，GAP-6）：「风险等级｜一句话说明」形式的风险提示；
+    /// 空表示无标注。旧版 plugins.json 缺该字段时反序列化为空串，天然兼容。
+    /// </summary>
+    public string RiskNote { get; set; } = "";
+
+    public bool HasRiskNote => RiskNote.Length > 0;
+
     public bool HasAiCost => AiCostCpu.Length > 0 || AiCostMem.Length > 0;
 }
 

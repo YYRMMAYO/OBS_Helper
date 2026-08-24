@@ -64,6 +64,9 @@ public static class AppServices
     private static readonly Lazy<SceneAutoSwitcher> _autoSwitcher = new(() => new SceneAutoSwitcher(Store, Obs));
     private static readonly Lazy<ControlTimerService> _timer = new(() => new ControlTimerService(Obs, Tray));
     private static readonly Lazy<SystemMonitorService> _systemMonitor = new(() => new SystemMonitorService());
+    // 录制守护 / 实时日志尾随预警（V2.8）
+    private static readonly Lazy<RecordWatchdogService> _watchdog = new(() => new RecordWatchdogService(Obs, Tray));
+    private static readonly Lazy<LogTailerService> _logTailer = new(() => new LogTailerService(Tray));
 
     private static readonly Lazy<AiSettingsService> _aiSettings = new(() => new AiSettingsService(Store, Host));
     private static readonly Lazy<ObsToolRegistry> _tools = new(() => new ObsToolRegistry(Problems));
@@ -123,6 +126,9 @@ public static class AppServices
     public static SceneAutoSwitcher AutoSwitcher => _autoSwitcher.Value;
     public static ControlTimerService Timer => _timer.Value;
     public static SystemMonitorService SystemMonitor => _systemMonitor.Value;
+    // 录制守护 / 实时日志尾随预警（V2.8）
+    public static RecordWatchdogService RecordWatchdog => _watchdog.Value;
+    public static LogTailerService LogTailer => _logTailer.Value;
     public static DiagnosticOrchestrator Orchestrator => _orchestrator.Value;
 
     /// <summary>导航服务由 MainWindow 在构造时注入，供各页面互相跳转。</summary>
@@ -150,6 +156,9 @@ public static class AppServices
         AutoSwitcher.Load();
         AutoSwitcher.Start();
         Tray.Start();
+        // V2.8 后台守护：录制守护与实时日志尾随（按各自设置开关启动）
+        RecordWatchdog.ApplyEnabled();
+        LogTailer.ApplyEnabled();
     }
 
     /// <summary>应用退出时的清理（MainWindow.OnClosed 调用）。</summary>
@@ -159,6 +168,8 @@ public static class AppServices
         try { AutoSwitcher.Stop(); } catch (Exception ex) { FileLogger.Warn("Shutdown", $"AutoSwitcher.Stop 失败: {ex.Message}"); }
         try { Hotkeys.Dispose(); } catch (Exception ex) { FileLogger.Warn("Shutdown", $"Hotkeys.Dispose 失败: {ex.Message}"); }
         try { SystemMonitor.Dispose(); } catch (Exception ex) { FileLogger.Warn("Shutdown", $"SystemMonitor.Dispose 失败: {ex.Message}"); }
+        try { RecordWatchdog.Dispose(); } catch (Exception ex) { FileLogger.Warn("Shutdown", $"RecordWatchdog.Dispose 失败: {ex.Message}"); }
+        try { LogTailer.Dispose(); } catch (Exception ex) { FileLogger.Warn("Shutdown", $"LogTailer.Dispose 失败: {ex.Message}"); }
         try { Timer.Dispose(); } catch (Exception ex) { FileLogger.Warn("Shutdown", $"Timer.Dispose 失败: {ex.Message}"); }
         try { Tray.Stop(); } catch (Exception ex) { FileLogger.Warn("Shutdown", $"Tray.Stop 失败: {ex.Message}"); }
     }

@@ -180,6 +180,90 @@
         </StackPanel>
       </Border>
 
+      <!-- ================================================== 黑屏专项体检（V2.8） -->
+      <TextBlock Style="{StaticResource SectionTitle}" Text="黑屏专项体检" Margin="0,20,0,10" />
+      <Border Style="{StaticResource Card}" Padding="14">
+        <StackPanel>
+          <StackPanel Orientation="Horizontal">
+            <Button Content="检查系统图形环境" Style="{StaticResource PrimaryButton}" Click="OnRunGraphicsEnvCheck" />
+            <TextBlock x:Name="GraphicsEnvSummaryText" Style="{StaticResource CaptionText}"
+                       Margin="12,0,0,0" VerticalAlignment="Center"
+                       Text="黑屏是提及率第一的问题：逐项只读检查管理员权限、GPU 偏好、HAGS、Game DVR、游戏模式、显卡驱动与电源供电。" />
+          </StackPanel>
+          <ItemsControl x:Name="GraphicsEnvList" Margin="0,10,0,0">
+            <ItemsControl.ItemTemplate>
+              <DataTemplate>
+                <Border Style="{StaticResource SoftPanel}" Padding="10,8" Margin="0,0,0,8">
+                  <StackPanel>
+                    <TextBlock FontWeight="SemiBold" Foreground="{DynamicResource TextBrush}" Text="{Binding Title}" />
+                    <TextBlock Style="{StaticResource MutedText}" Margin="0,4,0,0" TextWrapping="Wrap" Text="{Binding Detail}" />
+                  </StackPanel>
+                </Border>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+          <TextBlock x:Name="GraphicsEnvEmptyText" Style="{StaticResource MutedText}" Visibility="Visible"
+                     Margin="0,4,0,0" TextWrapping="Wrap"
+                     Text="尚未检查。全部探测均为只读，「建议」项会给出对应系统设置页的直达路径，不会替你改动任何设置。" />
+        </StackPanel>
+      </Border>
+
+      <!-- ================================================== 音频设备深度体检（V2.8） -->
+      <TextBlock Style="{StaticResource SectionTitle}" Text="音频设备深度体检" Margin="0,20,0,10" />
+      <Border Style="{StaticResource Card}" Padding="14">
+        <StackPanel>
+          <StackPanel Orientation="Horizontal">
+            <Button Content="检查音频系统状态" Style="{StaticResource PrimaryButton}" Click="OnRunAudioHealthCheck" />
+            <TextBlock x:Name="AudioHealthSummaryText" Style="{StaticResource CaptionText}"
+                       Margin="12,0,0,0" VerticalAlignment="Center"
+                       Text="麦克风无声 / BGM 忽然变小的根因常在系统侧：隐私权限、通信压音量、音频服务与 OBS 所选设备漂移。" />
+          </StackPanel>
+          <ItemsControl x:Name="AudioHealthList" Margin="0,10,0,0">
+            <ItemsControl.ItemTemplate>
+              <DataTemplate>
+                <Border Style="{StaticResource SoftPanel}" Padding="10,8" Margin="0,0,0,8">
+                  <StackPanel>
+                    <TextBlock FontWeight="SemiBold" Foreground="{DynamicResource TextBrush}" Text="{Binding Title}" />
+                    <TextBlock Style="{StaticResource MutedText}" Margin="0,4,0,0" TextWrapping="Wrap" Text="{Binding Detail}" />
+                  </StackPanel>
+                </Border>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+          <TextBlock x:Name="AudioHealthEmptyText" Style="{StaticResource MutedText}" Visibility="Visible"
+                     Margin="0,4,0,0" TextWrapping="Wrap"
+                     Text="尚未检查。连接 OBS 后检查会把「OBS 里选的输入」和「系统活动录音设备」做一次对照，未连接时跳过该对照项。" />
+        </StackPanel>
+      </Border>
+
+      <!-- ================================================== 虚拟摄像头体检（V2.8） -->
+      <TextBlock Style="{StaticResource SectionTitle}" Text="虚拟摄像头体检" Margin="0,20,0,10" />
+      <Border Style="{StaticResource Card}" Padding="14">
+        <StackPanel>
+          <StackPanel Orientation="Horizontal">
+            <Button Content="检查虚拟摄像头" Style="{StaticResource PrimaryButton}" Click="OnRunVirtualCamCheck" />
+            <TextBlock x:Name="VcamSummaryText" Style="{StaticResource CaptionText}"
+                       Margin="12,0,0,0" VerticalAlignment="Center"
+                       Text="腾讯会议等软件里找不到「OBS Virtual Camera」？先看驱动注册是否在位，再按排查树处理。" />
+          </StackPanel>
+          <ItemsControl x:Name="VcamCheckList" Margin="0,10,0,0">
+            <ItemsControl.ItemTemplate>
+              <DataTemplate>
+                <Border Style="{StaticResource SoftPanel}" Padding="10,8" Margin="0,0,0,8">
+                  <StackPanel>
+                    <TextBlock FontWeight="SemiBold" Foreground="{DynamicResource TextBrush}" Text="{Binding Title}" />
+                    <TextBlock Style="{StaticResource MutedText}" Margin="0,4,0,0" TextWrapping="Wrap" Text="{Binding Detail}" />
+                  </StackPanel>
+                </Border>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+          <TextBlock x:Name="VcamEmptyText" Style="{StaticResource MutedText}" Visibility="Visible"
+                     Margin="0,4,0,0" TextWrapping="Wrap"
+                     Text="尚未检查。开启虚拟摄像头的开关在控制台页；本体检只读探测驱动注册与插件文件，不会改动系统。" />
+        </StackPanel>
+      </Border>
+
       <!-- ================================================== 磁盘写入基准（V2.7） -->
       <TextBlock Style="{StaticResource SectionTitle}" Text="磁盘写入基准" Margin="0,20,0,10" />
       <Border Style="{StaticResource Card}" Padding="14">

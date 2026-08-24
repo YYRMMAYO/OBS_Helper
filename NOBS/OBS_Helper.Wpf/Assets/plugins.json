@@ -348,6 +348,7 @@
       "name": "obs-multi-rtmp",
       "category": "multi",
       "desc": "老牌多地址推流插件，装机量大；新版 OBS 上建议优先评估 Aitum Multistream。",
+      "riskNote": "注意｜新版 OBS 上有带宽骤降 / 编码过载 / 杀软误报的零星报告，多路不稳可换 Aitum Multistream",
       "url": "https://github.com/sorayuki/obs-multi-rtmp",
       "repo": "sorayuki/obs-multi-rtmp",
       "dlls": ["obs-multi-rtmp", "multi-rtmp"]
@@ -394,6 +395,7 @@
       "category": "record",
       "badge": "热门",
       "desc": "给单个来源单独录像：干净人像轨、纯游戏轨，后期剪辑不用再抠画面。",
+      "riskNote": "注意｜旧版本在部分 OBS 组合下可能引发「卡在正在停止录制」，遇到时先升级到最新版",
       "url": "https://github.com/exeldro/obs-source-record",
       "repo": "exeldro/obs-source-record",
       "dlls": ["source-record"]

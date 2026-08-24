@@ -153,7 +153,8 @@ public sealed class ObsLogAnalyzer
 
     // ------------------------------------------------------------------ 规则表
 
-    private static readonly LogRule[] Rules =
+    // V2.8 起共享给实时日志尾随（LogTailerService）使用，规则只在这一处维护
+    internal static readonly LogRule[] Rules =
     {
         // —— 编码 / 性能 ——
         new() {

@@ -389,6 +389,24 @@ public partial class PluginsPage : UserControl, INavigationAware
         headRow.Children.Add(nameText);
         headRow.Children.Add(metaText);
 
+        // 已知问题插件标注（V2.8，GAP-6）：命中广场条目的 riskNote 时打黄标
+        if (plugin.CatalogId is not null &&
+            PluginCatalogCore.FindById(_catalog, plugin.CatalogId) is { HasRiskNote: true } risky)
+        {
+            var riskText = new TextBlock
+            {
+                Text = $"⚠ {risky.RiskNote}",
+                VerticalAlignment = VerticalAlignment.Center,
+                Margin = new Thickness(8, 0, 0, 0),
+                MaxWidth = 420,
+                TextTrimming = TextTrimming.CharacterEllipsis,
+                ToolTip = risky.RiskNote
+            };
+            riskText.SetResourceReference(TextBlock.FontSizeProperty, "FontSizeXs");
+            riskText.SetResourceReference(TextBlock.ForegroundProperty, "WarnBrush");
+            headRow.Children.Add(riskText);
+        }
+
         // 状态徽标：收录的显示对应广场条目名（可点击跳转卡片）；未收录灰标
         FrameworkElement status;
         var entry = plugin.CatalogId is null ? null : PluginCatalogCore.FindById(_catalog, plugin.CatalogId);

@@ -10,4 +10,10 @@ public sealed class ShellSettings
 
     /// <summary>录制 / 推流状态开始或停止时弹出系统通知。</summary>
     [JsonPropertyName("notifyStateChange")] public bool NotifyStateChange { get; set; } = true;
+
+    /// <summary>录制守护：断连 / 心跳超时 / 重连后录制丢失时强提醒（V2.8）。</summary>
+    [JsonPropertyName("recordWatchdog")] public bool RecordWatchdogEnabled { get; set; } = true;
+
+    /// <summary>实时日志尾随预警：直播中命中掉帧 / 过载等特征时托盘提醒（V2.8）。</summary>
+    [JsonPropertyName("realtimeLogAlert")] public bool RealtimeLogAlertEnabled { get; set; } = true;
 }

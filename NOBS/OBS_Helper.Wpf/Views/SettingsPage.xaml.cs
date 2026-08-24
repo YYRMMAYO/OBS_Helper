@@ -172,6 +172,8 @@ public partial class SettingsPage : UserControl, INavigationAware
             var tray = AppServices.Tray.Settings;
             CloseToTraySwitch.IsChecked = tray.CloseToTray;
             NotifyStateSwitch.IsChecked = tray.NotifyStateChange;
+            RecordWatchdogSwitch.IsChecked = tray.RecordWatchdogEnabled;
+            RealtimeLogAlertSwitch.IsChecked = tray.RealtimeLogAlertEnabled;
 
             var h = AppServices.Hotkeys.Settings;
             RecHotkeyEnabled.IsChecked = h.RecordEnabled;
@@ -227,7 +229,15 @@ public partial class SettingsPage : UserControl, INavigationAware
         var s = AppServices.Tray.Settings;
         s.CloseToTray = CloseToTraySwitch.IsChecked == true;
         s.NotifyStateChange = NotifyStateSwitch.IsChecked == true;
+        var watchdogBefore = AppServices.RecordWatchdog.Enabled;
+        var tailerBefore = AppServices.LogTailer.Enabled;
+        s.RecordWatchdogEnabled = RecordWatchdogSwitch.IsChecked == true;
+        s.RealtimeLogAlertEnabled = RealtimeLogAlertSwitch.IsChecked == true;
         AppServices.Tray.SaveSettings();
+
+        // V2.8 守护开关即时生效
+        if (AppServices.RecordWatchdog.Enabled != watchdogBefore) AppServices.RecordWatchdog.ApplyEnabled();
+        if (AppServices.LogTailer.Enabled != tailerBefore) AppServices.LogTailer.ApplyEnabled();
     }
 
     /// <summary>热键任一修饰键 / 主键 / 启用勾选变化：只刷新预览文本，注册在「保存」时统一做。</summary>

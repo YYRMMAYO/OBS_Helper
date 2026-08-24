@@ -324,6 +324,80 @@ public partial class ToolboxPage : UserControl
         }
     }
 
+    // ------------------------------------------------------------ 黑屏专项体检（V2.8）
+
+    private async void OnRunGraphicsEnvCheck(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            GraphicsEnvSummaryText.Text = "正在探测系统图形环境（注册表 / WMI / 电源计划）…";
+            GraphicsEnvEmptyText.Visibility = Visibility.Collapsed;
+            var items = await OBS_Helper.Wpf.Services.SystemCheck.GraphicsEnvCheckService.RunAsync().ConfigureAwait(true);
+
+            GraphicsEnvSummaryText.Text = items.Count(i => i.Status == "warn") == 0
+                ? "检查完成，未发现黑屏相关风险项。"
+                : $"检查完成，发现 {items.Count(i => i.Status == "warn")} 项建议处理。";
+            GraphicsEnvList.ItemsSource = items;
+        }
+        catch (Exception ex)
+        {
+            GraphicsEnvEmptyText.Visibility = Visibility.Visible;
+            AppServices.Toast.Show($"黑屏体检失败：{ex.Message}", "error");
+        }
+    }
+
+    // ------------------------------------------------------------ 音频设备深度体检（V2.8）
+
+    private async void OnRunAudioHealthCheck(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            AudioHealthSummaryText.Text = "正在检查隐私权限 / 音频服务 / 设备对照…";
+            var connected = AppServices.Obs.IsConnected;
+            var obsInputs = connected
+                ? AppServices.Obs.AudioInputs.Select(i => i.Name).ToList()
+                : new List<string>();
+
+            var items = await OBS_Helper.Wpf.Services.Audio.AudioDeviceHealthService
+                .RunAsync(obsInputs)
+                .ConfigureAwait(true);
+
+            AudioHealthSummaryText.Text =
+                (items.Count(i => i.Status == "error"), items.Count(i => i.Status == "warn")) switch
+                {
+                    (0, 0) => "检查完成，音频链路健康。",
+                    var (err, warn) => $"检查完成：{err} 个问题、{warn} 项建议。"
+                };
+            AudioHealthList.ItemsSource = items;
+        }
+        catch (Exception ex)
+        {
+            AppServices.Toast.Show($"音频体检失败：{ex.Message}", "error");
+        }
+    }
+
+    // ------------------------------------------------------------ 虚拟摄像头体检（V2.8）
+
+    private async void OnRunVirtualCamCheck(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            VcamSummaryText.Text = "正在探测驱动注册与插件文件…";
+            VcamEmptyText.Visibility = Visibility.Collapsed;
+            var items = await OBS_Helper.Wpf.Services.Tools.VirtualCamCheckService.RunAsync().ConfigureAwait(true);
+
+            VcamSummaryText.Text = items.Count(i => i.Status is "warn" or "error") == 0
+                ? "检查完成，虚拟摄像头环境正常。"
+                : "检查完成，发现问题项，按下方指引处理。";
+            VcamCheckList.ItemsSource = items;
+        }
+        catch (Exception ex)
+        {
+            VcamEmptyText.Visibility = Visibility.Visible;
+            AppServices.Toast.Show($"虚拟摄像头体检失败：{ex.Message}", "error");
+        }
+    }
+
     // ------------------------------------------------------------ 磁盘写入基准（V2.7）
 
     private async void OnRunDiskBenchmark(object sender, RoutedEventArgs e)

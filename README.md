@@ -25,12 +25,27 @@
 >
 > **V2.2 起内置插件广场**：57 个精选插件收录、本机已装插件只读体检（全盘定位 OBS 安装目录）、日志分析联动插件嫌疑跳转、直达 Releases 下载；**V2.1 起支持增量更新与知识库独立更新**：更新只下载变更文件，问题库与插件目录都可脱离应用单独升级。
 
+---
+
+**目录**：[宣传视频](#宣传视频) · [V2.8.0 亮点](#v280-亮点守护与体检) · [亮点](#亮点) · [功能](#功能) · [智能诊断](#智能诊断) · [隐私与安全](#隐私与安全) · [安装与更新](#安装与更新) · [构建](#构建) · [工程结构](#工程结构) · [许可](#许可)
+
+---
+
+## 宣传视频
+
 <div align="center">
 
 <video src="https://github.com/YYRMMAYO/OBS_Helper/releases/download/V2.8.0/nobs-promo.mp4" controls width="880"></video>
 
-▲ **宣传视频**（含背景音乐）：一分钟看懂 OBS 排障助手能帮你做什么。
+▲ **宣传视频一 · 功能总览**（含背景音乐）：一分钟看懂 OBS 排障助手能帮你做什么。
 若内嵌播放不可用，[点击这里观看 / 下载](https://github.com/YYRMMAYO/OBS_Helper/releases/download/V2.8.0/nobs-promo.mp4)。
+
+<br/><br/>
+
+<video src="https://github.com/YYRMMAYO/OBS_Helper/releases/download/V2.8.0/promo02.mp4" controls width="880"></video>
+
+▲ **宣传视频二 · 守护与体检**（含背景音乐）：V2.8 录制守护、实时日志预警与专项体检实机演示。
+若内嵌播放不可用，[点击这里观看 / 下载](https://github.com/YYRMMAYO/OBS_Helper/releases/download/V2.8.0/promo02.mp4)。
 
 </div>
 
@@ -71,7 +86,7 @@
 
 ### 学习与排查
 
-- **知识库** — 10+ 个分类、149 条问题（v1.6），含现象 / 成因 / 分步解决 / 小贴士 / 相关问题；步骤可勾选且进度会记住
+- **知识库** — 10+ 个分类、149 条问题（v2.0），含现象 / 成因 / 分步解决 / 小贴士 / 相关问题；步骤可勾选且进度会记住
 - **知识库独立更新** — 问题库 / 插件目录与应用版本解耦：启动静默自动更新（6 小时节流）/ 设置页「检查知识库更新」/ 更新弹窗「仅更新知识库」三入口；GitHub raw 主通道 + Release 资产兜底
 - **搜索** — 边打边搜，跨标题、现象、成因匹配
 - **问我一下** — 用大白话描述现象，自动匹配最可能的问题
@@ -209,7 +224,6 @@ NOBS/
 | --- | --- |
 | `NOBS/` | **当前维护中的 Windows 原生 WPF 版**（本文档介绍的就是它） |
 | `OBS_Helper.Client/` | 旧版共享前端（Blazor WASM），仅存档 |
-| `OBS_Helper.Win/` | 旧版 Windows 桌面壳（WebView2），仅存档 |
 | `OBS_Helper.Mac/` | macOS 桌面壳（Tauri v2），仅存档 |
 | `docs/` | 旧版架构 / 报错码 / 依赖清单等文档，仅存档 |
 

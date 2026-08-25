@@ -35,7 +35,11 @@
 
 <div align="center">
 
-<!-- ▼ 视频一：光标放在下一行行首，把 F:\XUANCHUAN\readme-upload\promo1-readme.mp4 拖进来，然后删除这条注释 -->
+<!-- ▼ 视频一：
+
+
+https://github.com/user-attachments/assets/045890fa-d555-4ee3-97be-9c0ddbde7915
+
 
 <!-- ▲ 视频一占位结束 -->
 
@@ -44,9 +48,13 @@
 
 <br/><br/>
 
-<!-- ▼ 视频二：光标放在下一行行首，把 F:\XUANCHUAN\readme-upload\promo2-readme.mp4 拖进来，然后删除这条注释 -->
+<!-- ▼ 视频二：
 
-<!-- ▲ 视频二占位结束 -->
+
+https://github.com/user-attachments/assets/25361c9d-5239-4a1a-aeba-9080b0044e78
+
+
+
 
 ▲ **宣传视频二 · 守护与体检**（含背景音乐）：V2.8 录制守护、实时日志预警与专项体检实机演示。
 [高清版观看 / 下载](https://github.com/YYRMMAYO/OBS_Helper/releases/download/V2.8.0/promo02.mp4)

@@ -4,8 +4,6 @@
 
 # OBS 排障助手 · OBS Helper
 
-**面向直播新手的 OBS Studio 排障工具 —— 纯离线 · 隐私优先 · 原生 WPF**
-
 [![CI](https://github.com/YYRMMAYO/OBS_Helper/actions/workflows/ci.yml/badge.svg)](https://github.com/YYRMMAYO/OBS_Helper/actions/workflows/ci.yml)
 [![平台](https://img.shields.io/badge/Platform-Windows_10%2F11-0078D6.svg)]()
 [![.NET](https://img.shields.io/badge/.NET-10-512BD4.svg)]()
@@ -19,51 +17,37 @@
 
 </div>
 
-> **这是什么？** 面向直播新手的 OBS Studio 排障工具。**纯离线可用**：149 条问题的知识库、排障指引、日志分析规则全部内嵌在程序里，不联网也能查。连上 OBS 之后还能远程控制场景、录制与推流，并做一键体检。
->
-> 这是原 Blazor WebAssembly + WebView2 版本的**原生 WPF 重构**（源码在 [`NOBS/`](NOBS/)），功能一比一对齐，但去掉了浏览器内核这一层：冷启动直接起窗口、自包含单目录发布、无需安装 WebView2 与 .NET 运行时。
->
-> **V2.2 起内置插件广场**：57 个精选插件收录、本机已装插件只读体检（全盘定位 OBS 安装目录）、日志分析联动插件嫌疑跳转、直达 Releases 下载；**V2.1 起支持增量更新与知识库独立更新**：更新只下载变更文件，问题库与插件目录都可脱离应用单独升级。
+**OBS 排障助手**是面向直播新手的 OBS Studio 排障工具：**纯离线可用**——149 条问题的知识库、排障指引、日志分析规则全部内嵌在程序里，不联网也能查；连上 OBS 之后还能远程控制场景、录制与推流，并做一键体检。
+
+这是原 Blazor WebAssembly + WebView2 版本的**原生 WPF 重构**（源码在 [`NOBS/`](NOBS/)），功能一比一对齐，但去掉了浏览器内核这一层：冷启动直接起窗口、自包含单目录发布、无需安装 WebView2 与 .NET 运行时。**V2.2 起内置插件广场**（57 个精选插件 + 本机只读体检）；**V2.1 起支持增量更新与知识库独立更新**。
 
 ---
 
-**目录**：[宣传视频](#宣传视频) · [V2.8.0 亮点](#v280-亮点守护与体检) · [亮点](#亮点) · [功能](#功能) · [智能诊断](#智能诊断) · [隐私与安全](#隐私与安全) · [安装与更新](#安装与更新) · [构建](#构建) · [工程结构](#工程结构) · [许可](#许可)
+**目录**：[宣传视频](#-宣传视频) · [V2.8.0 亮点](#-v280-亮点守护与体检) · [亮点](#-亮点) · [功能](#-功能) · [智能诊断](#-智能诊断) · [隐私与安全](#-隐私与安全) · [安装与更新](#-安装与更新) · [构建](#-构建) · [工程结构](#-工程结构) · [许可](#-许可)
 
 ---
 
-## 宣传视频
+## 🎬 宣传视频
+
+一分钟看懂 OBS 排障助手能帮你做什么：
 
 <div align="center">
 
-<!-- ▼ 视频一：
-
-
 https://github.com/user-attachments/assets/045890fa-d555-4ee3-97be-9c0ddbde7915
 
-
-<!-- ▲ 视频一占位结束 -->
-
-▲ **宣传视频一 · 功能总览**（含背景音乐）：一分钟看懂 OBS 排障助手能帮你做什么。
-[高清版观看 / 下载](https://github.com/YYRMMAYO/OBS_Helper/releases/download/V2.8.0/nobs-promo.mp4)
+▲ **宣传视频一 · 功能总览**（含背景音乐）—— [高清版观看 / 下载](https://github.com/YYRMMAYO/OBS_Helper/releases/download/V2.8.0/nobs-promo.mp4)
 
 <br/><br/>
 
-<!-- ▼ 视频二：
-
-
 https://github.com/user-attachments/assets/25361c9d-5239-4a1a-aeba-9080b0044e78
 
-
-
-
-▲ **宣传视频二 · 守护与体检**（含背景音乐）：V2.8 录制守护、实时日志预警与专项体检实机演示。
-[高清版观看 / 下载](https://github.com/YYRMMAYO/OBS_Helper/releases/download/V2.8.0/promo02.mp4)
+▲ **宣传视频二 · 守护与体检**（含背景音乐）：V2.8 录制守护、实时日志预警与专项体检实机演示 —— [高清版观看 / 下载](https://github.com/YYRMMAYO/OBS_Helper/releases/download/V2.8.0/promo02.mp4)
 
 </div>
 
 ---
 
-## V2.8.0 亮点：守护与体检
+## 🛡 V2.8.0 亮点：守护与体检
 
 | | |
 |---|---|
@@ -78,7 +62,7 @@ https://github.com/user-attachments/assets/25361c9d-5239-4a1a-aeba-9080b0044e78
 
 ---
 
-## 亮点
+## ✨ 亮点
 
 | | |
 |---|---|
@@ -94,7 +78,7 @@ https://github.com/user-attachments/assets/25361c9d-5239-4a1a-aeba-9080b0044e78
 | **隐私优先** | 偏好文件不含任何凭据；密码与 API Key **双层加密**（AES-256-GCM + DPAPI）。只有你主动发起诊断才会联网，请求前先脱敏；本机插件体检全程只读、结果仅存本机 |
 | **零第三方依赖** | 原生 WPF + .NET 10，无 NuGet 包、无 WebView2，`obs-websocket` 协议纯手写；自包含单目录，秒开 |
 
-## 功能
+## 📦 功能
 
 ### 学习与排查
 
@@ -113,7 +97,7 @@ https://github.com/user-attachments/assets/25361c9d-5239-4a1a-aeba-9080b0044e78
 
 ### 智能诊断
 
-- **智能诊断** — 连上 OBS 后一键体检；三种引擎可选（见下方 [智能诊断](#智能诊断)），**结果可导出为 Markdown 报告**
+- **智能诊断** — 连上 OBS 后一键体检；三种引擎可选（见下方 [智能诊断](#-智能诊断)），**结果可导出为 Markdown 报告**
 - **日志分析** — 离线解析 OBS 日志：38 条规则 + 3 项量化比值；分析前先脱敏
 
 ### 控制 OBS
@@ -132,7 +116,7 @@ https://github.com/user-attachments/assets/25361c9d-5239-4a1a-aeba-9080b0044e78
 - **直播搭建** — 从零到开播的 6 步流程 + 10 个主流平台的推流配置
 - **外观** — 浅色 / 深色 / 跟随系统，4 档字号，高对比与减少动画
 
-## 智能诊断
+## 🩺 智能诊断
 
 连上 OBS 后一键体检，三种引擎可选：
 
@@ -144,7 +128,7 @@ https://github.com/user-attachments/assets/25361c9d-5239-4a1a-aeba-9080b0044e78
 
 云端 / 免费失败时**自动回退本地引擎**，并在结果中说明原因。免费档为单轮普通对话（不做知识库工具调用）；需要多轮深度排查或更高频使用，请接入你自己的云端 API。
 
-## 隐私与安全
+## 🔒 隐私与安全
 
 所有数据只存在本机：
 
@@ -153,7 +137,7 @@ https://github.com/user-attachments/assets/25361c9d-5239-4a1a-aeba-9080b0044e78
 
 只有在你**主动开启**「免费 AI」或「云端诊断引擎」并发起诊断时才会联网，且请求前会先对日志脱敏。OBS 配置备份 / 导出默认不含推流密钥（可勾选包含），密码与 Token 自动脱敏。
 
-## 安装与更新
+## 📥 安装与更新
 
 - **GitHub Releases** — 从 [Releases 页面](https://github.com/YYRMMAYO/OBS_Helper/releases) 下载安装包或便携版；便携版免安装、自带 .NET 运行时
 - **蓝奏云（国内镜像）** — 提取码 `YYKWY`（详见应用内更新弹窗）
@@ -165,7 +149,7 @@ https://github.com/user-attachments/assets/25361c9d-5239-4a1a-aeba-9080b0044e78
 > 支持 Windows 10 / 11。无需 WebView2、无需安装 .NET 运行时、无需管理员权限。
 > 已安装旧版（2.1.x ~ 2.7.x）的用户可直接走应用内「增量更新」升级到 2.8.0。
 
-## 构建
+## 🛠 构建
 
 需要 [.NET 10 SDK](https://dotnet.microsoft.com/download)；打安装包还需要 [Inno Setup 6](https://jrsoftware.org/isdl.php)。
 
@@ -201,7 +185,7 @@ python scripts\verify_delta.py --old PAKE\windows\OBS_Helper_Portable_2.0.0.zip 
 - `OBS_Helper_Portable_2.8.0.exe` — 单文件（需 `-SingleFile`）
 - `manifests/manifest_<ver>.json` — 各版本完整清单存档（增量包 diff 基准）
 
-## 工程结构
+## 🗂 工程结构
 
 ```
 NOBS/
@@ -237,8 +221,7 @@ NOBS/
 | `NOBS/` | **当前维护中的 Windows 原生 WPF 版**（本文档介绍的就是它） |
 | `OBS_Helper.Client/` | 旧版共享前端（Blazor WASM），仅存档 |
 | `OBS_Helper.Mac/` | macOS 桌面壳（Tauri v2），仅存档 |
-| `docs/` | 旧版架构 / 报错码 / 依赖清单等文档，仅存档 |
 
-## 许可
+## 📄 许可
 
 MIT，见 [LICENSE](LICENSE)。

@@ -35,17 +35,21 @@
 
 <div align="center">
 
-<video src="https://github.com/YYRMMAYO/OBS_Helper/releases/download/V2.8.0/nobs-promo.mp4" controls width="880"></video>
+<!-- ▼ 视频一：光标放在下一行行首，把 F:\XUANCHUAN\readme-upload\promo1-readme.mp4 拖进来，然后删除这条注释 -->
+
+<!-- ▲ 视频一占位结束 -->
 
 ▲ **宣传视频一 · 功能总览**（含背景音乐）：一分钟看懂 OBS 排障助手能帮你做什么。
-若内嵌播放不可用，[点击这里观看 / 下载](https://github.com/YYRMMAYO/OBS_Helper/releases/download/V2.8.0/nobs-promo.mp4)。
+[高清版观看 / 下载](https://github.com/YYRMMAYO/OBS_Helper/releases/download/V2.8.0/nobs-promo.mp4)
 
 <br/><br/>
 
-<video src="https://github.com/YYRMMAYO/OBS_Helper/releases/download/V2.8.0/promo02.mp4" controls width="880"></video>
+<!-- ▼ 视频二：光标放在下一行行首，把 F:\XUANCHUAN\readme-upload\promo2-readme.mp4 拖进来，然后删除这条注释 -->
+
+<!-- ▲ 视频二占位结束 -->
 
 ▲ **宣传视频二 · 守护与体检**（含背景音乐）：V2.8 录制守护、实时日志预警与专项体检实机演示。
-若内嵌播放不可用，[点击这里观看 / 下载](https://github.com/YYRMMAYO/OBS_Helper/releases/download/V2.8.0/promo02.mp4)。
+[高清版观看 / 下载](https://github.com/YYRMMAYO/OBS_Helper/releases/download/V2.8.0/promo02.mp4)
 
 </div>
 

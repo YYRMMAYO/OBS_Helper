@@ -114,7 +114,8 @@
           <StackPanel Orientation="Horizontal">
             <TextBlock Text="实测上行带宽（Mbps）：" VerticalAlignment="Center" Foreground="{DynamicResource TextBrush}" />
             <TextBox x:Name="UploadInput" Style="{StaticResource AppTextBox}" Width="110"
-                     Text="10" TextChanged="OnBandwidthInputChanged" />
+                     MaxLength="6" Text="10" TextChanged="OnBandwidthInputChanged"
+                     PreviewTextInput="OnNumericPreviewTextInput" />
             <TextBlock x:Name="RecommendHint" Style="{StaticResource CaptionText}" Margin="12,0,0,0"
                        VerticalAlignment="Center" Text="可在测速网站获取上行数值；直播看上行不看下行（上限 10000Mbps）。" />
           </StackPanel>
@@ -127,10 +128,12 @@
           <StackPanel Orientation="Horizontal">
             <TextBlock Text="多路推流：" VerticalAlignment="Center" Foreground="{DynamicResource TextBrush}" />
             <TextBox x:Name="StreamCountInput" Style="{StaticResource AppTextBox}" Width="70" Margin="8,0,0,0"
-                     Text="2" TextChanged="OnBandwidthInputChanged" />
+                     MaxLength="2" TextChanged="OnBandwidthInputChanged"
+                     PreviewTextInput="OnNumericPreviewTextInput" />
             <TextBlock Text="路 × 每路码率" VerticalAlignment="Center" Margin="8,0,0,0" Foreground="{DynamicResource TextBrush}" />
             <TextBox x:Name="StreamBitrateInput" Style="{StaticResource AppTextBox}" Width="90" Margin="8,0,0,0"
-                     Text="6000" TextChanged="OnBandwidthInputChanged" />
+                     MaxLength="6" TextChanged="OnBandwidthInputChanged"
+                     PreviewTextInput="OnNumericPreviewTextInput" />
             <TextBlock Text="kbps" VerticalAlignment="Center" Margin="6,0,0,0" Foreground="{DynamicResource MutedBrush}" />
             <TextBlock Style="{StaticResource CaptionText}" Margin="12,0,0,0"
                        VerticalAlignment="Center" Text="上限：32 路 × 100000kbps" />
@@ -272,6 +275,7 @@
             <Button Content="测试录像盘写入速度" Style="{StaticResource PrimaryButton}" Click="OnRunDiskBenchmark" />
             <TextBlock Text="计划录像码率：" Margin="12,0,0,0" VerticalAlignment="Center" Foreground="{DynamicResource TextBrush}" />
             <TextBox x:Name="DiskBitrateInput" Style="{StaticResource AppTextBox}" Width="90"
+                     MaxLength="7" PreviewTextInput="OnNumericPreviewTextInput"
                      Text="20000" />
             <TextBlock Text="kbps" Margin="6,0,0,0" VerticalAlignment="Center" Foreground="{DynamicResource MutedBrush}" />
           </StackPanel>

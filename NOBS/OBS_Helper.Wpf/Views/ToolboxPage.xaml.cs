@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Input;
 using Microsoft.Win32;
 using OBS_Helper.Wpf.Services.ObsConfig;
 using OBS_Helper.Wpf.Services.Tools;
@@ -200,6 +201,10 @@ public partial class ToolboxPage : UserControl
 
     // ------------------------------------------------------------ 带宽计算器
 
+    /// <summary>UI 层第一道防线：只放行数字与小数点（粘贴的非法字符同样拦截）。</summary>
+    private void OnNumericPreviewTextInput(object sender, TextCompositionEventArgs e)
+        => e.Handled = !e.Text.All(c => char.IsAsciiDigit(c) || c == '.');
+
     private void OnBandwidthInputChanged(object sender, TextChangedEventArgs e)
     {
         if (RecommendText is null || MultiStreamText is null) return; // XAML 初始化阶段
@@ -208,16 +213,25 @@ public partial class ToolboxPage : UserControl
 
     private void UpdateBandwidthAdvice()
     {
-        var upload = TryParseDouble(UploadInput.Text);
-        RecommendText.Text = BandwidthAdvisorCore.Recommend(upload).Advice;
+        var uploadRaw = TryParseDouble(UploadInput.Text);
+        RecommendText.Text = BandwidthAdvisorCore.Recommend(uploadRaw).Advice
+            + ClampedNote(uploadRaw, BandwidthAdvisorCore.MaxUploadMbps, "Mbps");
 
-        if (!double.IsNaN(upload))
+        if (!double.IsNaN(uploadRaw))
         {
-            var streams = BandwidthAdvisorCore.ClampToInt(TryParseDouble(StreamCountInput.Text), BandwidthAdvisorCore.MaxStreams);
-            var bitrate = BandwidthAdvisorCore.ClampToInt(TryParseDouble(StreamBitrateInput.Text), BandwidthAdvisorCore.MaxSingleBitrateKbps);
-            MultiStreamText.Text = BandwidthAdvisorCore.DescribeMultiStream(upload, streams, bitrate);
+            var streamsRaw = TryParseDouble(StreamCountInput.Text);
+            var bitrateRaw = TryParseDouble(StreamBitrateInput.Text);
+            var streams = BandwidthAdvisorCore.ClampToInt(streamsRaw, BandwidthAdvisorCore.MaxStreams);
+            var bitrate = BandwidthAdvisorCore.ClampToInt(bitrateRaw, BandwidthAdvisorCore.MaxSingleBitrateKbps);
+            MultiStreamText.Text = BandwidthAdvisorCore.DescribeMultiStream(uploadRaw, streams, bitrate)
+                + ClampedNote(streamsRaw, BandwidthAdvisorCore.MaxStreams, "路")
+                + ClampedNote(bitrateRaw, BandwidthAdvisorCore.MaxSingleBitrateKbps, "kbps");
         }
     }
+
+    /// <summary>UI 层第二道防线：核心层钳制是静默的，这里把「已按上限计算」明确告诉用户。</summary>
+    private static string ClampedNote(double raw, double max, string unit)
+        => !double.IsNaN(raw) && raw > max ? $"\n注意：输入超过上限 {max:0} {unit}，已按上限计算。" : "";
 
     private static double TryParseDouble(string? raw)
         => double.TryParse(raw?.Trim(), System.Globalization.NumberStyles.Float,
@@ -404,8 +418,9 @@ public partial class ToolboxPage : UserControl
     {
         try
         {
+            var bitrateRaw = TryParseDouble(DiskBitrateInput.Text);
             var bitrate = BandwidthAdvisorCore.ClampToInt(
-                TryParseDouble(DiskBitrateInput.Text), DiskBenchmarkInput.MaxBitrateKbps);
+                bitrateRaw, DiskBenchmarkInput.MaxBitrateKbps);
             if (bitrate <= 0)
             {
                 AppServices.Toast.Show("请先填写有效的计划录像码率（kbps）。", "error");
@@ -417,7 +432,7 @@ public partial class ToolboxPage : UserControl
                 ? dirResult.Dir
                 : Environment.GetFolderPath(Environment.SpecialFolder.MyVideos);
 
-            DiskBenchmarkText.Text = $"正在向 {dir} 写入测试数据（256MB）…";
+            DiskBenchmarkText.Text = $"正在向 {dir} 写入测试数据（256MB）…{ClampedNote(bitrateRaw, DiskBenchmarkInput.MaxBitrateKbps, "kbps")}";
             AppServices.Busy.Show("磁盘写入测速中…");
             try
             {

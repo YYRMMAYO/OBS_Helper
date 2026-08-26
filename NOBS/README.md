@@ -3,7 +3,7 @@
 本目录是当前维护中的 **Windows 原生 WPF 版**源码（`OBS_Helper.Wpf/`），
 这是原 Blazor WebAssembly + WebView2 版本的原生重构。
 
-**当前版本：V2.8.0** —— 守护与体检版。依据 [`docs/DEV_GUIDE_GAPS_2026-08.md`](docs/DEV_GUIDE_GAPS_2026-08.md)
+**当前版本：V2.8.2** —— 守护与体检版。依据 [`docs/DEV_GUIDE_GAPS_2026-08.md`](docs/DEV_GUIDE_GAPS_2026-08.md)
 缺口清单，补齐 OBS 用户最高频故障场景的「事中守护 + 系统侧体检」：
 
 <div align="center">
@@ -14,6 +14,12 @@
 [点击这里观看 / 下载](https://github.com/YYRMMAYO/OBS_Helper/releases/download/V2.8.0/nobs-promo.mp4)。
 
 </div>
+
+## V2.8.2 修复
+
+- **码率计算器输入限制补全**：工具箱四个数字输入框（上行带宽 / 推流路数 / 单路码率 /
+  计划录像码率）加 UI 层数字过滤与长度上限，超限按安全上限计算并明确提示，
+  修复异常大数值静默截断的可用性问题。
 
 ## V2.8.0 新增
 
@@ -45,7 +51,7 @@
 
 - 仓库完整介绍 → [`../README.md`](../README.md)（含宣传视频）
 - English → [`../README.en.md`](../README.en.md)
-- 本版发布说明 → [`RELEASE_NOTES_v2.8.0.md`](RELEASE_NOTES_v2.8.0.md)
+- 本版发布说明 → [`RELEASE_NOTES_v2.8.2.md`](RELEASE_NOTES_v2.8.2.md)
 - 项目库代码清单 → [`docs/CODEBASE.md`](docs/CODEBASE.md)
 - 架构总览 → [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md)
 - 缺口开发指引（V2.8 依据）→ [`docs/DEV_GUIDE_GAPS_2026-08.md`](docs/DEV_GUIDE_GAPS_2026-08.md)

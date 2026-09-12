@@ -23,11 +23,11 @@
 
 ---
 
-**目录**：[宣传视频](#-宣传视频) · [V2.8.0 亮点](#-v280-亮点守护与体检) · [亮点](#-亮点) · [功能](#-功能) · [智能诊断](#-智能诊断) · [隐私与安全](#-隐私与安全) · [安装与更新](#-安装与更新) · [构建](#-构建) · [工程结构](#-工程结构) · [许可](#-许可)
+**目录**：[宣传视频](#宣传视频) · [V2.8.0 亮点](#v280-亮点守护与体检) · [亮点](#亮点) · [功能](#功能) · [智能诊断](#智能诊断) · [隐私与安全](#隐私与安全) · [安装与更新](#安装与更新) · [构建](#构建) · [工程结构](#工程结构) · [许可](#许可)
 
 ---
 
-## 🎬 宣传视频
+## 宣传视频
 
 一分钟看懂 OBS 排障助手能帮你做什么：
 
@@ -47,7 +47,7 @@ https://github.com/user-attachments/assets/25361c9d-5239-4a1a-aeba-9080b0044e78
 
 ---
 
-## 🛡 V2.8.0 亮点：守护与体检
+## V2.8.0 亮点：守护与体检
 
 | | |
 |---|---|
@@ -62,7 +62,7 @@ https://github.com/user-attachments/assets/25361c9d-5239-4a1a-aeba-9080b0044e78
 
 ---
 
-## ✨ 亮点
+## 亮点
 
 | | |
 |---|---|
@@ -78,7 +78,7 @@ https://github.com/user-attachments/assets/25361c9d-5239-4a1a-aeba-9080b0044e78
 | **隐私优先** | 偏好文件不含任何凭据；密码与 API Key **双层加密**（AES-256-GCM + DPAPI）。只有你主动发起诊断才会联网，请求前先脱敏；本机插件体检全程只读、结果仅存本机 |
 | **零第三方依赖** | 原生 WPF + .NET 10，无 NuGet 包、无 WebView2，`obs-websocket` 协议纯手写；自包含单目录，秒开 |
 
-## 📦 功能
+## 功能
 
 ### 学习与排查
 
@@ -116,7 +116,7 @@ https://github.com/user-attachments/assets/25361c9d-5239-4a1a-aeba-9080b0044e78
 - **直播搭建** — 从零到开播的 6 步流程 + 10 个主流平台的推流配置
 - **外观** — 浅色 / 深色 / 跟随系统，4 档字号，高对比与减少动画
 
-## 🩺 智能诊断
+## 智能诊断
 
 连上 OBS 后一键体检，三种引擎可选：
 
@@ -128,7 +128,7 @@ https://github.com/user-attachments/assets/25361c9d-5239-4a1a-aeba-9080b0044e78
 
 云端 / 免费失败时**自动回退本地引擎**，并在结果中说明原因。免费档为单轮普通对话（不做知识库工具调用）；需要多轮深度排查或更高频使用，请接入你自己的云端 API。
 
-## 🔒 隐私与安全
+## 隐私与安全
 
 所有数据只存在本机：
 
@@ -137,7 +137,7 @@ https://github.com/user-attachments/assets/25361c9d-5239-4a1a-aeba-9080b0044e78
 
 只有在你**主动开启**「免费 AI」或「云端诊断引擎」并发起诊断时才会联网，且请求前会先对日志脱敏。OBS 配置备份 / 导出默认不含推流密钥（可勾选包含），密码与 Token 自动脱敏。
 
-## 📥 安装与更新
+## 安装与更新
 
 - **GitHub Releases** — 从 [Releases 页面](https://github.com/YYRMMAYO/OBS_Helper/releases) 下载安装包或便携版；便携版免安装、自带 .NET 运行时
 - **蓝奏云（国内镜像）** — 提取码 `YYKWY`（详见应用内更新弹窗）
@@ -149,7 +149,7 @@ https://github.com/user-attachments/assets/25361c9d-5239-4a1a-aeba-9080b0044e78
 > 支持 Windows 10 / 11。无需 WebView2、无需安装 .NET 运行时、无需管理员权限。
 > 已安装旧版（2.1.x ~ 2.7.x）的用户可直接走应用内「增量更新」升级到 2.8.0。
 
-## 🛠 构建
+## 构建
 
 需要 [.NET 10 SDK](https://dotnet.microsoft.com/download)；打安装包还需要 [Inno Setup 6](https://jrsoftware.org/isdl.php)。
 
@@ -185,7 +185,7 @@ python scripts\verify_delta.py --old PAKE\windows\OBS_Helper_Portable_2.0.0.zip 
 - `OBS_Helper_Portable_2.8.0.exe` — 单文件（需 `-SingleFile`）
 - `manifests/manifest_<ver>.json` — 各版本完整清单存档（增量包 diff 基准）
 
-## 🗂 工程结构
+## 工程结构
 
 ```
 NOBS/
@@ -222,6 +222,6 @@ NOBS/
 | `OBS_Helper.Client/` | 旧版共享前端（Blazor WASM），仅存档 |
 | `OBS_Helper.Mac/` | macOS 桌面壳（Tauri v2），仅存档 |
 
-## 📄 许可
+## 许可
 
 MIT，见 [LICENSE](LICENSE)。

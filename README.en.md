@@ -119,7 +119,8 @@ The app only goes online when you **explicitly** enable the free-AI or cloud dia
   - **Full installer**: Lanzou or in-app download of the complete package
 
 > Windows 10 / 11. No WebView2, no .NET runtime install, no administrator rights required.
-> Users on 2.1.x – 2.9.0 can jump straight to 2.9.1 via the in-app incremental update.
+> Users on 2.9.0 can use the in-app incremental update to reach 2.9.1 (only 4 files change); older versions
+> (2.1.x – 2.8.x) don't match the delta's base version, so install with the setup or portable package instead.
 > No OBS yet? The in-app *Setup* page, the *Toolbox* and the home welcome card all link to **official** download sources (obsproject.com and the official GitHub releases).
 
 ## Building from Source

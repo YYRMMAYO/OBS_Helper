@@ -152,5 +152,68 @@
       <!-- 全局 Toast 容器（贴底居中；P0，由 ToastService 增删卡片） -->
       <StackPanel x:Name="ToastHost" Grid.Row="1" Style="{StaticResource ToastHost}" />
     </Grid>
+
+    <!-- ============================================ 新手引导覆盖层（首次启动展示） -->
+    <!--
+      覆盖整窗（含左侧导航），首启时铺在界面上方；步骤文案与游标逻辑在 Services/Shell/OnboardingGuide.cs
+      （纯逻辑、有单测），这里只负责渲染。进度点由代码按步骤数动态生成，改动步骤数不需要动 XAML。
+    -->
+    <Grid x:Name="OnboardingLayer" Grid.ColumnSpan="2"
+          Background="{DynamicResource OverlayBrush}"
+          Visibility="Collapsed"
+          IsHitTestVisible="True">
+      <Border x:Name="OnboardingCard"
+              Background="{DynamicResource SurfaceBrush}"
+              BorderBrush="{DynamicResource LineBrush}" BorderThickness="1"
+              CornerRadius="{DynamicResource CornerRadiusLg}"
+              Effect="{DynamicResource CardShadowStrong}"
+              Width="560" Padding="32,28"
+              HorizontalAlignment="Center" VerticalAlignment="Center">
+        <StackPanel>
+          <TextBlock Text="欢迎使用 OBS 排障助手" FontWeight="SemiBold"
+                     FontSize="{DynamicResource FontSizeXl}"
+                     Foreground="{DynamicResource TextBrush}" />
+          <TextBlock Text="直播翻车现场急救箱 · 离线可用 · 数据仅存本机"
+                     Margin="0,6,0,0" TextWrapping="Wrap"
+                     FontSize="{DynamicResource FontSizeSm}"
+                     Foreground="{DynamicResource MutedBrush}" />
+
+          <Border Style="{StaticResource HLine}" Margin="0,16,0,0" />
+
+          <TextBlock x:Name="OnbStepTitle" Text="" FontWeight="SemiBold"
+                     Margin="0,16,0,0" TextWrapping="Wrap"
+                     FontSize="{DynamicResource FontSizeMd}"
+                     Foreground="{DynamicResource BrandBrush}" />
+          <TextBlock x:Name="OnbStepDesc" Text="" LineHeight="22"
+                     TextWrapping="Wrap" Margin="0,10,0,0"
+                     FontSize="{DynamicResource FontSizeSm}"
+                     Foreground="{DynamicResource MutedBrush}" />
+
+          <!-- 进度指示：圆点数量在代码里按 OnboardingGuide.Steps 动态生成 -->
+          <StackPanel x:Name="OnbDots" Orientation="Horizontal"
+                      HorizontalAlignment="Center" Margin="0,22,0,0" />
+
+          <TextBlock x:Name="OnbStepCounter" Text="" HorizontalAlignment="Center"
+                     Margin="0,10,0,0"
+                     FontSize="{DynamicResource FontSizeXs}"
+                     Foreground="{DynamicResource MutedBrush}" />
+
+          <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,18,0,0">
+            <Button x:Name="OnbSkipBtn" Content="跳过" Style="{StaticResource GhostButton}"
+                    Padding="12,7" Margin="0,0,8,0" Click="OnbSkipBtn_Click" />
+            <Button x:Name="OnbBackBtn" Content="上一步" Style="{StaticResource SecondaryButton}"
+                    Padding="14,7" Margin="0,0,8,0"
+                    Visibility="Collapsed" Click="OnbBackBtn_Click" />
+            <Button x:Name="OnbNextBtn" Content="下一步" Style="{StaticResource PrimaryButton}"
+                    Padding="18,8" Click="OnbNextBtn_Click" />
+          </StackPanel>
+
+          <TextBlock Text="随时可在「设置 → 新手引导」里重新播放本引导。"
+                     HorizontalAlignment="Right" Margin="0,10,0,0"
+                     FontSize="{DynamicResource FontSizeXs}"
+                     Foreground="{DynamicResource MutedBrush}" />
+        </StackPanel>
+      </Border>
+    </Grid>
   </Grid>
 </Window>

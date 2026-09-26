@@ -9,6 +9,7 @@ using System.Windows.Media.Animation;
 using OBS_Helper.Wpf.Controls;
 using OBS_Helper.Wpf.Navigation;
 using OBS_Helper.Wpf.Services;
+using OBS_Helper.Wpf.Services.Shell;
 using OBS_Helper.Wpf.Views;
 
 namespace OBS_Helper.Wpf;
@@ -69,6 +70,10 @@ public partial class MainWindow : Window
         Loaded += OnLoaded;
         Closed += OnClosed;
         Closing += OnClosing;
+
+        // 设置页「重新展示引导」→ 立即重播（静态事件解耦，见 App.RequestOnboardingReset）
+        App.OnboardingResetRequested += OnOnboardingResetRequested;
+        BuildOnboardingDots();
     }
 
     private void RegisterRoutes()
@@ -119,11 +124,236 @@ public partial class MainWindow : Window
 
         await _nav.NavigateAsync(Routes.Home, pushHistory: false);
 
-        // 启动后静默检查一次更新：有新版才弹窗，失败/无更新一律不打扰。
-        _ = RunStartupUpdateCheckAsync();
+        // 首次启动：先展示新手引导，把「启动更新检查」推迟到引导结束之后 ——
+        // 首启同时弹引导与更新弹窗会互相打架，对新手也不友好。
+        if (TryShowOnboardingForFirstRun())
+        {
+            _updateCheckDeferredUntilOnboarding = true;
+        }
+        else
+        {
+            // 启动后静默检查一次更新：有新版才弹窗，失败/无更新一律不打扰。
+            _ = RunStartupUpdateCheckAsync();
+        }
 
         // 启动后静默维护：知识库分离更新（节流 6h，自动应用）+ 旧安装包清理。
         _ = RunStartupMaintenanceAsync();
+    }
+
+    // ------------------------------------------------------------ 新手引导（V2.9.0）
+
+    /// <summary>当前展示到第几步（0 基）。</summary>
+    private int _onboardingStep;
+
+    /// <summary>首启时更新检查被引导推迟；引导结束后补跑一次。</summary>
+    private bool _updateCheckDeferredUntilOnboarding;
+
+    /// <summary>进度圆点（数量与 OnboardingGuide.Steps 一致，构造时生成一次）。</summary>
+    private readonly List<System.Windows.Shapes.Ellipse> _onboardingDots = new();
+
+    /// <summary>按步骤数生成进度圆点：步骤数改动时不需要改 XAML。</summary>
+    private void BuildOnboardingDots()
+    {
+        OnbDots.Children.Clear();
+        _onboardingDots.Clear();
+
+        for (var i = 0; i < OnboardingGuide.StepCount; i++)
+        {
+            var dot = new System.Windows.Shapes.Ellipse
+            {
+                Width = 8,
+                Height = 8,
+                Margin = new Thickness(4, 0, 4, 0),
+                // 未选中态：用次要文字色的低透明度，深浅主题下都能与卡片底拉开层次
+                // （本应用没有 TextDisabledBrush 这类专用资源，避免为此新增色板项）
+                Opacity = IdleDotOpacity
+            };
+            dot.SetResourceReference(System.Windows.Shapes.Shape.FillProperty, "MutedBrush");
+            _onboardingDots.Add(dot);
+            OnbDots.Children.Add(dot);
+        }
+    }
+
+    /// <summary>未选中进度点的透明度。</summary>
+    private const double IdleDotOpacity = 0.35;
+
+    /// <summary>
+    /// 首启按需展示引导。<c>OBS_SELFTEST</c> 自检模式下不展示（自检只验证路由能构造出来）。
+    /// 返回是否已展示。
+    /// </summary>
+    private bool TryShowOnboardingForFirstRun()
+    {
+        if (App.HeadlessTest) return false;
+        if (!OnboardingGuide.ShouldShow(AppServices.Store.GetItem(OnboardingGuide.PrefKey))) return false;
+
+        ShowOnboarding();
+        return true;
+    }
+
+    /// <summary>从头开始展示引导（首启与设置页「重新展示引导」共用）。</summary>
+    private void ShowOnboarding()
+    {
+        _onboardingStep = 0;
+        RenderOnboardingStep();
+
+        OnboardingLayer.Visibility = Visibility.Visible;
+
+        if (AppServices.Appearance.Settings.ReduceMotion)
+        {
+            // 无障碍「减少动画」：直接以终态显示（属性被动画持有期间直赋值无效，先清动画）
+            OnboardingLayer.BeginAnimation(UIElement.OpacityProperty, null);
+            OnboardingLayer.Opacity = 1;
+            FocusOnboardingPrimaryButton();
+            return;
+        }
+
+        OnboardingLayer.Opacity = 0;
+        OnboardingLayer.BeginAnimation(UIElement.OpacityProperty,
+            new DoubleAnimation(0, 1, TimeSpan.FromMilliseconds(180))
+            {
+                EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
+            });
+        FocusOnboardingPrimaryButton();
+    }
+
+    /// <summary>
+    /// 把键盘焦点放到引导主按钮上：否则焦点可能残留在覆盖层之下的导航项上，
+    /// 这时按空格会「隔着引导」切页面，看起来像引导失灵。
+    /// </summary>
+    private void FocusOnboardingPrimaryButton()
+    {
+        try { OnbNextBtn.Focus(); }
+        catch (Exception) { /* 焦点失败不影响引导本身 */ }
+    }
+
+    /// <summary>覆盖层是否正盖在界面上（用于屏蔽导航热键）。</summary>
+    private bool IsOnboardingVisible => OnboardingLayer.Visibility == Visibility.Visible;
+
+    /// <summary>渲染当前步骤（文案 + 进度点 + 按钮状态）。越界下标由 OnboardingGuide 夹取。</summary>
+    private void RenderOnboardingStep()
+    {
+        _onboardingStep = OnboardingGuide.Clamp(_onboardingStep);
+
+        var step = OnboardingGuide.Step(_onboardingStep);
+        OnbStepTitle.Text = step.Title;
+        OnbStepDesc.Text = step.Description;
+        OnbStepCounter.Text = $"第 {_onboardingStep + 1} / {OnboardingGuide.StepCount} 步";
+
+        var accent = (System.Windows.Media.Brush)FindResource("BrandBrush");
+        var idle = (System.Windows.Media.Brush)FindResource("MutedBrush");
+        for (var i = 0; i < _onboardingDots.Count; i++)
+        {
+            var isActive = i == _onboardingStep;
+            _onboardingDots[i].Fill = isActive ? accent : idle;
+            _onboardingDots[i].Opacity = isActive ? 1.0 : IdleDotOpacity;
+        }
+
+        OnbBackBtn.Visibility = OnboardingGuide.IsFirst(_onboardingStep)
+            ? Visibility.Collapsed
+            : Visibility.Visible;
+
+        // 最后一步：主按钮变成「开始使用」，不再提供「跳过」（跳过与完成在此处等价）
+        OnbNextBtn.Content = OnboardingGuide.IsLast(_onboardingStep) ? "开始使用" : "下一步";
+        OnbSkipBtn.Visibility = OnboardingGuide.IsLast(_onboardingStep)
+            ? Visibility.Collapsed
+            : Visibility.Visible;
+
+        AnimateOnboardingText();
+    }
+
+    /// <summary>步骤文字淡入（每次切步都重播，给「翻页」以视觉反馈）。</summary>
+    private void AnimateOnboardingText()
+    {
+        if (AppServices.Appearance.Settings.ReduceMotion)
+        {
+            OnbStepTitle.BeginAnimation(UIElement.OpacityProperty, null);
+            OnbStepDesc.BeginAnimation(UIElement.OpacityProperty, null);
+            OnbStepTitle.Opacity = 1;
+            OnbStepDesc.Opacity = 1;
+            return;
+        }
+
+        var fade = new DoubleAnimation(0, 1, TimeSpan.FromMilliseconds(160))
+        {
+            EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
+        };
+        OnbStepTitle.BeginAnimation(UIElement.OpacityProperty, fade);
+        OnbStepDesc.BeginAnimation(UIElement.OpacityProperty, fade);
+    }
+
+    /// <summary>结束引导（走完最后一步或点「跳过」）：记下已完成并淡出。</summary>
+    private void FinishOnboarding()
+    {
+        try
+        {
+            AppServices.Store.SetItem(OnboardingGuide.PrefKey, OnboardingGuide.CompletedValue);
+        }
+        catch (Exception ex)
+        {
+            // 偏好写入失败不该拦住用户：本次会话照常收起，下次启动会再展示一次
+            FileLogger.Warn("Onboarding", "写入引导完成标记失败：" + ex.Message);
+        }
+
+        void AfterHide()
+        {
+            OnboardingLayer.Visibility = Visibility.Collapsed;
+            ResumeDeferredUpdateCheck();
+        }
+
+        if (AppServices.Appearance.Settings.ReduceMotion)
+        {
+            OnboardingLayer.BeginAnimation(UIElement.OpacityProperty, null);
+            OnboardingLayer.Opacity = 1;
+            AfterHide();
+            return;
+        }
+
+        var fadeOut = new DoubleAnimation(1, 0, TimeSpan.FromMilliseconds(140));
+        fadeOut.Completed += (_, _) => AfterHide();
+        OnboardingLayer.BeginAnimation(UIElement.OpacityProperty, fadeOut);
+    }
+
+    /// <summary>引导结束后补跑被推迟的启动更新检查（仅首启路径会推迟）。</summary>
+    private void ResumeDeferredUpdateCheck()
+    {
+        if (!_updateCheckDeferredUntilOnboarding) return;
+        _updateCheckDeferredUntilOnboarding = false;
+        _ = RunStartupUpdateCheckAsync();
+    }
+
+    private void OnbNextBtn_Click(object sender, RoutedEventArgs e)
+    {
+        if (OnboardingGuide.IsLast(_onboardingStep))
+        {
+            FinishOnboarding();
+            return;
+        }
+
+        _onboardingStep = OnboardingGuide.Next(_onboardingStep);
+        RenderOnboardingStep();
+    }
+
+    private void OnbBackBtn_Click(object sender, RoutedEventArgs e)
+    {
+        _onboardingStep = OnboardingGuide.Back(_onboardingStep);
+        RenderOnboardingStep();
+    }
+
+    private void OnbSkipBtn_Click(object sender, RoutedEventArgs e) => FinishOnboarding();
+
+    /// <summary>设置页要求重播引导：可能在后台线程触发，切回 UI 线程再操作。</summary>
+    private void OnOnboardingResetRequested()
+    {
+        if (!Dispatcher.CheckAccess())
+        {
+            Dispatcher.BeginInvoke(new Action(OnOnboardingResetRequested));
+            return;
+        }
+
+        // 引导正开着时先收起再重播，避免出现「点重置没反应」的观感
+        OnboardingLayer.BeginAnimation(UIElement.OpacityProperty, null);
+        OnboardingLayer.Visibility = Visibility.Collapsed;
+        ShowOnboarding();
     }
 
     /// <summary>
@@ -268,6 +498,41 @@ public partial class MainWindow : Window
             }
         }
 
+        // 新手引导覆盖层（V2.9.0）：逐步渲染 + 显隐，拦截 FindResource 取不到资源、
+        // 步骤越界一类只有在展示时才会炸的错误。自检不动偏好（不调用 FinishOnboarding），
+        // 避免把开发机的「已完成」标记真的写掉。
+        try
+        {
+            ShowOnboarding();
+            for (var i = 0; i < OnboardingGuide.StepCount; i++)
+            {
+                _onboardingStep = i;
+                RenderOnboardingStep();
+            }
+
+            var stepTitleOk = !string.IsNullOrWhiteSpace(OnbStepTitle.Text);
+            var dotsOk = OnbDots.Children.Count == OnboardingGuide.StepCount;
+            var buttonsOk = OnbNextBtn.Content is not null && OnbBackBtn.Content is not null;
+            if (!stepTitleOk || !dotsOk || !buttonsOk)
+            {
+                results.Add($"FAIL  onboarding -> 渲染结果异常（标题={stepTitleOk} 圆点={OnbDots.Children.Count}/{OnboardingGuide.StepCount} 按钮={buttonsOk}）");
+            }
+            else
+            {
+                results.Add($"PASS  onboarding ({OnboardingGuide.StepCount} 步渲染 + 进度点 + 显隐)");
+            }
+        }
+        catch (Exception ex)
+        {
+            results.Add($"FAIL  onboarding -> {ex.GetType().Name}: {ex.Message}");
+        }
+        finally
+        {
+            // 收起覆盖层，别影响后面的小窗自检
+            OnboardingLayer.BeginAnimation(UIElement.OpacityProperty, null);
+            OnboardingLayer.Visibility = Visibility.Collapsed;
+        }
+
         // 小窗：创建 + 显示 + 隐藏，拦截 XAML 解析 / 资源引用 / 位置恢复错误（自检时窗口一闪而过）
         try
         {
@@ -284,7 +549,8 @@ public partial class MainWindow : Window
         var fail = results.Count - ok;
         var report = new StringBuilder();
         report.AppendLine($"OBS_Helper WPF 自检  {DateTime.Now:yyyy-MM-dd HH:mm:ss}");
-        report.AppendLine($"路由覆盖: {ok} PASS / {fail} FAIL  (共 {cases.Length})");
+        // 总数不能只写 cases.Length：列表里还有引导覆盖层与小窗两项非路由检查
+        report.AppendLine($"检查项: {ok} PASS / {fail} FAIL  （路由 {cases.Length} 项 + 新手引导 + 迷你小窗）");
         report.AppendLine(new string('-', 60));
         foreach (var line in results) report.AppendLine(line);
         if (App.HeadlessErrors.Count > 0)
@@ -303,6 +569,8 @@ public partial class MainWindow : Window
 
     private async void OnClosed(object? sender, EventArgs e)
     {
+        // 静态事件持有本窗口引用：退出时退订，避免残留引用
+        App.OnboardingResetRequested -= OnOnboardingResetRequested;
         // 退出时断开 OBS，避免 WebSocket 线程拖住进程
         try { await AppServices.Obs.DisposeAsync(); } catch { /* 退出路径，忽略 */ }
         AppServices.Appearance.Dispose();
@@ -459,7 +727,17 @@ public partial class MainWindow : Window
 
     private void OnSettingsClick(object sender, RoutedEventArgs e) => _nav.Navigate(Routes.Settings);
 
-    private void OnFindExecuted(object sender, ExecutedRoutedEventArgs e) => _nav.Navigate(Routes.Search);
+    /// <summary>Ctrl+F：引导覆盖层正开着时不响应，避免「隔着引导」跳页面。</summary>
+    private void OnFindExecuted(object sender, ExecutedRoutedEventArgs e)
+    {
+        if (IsOnboardingVisible) return;
+        _nav.Navigate(Routes.Search);
+    }
 
-    private void OnBrowseBackExecuted(object sender, ExecutedRoutedEventArgs e) => _nav.GoBack();
+    /// <summary>Alt+←：同上，引导期间不响应返回。</summary>
+    private void OnBrowseBackExecuted(object sender, ExecutedRoutedEventArgs e)
+    {
+        if (IsOnboardingVisible) return;
+        _nav.GoBack();
+    }
 }

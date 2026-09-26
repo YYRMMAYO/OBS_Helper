@@ -8,6 +8,7 @@ using OBS_Helper.Wpf.Models.Shell;
 using OBS_Helper.Wpf.Navigation;
 using OBS_Helper.Wpf.Services;
 using OBS_Helper.Wpf.Services.Ai;
+using OBS_Helper.Wpf.Services.Shell;
 
 namespace OBS_Helper.Wpf.Views;
 
@@ -828,6 +829,21 @@ public partial class SettingsPage : UserControl, INavigationAware
     {
         DataStatusText.Text = text;
         DataStatusText.Visibility = Visibility.Visible;
+    }
+
+    // ------------------------------------------------------------ 新手引导（V2.9.0）
+
+    /// <summary>
+    /// 「重新展示引导」：通知主窗口立即重播覆盖层，并顺手把「已完成」标记清掉 ——
+    /// 否则用户重看后中途关掉窗口，下次启动又不会展示（标记仍为已完成）。
+    /// </summary>
+    private void OnReplayOnboarding(object sender, RoutedEventArgs e)
+    {
+        AppServices.Store.RemoveItem(OnboardingGuide.PrefKey);
+        App.RequestOnboardingReset();
+
+        OnboardingStatusText.Text = "已重新展示，请查看主界面覆盖层。";
+        OnboardingStatusText.Visibility = Visibility.Visible;
     }
 
     // ------------------------------------------------------------ 关于

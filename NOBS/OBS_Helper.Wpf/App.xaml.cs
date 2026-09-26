@@ -25,6 +25,17 @@ public partial class App : Application
     private static readonly Dictionary<string, DateTime> LastDialogAt = new();
     private static readonly object DialogThrottleLock = new();
 
+    // ------------------------------------------------------------ 新手引导
+
+    /// <summary>
+    /// 「重新展示新手引导」请求（V2.9.0）。设置页与主窗口之间没有直接引用，
+    /// 用静态事件解耦：设置页点按钮 → 主窗口立即重播引导，无需重启应用。
+    /// </summary>
+    public static event Action? OnboardingResetRequested;
+
+    /// <summary>请求重新展示新手引导（只能在 UI 线程调用；主窗口会自行切回 UI 线程）。</summary>
+    public static void RequestOnboardingReset() => OnboardingResetRequested?.Invoke();
+
     // ------------------------------------------------------------ 单实例
     // 桌面快捷方式 / 安装完成后启动 / 托盘常驻都可能重复拉起进程。
     // 用「会话级命名 Mutex」做唯一判定：第二个实例直接退出，并通知第一个实例把窗口带回前台。

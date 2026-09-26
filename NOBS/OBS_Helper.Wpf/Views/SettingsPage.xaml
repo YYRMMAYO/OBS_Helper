@@ -476,6 +476,22 @@
         </StackPanel>
       </Border>
 
+      <!-- ==================================================== 新手引导（V2.9.0） -->
+      <Border Style="{StaticResource Card}" Margin="0,0,0,16">
+        <StackPanel>
+          <TextBlock Text="新手引导" Style="{StaticResource SectionTitle}" />
+          <TextBlock Style="{StaticResource MutedText}" Margin="0,0,0,12"
+                     Text="首次启动会分四步介绍「连接 OBS / 查问题 / 体检 / 开播与装修」的入口。点下面的按钮可随时重看，不必重启应用。" />
+
+          <StackPanel Orientation="Horizontal">
+            <Button x:Name="ReplayOnboardingButton" Content="重新展示引导"
+                    Style="{StaticResource PrimaryButton}" Click="OnReplayOnboarding" />
+            <TextBlock x:Name="OnboardingStatusText" Style="{StaticResource CaptionText}"
+                       VerticalAlignment="Center" Margin="12,0,0,0" Visibility="Collapsed" />
+          </StackPanel>
+        </StackPanel>
+      </Border>
+
       <!-- ==================================================== OBS 配置管理 -->
       <Border Style="{StaticResource Card}" Margin="0,0,0,16">
         <StackPanel>

@@ -84,6 +84,8 @@ public partial class PluginsPage : UserControl, INavigationAware
             _activeCategory = "all";
         }
 
+        UpdateCatalogMeta();
+
         // 路由参数：插件 id → 切到对应分类、清空筛选，渲染后滚动高亮（P0-2 / P2-2 联动入口）
         _highlightId = parameter as string;
         if (!string.IsNullOrEmpty(_highlightId))
@@ -102,6 +104,36 @@ public partial class PluginsPage : UserControl, INavigationAware
         RenderList();
 
         await EnsureScanAsync(force: false);
+    }
+
+    // ---------------------------------------------------------- 目录元信息（V2.9）
+
+    /// <summary>
+    /// 显示当前生效的目录版本、复核日期与维护放缓条数。
+    /// 数据源可能是「内置种子」也可能是热更新的外部文件，这里如实反映实际生效的那一份，
+    /// 用户据此就能判断插件广场有没有更新过。
+    /// </summary>
+    private void UpdateCatalogMeta()
+    {
+        try
+        {
+            var slow = _catalog.Plugins.Count(p => p.IsMaintenanceSlow);
+            var parts = new List<string>
+            {
+                $"目录 v{_catalog.Version}",
+                $"{_catalog.Plugins.Count} 条"
+            };
+            if (!string.IsNullOrWhiteSpace(_catalog.Updated)) parts.Add($"{_catalog.Updated} 复核");
+            if (slow > 0) parts.Add($"其中 {slow} 条维护放缓（卡片已标注）");
+            if (AppServices.PluginCatalog.DataSource == "external") parts.Add("已热更新");
+
+            CatalogMetaText.Text = string.Join(" · ", parts);
+        }
+        catch (Exception)
+        {
+            // 元信息属锦上添花：任何异常都不该影响插件列表本身
+            CatalogMetaText.Text = "";
+        }
     }
 
     // ---------------------------------------------------------- 官方入口
@@ -442,7 +474,12 @@ public partial class PluginsPage : UserControl, INavigationAware
             status = unknown;
         }
 
-        var sourceTag = plugin.SourceLabel == "user" ? "用户目录" : "安装目录";
+        var sourceTag = plugin.SourceLabel switch
+        {
+            "user" => "用户插件目录",
+            "global" => "全局插件目录",
+            _ => "安装目录"
+        };
 
         var grid = new Grid { Margin = new Thickness(0, 5, 0, 5) };
         grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
@@ -667,6 +704,25 @@ public partial class PluginsPage : UserControl, INavigationAware
             costText.SetResourceReference(TextBlock.ForegroundProperty,
                 string.IsNullOrEmpty(_aiBudgetHint) ? "MutedBrush" : "WarnBrush");
             body.Children.Add(costText);
+        }
+
+        // 维护状态（V2.9，目录 v1.4）：把「上游还在不在维护」摆到卡片上。
+        // 维护放缓用警示色（并带 ToolTip），活跃用次要色，不给用户造成无谓焦虑。
+        if (plugin.HasMaintenanceInfo)
+        {
+            var maintainText = new TextBlock
+            {
+                Text = $"维护：{plugin.MaintenanceText}",
+                Margin = new Thickness(0, 6, 0, 0),
+                TextWrapping = TextWrapping.Wrap,
+                ToolTip = plugin.IsMaintenanceSlow
+                    ? "该项目近 12 个月内没有提交或发行；仍可正常使用，但遇到 OBS 大版本更新时请留意兼容性。"
+                    : "该项目近 12 个月内有提交或发行。"
+            };
+            maintainText.SetResourceReference(TextBlock.FontSizeProperty, "FontSizeXs");
+            maintainText.SetResourceReference(TextBlock.ForegroundProperty,
+                plugin.IsMaintenanceSlow ? "WarnBrush" : "MutedBrush");
+            body.Children.Add(maintainText);
         }
 
         // 动作行：下载 + 最新版本角标 + 关注（P1-1 / P2-1）

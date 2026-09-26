@@ -1,16 +1,48 @@
 {
-  "version": "1.3",
-  "updated": "2026-08-23",
-  "note": "插件广场目录（V2.2 起从页内静态数组外置到知识库通道）：链接全部指向 GitHub 官方仓库，收录前逐一验证可达性。v1.3 目录扩充到 57 个条目：新增 obs-detect、Soundboard、Countdown Timer、Scale to Sound、3D Effect、Recursion Effect、Browser Transition、HTML Source、Device Switcher、Time Shift、Color Monitor 十一个精选（其中 3D Effect 为 StreamFX 停更后的 3D 变换替代品）。本文件走与 problems.json 完全一致的分离热更新通道，链接失效或新插件上架无需发版即可修复。dlls 字段用于「本地插件体检」把已装 DLL 匹配回广场条目（文件名主干、小写、可多个别名；Lua 脚本类条目可为空数组）；aiCost* 仅 AI 类插件填写，来自各项目 README 的公开开销说明。",
+  "version": "1.4",
+  "updated": "2026-09-26",
+  "note": "插件广场目录（V2.2 起从页内静态数组外置到知识库通道）：链接全部指向 GitHub 官方仓库，收录前逐一验证可达性。v1.4（2026-09-26 全量复核）对全部条目做了「仓库是否归档 / 最近提交与发行时间 / 能否拿到 Windows 成品包」三项实测，并按下列口径调整：① 剔除 8 个条目 —— spectralizer、obs-detect（仓库已归档）、win-capture-audio、obs-dynamic-delay、obs-time-shift、obs-time-warp-scan、obs-device-switcher（长期停更且无发行包）、obs-recursion-effect；② 修正 3 个被迁移的仓库归属（occ-ai/* 已改名 royshil/*）；③ 新增 8 个活跃条目 —— Source Profiler、Record Rename、BILIBILI Stream、Branch Output、iOS Camera Source、MIDI MG、Shadertastic、Durchblick；④ 新增 maintain / maintainNote 字段：近 12 个月内有提交或发行记为 active，更久记为 slow（明示「维护放缓」，便于用户判断是否值得装）。本文件走与 problems.json 完全一致的分离热更新通道，链接失效或新插件上架无需发版即可修复。dlls 字段用于「本地插件体检」把已装 DLL 匹配回广场条目（文件名主干、小写、可多个别名；Lua 脚本类条目可为空数组）；aiCost* 仅 AI 类插件填写，来自各项目 README 的公开开销说明。本版全部条目的实测依据见 docs/PLUGIN_AUDIT_2026-09.md。",
   "categories": [
-    { "key": "tool", "label": "工具 / 排障", "icon": "" },
-    { "key": "auto", "label": "自动化", "icon": "" },
-    { "key": "fx", "label": "视觉特效", "icon": "" },
-    { "key": "ai", "label": "AI 智能", "icon": "" },
-    { "key": "audio", "label": "音频", "icon": "" },
-    { "key": "multi", "label": "多平台 / 竖屏", "icon": "" },
-    { "key": "record", "label": "录制 / 后期", "icon": "" },
-    { "key": "input", "label": "输入 / 互动", "icon": "" }
+    {
+      "key": "tool",
+      "label": "工具 / 排障",
+      "icon": ""
+    },
+    {
+      "key": "auto",
+      "label": "自动化",
+      "icon": ""
+    },
+    {
+      "key": "fx",
+      "label": "视觉特效",
+      "icon": ""
+    },
+    {
+      "key": "ai",
+      "label": "AI 智能",
+      "icon": ""
+    },
+    {
+      "key": "audio",
+      "label": "音频",
+      "icon": ""
+    },
+    {
+      "key": "multi",
+      "label": "多平台 / 竖屏",
+      "icon": ""
+    },
+    {
+      "key": "record",
+      "label": "录制 / 后期",
+      "icon": ""
+    },
+    {
+      "key": "input",
+      "label": "输入 / 互动",
+      "icon": ""
+    }
   ],
   "plugins": [
     {
@@ -21,25 +53,8 @@
       "desc": "本软件的官方 OBS 停靠面板插件（C++ / Qt6 原生）：体检、日志分析、设置体检、系统信息四大页签，本地离线对齐官方 Log Analyzer 规则集，支持「元凶插件」一键禁用。",
       "url": "https://github.com/YYRMMAYO/OBS_Helper_Plugin",
       "repo": "YYRMMAYO/OBS_Helper_Plugin",
-      "dlls": ["obs-helper-dock"]
-    },
-    {
-      "id": "win-capture-audio",
-      "name": "Win Capture Audio",
-      "category": "audio",
-      "desc": "按应用程序直接捕获游戏声音，不用开「侦听此设备」：桌面噪音不再混进人声轨，游戏语音分离刚需。",
-      "url": "https://github.com/bozbez/win-capture-audio",
-      "repo": "bozbez/win-capture-audio",
-      "dlls": ["win-capture-audio"]
-    },
-    {
-      "id": "dynamic-delay",
-      "name": "Dynamic Delay",
-      "category": "audio",
-      "desc": "音频动态延迟补偿滤镜：按信号有无自动加延迟对齐画面，远程连线与采集卡音画微调利器。",
-      "url": "https://github.com/exeldro/obs-dynamic-delay",
-      "repo": "exeldro/obs-dynamic-delay",
-      "dlls": ["dynamic-delay"]
+      "dlls": ["obs-helper-dock"],
+      "maintain": "active"
     },
     {
       "id": "scene-notes-dock",
@@ -48,7 +63,8 @@
       "desc": "给每个场景挂一块独立备注板：提词、流程、待办随手记，切换场景时自动跟随显示。",
       "url": "https://github.com/exeldro/obs-scene-notes-dock",
       "repo": "exeldro/obs-scene-notes-dock",
-      "dlls": ["scene-notes-dock"]
+      "dlls": ["scene-notes-dock"],
+      "maintain": "active"
     },
     {
       "id": "face-tracker",
@@ -57,7 +73,8 @@
       "desc": "人脸识别自动追踪：摄像头随人物移动平滑变焦居中，走动教学、开箱展示与多机位导播好用。",
       "url": "https://github.com/norihiro/obs-face-tracker",
       "repo": "norihiro/obs-face-tracker",
-      "dlls": ["face-tracker", "obs-face-tracker"]
+      "dlls": ["face-tracker", "obs-face-tracker"],
+      "maintain": "active"
     },
     {
       "id": "ptz-controls",
@@ -66,7 +83,8 @@
       "desc": "在 OBS 内直接控制 PTZ 云台摄像机：转向预设位、变焦联动场景切换，会议录制与多机位直播刚需。",
       "url": "https://github.com/glikely/obs-ptz",
       "repo": "glikely/obs-ptz",
-      "dlls": ["obs-ptz", "ptz-controls"]
+      "dlls": ["obs-ptz", "ptz-controls"],
+      "maintain": "active"
     },
     {
       "id": "rtspserver",
@@ -75,7 +93,9 @@
       "desc": "把 OBS 输出变成 RTSP 服务器：局域网内 VLC、手机、另一台电脑都能直接拉流监看。",
       "url": "https://github.com/iamscottxu/obs-rtspserver",
       "repo": "iamscottxu/obs-rtspserver",
-      "dlls": ["obs-rtspserver"]
+      "dlls": ["obs-rtspserver"],
+      "maintain": "slow",
+      "maintainNote": "最近提交 2024-01 · 暂无同类替代，仍可使用"
     },
     {
       "id": "zoom-to-mouse",
@@ -84,7 +104,9 @@
       "desc": "Lua 脚本（无需装 DLL）：显示器捕获跟随鼠标平滑缩放聚焦，教程演示的「智能导播」，与 Zoominator 二选一。",
       "url": "https://github.com/BlankSourceCode/obs-zoom-to-mouse",
       "repo": "BlankSourceCode/obs-zoom-to-mouse",
-      "dlls": []
+      "dlls": [],
+      "maintain": "slow",
+      "maintainNote": "最近提交 2024-06 · 暂无同类替代，仍可使用"
     },
     {
       "id": "advanced-scene-switcher",
@@ -94,7 +116,8 @@
       "desc": "宏驱动的场景自动化：按窗口焦点、音频电平、定时、直播平台事件等条件自动切场景、开录、发请求。",
       "url": "https://github.com/WarmUpTill/SceneSwitcher",
       "repo": "WarmUpTill/SceneSwitcher",
-      "dlls": ["advanced-scene-switcher"]
+      "dlls": ["advanced-scene-switcher"],
+      "maintain": "active"
     },
     {
       "id": "move-transition",
@@ -104,7 +127,8 @@
       "desc": "场景切换时让来源按缓动曲线平移缩放，硬切变运镜，开销极低。",
       "url": "https://github.com/exeldro/obs-move-transition",
       "repo": "exeldro/obs-move-transition",
-      "dlls": ["move-transition"]
+      "dlls": ["move-transition"],
+      "maintain": "active"
     },
     {
       "id": "transition-table",
@@ -113,7 +137,8 @@
       "desc": "为任意两个场景的组合指定专属转场效果，替代全局单一转场。",
       "url": "https://github.com/exeldro/obs-transition-table",
       "repo": "exeldro/obs-transition-table",
-      "dlls": ["transition-table"]
+      "dlls": ["transition-table"],
+      "maintain": "active"
     },
     {
       "id": "downstream-keyer",
@@ -122,7 +147,8 @@
       "desc": "把台标、横幅、提分条置顶叠加在所有场景之上，无需逐场景添加。",
       "url": "https://github.com/exeldro/obs-downstream-keyer",
       "repo": "exeldro/obs-downstream-keyer",
-      "dlls": ["downstream-keyer"]
+      "dlls": ["downstream-keyer"],
+      "maintain": "active"
     },
     {
       "id": "scene-collection-manager",
@@ -131,7 +157,8 @@
       "desc": "场景集自动备份与快照管理，误操作一键回滚。",
       "url": "https://github.com/exeldro/obs-scene-collection-manager",
       "repo": "exeldro/obs-scene-collection-manager",
-      "dlls": ["scene-collection-manager"]
+      "dlls": ["scene-collection-manager"],
+      "maintain": "active"
     },
     {
       "id": "source-switcher",
@@ -140,7 +167,8 @@
       "desc": "按定时、热键或条件在一组来源间自动轮播切换，适合多机位与广告轮播。",
       "url": "https://github.com/exeldro/obs-source-switcher",
       "repo": "exeldro/obs-source-switcher",
-      "dlls": ["source-switcher"]
+      "dlls": ["source-switcher"],
+      "maintain": "active"
     },
     {
       "id": "media-controls",
@@ -149,7 +177,8 @@
       "desc": "独立控制面板：播放 / 暂停 / 跳转所有媒体来源，导播时不用翻场景找按钮。",
       "url": "https://github.com/exeldro/obs-media-controls",
       "repo": "exeldro/obs-media-controls",
-      "dlls": ["media-controls"]
+      "dlls": ["media-controls"],
+      "maintain": "active"
     },
     {
       "id": "urlsource",
@@ -158,7 +187,8 @@
       "desc": "从 URL / API 拉取数据生成文本或图片：股价、比分、天气、弹幕接口都能上屏。",
       "url": "https://github.com/royshil/obs-urlsource",
       "repo": "royshil/obs-urlsource",
-      "dlls": ["urlsource"]
+      "dlls": ["urlsource"],
+      "maintain": "active"
     },
     {
       "id": "shaderfilter",
@@ -167,7 +197,8 @@
       "desc": "给任意来源加载自定义着色器：暗角、RGB 分离、像素化、VHS 等，内置示例丰富。",
       "url": "https://github.com/exeldro/obs-shaderfilter",
       "repo": "exeldro/obs-shaderfilter",
-      "dlls": ["obs-shaderfilter", "shaderfilter"]
+      "dlls": ["obs-shaderfilter", "shaderfilter"],
+      "maintain": "active"
     },
     {
       "id": "composite-blur",
@@ -176,7 +207,8 @@
       "desc": "高质量模糊滤镜，Dual Kawase 模式又快又美；StreamFX 停更后的模糊替代品。",
       "url": "https://github.com/FiniteSingularity/obs-composite-blur",
       "repo": "FiniteSingularity/obs-composite-blur",
-      "dlls": ["composite-blur"]
+      "dlls": ["composite-blur"],
+      "maintain": "active"
     },
     {
       "id": "advanced-masks",
@@ -185,7 +217,8 @@
       "desc": "形状 / 渐变 / 图像遮罩，圆角摄像头、异形画面必备。",
       "url": "https://github.com/FiniteSingularity/obs-advanced-masks",
       "repo": "FiniteSingularity/obs-advanced-masks",
-      "dlls": ["advanced-masks"]
+      "dlls": ["advanced-masks"],
+      "maintain": "active"
     },
     {
       "id": "stroke-glow-shadow",
@@ -194,7 +227,8 @@
       "desc": "描边、辉光、投影三合一，摄像头画面与文字秒出精致质感。",
       "url": "https://github.com/FiniteSingularity/obs-stroke-glow-shadow",
       "repo": "FiniteSingularity/obs-stroke-glow-shadow",
-      "dlls": ["stroke-glow-shadow"]
+      "dlls": ["stroke-glow-shadow"],
+      "maintain": "active"
     },
     {
       "id": "gradient-source",
@@ -203,16 +237,8 @@
       "desc": "渐变色来源，可作背景、转场色卡或遮罩素材。",
       "url": "https://github.com/exeldro/obs-gradient-source",
       "repo": "exeldro/obs-gradient-source",
-      "dlls": ["gradient-source"]
-    },
-    {
-      "id": "time-warp-scan",
-      "name": "Time Warp Scan",
-      "category": "fx",
-      "desc": "经典「扫描线延迟」特效，互动整活利器。",
-      "url": "https://github.com/exeldro/obs-time-warp-scan",
-      "repo": "exeldro/obs-time-warp-scan",
-      "dlls": ["time-warp-scan"]
+      "dlls": ["gradient-source"],
+      "maintain": "active"
     },
     {
       "id": "source-clone",
@@ -221,7 +247,8 @@
       "desc": "克隆同一来源并挂不同滤镜：一份摄像头同时出干净版、画中画、竖屏裁剪。",
       "url": "https://github.com/exeldro/obs-source-clone",
       "repo": "exeldro/obs-source-clone",
-      "dlls": ["source-clone"]
+      "dlls": ["source-clone"],
+      "maintain": "active"
     },
     {
       "id": "freeze-filter",
@@ -230,7 +257,9 @@
       "desc": "一键冻结来源当前画面：断线、切换间隙时保住「体面画面」的保险丝。",
       "url": "https://github.com/exeldro/obs-freeze-filter",
       "repo": "exeldro/obs-freeze-filter",
-      "dlls": ["freeze-filter"]
+      "dlls": ["freeze-filter"],
+      "maintain": "slow",
+      "maintainNote": "最近提交 2025-07 · 暂无同类替代，仍可使用"
     },
     {
       "id": "retro-effects",
@@ -239,7 +268,8 @@
       "desc": "CRT / VHS / 故障艺术复古特效，性能开销远低于同类着色器方案。",
       "url": "https://github.com/FiniteSingularity/obs-retro-effects",
       "repo": "FiniteSingularity/obs-retro-effects",
-      "dlls": ["retro-effects"]
+      "dlls": ["retro-effects"],
+      "maintain": "active"
     },
     {
       "id": "backgroundremoval",
@@ -247,11 +277,12 @@
       "category": "ai",
       "badge": "热门",
       "desc": "AI 抠像虚拟绿幕，无需实体绿布，CPU / GPU 均可运行。",
-      "url": "https://github.com/occ-ai/obs-backgroundremoval",
-      "repo": "occ-ai/obs-backgroundremoval",
+      "url": "https://github.com/royshil/obs-backgroundremoval",
+      "repo": "royshil/obs-backgroundremoval",
       "dlls": ["backgroundremoval", "obs-backgroundremoval"],
       "aiCostCpu": "+5~15% CPU",
-      "aiCostMem": "+100~300MB 内存"
+      "aiCostMem": "+100~300MB 内存",
+      "maintain": "active"
     },
     {
       "id": "localvocal",
@@ -259,11 +290,12 @@
       "category": "ai",
       "badge": "AI",
       "desc": "本地实时语音转文字 + 翻译字幕，支持上百种语言，数据不出本机。",
-      "url": "https://github.com/occ-ai/obs-localvocal",
-      "repo": "occ-ai/obs-localvocal",
+      "url": "https://github.com/royshil/obs-localvocal",
+      "repo": "royshil/obs-localvocal",
       "dlls": ["localvocal"],
       "aiCostCpu": "+5~10% CPU",
-      "aiCostMem": "+200~500MB 内存"
+      "aiCostMem": "+200~500MB 内存",
+      "maintain": "active"
     },
     {
       "id": "cleanstream",
@@ -271,11 +303,12 @@
       "category": "ai",
       "badge": "AI",
       "desc": "AI 降噪滤除键盘声、底噪，保留干净人声。",
-      "url": "https://github.com/occ-ai/obs-cleanstream",
-      "repo": "occ-ai/obs-cleanstream",
+      "url": "https://github.com/royshil/obs-cleanstream",
+      "repo": "royshil/obs-cleanstream",
       "dlls": ["cleanstream"],
       "aiCostCpu": "+2~6% CPU",
-      "aiCostMem": "+50~200MB 内存"
+      "aiCostMem": "+50~200MB 内存",
+      "maintain": "active"
     },
     {
       "id": "auto-subtitle",
@@ -286,7 +319,9 @@
       "url": "https://github.com/summershrimp/obs-auto-subtitle",
       "repo": "summershrimp/obs-auto-subtitle",
       "dlls": ["auto-subtitle", "obs-auto-subtitle", "auto_subtitle"],
-      "aiCostCpu": "开销极低（云端识别，本地仅采集音频）"
+      "aiCostCpu": "开销极低（云端识别，本地仅采集音频）",
+      "maintain": "slow",
+      "maintainNote": "最近提交 2024-12 · 暂无同类替代，仍可使用"
     },
     {
       "id": "audio-monitor",
@@ -295,16 +330,8 @@
       "desc": "按来源监听音频或分流到不同输出设备，双机位与访谈场景刚需。",
       "url": "https://github.com/exeldro/obs-audio-monitor",
       "repo": "exeldro/obs-audio-monitor",
-      "dlls": ["audio-monitor"]
-    },
-    {
-      "id": "spectralizer",
-      "name": "Spectralizer",
-      "category": "audio",
-      "desc": "音频频谱可视化，音乐区直播间标配。",
-      "url": "https://github.com/univrsal/spectralizer",
-      "repo": "univrsal/spectralizer",
-      "dlls": ["spectralizer"]
+      "dlls": ["audio-monitor"],
+      "maintain": "active"
     },
     {
       "id": "tuna",
@@ -313,7 +340,8 @@
       "desc": "「正在播放」：抓取播放器歌名与封面生成悬浮条。",
       "url": "https://github.com/univrsal/tuna",
       "repo": "univrsal/tuna",
-      "dlls": ["tuna"]
+      "dlls": ["tuna"],
+      "maintain": "active"
     },
     {
       "id": "waveform",
@@ -322,7 +350,8 @@
       "desc": "高精度实时音频波形可视化，支持多通道与自定义外观，比频谱更细腻。",
       "url": "https://github.com/phandasm/waveform",
       "repo": "phandasm/waveform",
-      "dlls": ["waveform"]
+      "dlls": ["waveform"],
+      "maintain": "active"
     },
     {
       "id": "aitum-vertical",
@@ -332,7 +361,8 @@
       "desc": "竖屏第二画布，横竖屏同播同录，绑定场景联动切换。",
       "url": "https://github.com/Aitum/obs-vertical-canvas",
       "repo": "Aitum/obs-vertical-canvas",
-      "dlls": ["aitum-vertical-canvas", "aitum-vertical"]
+      "dlls": ["aitum-vertical-canvas", "aitum-vertical"],
+      "maintain": "active"
     },
     {
       "id": "aitum-multistream",
@@ -341,7 +371,8 @@
       "desc": "一个 OBS 同时推多平台，每路独立码率与设置，维护活跃。",
       "url": "https://github.com/Aitum/obs-aitum-multistream",
       "repo": "Aitum/obs-aitum-multistream",
-      "dlls": ["aitum-multistream"]
+      "dlls": ["aitum-multistream"],
+      "maintain": "active"
     },
     {
       "id": "obs-multi-rtmp",
@@ -351,7 +382,8 @@
       "riskNote": "注意｜新版 OBS 上有带宽骤降 / 编码过载 / 杀软误报的零星报告，多路不稳可换 Aitum Multistream",
       "url": "https://github.com/sorayuki/obs-multi-rtmp",
       "repo": "sorayuki/obs-multi-rtmp",
-      "dlls": ["obs-multi-rtmp", "multi-rtmp"]
+      "dlls": ["obs-multi-rtmp", "multi-rtmp"],
+      "maintain": "active"
     },
     {
       "id": "distroav",
@@ -360,7 +392,8 @@
       "desc": "局域网低延时收发音视频，双机方案与远程导播的基础设施。",
       "url": "https://github.com/DistroAV/DistroAV",
       "repo": "DistroAV/DistroAV",
-      "dlls": ["distroav", "obs-ndi"]
+      "dlls": ["distroav", "obs-ndi"],
+      "maintain": "active"
     },
     {
       "id": "teleport",
@@ -369,7 +402,8 @@
       "desc": "轻量 NDI 替代：手机或另一台电脑的摄像头画面经局域网推入 OBS。",
       "url": "https://github.com/fzwoch/obs-teleport",
       "repo": "fzwoch/obs-teleport",
-      "dlls": ["obs-teleport"]
+      "dlls": ["obs-teleport"],
+      "maintain": "active"
     },
     {
       "id": "source-dock",
@@ -378,7 +412,8 @@
       "desc": "把任一来源投到独立窗口：双屏监看摄像头 / 游戏画面，导播台式工作流。",
       "url": "https://github.com/exeldro/obs-source-dock",
       "repo": "exeldro/obs-source-dock",
-      "dlls": ["source-dock"]
+      "dlls": ["source-dock"],
+      "maintain": "active"
     },
     {
       "id": "spout2",
@@ -387,7 +422,8 @@
       "desc": "Spout2 GPU 纹理互通：与 TouchDesigner、Resolume 等视觉软件零损耗互传画面。",
       "url": "https://github.com/Off-World-Live/obs-spout2-plugin",
       "repo": "Off-World-Live/obs-spout2-plugin",
-      "dlls": ["win-spout", "spout2"]
+      "dlls": ["win-spout", "spout2"],
+      "maintain": "active"
     },
     {
       "id": "source-record",
@@ -398,7 +434,8 @@
       "riskNote": "注意｜旧版本在部分 OBS 组合下可能引发「卡在正在停止录制」，遇到时先升级到最新版",
       "url": "https://github.com/exeldro/obs-source-record",
       "repo": "exeldro/obs-source-record",
-      "dlls": ["source-record"]
+      "dlls": ["source-record"],
+      "maintain": "active"
     },
     {
       "id": "source-copy",
@@ -407,7 +444,8 @@
       "desc": "在场景间复制粘贴来源与滤镜配置，复杂场景搭建省时利器。",
       "url": "https://github.com/exeldro/obs-source-copy",
       "repo": "exeldro/obs-source-copy",
-      "dlls": ["source-copy"]
+      "dlls": ["source-copy"],
+      "maintain": "active"
     },
     {
       "id": "replay-source",
@@ -416,7 +454,8 @@
       "desc": "回放缓冲即时重播：赛事、高光时刻一键回放刚发生的画面。",
       "url": "https://github.com/exeldro/obs-replay-source",
       "repo": "exeldro/obs-replay-source",
-      "dlls": ["replay-source"]
+      "dlls": ["replay-source"],
+      "maintain": "active"
     },
     {
       "id": "input-overlay",
@@ -425,7 +464,8 @@
       "desc": "在直播画面同步显示键盘、鼠标、手柄输入，游戏教学与挑战内容常用。",
       "url": "https://github.com/univrsal/input-overlay",
       "repo": "univrsal/input-overlay",
-      "dlls": ["input-overlay"]
+      "dlls": ["input-overlay"],
+      "maintain": "active"
     },
     {
       "id": "droidcam-obs",
@@ -434,7 +474,8 @@
       "desc": "把 Android / iOS 手机变成无线摄像头来源。",
       "url": "https://github.com/dev47apps/droidcam-obs-plugin",
       "repo": "dev47apps/droidcam-obs-plugin",
-      "dlls": ["droidcam-obs", "droidcamobs"]
+      "dlls": ["droidcam-obs", "droidcamobs"],
+      "maintain": "active"
     },
     {
       "id": "zoominator",
@@ -443,19 +484,8 @@
       "desc": "整个场景跟随鼠标平滑缩放聚焦，教程与演示的「智能导播」。",
       "url": "https://github.com/mmlTools/zoominator",
       "repo": "mmlTools/zoominator",
-      "dlls": ["zoominator"]
-    },
-    {
-      "id": "obs-detect",
-      "name": "OBS Detect",
-      "category": "ai",
-      "badge": "AI",
-      "desc": "AI 目标检测：识别人物、物体并按检测结果自动联动场景或滤镜，与 Background Removal 同源团队维护。",
-      "url": "https://github.com/occ-ai/obs-detect",
-      "repo": "occ-ai/obs-detect",
-      "dlls": ["obs-detect"],
-      "aiCostCpu": "+5~15% CPU / GPU 推理",
-      "aiCostMem": "+200~500MB 内存"
+      "dlls": ["zoominator"],
+      "maintain": "active"
     },
     {
       "id": "soundboard",
@@ -465,7 +495,9 @@
       "desc": "热键音效板：把音效、罐头笑声、梗音频绑定到按键一键触发，互动直播气氛利器。",
       "url": "https://github.com/cg2121/obs-soundboard",
       "repo": "cg2121/obs-soundboard",
-      "dlls": ["soundboard", "obs-soundboard"]
+      "dlls": ["soundboard", "obs-soundboard"],
+      "maintain": "slow",
+      "maintainNote": "最近提交 2025-06 · 暂无同类替代，仍可使用"
     },
     {
       "id": "countdown-timer",
@@ -474,7 +506,8 @@
       "desc": "专业倒计时来源：开播倒数、抽奖、Subathon 计时，支持暂停续走与文本格式自定义。",
       "url": "https://github.com/ashmanix/obs-plugin-countdown",
       "repo": "ashmanix/obs-plugin-countdown",
-      "dlls": ["countdown", "obs-plugin-countdown"]
+      "dlls": ["countdown", "obs-plugin-countdown"],
+      "maintain": "active"
     },
     {
       "id": "scale-to-sound",
@@ -483,7 +516,9 @@
       "desc": "音量驱动画面缩放：说话时头像随声音弹跳放大，无需动效软件即可做出「会呼吸」的摄像头。",
       "url": "https://github.com/dimtpap/obs-scale-to-sound",
       "repo": "dimtpap/obs-scale-to-sound",
-      "dlls": ["scale-to-sound"]
+      "dlls": ["scale-to-sound"],
+      "maintain": "slow",
+      "maintainNote": "最近提交 2025-07 · 暂无同类替代，仍可使用"
     },
     {
       "id": "3d-effect",
@@ -492,16 +527,8 @@
       "desc": "3D 变换滤镜：透视旋转、倾斜、翻转摄像头或任意来源；StreamFX 停更后官方推荐的替代品。",
       "url": "https://github.com/exeldro/obs-3d-effect",
       "repo": "exeldro/obs-3d-effect",
-      "dlls": ["obs-3d-effect", "3d-effect"]
-    },
-    {
-      "id": "recursion-effect",
-      "name": "Recursion Effect",
-      "category": "fx",
-      "desc": "递归无限镜像特效：画中画套娃、空间隧道感转场，赛博风格直播常用。",
-      "url": "https://github.com/exeldro/obs-recursion-effect",
-      "repo": "exeldro/obs-recursion-effect",
-      "dlls": ["recursion-effect"]
+      "dlls": ["obs-3d-effect", "3d-effect"],
+      "maintain": "active"
     },
     {
       "id": "browser-transition",
@@ -510,7 +537,8 @@
       "desc": "HTML 动画转场：用网页动画文件做场景切换效果，社区海量免费转场素材即装即用。",
       "url": "https://github.com/exeldro/obs-browser-transition",
       "repo": "exeldro/obs-browser-transition",
-      "dlls": ["browser-transition", "obs-browser-transition"]
+      "dlls": ["browser-transition", "obs-browser-transition"],
+      "maintain": "active"
     },
     {
       "id": "html-source",
@@ -519,25 +547,8 @@
       "desc": "本地 HTML/CSS/JS 渲染为来源：做动态字幕条、数据看板比浏览器源更轻，支持实时刷新。",
       "url": "https://github.com/exeldro/obs-html-source",
       "repo": "exeldro/obs-html-source",
-      "dlls": ["html-source", "obs-html-source"]
-    },
-    {
-      "id": "device-switcher",
-      "name": "Device Switcher",
-      "category": "tool",
-      "desc": "采集设备断连自动切换备用来源：摄像头掉线瞬间切出占位画面，避免直播翻车黑屏。",
-      "url": "https://github.com/exeldro/obs-device-switcher",
-      "repo": "exeldro/obs-device-switcher",
-      "dlls": ["device-switcher", "obs-device-switcher"]
-    },
-    {
-      "id": "time-shift",
-      "name": "Time Shift",
-      "category": "audio",
-      "desc": "音视频时间轴平移滤镜：采集卡、蓝牙耳机导致的音画不同步毫秒级对齐。",
-      "url": "https://github.com/exeldro/obs-time-shift",
-      "repo": "exeldro/obs-time-shift",
-      "dlls": ["time-shift", "obs-time-shift"]
+      "dlls": ["html-source", "obs-html-source"],
+      "maintain": "active"
     },
     {
       "id": "color-monitor",
@@ -546,7 +557,98 @@
       "desc": "广播级监看工具：波形图、矢量示波器、直方图，调色与曝光校准的专业依据。",
       "url": "https://github.com/norihiro/obs-color-monitor",
       "repo": "norihiro/obs-color-monitor",
-      "dlls": ["color-monitor", "obs-color-monitor"]
+      "dlls": ["color-monitor", "obs-color-monitor"],
+      "maintain": "active"
+    },
+    {
+      "id": "obs-source-profiler",
+      "name": "Source Profiler",
+      "category": "tool",
+      "badge": "推荐",
+      "desc": "来源级性能分析：统计每个来源与滤镜的 CPU / GPU 耗时占比，把「谁在吃性能」直接摆到台面上。掉帧卡顿排查时，比逐个禁用来源试错快得多。",
+      "url": "https://github.com/exeldro/obs-source-profiler",
+      "repo": "exeldro/obs-source-profiler",
+      "dlls": ["source-profiler", "obs-source-profiler"],
+      "maintain": "active",
+      "maintainNote": "最近提交 2026-02"
+    },
+    {
+      "id": "obs-record-rename",
+      "name": "Record Rename",
+      "category": "record",
+      "desc": "录制结束后按规则自动重命名录像文件（时间、场景名等），长期录制的分段文件不再是一堆时间戳，翻找素材省一大截。",
+      "url": "https://github.com/exeldro/obs-record-rename",
+      "repo": "exeldro/obs-record-rename",
+      "dlls": ["record-rename", "obs-record-rename"],
+      "maintain": "active",
+      "maintainNote": "最近提交 2026-04"
+    },
+    {
+      "id": "bilibili-stream",
+      "name": "BILIBILI Stream for OBS",
+      "category": "multi",
+      "badge": "热门",
+      "desc": "B 站开播一条龙：在 OBS 内扫码登录、获取 RTMP 推流地址与推流码、同步更新直播间信息，免去在网页后台反复复制串流密钥。",
+      "url": "https://github.com/Zarosmm/obs-bilibili-stream",
+      "repo": "Zarosmm/obs-bilibili-stream",
+      "dlls": ["bilibili-stream-for-obs", "bilibili-stream", "obs-bilibili-stream"],
+      "maintain": "active",
+      "maintainNote": "最近提交 2026-09"
+    },
+    {
+      "id": "branch-output",
+      "name": "Branch Output",
+      "category": "multi",
+      "desc": "为单个来源单独挂一路 RTMP / SRT 输出：主舞台推平台的同时，把摄像头、嘉宾位等单独送到另一台机器或另一个平台，不必整体再推一份。",
+      "url": "https://github.com/OPENSPHERE-Inc/branch-output",
+      "repo": "OPENSPHERE-Inc/branch-output",
+      "dlls": ["osi-branch-output", "branch-output"],
+      "maintain": "active",
+      "maintainNote": "最近提交 2026-09"
+    },
+    {
+      "id": "ios-camera-source",
+      "name": "iOS Camera Source",
+      "category": "input",
+      "desc": "把 iPhone / iPad 当作 OBS 的视频源：USB 连线传输，画质与稳定性通常优于普通网络摄像头，适合临时补机位或移动拍摄。",
+      "url": "https://github.com/wtsnz/obs-ios-camera-source",
+      "repo": "wtsnz/obs-ios-camera-source",
+      "dlls": ["obs-ios-camera-source", "ios-camera-source"],
+      "maintain": "active",
+      "maintainNote": "最近提交 2026-08"
+    },
+    {
+      "id": "obs-midi-mg",
+      "name": "MIDI MG",
+      "category": "input",
+      "desc": "把 MIDI 控制器（调音台、打击垫、旋钮）映射成 OBS 动作：推子控音量、按键切场景，手里有硬件面板就不必另买专用控制器。",
+      "url": "https://github.com/nhielost/obs-midi-mg",
+      "repo": "nhielost/obs-midi-mg",
+      "dlls": ["obs-midi-mg", "midi-mg"],
+      "maintain": "active",
+      "maintainNote": "最近提交 2026-03"
+    },
+    {
+      "id": "shadertastic",
+      "name": "Shadertastic",
+      "category": "fx",
+      "desc": "为来源添加着色器特效：内置多种现成效果，也能直接加载自定义 shader 文件，做风格化画面比从零手写特效省事。",
+      "url": "https://github.com/xurei/shadertastic",
+      "repo": "xurei/shadertastic",
+      "dlls": ["shadertastic"],
+      "maintain": "active",
+      "maintainNote": "最近提交 2026-09"
+    },
+    {
+      "id": "durchblick",
+      "name": "Durchblick",
+      "category": "multi",
+      "desc": "模块化多画面监看：把多个场景 / 来源拼成一路多宫格输出，导播与会议录制看全场，布局比自带多视图更灵活。",
+      "url": "https://github.com/univrsal/durchblick",
+      "repo": "univrsal/durchblick",
+      "dlls": ["durchblick"],
+      "maintain": "active",
+      "maintainNote": "最近提交 2025-11"
     }
   ]
 }

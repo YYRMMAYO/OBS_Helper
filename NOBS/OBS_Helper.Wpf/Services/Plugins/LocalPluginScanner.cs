@@ -28,7 +28,8 @@ public sealed class LocalPluginScanResult
 ///   <item>%ProgramFiles%（及 x86 / ProgramW6432）下的 obs-studio；</item>
 ///   <item>Steam 版：解析各 Steam 根的 steamapps/libraryfolders.vdf，
 ///         覆盖安装在非默认盘的库（D:\SteamLibrary 等）；</item>
-///   <item>用户级插件目录 %AppData%\obs-studio\plugins。</item>
+///   <item>用户级插件根 %AppData%\obs-studio\plugins（V2.9 起同时展开一插件一目录布局）；</item>
+///   <item>全局插件根 %ProgramData%\obs-studio\plugins（OBS 32.x 新增，V2.9 起纳入；同上新布局）。</item>
 /// </list>
 ///
 /// 原则：只读不改——不提供任何安装 / 卸载 / 移动文件的能力；结果仅存本机。
@@ -49,7 +50,12 @@ public sealed class LocalPluginScanner
             installDir,
             GetObsInstallRoots(),
             GetSteamObsPluginDirs(),
-            GetUserPluginsDir());
+            GetUserPluginsDir(),
+            GetGlobalPluginsDir());
+
+        // OBS 32.x 的一插件一目录布局：把两个插件根展开成 <根>\<插件名>\bin\64bit。
+        // 子目录枚举属于 IO，放在这里；路径拼装（可测）放在 PluginScanLocations。
+        candidates.AddRange(ExpandPluginRoots(candidates));
 
         var scanned = candidates
             .Where(c => !string.IsNullOrWhiteSpace(c.Dir) && Directory.Exists(c.Dir))
@@ -66,6 +72,27 @@ public sealed class LocalPluginScanner
             ScannedDirs = scanned,
             ObsInstallFound = !string.IsNullOrEmpty(installDir) || scanned.Count > 0
         };
+    }
+
+    /// <summary>
+    /// 把标记为插件根（user / global）的候选展开成一插件一目录布局下的实际 DLL 目录。
+    /// 根目录本身保留：老式「直接把 dll 丢进 plugins 根」的摆法仍能被扫到。
+    /// </summary>
+    private static List<(string Dir, string Label)> ExpandPluginRoots(List<(string Dir, string Label)> candidates)
+    {
+        var result = new List<(string Dir, string Label)>();
+        foreach (var (dir, label) in candidates)
+        {
+            if (label is not ("user" or "global")) continue;
+
+            string[] subDirs;
+            try { subDirs = Directory.GetDirectories(dir); }
+            catch (Exception) { continue; } // 不存在 / 无权限：交给后续存在性过滤
+
+            foreach (var nested in PluginScanLocations.NestedPluginDirs(dir, subDirs))
+                result.Add((nested, label));
+        }
+        return result;
     }
 
     /// <summary>
@@ -175,6 +202,23 @@ public sealed class LocalPluginScanner
         {
             return Path.Combine(
                 Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "obs-studio", "plugins");
+        }
+        catch (Exception)
+        {
+            return null;
+        }
+    }
+
+    /// <summary>
+    /// 全局插件根 <c>%ProgramData%\obs-studio\plugins</c>（OBS 32.x 新增的机器级插件目录，
+    /// 与用户级插件根同级同布局）。本机实测该目录确实存在并被使用。
+    /// </summary>
+    private static string? GetGlobalPluginsDir()
+    {
+        try
+        {
+            return Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), "obs-studio", "plugins");
         }
         catch (Exception)
         {

@@ -178,4 +178,86 @@ public class PluginScanLocationsTests
     {
         Assert.Empty(PluginScanLocations.ParseSteamLibraryPaths(content));
     }
+
+    // ---------------------------------------------------------- OBS 32.x 新插件布局（V2.9）
+
+    [Fact]
+    public void BuildCandidates_IncludesGlobalPluginsDir_AfterUserDir()
+    {
+        var candidates = PluginScanLocations.BuildCandidates(
+            installDir: null,
+            obsInstallRoots: Array.Empty<string>(),
+            steamObsPluginDirs: Array.Empty<string>(),
+            userPluginsDir: @"C:\Users\u\AppData\Roaming\obs-studio\plugins",
+            globalPluginsDir: @"C:\ProgramData\obs-studio\plugins");
+
+        Assert.Equal(new[]
+        {
+            @"C:\Users\u\AppData\Roaming\obs-studio\plugins",
+            @"C:\ProgramData\obs-studio\plugins",
+        }, candidates.Select(c => c.Dir).ToArray());
+        Assert.Equal("user", candidates[0].Label);
+        Assert.Equal("global", candidates[1].Label);
+    }
+
+    [Fact]
+    public void BuildCandidates_GlobalDirIsOptional()
+    {
+        // 不传全局目录时行为与旧版完全一致（保持向后兼容）
+        var candidates = PluginScanLocations.BuildCandidates(
+            installDir: null,
+            obsInstallRoots: Array.Empty<string>(),
+            steamObsPluginDirs: Array.Empty<string>(),
+            userPluginsDir: @"C:\Users\u\AppData\Roaming\obs-studio\plugins");
+
+        Assert.Single(candidates);
+    }
+
+    [Fact]
+    public void NestedPluginDirs_BuildsObs322Layout()
+    {
+        // OBS 32.x 布局：<插件根>\<插件名>\bin\64bit\<插件>.dll
+        var dirs = PluginScanLocations.NestedPluginDirs(
+            @"C:\ProgramData\obs-studio\plugins",
+            new[] { "obs-helper-dock", "advanced-scene-switcher" });
+
+        Assert.Equal(new[]
+        {
+            @"C:\ProgramData\obs-studio\plugins\obs-helper-dock\bin\64bit",
+            @"C:\ProgramData\obs-studio\plugins\advanced-scene-switcher\bin\64bit",
+        }, dirs);
+    }
+
+    [Fact]
+    public void NestedPluginDirs_AcceptsFullPathsAndDedupes()
+    {
+        var dirs = PluginScanLocations.NestedPluginDirs(
+            @"C:\ProgramData\obs-studio\plugins",
+            new[]
+            {
+                @"C:\ProgramData\obs-studio\plugins\obs-helper-dock",
+                @"C:\ProgramData\obs-studio\plugins\obs-helper-dock\",
+                @"C:\ProgramData\obs-studio\plugins\OBS-Helper-Dock",
+            });
+
+        Assert.Single(dirs);
+        Assert.EndsWith(@"obs-helper-dock\bin\64bit", dirs[0]);
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    [InlineData("   ")]
+    public void NestedPluginDirs_BlankRoot_ReturnsEmpty(string? root)
+        => Assert.Empty(PluginScanLocations.NestedPluginDirs(root, new[] { "some-plugin" }));
+
+    [Fact]
+    public void NestedPluginDirs_SkipsBlankAndTraversalEntries()
+    {
+        var dirs = PluginScanLocations.NestedPluginDirs(
+            @"C:\ProgramData\obs-studio\plugins",
+            new[] { null, "", "   ", "..", "." });
+
+        Assert.Empty(dirs);
+    }
 }

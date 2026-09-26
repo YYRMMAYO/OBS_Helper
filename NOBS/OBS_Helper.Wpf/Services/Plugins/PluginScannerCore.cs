@@ -97,23 +97,29 @@ public static class PluginScannerCore
 
 /// <summary>
 /// 扫描候选目录构建的纯逻辑部分（V2.3，可单测）：把「实际 OBS 安装目录 / 常见安装根 /
-/// Steam 多库目录 / 用户级插件目录」合并成有序去重的候选清单。不做任何 IO 与注册表访问。
+/// Steam 多库目录 / 用户级插件目录 / 全局插件目录」合并成有序去重的候选清单。不做任何 IO 与注册表访问。
 ///
 /// 背景：V2.2 只探测 %ProgramFiles%（通常在 C 盘）——OBS 装在 D/E 盘或 Steam 非默认库时
 /// 本机体检会漏扫。V2.3 改为多信号定位，具体探测由 <see cref="LocalPluginScanner"/> 完成。
+///
+/// V2.9 补充：OBS 32.x 起（配套 32.1 的插件管理器）插件可以装到「插件根目录」下，
+/// 采用一插件一目录的新布局 <c>&lt;插件根&gt;\&lt;插件名&gt;\bin\64bit\&lt;插件&gt;.dll</c>，
+/// 且新增了全局插件根 <c>%ProgramData%\obs-studio\plugins</c>。
+/// 只扫旧扁平布局的话，用新版方式安装的插件在体检里会全部失踪。
 /// </summary>
 public static class PluginScanLocations
 {
     /// <summary>
     /// 合并各来源候选并按优先级排序去重：
-    /// 实际安装目录 → 各安装根下的 obs-plugins\64bit → Steam 库目录 → 用户级插件目录。
+    /// 实际安装目录 → 各安装根下的 obs-plugins\64bit → Steam 库目录 → 用户级插件目录 → 全局插件目录。
     /// 空白输入直接忽略；存在性检查交给调用方（ScanDirectories 会跳过不存在的目录）。
     /// </summary>
     public static List<(string Dir, string Label)> BuildCandidates(
         string? installDir,
         IEnumerable<string> obsInstallRoots,
         IEnumerable<string> steamObsPluginDirs,
-        string? userPluginsDir)
+        string? userPluginsDir,
+        string? globalPluginsDir = null)
     {
         var list = new List<(string Dir, string Label)>();
 
@@ -135,9 +141,35 @@ public static class PluginScanLocations
         if (!string.IsNullOrWhiteSpace(userPluginsDir))
             list.Add((userPluginsDir, "user"));
 
+        if (!string.IsNullOrWhiteSpace(globalPluginsDir))
+            list.Add((globalPluginsDir, "global"));
+
         // 大小写不敏感去重，保留首次出现顺序（优先级语义）
         var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         return list.Where(c => seen.Add(c.Dir)).ToList();
+    }
+
+    /// <summary>
+    /// OBS 32.x 新插件布局下的 DLL 所在目录：给定插件根与它的子目录名，产出
+    /// <c>&lt;插件根&gt;\&lt;子目录&gt;\bin\64bit</c>。纯拼路径、不做 IO，
+    /// 子目录枚举与存在性判断由调用方完成。
+    /// </summary>
+    public static List<string> NestedPluginDirs(string? pluginsRoot, IEnumerable<string?> subDirectoryNames)
+    {
+        var result = new List<string>();
+        if (string.IsNullOrWhiteSpace(pluginsRoot)) return result;
+
+        foreach (var name in subDirectoryNames)
+        {
+            if (string.IsNullOrWhiteSpace(name)) continue;
+            // 防目录穿越：只用最后一段作为插件目录名
+            var leaf = Path.GetFileName(name.Trim().TrimEnd('\\', '/'));
+            if (leaf.Length == 0 || leaf == "." || leaf == "..") continue;
+
+            var dir = Path.Combine(pluginsRoot, leaf, "bin", "64bit");
+            if (!result.Contains(dir, StringComparer.OrdinalIgnoreCase)) result.Add(dir);
+        }
+        return result;
     }
 
     /// <summary>

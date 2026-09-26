@@ -38,6 +38,32 @@ public sealed class PluginEntry
     public bool HasRiskNote => RiskNote.Length > 0;
 
     public bool HasAiCost => AiCostCpu.Length > 0 || AiCostMem.Length > 0;
+
+    /// <summary>
+    /// 维护状态（V2.9，目录 v1.4）：<c>"active"</c> = 近 12 个月内有提交或发行，
+    /// <c>"slow"</c> = 维护放缓。空值（旧目录 / 外部热更新文件缺字段）按「活跃」处理 ——
+    /// 宁可不标注，也不要给维护正常的插件打上误导性的黄标。
+    /// </summary>
+    public string Maintain { get; set; } = "";
+
+    /// <summary>维护状态的补充说明（如「最近提交 2024-01 · 暂无同类替代，仍可使用」）；无则空串。</summary>
+    public string MaintainNote { get; set; } = "";
+
+    /// <summary>维护放缓：需要在卡片上明示，避免用户装了才发现上游没人维护。</summary>
+    public bool IsMaintenanceSlow => string.Equals(Maintain, "slow", StringComparison.OrdinalIgnoreCase);
+
+    /// <summary>维护状态短标签（配合界面上的「维护：」前缀使用）。</summary>
+    public string MaintenanceLabel => IsMaintenanceSlow ? "放缓" : "活跃";
+
+    /// <summary>维护状态行的展示文案：「活跃」/「放缓」+ 可选的补充说明。</summary>
+    public string MaintenanceText
+        => MaintainNote.Length > 0 ? $"{MaintenanceLabel} · {MaintainNote}" : MaintenanceLabel;
+
+    /// <summary>
+    /// 是否需要渲染维护状态行：维护放缓，或带补充说明（新收录条目标注了复核日期）时才展示。
+    /// 「活跃且无说明」是所有条目的常态，逐张卡片重复一遍只是噪音，不展示。
+    /// </summary>
+    public bool HasMaintenanceInfo => IsMaintenanceSlow || MaintainNote.Length > 0;
 }
 
 /// <summary>plugins.json 的根对象。</summary>

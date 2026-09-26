@@ -11,8 +11,13 @@
           <ColumnDefinition Width="Auto" />
         </Grid.ColumnDefinitions>
 
-        <TextBlock Grid.Column="0" Style="{StaticResource MutedText}" VerticalAlignment="Center"
-                   Text="精选社区维护活跃的常用插件，点击卡片用浏览器打开项目主页；安装后重启 OBS 生效。" />
+        <StackPanel Grid.Column="0">
+          <TextBlock Style="{StaticResource MutedText}" TextWrapping="Wrap"
+                     Text="精选社区常用插件，卡片直达项目主页与 Releases 下载；装前请留意卡片上的「维护」标注。" />
+          <!-- 目录版本与复核日期：由代码按当前生效的目录数据填写（V2.9） -->
+          <TextBlock x:Name="CatalogMetaText" Style="{StaticResource CaptionText}"
+                     Margin="0,4,0,0" TextWrapping="Wrap" />
+        </StackPanel>
 
         <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center" Margin="18,0,0,0">
           <TextBox x:Name="SearchBox" Style="{StaticResource AppTextBox}"
@@ -83,7 +88,7 @@
         <StackPanel>
           <TextBlock Style="{StaticResource BodyText}" FontWeight="SemiBold" Text="安装小贴士" />
           <TextBlock Style="{StaticResource MutedText}" Margin="0,6,0,0" TextWrapping="Wrap"
-                     Text="· Windows 插件多为 .exe 安装器或 zip 包，zip 解压到 OBS 安装目录（默认 C:\Program Files\obs-studio）即可；&#10;· 插件只在 OBS 启动时加载，安装后需完全退出并重启 OBS；&#10;· OBS 32.1+ 内置「工具 → 插件管理器」，可查看已装插件的版本与兼容状态；&#10;· OBS 大版本更新后若插件不兼容，先到插件主页确认是否有对应新版本，再决定升级或回退。" />
+                     Text="· 插件只在 OBS 启动时加载，安装后需完全退出并重启 OBS 才生效；&#10;· Windows 插件多为 .exe 安装器或 zip 包；OBS 32.1+ 的「工具 → 插件管理器」会装到「一插件一目录」的插件根（%ProgramData%\obs-studio\plugins\&lt;插件名&gt;\bin\64bit），手动解压 zip 则放到 OBS 安装目录的 obs-plugins\64bit；&#10;· 同一个插件不要装两份（更新时旧文件没被覆盖，或同时装在插件根与安装目录），OBS 会报「Duplicate library」并可能崩溃 —— 可用本页上方的本机体检逐项核对；&#10;· OBS 32.2 曾出现带依赖的插件首次加载失败，32.2.2 已修复；插件报错时先确认 OBS 是否已更新到最新版；&#10;· 装前先看项目主页有没有对应 OBS 大版本的发行包，卡片上的「维护」状态可作参考。" />
         </StackPanel>
       </Border>
 

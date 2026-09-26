@@ -45,9 +45,17 @@
     <Compile Include="..\OBS_Helper.Wpf\Services\EnvCheckItem.cs" Link="Linked\EnvCheckItem.cs" />
     <Compile Include="..\OBS_Helper.Wpf\Services\Shell\RecordWatchdogCore.cs" Link="Linked\Shell\RecordWatchdogCore.cs" />
     <Compile Include="..\OBS_Helper.Wpf\Services\Shell\LogAlertThrottle.cs" Link="Linked\Shell\LogAlertThrottle.cs" />
+    <Compile Include="..\OBS_Helper.Wpf\Services\Shell\ObsLogFileFinder.cs" Link="Linked\Shell\ObsLogFileFinder.cs" />
+    <Compile Include="..\OBS_Helper.Wpf\Services\Shell\OnboardingGuide.cs" Link="Linked\Shell\OnboardingGuide.cs" />
     <Compile Include="..\OBS_Helper.Wpf\Services\SystemCheck\GraphicsEnvCheckCore.cs" Link="Linked\SystemCheck\GraphicsEnvCheckCore.cs" />
     <Compile Include="..\OBS_Helper.Wpf\Services\Audio\AudioDeviceHealthCore.cs" Link="Linked\Audio\AudioDeviceHealthCore.cs" />
     <Compile Include="..\OBS_Helper.Wpf\Services\Tools\VirtualCamCheckCore.cs" Link="Linked\Tools\VirtualCamCheckCore.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- 随包插件目录：给「数据自洽性」测试用（校验 id 唯一、分类有效、repo 可归一化、维护状态合法等） -->
+    <None Include="..\OBS_Helper.Wpf\Assets\plugins.json" Link="Assets\plugins.json"
+          CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
 </Project>

@@ -10,7 +10,7 @@
 [![Platform](https://img.shields.io/badge/Platform-Windows_10%2F11-0078D6.svg)]()
 [![.NET](https://img.shields.io/badge/.NET-10-512BD4.svg)]()
 [![Stack](https://img.shields.io/badge/Stack-WPF_%2F_C%23-239120.svg)]()
-[![Release](https://img.shields.io/badge/Release-2.9.0-38bdf8.svg)](https://github.com/YYRMMAYO/OBS_Helper/releases)
+[![Release](https://img.shields.io/badge/Release-2.9.1-38bdf8.svg)](https://github.com/YYRMMAYO/OBS_Helper/releases)
 [![OBS](https://img.shields.io/badge/OBS-32.2.2-302E31.svg)](https://github.com/obsproject/obs-studio/releases)
 [![Offline](https://img.shields.io/badge/offline--first-2ea44f.svg)]()
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
@@ -25,7 +25,9 @@
 >
 > **Since V2.2 there's a built-in plugin directory**: 57 curated plugins with direct GitHub Releases downloads, a read-only scan of locally installed plugins (with multi-drive OBS install detection), and log-analysis links that jump straight to the suspect plugin. **Since V2.1, updates are incremental and knowledge bases update independently**: only changed files are downloaded, and both the issue database and the plugin catalog can be upgraded without waiting for a new release.
 >
-> **V2.9 adds a first-run tutorial**, re-audits the whole plugin catalog (every entry re-verified against its repository: not archived, recently maintained, Windows build available — abandoned entries dropped, maintenance status shown on each card), and aligns the app with **OBS Studio 32.2.2**: log parsing, config keys, the obs-websocket handshake and the local plugin scan (including the new `%ProgramData%\obs-studio\plugins\<name>\bin\64bit` layout introduced in OBS 32.x) were all verified against a real 32.2.2 installation. See [RELEASE_NOTES_v2.9.0.md](NOBS/RELEASE_NOTES_v2.9.0.md) (Chinese) for the full changelog of V2.4 → V2.9.
+> **V2.9.1 fixes the knowledge-base raw channel** (both GitHub-raw URLs were missing the repository's leading `NOBS/` segment, so they had always returned 404 and every check silently fell back to the Release asset — a commit now really does reach every install, and non-2xx responses are logged), turns the **first-run tutorial into a guided tour that navigates the UI** for you, and adds **official OBS download entries** (obsproject.com / the official GitHub releases, plus a direct link to the current stable Windows installer resolved via the GitHub API — official hosts only, so fake "download sites" don't get a chance). See [RELEASE_NOTES_v2.9.1.md](NOBS/RELEASE_NOTES_v2.9.1.md) (Chinese).
+>
+> **V2.9 adds a first-run tutorial**, re-audits the whole plugin catalog (every entry re-verified against its repository: not archived, recently maintained, Windows build available — abandoned entries dropped, maintenance status shown on each card), and aligns the app with **OBS Studio 32.2.2**: log parsing, config keys, the obs-websocket handshake and the local plugin scan (including the new `%ProgramData%\obs-studio\plugins\<name>\bin\64bit` layout introduced in OBS 32.x) were all verified against a real 32.2.2 installation.
 
 ---
 
@@ -33,8 +35,9 @@
 
 | | |
 |---|---|
-| **149 fixes, fully offline** | A built-in knowledge base of **149 curated issues across 10+ categories** (v2.0) — symptoms, root causes, step-by-step fixes, tips and related questions. Steps are checkable and your progress is remembered. The **knowledge base updates independently** from the app. |
-| **First-run tutorial (V2.9)** | A four-step overlay on first launch — connect to OBS → where to look when something breaks → one-click health check → go live & decorate. Every entry it mentions uses the real navigation label, and you can replay it any time from *Settings → Onboarding* without restarting. |
+| **212 fixes, fully offline** | A built-in knowledge base of **212 curated issues** (knowledge base v2.2, organised into 10 categories on the home screen) — symptoms, root causes, step-by-step fixes, tips and related questions. Steps are checkable and your progress is remembered. The **knowledge base updates independently** from the app. |
+| **First-run tutorial (V2.9, guided since V2.9.1)** | A four-step tour on first launch — connect to OBS → where to look when something breaks → one-click health check → go live & decorate. Since V2.9.1 each step **switches the app to the page it is describing** (card tucked into the bottom-right corner, overlay kept light so the page stays readable) and offers extra jump buttons for the other pages it mentions. Replay it any time from *Settings → Onboarding* without restarting. |
+| **Official OBS download entries (V2.9.1)** | For people who can't get hold of genuine OBS: the build page, the toolbox, the home welcome card, the first tutorial step and the troubleshooting guide all link to the **official site** (obsproject.com, Chinese page) and the **official GitHub releases**, plus a "download the current stable Windows installer" button whose direct link is resolved from the GitHub API. Every URL is forced to https and restricted to official hosts (`obsproject.com`, `cdn-fastly.obsproject.com`, `github.com/obsproject/obs-studio`) — a tampered API response makes the app fall back to the release page instead of opening a third-party site. |
 | **Plugin square + local plugin health check** | **57 curated plugins** across 8 categories, fully re-audited in V2.9 (repository not archived, recently maintained, Windows build available) with a **maintenance status** shown on each card; a **read-only scan** of locally installed plugins locates the OBS install directory across all drives — registry (multi-view + HKCU + DisplayIcon fallback), per-drive standard layouts, Steam libraries and the OBS 32.x per-plugin roots (`%ProgramData%\obs-studio\plugins\<name>\bin\64bit`) — so non-C-drive and new-style installs are never missed. Log analysis can link a suspect module straight to its plugin card. |
 | **Incremental updates** | Since V2.1 the in-app "incremental update" downloads only changed files (the 2.2 → 2.3.0 delta is about **1.3 MB**); every file is SHA-256 verified, with automatic fallback to the full installer; installed versions auto-elevate, swap files and restart. |
 | **Auto-cleanup of installers** | On startup the app scans temp / Downloads / Desktop folders and deletes old OBS_Helper installers & delta packages (newest kept per kind), only ever touching `OBS_Helper_*` files. |
@@ -51,7 +54,7 @@
 ### Learn & troubleshoot
 
 - **First-run tutorial** — a four-step walkthrough on first launch (connect to OBS → where to look when something breaks → one-click health check → go live & decorate); replay it from *Settings → Onboarding*
-- **Knowledge base** — 10+ categories, 149 issues (v2.0), each with symptoms / root causes / step-by-step fixes / tips / related questions; steps are checkable and progress is remembered
+- **Knowledge base** — 212 issues (knowledge base v2.2, organised into 10 categories on the home screen), each with symptoms / root causes / step-by-step fixes / tips / related questions; steps are checkable and progress is remembered
 - **Independent knowledge-base updates** — issue database and plugin catalog are decoupled from the app version: silent auto-update at startup (6h throttled), a "Check KB updates" button in Settings, and an "Update knowledge base only" option in the update dialog; GitHub raw primary channel + Release asset fallback
 - **Instant search** — matches across titles, symptoms and causes as you type
 - **Ask me anything** — describe the problem in plain words and get the most likely issue
@@ -116,7 +119,8 @@ The app only goes online when you **explicitly** enable the free-AI or cloud dia
   - **Full installer**: Lanzou or in-app download of the complete package
 
 > Windows 10 / 11. No WebView2, no .NET runtime install, no administrator rights required.
-> Users on 2.1.x – 2.8.x can jump straight to 2.9.0 via the in-app incremental update.
+> Users on 2.1.x – 2.9.0 can jump straight to 2.9.1 via the in-app incremental update.
+> No OBS yet? The in-app *Setup* page, the *Toolbox* and the home welcome card all link to **official** download sources (obsproject.com and the official GitHub releases).
 
 ## Building from Source
 
@@ -147,10 +151,10 @@ python scripts\verify_delta.py --old PAKE\windows\OBS_Helper_Portable_2.0.0.zip 
 
 Artifacts land in `NOBS\PAKE\windows\`:
 
-- `OBS_Helper_Setup_2.9.0.exe` — installer
-- `OBS_Helper_Portable_2.9.0.zip` — unzip-and-run portable build
-- `OBS_Helper_Update_2.9.0.zip` — incremental update package (contains `update_manifest.json`, used by the in-app updater)
-- `OBS_Helper_Portable_2.9.0.exe` — single-file build (with `-SingleFile`)
+- `OBS_Helper_Setup_2.9.1.exe` — installer
+- `OBS_Helper_Portable_2.9.1.zip` — unzip-and-run portable build
+- `OBS_Helper_Update_2.9.1.zip` — incremental update package (contains `update_manifest.json`, used by the in-app updater)
+- `OBS_Helper_Portable_2.9.1.exe` — single-file build (with `-SingleFile`)
 - `OBS_Helper_Plugins_1.4.json` — plugin directory v1.4 (independent hot-update asset, published with the release)
 - `OBS_Helper_Knowledge_2.2.json` — issue database v2.2 (independent hot-update asset, published with the release)
 - `manifests/manifest_<ver>.json` — per-version file manifest (SHA-256, delta diff base; not published as a release asset)

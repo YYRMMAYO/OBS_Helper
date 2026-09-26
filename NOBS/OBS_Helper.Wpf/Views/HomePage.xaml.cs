@@ -84,6 +84,27 @@ public partial class HomePage : UserControl, INavigationAware
     private void OnConnectGuideClick(object sender, RoutedEventArgs e)
         => AppServices.Navigation.Navigate(Routes.Console);
 
+    /// <summary>欢迎卡上的官方下载入口（V2.9.1）：只跳官方渠道，地址常量在 ObsDownloadLinks。</summary>
+    private async void OnOpenObsDownload(object sender, RoutedEventArgs e)
+        => await OpenOfficialAsync(Services.Update.ObsDownloadLinks.OfficialDownload);
+
+    /// <summary>欢迎卡上的官方 GitHub 发布页入口（V2.9.1）。</summary>
+    private async void OnOpenObsGitHub(object sender, RoutedEventArgs e)
+        => await OpenOfficialAsync(Services.Update.ObsDownloadLinks.GitHubLatestRelease);
+
+    private static async Task OpenOfficialAsync(string url)
+    {
+        try
+        {
+            var ok = await AppServices.Host.OpenExternalAsync(url).ConfigureAwait(true);
+            if (!ok) AppServices.Toast.Show("打不开浏览器，请手动访问 " + url, "error");
+        }
+        catch (Exception ex)
+        {
+            AppServices.Toast.Show("打开链接失败：" + ex.Message, "error");
+        }
+    }
+
     /// <summary>
     /// 重建收藏区。收藏事件是在 ProblemCard 的点击处理中同步触发的，
     /// 直接重建会把正在处理点击的卡片从可视树上摘掉，因此延后到本次输入处理之后再刷新。

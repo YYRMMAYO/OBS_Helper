@@ -1,6 +1,7 @@
 <UserControl x:Class="OBS_Helper.Wpf.Views.ToolboxPage"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:ctl="clr-namespace:OBS_Helper.Wpf.Controls">
   <ScrollViewer Style="{StaticResource PageScroll}">
     <StackPanel Margin="22,18,22,26">
 
@@ -354,6 +355,10 @@
                      Text="联网查询 obsproject/obs-studio 的最新 Release（含版本号、日期与要点摘要），帮你判断是否值得升级。结果本地缓存，失败时展示离线快照。" />
         </StackPanel>
       </Border>
+
+      <!-- ================================================== 获取官方 OBS（V2.9.1） -->
+      <TextBlock Style="{StaticResource SectionTitle}" Text="获取官方 OBS" Margin="0,20,0,10" />
+      <ctl:ObsDownloadCard />
 
       <!-- ================================================== 快捷键速查 -->
       <TextBlock Style="{StaticResource SectionTitle}" Text="常用快捷键速查" Margin="0,20,0,10" />

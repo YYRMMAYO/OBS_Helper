@@ -19,20 +19,19 @@ namespace OBS_Helper.Wpf.Services.Update;
 ///   <item><b>内置</b>：程序集内嵌的同名 JSON 作为「种子」，本地缺失 / 损坏时兜底；</item>
 ///   <item><b>远程</b>：优先拉 GitHub raw（仓库 master 分支，随 commit 更新）；
 ///          raw 失败时兜底拉 GitHub Release 资产（OBS_Helper_Knowledge_&lt;ver&gt;.json /
-///          OBS_Helper_Plugins_&lt;ver&gt;.json）。</item>
+///          OBS_Helper_Plugins_&lt;ver&gt;.json）。raw 地址见 <see cref="KnowledgeBaseUrls"/>
+///          ——仓库根目录下是 <c>NOBS/</c>，路径漏了这一段会静默 404（V2.9 及以前的实际缺陷）。</item>
 /// </list>
 /// 版本号取 JSON 里的 <c>version</c> 字段（如 "1.5"），与程序集版本完全解耦——
 /// 知识库可以随时独立更新，不需要等应用发版。
 /// </summary>
 public sealed class KnowledgeBaseUpdater
 {
-    /// <summary>远程问题库主通道：GitHub raw（仓库 master 分支）。</summary>
-    public const string RawKbUrl =
-        "https://raw.githubusercontent.com/YYRMMAYO/OBS_Helper/master/OBS_Helper.Wpf/Assets/problems.json";
+    /// <summary>远程问题库主通道（raw，仓库 master 分支）。地址常量见 <see cref="KnowledgeBaseUrls"/>。</summary>
+    public const string RawKbUrl = KnowledgeBaseUrls.RawProblems;
 
     /// <summary>远程插件目录主通道（P0-3）：同一仓库 master 分支的 plugins.json。</summary>
-    public const string RawPluginsUrl =
-        "https://raw.githubusercontent.com/YYRMMAYO/OBS_Helper/master/OBS_Helper.Wpf/Assets/plugins.json";
+    public const string RawPluginsUrl = KnowledgeBaseUrls.RawPlugins;
 
     /// <summary>问题库 Release 资产兜底的文件名前缀（OBS_Helper_Knowledge_&lt;ver&gt;.json）。</summary>
     public const string KbAssetPrefix = "OBS_Helper_Knowledge_";
@@ -240,6 +239,9 @@ public sealed class KnowledgeBaseUpdater
     /// <summary>
     /// 拉取远程知识库文本。主通道 raw.githubusercontent；失败时兜底 Release 资产。
     /// 返回 (内容, 是否走了兜底通道)；两者都失败返回 (null, false)。
+    ///
+    /// 两条通道都会记录失败原因：raw 地址写错这类问题在本机只表现为「兜底通道生效」，
+    /// 不写日志的话等于没人能发现（V2.9 的 NOBS/ 前缀缺陷就是这么潜伏下来的）。
     /// </summary>
     private async Task<(string? Json, bool Fallback)> FetchRemoteKbAsync(string rawUrl, bool usePluginsChannel)
     {
@@ -251,11 +253,18 @@ public sealed class KnowledgeBaseUpdater
             {
                 var text = await resp.Content.ReadAsStringAsync(cts.Token).ConfigureAwait(false);
                 if (!string.IsNullOrWhiteSpace(text)) return (text, false);
+
+                FileLogger.Warn("KB", $"raw 通道返回空内容，转兜底：{rawUrl}");
+            }
+            else
+            {
+                // 关键：非 2xx（例如地址少一段导致的 404）以前是静默的，现在明确落盘
+                FileLogger.Warn("KB", $"raw 通道返回 {(int)resp.StatusCode}，转兜底：{rawUrl}");
             }
         }
         catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException)
         {
-            FileLogger.Warn("KB", "raw 通道拉取失败：" + ex.Message);
+            FileLogger.Warn("KB", $"raw 通道拉取失败：{ex.Message}（{rawUrl}）");
         }
 
         // 兜底：GitHub Release 资产（OBS_Helper_Knowledge_*.json / OBS_Helper_Plugins_*.json）
@@ -272,7 +281,17 @@ public sealed class KnowledgeBaseUpdater
                 {
                     var text = await resp.Content.ReadAsStringAsync(cts.Token).ConfigureAwait(false);
                     if (!string.IsNullOrWhiteSpace(text)) return (text, true);
+
+                    FileLogger.Warn("KB", "Release 资产内容为空：" + info.AssetUrl);
                 }
+                else
+                {
+                    FileLogger.Warn("KB", $"Release 资产返回 {(int)resp.StatusCode}：" + info.AssetUrl);
+                }
+            }
+            else
+            {
+                FileLogger.Warn("KB", "Release 资产兜底不可用：" + (info.Error ?? "未找到资产"));
             }
         }
         catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException)

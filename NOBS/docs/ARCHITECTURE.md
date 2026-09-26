@@ -70,6 +70,7 @@ Problems ── AssistantService / ObsToolRegistry / LocalDiagnosticEngine / Orc
 ## 5. 导航模型
 
 - **路由表**：`Navigation/Routes.cs` 集中定义路由名常量（`home` / `console` / `settings` 等），避免拼字符串。
+  单独成文件（V2.9.1）是为了让它零 WPF 依赖，可直接被单测工程链接——新手引导的「跳转目标必须是已注册路由」由此可测。
 - **导航服务** `NavigationService`：路由名 → 页面工厂；页面实例**缓存复用**（保滚动位置、避免重建）；维护前进/后退栈。
 - **页面生命周期**：页面实现 `INavigationAware` 接口——`OnNavigatedToAsync(parameter)` 进入时加载数据；`OnNavigatedFromAsync()` 离开时对称退订事件/停计时器（接口默认实现，页面按需覆写）；`CanReleaseOnLeave` 决定离开后是否允许从缓存释放实例。
 - **切换动画**：`MainWindow` 在 `Navigated` 事件里做淡入 + 上移动画（「减少动画」开启时直赋值）。
@@ -139,7 +140,8 @@ SceneTemplateService 场景模板：在线落地（建专属配置集合 → 逐
 | 系统监控 | `SystemMonitorService` | 每秒采样 CPU/内存/磁盘；`PerformancePage` 订阅展示；预警阈值见 Tray |
 | 场景自动切换 | `SceneAutoSwitcher` | 正则匹配窗口标题，**ReDoS 超时保护**（匹配超时中止） |
 | 定时停止 | `ControlTimerService` | 录制/推流定时停止 |
-| 新手引导 | `OnboardingGuide`（纯逻辑）+ `MainWindow` 覆盖层 | 步骤清单与游标状态机可单测；「已完成」只记一个偏好键；「减少动画」时不播动效 |
+| 新手引导 | `OnboardingGuide`（纯逻辑）+ `MainWindow` 覆盖层 | 步骤清单与游标状态机可单测；**每步自动把界面切到对应页面**（V2.9.1「跳转式引导」），卡片贴右下角 + 轻遮罩（页面要看得见），卡片另给站内跳转按钮与官方下载外链；「已完成」只记一个偏好键；「减少动画」时不播动效 |
+| 官方下载入口 | `ObsDownloadCard` 控件 + `ObsDownloadLinks` 常量 | 只允许 `obsproject.com` / 官方 GitHub 仓库；Windows 安装包直链由 GitHub API 解析（`ObsInstallerAsset`），解析不到退化到官方发布页 |
 | OBS 日志定位 | `ObsLogFileFinder` | 认 `.txt` / `.log` 两种扩展名（OBS 会话日志是 `.txt`），按修改时间取最新 |
 
 ## 11. 线程模型
@@ -167,6 +169,16 @@ SceneTemplateService 场景模板：在线落地（建专属配置集合 → 逐
 2. **GitHub Release**：`releases/latest` 找 `OBS_Helper_Setup_*.exe` 资产，去 `V/v` 前缀后 `Version.TryParse` 比较；下载用随机临时名 + **MZ 头校验**。
    - Release 未建时方式二因「最新版不高于当前版」拒绝下载——这是特性。
 
+**知识库 / 插件目录的独立更新**（`KnowledgeBaseUpdater`）同样是双通道：主通道 GitHub raw，兜底 Release 资产
+（`OBS_Helper_Knowledge_*.json` / `OBS_Helper_Plugins_*.json`）。raw 地址在 `KnowledgeBaseUrls` 里——
+仓库根目录下是 `NOBS/`，路径漏了这一段会**静默 404**（V2.9.0 及以前的真实缺陷：主通道从未生效，全靠兜底），
+因此地址常量化 + 单测（形状 + 本机源码树落地校验）+ 两条通道失败均记日志。
+
+**官方 OBS 下载入口**（V2.9.1）：`ObsDownloadLinks` 只有官网（`obsproject.com`，含中文下载页）与官方 GitHub
+两类地址，`IsOfficialDownloadUrl` 做 https + 域名白名单校验（含官方 CDN 子域、限定官方仓库路径）；
+`ObsReleaseInfoService.GetWindowsInstallerLinkAsync` 从 `releases/latest` 解析当前稳定版的 Windows 安装包直链，
+解析失败返回官方发布页并标注 `IsDirect=false`。
+
 `UpdateDialog` 提供四种用户选择：蓝奏云下载 / 应用内下载 / 稍后再说 / 打开 GitHub Release 页。
 
 ## 14. 安全设计清单
@@ -178,6 +190,7 @@ SceneTemplateService 场景模板：在线落地（建专属配置集合 → 逐
 | 云端转发 | 强制 https；拒绝内网/回环地址（SSRF） |
 | 路径操作 | `ObsSafePath` 护栏，防 `..` 穿越，越界抛异常 |
 | Markdown | 链接白名单（http/https/mailto/站内），含引号或空白即丢弃 |
+| 官方下载入口 | 仅 `obsproject.com`（含子域）/ `github.com/obsproject/obs-studio`；强制 https；GitHub API 响应被篡改时退化到发布页，绝不跳第三方站点 |
 | 日志脱敏 | `LogSanitizer` 抹掉密钥/敏感串，保留 OBS 正常长串 |
 | 免费 AI 限频 | 按通道独立限额（智谱 10 次/天强限制，Pollinations 20 次），本地强制 |
 | 正则 | 场景自动切换匹配带 ReDoS 超时 |
@@ -187,5 +200,5 @@ SceneTemplateService 场景模板：在线落地（建专属配置集合 → 逐
 
 - `build.ps1`：`dotnet publish`（Release、R2R、自包含单文件）→ Inno Setup 安装包 → 便携 zip；产物到 `PAKE/windows/`（gitignore）。
 - 免费 AI 密钥：构建期由 `scripts/embed_free_ai_key.ps1` 注入 `Assets/free_ai_key.json`（真实密钥不入库）。
-- 自检：`OBS_SELFTEST=1` 无界面跑 17 条路由 + 新手引导覆盖层 + 迷你小窗共 19 项自检，结果写 `selftest_result.txt`——「编译过但运行炸」类错误的最有效拦截。
+- 自检：`OBS_SELFTEST=1` 无界面跑 17 条路由 + 新手引导覆盖层 + 迷你小窗共 19 项自检，结果写 `selftest_result.txt`——「编译过但运行炸」类错误的最有效拦截。引导一项会**逐步真实导航**并校验「页面名与路由表一致」「跳转按钮数量与步骤定义一致」「站外链接落在官方域名」。
 - 数据脚本：`scripts/add_problems.py` / `add_templates.py` 可复用改知识库 / 模板数据。

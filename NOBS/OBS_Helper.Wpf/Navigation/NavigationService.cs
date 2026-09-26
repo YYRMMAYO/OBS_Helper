@@ -27,45 +27,12 @@ public interface INavigationAware
     bool CanReleaseOnLeave => false;
 }
 
-/// <summary>应用内路由名。集中定义，避免各页面拼字符串拼错。</summary>
-public static class Routes
-{
-    public const string Home = "home";
-    public const string Search = "search";
-    public const string Assistant = "assistant";
-    public const string Diagnostic = "diagnostic";
-    public const string Setup = "setup";
-    public const string Console = "console";
-    public const string Guide = "guide";
-    public const string Settings = "settings";
-
-    /// <summary>分类页，参数为分类 id（string）。</summary>
-    public const string Category = "category";
-    /// <summary>问题详情页，参数为问题 id（string）。</summary>
-    public const string Problem = "problem";
-    /// <summary>日志分析页（从诊断页 / 设置页进入，无独立导航项）。</summary>
-    public const string Logs = "logs";
-
-    /// <summary>直播间场景模板页（一级导航）。</summary>
-    public const string Templates = "templates";
-    /// <summary>OBS 配置管理页：备份 / 导入导出 / 重置（从设置页进入，无独立导航项）。</summary>
-    public const string ObsConfig = "obsconfig";
-
-    /// <summary>系统资源监控页（一级导航）。</summary>
-    public const string Performance = "performance";
-
-    /// <summary>OBS 插件广场：常用插件的分类导航与官方下载跳转（一级导航）。</summary>
-    public const string Plugins = "plugins";
-
-    /// <summary>工具箱：录像工具 / 参数处方 / 隐私清单 / 冲突扫描 / 带宽计算 / 版本情报（一级导航，V2.6）。</summary>
-    public const string Toolbox = "toolbox";
-}
-
 /// <summary>
 /// 极简的页面导航。
 ///
 /// 取代 Blazor 的 &lt;Router&gt;：路由名 → 页面工厂，页面实例缓存复用（避免每次切页重建列表），
 /// 并维护一个前进 / 后退栈供顶栏的「返回」按钮使用。
+/// 路由名常量在 <see cref="Routes"/>（单独一个文件，便于被单测链接校验）。
 /// </summary>
 public sealed class NavigationService
 {

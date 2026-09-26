@@ -157,18 +157,29 @@
     <!--
       覆盖整窗（含左侧导航），首启时铺在界面上方；步骤文案与游标逻辑在 Services/Shell/OnboardingGuide.cs
       （纯逻辑、有单测），这里只负责渲染。进度点由代码按步骤数动态生成，改动步骤数不需要动 XAML。
+
+      V2.9.1「跳转式引导」：
+      1) 每一步都会自动把界面切到对应页面（Console / 首页 / 诊断 / 搭建），步骤说明再配上
+         「本步对应页面」胶囊与额外的跳转按钮 —— 不再只是念文案；
+      2) 卡片因此从正中挪到右下角、变暗层压到 0.35（≈17% 黑）：页面被卡片和遮罩盖住的话，
+         跳转了也看不见，这是「跳转式引导」的关键取舍。
+      遮罩仍然拦住底下的点击（保持「跟着引导走」的语义），热键同理（见 OnFindExecuted / OnBrowseBackExecuted）。
     -->
     <Grid x:Name="OnboardingLayer" Grid.ColumnSpan="2"
-          Background="{DynamicResource OverlayBrush}"
           Visibility="Collapsed"
           IsHitTestVisible="True">
+      <!-- 变暗层：兼作点击拦截层（Border 有背景即可命中测试，铺满整个覆盖层）。
+           透明度刻意压得很轻（OverlayBrush 本身已是 50% 黑，这里再乘 0.35 ≈ 17%）：
+           引导的重点是「看界面」，遮罩太重会把刚跳过去的页面压得看不清。 -->
+      <Border Background="{DynamicResource OverlayBrush}" Opacity="0.35" />
+
       <Border x:Name="OnboardingCard"
               Background="{DynamicResource SurfaceBrush}"
               BorderBrush="{DynamicResource LineBrush}" BorderThickness="1"
               CornerRadius="{DynamicResource CornerRadiusLg}"
               Effect="{DynamicResource CardShadowStrong}"
-              Width="560" Padding="32,28"
-              HorizontalAlignment="Center" VerticalAlignment="Center">
+              Width="500" Padding="26,22"
+              HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="0,0,20,20">
         <StackPanel>
           <TextBlock Text="欢迎使用 OBS 排障助手" FontWeight="SemiBold"
                      FontSize="{DynamicResource FontSizeXl}"
@@ -178,27 +189,41 @@
                      FontSize="{DynamicResource FontSizeSm}"
                      Foreground="{DynamicResource MutedBrush}" />
 
-          <Border Style="{StaticResource HLine}" Margin="0,16,0,0" />
+          <Border Style="{StaticResource HLine}" Margin="0,14,0,0" />
 
           <TextBlock x:Name="OnbStepTitle" Text="" FontWeight="SemiBold"
-                     Margin="0,16,0,0" TextWrapping="Wrap"
+                     Margin="0,14,0,0" TextWrapping="Wrap"
                      FontSize="{DynamicResource FontSizeMd}"
                      Foreground="{DynamicResource BrandBrush}" />
-          <TextBlock x:Name="OnbStepDesc" Text="" LineHeight="22"
-                     TextWrapping="Wrap" Margin="0,10,0,0"
+          <TextBlock x:Name="OnbStepDesc" Text="" LineHeight="20"
+                     TextWrapping="Wrap" Margin="0,9,0,0"
                      FontSize="{DynamicResource FontSizeSm}"
                      Foreground="{DynamicResource MutedBrush}" />
 
+          <!-- 本步自动跳转到的页面：名字取自主窗口路由表，跟着页面标题走，不会写错 -->
+          <StackPanel x:Name="OnbTargetRow" Orientation="Horizontal" Margin="0,12,0,0">
+            <TextBlock Text="本步对应页面" Style="{StaticResource CaptionText}"
+                       VerticalAlignment="Center" />
+            <Border Style="{StaticResource Pill}" Margin="7,0,0,0">
+              <TextBlock x:Name="OnbTargetText" Text="" FontWeight="SemiBold"
+                         FontSize="{DynamicResource FontSizeXs}"
+                         Foreground="{DynamicResource BrandBrush}" />
+            </Border>
+          </StackPanel>
+
+          <!-- 额外跳转按钮：本步提到的其它页面（内部路由）+ 官方下载入口（站外） -->
+          <WrapPanel x:Name="OnbLinks" Margin="0,10,0,0" />
+
           <!-- 进度指示：圆点数量在代码里按 OnboardingGuide.Steps 动态生成 -->
           <StackPanel x:Name="OnbDots" Orientation="Horizontal"
-                      HorizontalAlignment="Center" Margin="0,22,0,0" />
+                      HorizontalAlignment="Center" Margin="0,16,0,0" />
 
           <TextBlock x:Name="OnbStepCounter" Text="" HorizontalAlignment="Center"
-                     Margin="0,10,0,0"
+                     Margin="0,8,0,0"
                      FontSize="{DynamicResource FontSizeXs}"
                      Foreground="{DynamicResource MutedBrush}" />
 
-          <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,18,0,0">
+          <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,14,0,0">
             <Button x:Name="OnbSkipBtn" Content="跳过" Style="{StaticResource GhostButton}"
                     Padding="12,7" Margin="0,0,8,0" Click="OnbSkipBtn_Click" />
             <Button x:Name="OnbBackBtn" Content="上一步" Style="{StaticResource SecondaryButton}"
@@ -208,10 +233,10 @@
                     Padding="18,8" Click="OnbNextBtn_Click" />
           </StackPanel>
 
-          <TextBlock Text="随时可在「设置 → 新手引导」里重新播放本引导。"
-                     HorizontalAlignment="Right" Margin="0,10,0,0"
+          <TextBlock Text="引导会带着界面一起跳页；随时可在「设置 → 新手引导」里重新播放。"
+                     HorizontalAlignment="Right" Margin="0,9,0,0"
                      FontSize="{DynamicResource FontSizeXs}"
-                     Foreground="{DynamicResource MutedBrush}" />
+                     Foreground="{DynamicResource MutedBrush}" TextWrapping="Wrap" />
         </StackPanel>
       </Border>
     </Grid>

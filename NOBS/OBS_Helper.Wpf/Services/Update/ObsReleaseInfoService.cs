@@ -46,16 +46,9 @@ public sealed class ObsReleaseInfoService
     /// <summary>获取最新 Release 信息；失败回退缓存；两者皆无返回 null。</summary>
     public async Task<ObsReleaseInfo?> GetLatestAsync()
     {
-        try
+        var json = await FetchLatestReleaseJsonAsync().ConfigureAwait(false);
+        if (json is not null)
         {
-            using var req = new HttpRequestMessage(HttpMethod.Get, ApiUrl);
-            req.Headers.UserAgent.ParseAdd("OBS-Helper/2.6");
-            req.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/vnd.github+json"));
-
-            using var resp = await _http.SendAsync(req).ConfigureAwait(false);
-            resp.EnsureSuccessStatusCode();
-            var json = await resp.Content.ReadAsStringAsync().ConfigureAwait(false);
-
             var info = Parse(json);
             if (info is not null)
             {
@@ -63,12 +56,97 @@ public sealed class ObsReleaseInfoService
                 return info with { Source = "live" };
             }
         }
-        catch (Exception ex)
-        {
-            FileLogger.Info("ObsRelease", $"在线获取失败，尝试缓存：{ex.Message}");
-        }
 
         return ReadCache();
+    }
+
+    /// <summary>拉取 <c>releases/latest</c> 的原始 JSON；失败返回 null（内部已记日志）。</summary>
+    private async Task<string?> FetchLatestReleaseJsonAsync()
+    {
+        try
+        {
+            using var req = new HttpRequestMessage(HttpMethod.Get, ApiUrl);
+            req.Headers.UserAgent.ParseAdd("OBS-Helper/" + Host.HostBridge.AppVersion);
+            req.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/vnd.github+json"));
+
+            using var resp = await _http.SendAsync(req).ConfigureAwait(false);
+            resp.EnsureSuccessStatusCode();
+            return await resp.Content.ReadAsStringAsync().ConfigureAwait(false);
+        }
+        catch (Exception ex)
+        {
+            FileLogger.Info("ObsRelease", $"在线获取失败（{ApiUrl}）：{ex.Message}");
+            return null;
+        }
+    }
+
+    // -------------------------------------------------------------- 下载直链（V2.9.1）
+
+    /// <summary>安装包直链解析结果：<paramref name="IsDirect"/> 为 false 时 Url 是发布页（退化入口）。</summary>
+    public sealed record ObsInstallerLink(string Url, string? Version, bool IsDirect);
+
+    /// <summary>直链解析结果的内存缓存有效期：成功 6 小时（与版本情报同口径），失败只退避 2 分钟。</summary>
+    private static readonly TimeSpan InstallerCacheTtl = TimeSpan.FromHours(6);
+
+    /// <summary>
+    /// 解析失败（退化为发布页）后的退避时间。没有这段退避时，用户连点几次按钮就会连打几次
+    /// GitHub API，每次都卡到 HTTP 超时；2 分钟足够避开连点，又不至于让「刚恢复的网络」等太久。
+    /// </summary>
+    private static readonly TimeSpan InstallerFallbackTtl = TimeSpan.FromMinutes(2);
+
+    /// <summary>串行化解析（缓存 + 请求），避免并发点击时打多份请求。</summary>
+    private readonly SemaphoreSlim _installerLock = new(1, 1);
+
+    private ObsInstallerLink? _installerCache;
+    private DateTime _installerCachedAtUtc;
+    private TimeSpan _installerCacheTtl = TimeSpan.Zero;
+
+    /// <summary>
+    /// 取「当前稳定版 Windows x64 安装包」的官方直链。
+    /// 拿不到直链（网络失败 / 资产改名 / 响应被篡改）时退化为官方发布页链接，<c>IsDirect=false</c>。
+    /// 永不抛异常，永不返回第三方站点地址。
+    /// </summary>
+    public async Task<ObsInstallerLink> GetWindowsInstallerLinkAsync()
+    {
+        await _installerLock.WaitAsync().ConfigureAwait(false);
+        try
+        {
+            if (_installerCache is not null && DateTime.UtcNow - _installerCachedAtUtc < _installerCacheTtl)
+            {
+                return _installerCache;
+            }
+
+            var json = await FetchLatestReleaseJsonAsync().ConfigureAwait(false);
+            var url = ObsInstallerAsset.PickWindowsInstallerUrl(json);
+            if (url is not null)
+            {
+                return Remember(new ObsInstallerLink(url, ObsInstallerAsset.PickWindowsInstallerVersion(json), true),
+                    InstallerCacheTtl);
+            }
+
+            FileLogger.Info("ObsRelease", "未能解析出 Windows 安装包直链，退化为官方发布页。");
+            return Remember(new ObsInstallerLink(ObsDownloadLinks.GitHubLatestRelease, null, false),
+                InstallerFallbackTtl);
+        }
+        catch (Exception ex)
+        {
+            FileLogger.Warn("ObsRelease", "安装包直链解析异常：" + ex.Message);
+            return Remember(new ObsInstallerLink(ObsDownloadLinks.GitHubLatestRelease, null, false),
+                InstallerFallbackTtl);
+        }
+        finally
+        {
+            _installerLock.Release();
+        }
+    }
+
+    /// <summary>写入缓存并返回该结果（成功与失败用不同的 TTL，见两个 TTL 常量的注释）。</summary>
+    private ObsInstallerLink Remember(ObsInstallerLink link, TimeSpan ttl)
+    {
+        _installerCache = link;
+        _installerCachedAtUtc = DateTime.UtcNow;
+        _installerCacheTtl = ttl;
+        return link;
     }
 
     // -------------------------------------------------------------- 解析

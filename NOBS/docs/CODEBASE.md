@@ -29,7 +29,7 @@ NOBS/
 | `App.xaml` | - | 应用资源字典装配（主题、图标、控件样式）。 |
 | `App.xaml.cs` | - | 启动入口：单实例 Mutex、异常三挂钩（Dispatcher/AppDomain/Unobserved）、启动服务装配、`HeadlessTest` 自检模式、新手引导重播事件。 |
 | `AppServices.cs` | 125 | 组合根：20 个服务的手工 Lazy 单例装配（刻意不用 DI 容器）。 |
-| `MainWindow.xaml` / `.xaml.cs` | - | 主窗口：导航框架、页面路由表、页面过渡动画、托盘联动、**新手引导覆盖层**（首次启动分步引导 + 设置页即时重播）。 |
+| `MainWindow.xaml` / `.xaml.cs` | - | 主窗口：导航框架、页面路由表、页面过渡动画、托盘联动、**新手引导覆盖层**（首启分步引导 + 设置页即时重播；V2.9.1 起每步自动跳转到对应页面并渲染站内/站外跳转按钮）。 |
 | `app.manifest` | - | Windows 清单（DPI 感知、执行级别）。 |
 
 ### 2.2 Models（数据模型）
@@ -116,7 +116,10 @@ NOBS/
 | `Services/ObsConfig/ColorCheckService.cs` | - | 色彩体检服务（V2.7）：配置定位链路 + 只读读取 basic.ini。 |
 | `Services/Audio/SampleRateCheckCore.cs` | - | 音频采样率体检纯逻辑（V2.7）：OBS 与系统设备采样率一致性判定。 |
 | `Services/Audio/SampleRateCheckService.cs` | - | 采样率体检服务（V2.7）：注册表 MMDevices 只读枚举活动设备共享模式采样率。 |
-| `Services/Update/ObsReleaseInfoService.cs` | 180 | OBS 新版本情报（V2.6）：GitHub 最新 Release 拉取 + 本地缓存回退，永不抛异常。 |
+| `Services/Update/ObsReleaseInfoService.cs` | 180 | OBS 新版本情报（V2.6）：GitHub 最新 Release 拉取 + 本地缓存回退，永不抛异常；V2.9.1 起兼作「当前稳定版 Windows 安装包直链」解析入口。 |
+| `Services/Update/KnowledgeBaseUrls.cs` | - | **知识库 / 插件目录 raw 主通道地址常量**（V2.9.1）：仓库根下是 `NOBS/`，路径缺这段会静默 404；纯常量、可单测（形状 + 本机源码树落地校验）。 |
+| `Services/Update/ObsDownloadLinks.cs` | - | **官方 OBS 下载入口常量与白名单**（V2.9.1）：官网 / 官方 GitHub 两类地址 + `IsOfficialDownloadUrl`（https + 域名白名单）。 |
+| `Services/Update/ObsInstallerAsset.cs` | - | **Windows 安装包直链解析纯逻辑**（V2.9.1）：从 `releases/latest` JSON 中挑 `*-Windows-x64-Installer.exe` 并校验官方域名，永不抛异常。 |
 | `Services/FileLogger.cs` | 104 | 文件日志（跨日滚动）。 |
 | `Services/TraceLoggerListener.cs` | 23 | Trace 输出接 FileLogger。 |
 | `Services/ToastService.cs` | 80 | 全局轻提示（统一 Toast）。 |
@@ -150,6 +153,7 @@ NOBS/
 | `Controls/ConnectionBadge.xaml(.cs)` | 连接状态徽章。 |
 | `Controls/ConfirmDialog.xaml(.cs)` | 通用确认对话框。 |
 | `Controls/UpdateDialog.xaml(.cs)` | 更新提示对话框（四选一：蓝奏云/应用内/GitHub/稍后）。 |
+| `Controls/ObsDownloadCard.xaml(.cs)` | **官方 OBS 下载卡**（V2.9.1）：官网下载页 / 官方 GitHub 发布页 / 当前稳定版 Windows 安装包直链；搭建页与工具箱共用同一枚控件。 |
 
 ### 2.5 Views（页面）
 
@@ -189,6 +193,7 @@ NOBS/
 
 | 文件 | 职责 |
 |---|---|
+| `Navigation/Routes.cs` | 应用内路由名常量表（纯常量、零 WPF 依赖，V2.9.1 起独立成文件，供单测校验引导跳转目标）。 |
 | `Navigation/NavigationService.cs` | 页面导航服务（路由 → 页面实例、参数传递、缓存策略）。 |
 | `Errors/ErrorCodes.cs` | 统一错误码表与用户可读说明（含解决建议）。 |
 
@@ -246,8 +251,10 @@ NOBS/
 - **改场景模板** → `Services/ObsConfig/SceneTemplateService.cs` + `Assets/scene_templates.json`
 - **改日志分析 / 脱敏** → `ObsLogAnalyzer.cs`、`LogSanitizer.cs`
 - **改更新逻辑** → `UpdateService.cs`、`Controls/UpdateDialog.xaml(.cs)`
+- **改知识库热更新（raw 通道地址 / 兜底）** → `Services/Update/KnowledgeBaseUrls.cs`（地址常量 + 单测）、`KnowledgeBaseUpdater.cs`（双通道逻辑）
+- **改官方 OBS 下载入口** → `Services/Update/ObsDownloadLinks.cs`（地址与白名单）、`ObsInstallerAsset.cs`（直链解析）、`Controls/ObsDownloadCard.xaml(.cs)`（卡片外观）
 - **改托盘 / 热键 / 小窗 / 监控** → `Services/Shell/`
 - **改主题 / 样式** → `Themes/`（Palette / Controls / Icons）+ `AppearanceService.cs`
 - **改页面 UI** → `Views/` + `Controls/`
-- **改新手引导（步骤文案 / 顺序）** → `Services/Shell/OnboardingGuide.cs`（文案与游标纯逻辑）+ `MainWindow.xaml`（覆盖层外观）；设置页入口在 `Views/SettingsPage.xaml(.cs)`
+- **改新手引导（步骤文案 / 顺序 / 跳转目标）** → `Services/Shell/OnboardingGuide.cs`（文案、游标、每步对应路由与跳转按钮等纯逻辑）+ `MainWindow.xaml`（覆盖层外观）+ `MainWindow.xaml.cs`（自动跳转与按钮渲染）；设置页入口在 `Views/SettingsPage.xaml(.cs)`
 - **改插件广场数据（收录 / 维护状态）** → `Assets/plugins.json` + `docs/PLUGIN_AUDIT_2026-09.md`（复核报告），模型在 `Services/Plugins/PluginCatalog.cs`

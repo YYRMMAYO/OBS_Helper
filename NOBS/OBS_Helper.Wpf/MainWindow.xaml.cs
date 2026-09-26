@@ -10,6 +10,7 @@ using OBS_Helper.Wpf.Controls;
 using OBS_Helper.Wpf.Navigation;
 using OBS_Helper.Wpf.Services;
 using OBS_Helper.Wpf.Services.Shell;
+using OBS_Helper.Wpf.Services.Update;
 using OBS_Helper.Wpf.Views;
 
 namespace OBS_Helper.Wpf;
@@ -229,7 +230,7 @@ public partial class MainWindow : Window
     /// <summary>覆盖层是否正盖在界面上（用于屏蔽导航热键）。</summary>
     private bool IsOnboardingVisible => OnboardingLayer.Visibility == Visibility.Visible;
 
-    /// <summary>渲染当前步骤（文案 + 进度点 + 按钮状态）。越界下标由 OnboardingGuide 夹取。</summary>
+    /// <summary>渲染当前步骤（文案 + 对应页面 + 跳转按钮 + 进度点 + 按钮状态）。越界下标由 OnboardingGuide 夹取。</summary>
     private void RenderOnboardingStep()
     {
         _onboardingStep = OnboardingGuide.Clamp(_onboardingStep);
@@ -258,7 +259,93 @@ public partial class MainWindow : Window
             ? Visibility.Collapsed
             : Visibility.Visible;
 
+        // V2.9.1：把界面切到本步对应的页面，并列出本步提到的其它页面
+        BuildOnboardingLinks(step);
+        ShowStepTargetPage(step);
+
         AnimateOnboardingText();
+    }
+
+    /// <summary>路由名 → 主窗口路由表里的页面标题（取不到时回退路由名本身）。</summary>
+    private string PageNameOf(string route)
+    {
+        if (string.IsNullOrEmpty(route)) return "";
+        return _meta.TryGetValue(route, out var meta) && !string.IsNullOrWhiteSpace(meta.Title)
+            ? meta.Title
+            : route;
+    }
+
+    /// <summary>
+    /// 展示本步对应页面：先在卡片上写明「本步对应页面」，再把界面导航过去。
+    ///
+    /// 用 <c>pushHistory: false</c>：引导的跳转不该进入「返回」栈（否则用户点几次返回
+    /// 会在引导介绍过的页面之间来回跳，与刚讲完的内容对不上）。
+    /// 跳转失败（路由没注册）由 NavigationService 转成报错码，不影响引导继续走。
+    /// </summary>
+    private void ShowStepTargetPage(OnboardingStep step)
+    {
+        var name = PageNameOf(step.Route);
+        OnbTargetText.Text = name;
+        OnbTargetRow.Visibility = string.IsNullOrEmpty(name) ? Visibility.Collapsed : Visibility.Visible;
+
+        if (string.IsNullOrEmpty(name)) return;
+
+        var nav = AppServices.Navigation;
+        if (nav is null) return;
+        if (string.Equals(nav.CurrentRoute, step.Route, StringComparison.OrdinalIgnoreCase)) return;
+
+        nav.Navigate(step.Route, pushHistory: false);
+    }
+
+    /// <summary>
+    /// 生成本步的跳转按钮：统一用次要按钮（可点的观感一致），站外链接加 ↗ 前缀、
+    /// 站内页面加 → 后缀，用于区分「切页面」和「开浏览器」。
+    /// 按钮数量随步骤变化，每次渲染重建（每步最多 4 个，开销可忽略）。
+    /// </summary>
+    private void BuildOnboardingLinks(OnboardingStep step)
+    {
+        OnbLinks.Children.Clear();
+
+        foreach (var link in step.Links)
+        {
+            var label = link.External ? "↗ " + link.Label : link.Label + " →";
+            var button = new Button
+            {
+                Style = (Style)FindResource("SecondaryButton"),
+                Content = label,
+                Tag = link,
+                Padding = new Thickness(12, 6, 12, 6),
+                Margin = new Thickness(0, 0, 8, 6),
+                ToolTip = link.External ? "用默认浏览器打开官方页面" : $"打开「{PageNameOf(link.Target)}」"
+            };
+            button.Click += OnOnboardingLinkClick;
+            OnbLinks.Children.Add(button);
+        }
+
+        OnbLinks.Visibility = OnbLinks.Children.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
+    }
+
+    /// <summary>点引导卡片上的跳转按钮：站内切页面（不进返回栈），站外交给系统浏览器。</summary>
+    private async void OnOnboardingLinkClick(object sender, RoutedEventArgs e)
+    {
+        if (sender is not Button { Tag: OnboardingLink link }) return;
+
+        try
+        {
+            if (link.External)
+            {
+                var ok = await AppServices.Host.OpenExternalAsync(link.Target).ConfigureAwait(true);
+                if (!ok) AppServices.Toast.Show("打不开浏览器，请手动访问 " + link.Target, "error");
+                return;
+            }
+
+            AppServices.Navigation?.Navigate(link.Target, pushHistory: false);
+        }
+        catch (Exception ex)
+        {
+            // 引导里的跳转失败不该打断引导
+            FileLogger.Warn("Onboarding", $"引导跳转失败（{link.Target}）：{ex.Message}");
+        }
     }
 
     /// <summary>步骤文字淡入（每次切步都重播，给「翻页」以视觉反馈）。</summary>
@@ -297,6 +384,9 @@ public partial class MainWindow : Window
         void AfterHide()
         {
             OnboardingLayer.Visibility = Visibility.Collapsed;
+            // 引导过程里为了展示页面做过多次导航，清掉历史：避免用户上手第一下点「返回」
+            // 退回到某个只是被引导介绍过的页面。
+            _nav.ClearHistory();
             ResumeDeferredUpdateCheck();
         }
 
@@ -355,6 +445,15 @@ public partial class MainWindow : Window
         OnboardingLayer.Visibility = Visibility.Collapsed;
         ShowOnboarding();
     }
+
+    /// <summary>
+    /// 等 UI 调度队列里「当前及更早优先级」的工作跑完。
+    /// 自检需要等 <c>NavigationService.Navigate</c>（async void）把跳转真正落地再断言：
+    /// 这里在 Background 优先级插入一个空操作，排在它前面的 Normal / Loaded 级工作（含导航链路）
+    /// 会先执行完，返回时 <c>CurrentRoute</c> 已确定。
+    /// </summary>
+    private Task WaitForUiIdleAsync()
+        => Dispatcher.InvokeAsync(() => { }, System.Windows.Threading.DispatcherPriority.Background).Task;
 
     /// <summary>
     /// 启动静默维护（fire-and-forget）：
@@ -498,28 +597,59 @@ public partial class MainWindow : Window
             }
         }
 
-        // 新手引导覆盖层（V2.9.0）：逐步渲染 + 显隐，拦截 FindResource 取不到资源、
-        // 步骤越界一类只有在展示时才会炸的错误。自检不动偏好（不调用 FinishOnboarding），
+        // 新手引导覆盖层（V2.9.0 / V2.9.1）：逐步渲染 + 显隐，拦截 FindResource 取不到资源、
+        // 步骤越界、跳转目标路由不存在一类只有在展示时才会炸的错误。自检不动偏好（不调用 FinishOnboarding），
         // 避免把开发机的「已完成」标记真的写掉。
+        //
+        // 每一步走**生产路径**：RenderOnboardingStep 内部用 NavigationService.Navigate 触发跳转
+        // （async void），这里靠 WaitForUiIdleAsync 等调度队列跑完再断言 —— 不再自检里单独 await
+        // 一次 NavigateAsync 代劳，否则「引导真的会自动跳页」这件事根本没被验证。
         try
         {
             ShowOnboarding();
+            var onboardingProblems = new List<string>();
+            var errorsBeforeOnboarding = App.HeadlessErrors.Count;
+
             for (var i = 0; i < OnboardingGuide.StepCount; i++)
             {
+                var step = OnboardingGuide.Step(i);
+
                 _onboardingStep = i;
                 RenderOnboardingStep();
+                await WaitForUiIdleAsync().ConfigureAwait(true);
+
+                // OnbTargetText 在路由名查不到时会回退成路由名本身，所以「读到的不是路由名」即证明
+                // 这一步的路由确实在主窗口路由表里（否则界面上会出现 home / console 这种英文名）。
+                if (string.IsNullOrWhiteSpace(OnbTargetText.Text))
+                    onboardingProblems.Add($"第 {i + 1} 步没有显示对应页面");
+                else if (string.Equals(OnbTargetText.Text, step.Route, StringComparison.OrdinalIgnoreCase))
+                    onboardingProblems.Add($"第 {i + 1} 步的页面名未命中路由表（{step.Route}）");
+                if (OnbLinks.Children.Count != step.Links.Count)
+                    onboardingProblems.Add($"第 {i + 1} 步跳转按钮 {OnbLinks.Children.Count}/{step.Links.Count}");
+                if (!string.Equals(AppServices.Navigation?.CurrentRoute, step.Route, StringComparison.OrdinalIgnoreCase))
+                    onboardingProblems.Add($"第 {i + 1} 步未跳转到 {step.Route}（当前 {AppServices.Navigation?.CurrentRoute}）");
+                foreach (var link in step.Links.Where(l => l.External))
+                {
+                    if (!ObsDownloadLinks.IsOfficialDownloadUrl(link.Target))
+                        onboardingProblems.Add($"第 {i + 1} 步外链不在官方域名下：{link.Target}");
+                }
             }
 
             var stepTitleOk = !string.IsNullOrWhiteSpace(OnbStepTitle.Text);
             var dotsOk = OnbDots.Children.Count == OnboardingGuide.StepCount;
             var buttonsOk = OnbNextBtn.Content is not null && OnbBackBtn.Content is not null;
-            if (!stepTitleOk || !dotsOk || !buttonsOk)
+            if (!stepTitleOk || !dotsOk || !buttonsOk || onboardingProblems.Count > 0)
             {
-                results.Add($"FAIL  onboarding -> 渲染结果异常（标题={stepTitleOk} 圆点={OnbDots.Children.Count}/{OnboardingGuide.StepCount} 按钮={buttonsOk}）");
+                results.Add($"FAIL  onboarding -> 渲染结果异常（标题={stepTitleOk} 圆点={OnbDots.Children.Count}/{OnboardingGuide.StepCount} 按钮={buttonsOk}"
+                    + (onboardingProblems.Count > 0 ? $"，问题：{string.Join("；", onboardingProblems)}" : "") + "）");
+            }
+            else if (App.HeadlessErrors.Count > errorsBeforeOnboarding)
+            {
+                results.Add($"FAIL  onboarding -> 跳转过程报错 {App.HeadlessErrors.Count - errorsBeforeOnboarding} 处");
             }
             else
             {
-                results.Add($"PASS  onboarding ({OnboardingGuide.StepCount} 步渲染 + 进度点 + 显隐)");
+                results.Add($"PASS  onboarding ({OnboardingGuide.StepCount} 步渲染 + 逐步跳转 + 进度点 + 显隐)");
             }
         }
         catch (Exception ex)

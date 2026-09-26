@@ -1,3 +1,5 @@
+using System.Reflection;
+using OBS_Helper.Wpf.Navigation;
 using OBS_Helper.Wpf.Services.Shell;
 
 namespace OBS_Helper.Wpf.Tests;
@@ -7,9 +9,20 @@ namespace OBS_Helper.Wpf.Tests;
 ///
 /// 引导是首启的第一印象，文案写空、步数越界、标记判断反了这类问题在 UI 上很难自动发现，
 /// 因此在纯逻辑层钉死。
+///
+/// V2.9.1 追加：**跳转目标**（步骤对应的页面与卡片上的跳转按钮）也在这里校验 ——
+/// 引导会带着界面自动翻页，路由名写错的话用户看到的是「文案讲 A 页、界面停在 B 页」，
+/// 比纯文字引导更糟。
 /// </summary>
 public class OnboardingGuideTests
 {
+    /// <summary>Routes 里定义的全部路由名（反射取常量，避免手工维护第二份清单）。</summary>
+    private static HashSet<string> AllRoutes() => typeof(Routes)
+        .GetFields(BindingFlags.Public | BindingFlags.Static | BindingFlags.FlattenHierarchy)
+        .Where(f => f is { IsLiteral: true, IsInitOnly: false } && f.FieldType == typeof(string))
+        .Select(f => (string)f.GetRawConstantValue()!)
+        .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
     [Fact]
     public void Steps_ArePresentAndWellFormed()
     {
@@ -28,6 +41,69 @@ public class OnboardingGuideTests
     {
         var titles = OnboardingGuide.Steps.Select(s => s.Title).ToList();
         Assert.Equal(titles.Count, titles.Distinct(StringComparer.Ordinal).Count());
+    }
+
+    [Fact]
+    public void StepRoutes_AreRegisteredRouteNames()
+    {
+        var routes = AllRoutes();
+        Assert.NotEmpty(routes);
+
+        foreach (var step in OnboardingGuide.Steps)
+        {
+            Assert.False(string.IsNullOrWhiteSpace(step.Route), $"步骤「{step.Title}」没有配置跳转页面");
+            Assert.Contains(step.Route, routes);
+        }
+    }
+
+    [Fact]
+    public void StepRoutes_AreDistinct()
+    {
+        // 每步自动跳到同一个页面等于没跳，这里钉住「一步一个页面」
+        var routes = OnboardingGuide.Steps.Select(s => s.Route).ToList();
+        Assert.Equal(routes.Count, routes.Distinct(StringComparer.OrdinalIgnoreCase).Count());
+    }
+
+    [Fact]
+    public void StepLinks_AreWellFormedAndResolvable()
+    {
+        var routes = AllRoutes();
+
+        foreach (var step in OnboardingGuide.Steps)
+        {
+            Assert.NotNull(step.Links);
+
+            foreach (var link in step.Links)
+            {
+                Assert.False(string.IsNullOrWhiteSpace(link.Label), $"步骤「{step.Title}」有跳转按钮没写文案");
+                Assert.False(string.IsNullOrWhiteSpace(link.Target), $"步骤「{step.Title}」的「{link.Label}」没写目标");
+
+                if (link.External)
+                {
+                    // 站外链接只允许官方域名：引导里的外链最容易变成「点了直接中招」的入口
+                    Assert.True(Services.Update.ObsDownloadLinks.IsOfficialDownloadUrl(link.Target),
+                        $"站外跳转不在官方域名下：{link.Label} → {link.Target}");
+                }
+                else
+                {
+                    Assert.Contains(link.Target, routes);
+                }
+            }
+        }
+    }
+
+    [Fact]
+    public void StepLinks_DoNotContradictStepRoute()
+    {
+        // 卡片上的「站内跳转按钮」不该指向本步已经自动打开的页面（点了没反应，像坏了）
+        foreach (var step in OnboardingGuide.Steps)
+        {
+            foreach (var link in step.Links.Where(l => !l.External))
+            {
+                Assert.False(string.Equals(step.Route, link.Target, StringComparison.OrdinalIgnoreCase),
+                    $"步骤「{step.Title}」的跳转按钮「{link.Label}」指向了本步已经自动打开的页面");
+            }
+        }
     }
 
     [Fact]

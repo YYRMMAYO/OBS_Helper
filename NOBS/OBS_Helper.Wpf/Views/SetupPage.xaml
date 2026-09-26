@@ -1,12 +1,20 @@
 <UserControl x:Class="OBS_Helper.Wpf.Views.SetupPage"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:ctl="clr-namespace:OBS_Helper.Wpf.Controls">
   <ScrollViewer Style="{StaticResource PageScroll}">
     <StackPanel Margin="22,18,22,26">
 
       <!-- 页面大标题在 MainWindow 顶栏，这里只保留原版的引导文案 -->
       <TextBlock Style="{StaticResource MutedText}"
                  Text="按阶段一步步搭建，选择平台可直达对应接入指南。" />
+
+      <!--
+        获取官方 OBS（V2.9.1）：搭建流程第一步是「准备与权限」，但更前置的问题是
+        「机器上还没有 OBS / 装到了下载站的仿冒包」。把官方入口放在流程之前。
+      -->
+      <TextBlock Style="{StaticResource SectionTitle}" Text="获取官方 OBS" Margin="0,18,0,10" />
+      <ctl:ObsDownloadCard />
 
       <TextBlock Style="{StaticResource SectionTitle}" Text="搭建流程" Margin="0,18,0,10" />
       <StackPanel x:Name="FlowPanel" />

@@ -32,6 +32,22 @@
                        Foreground="{DynamicResource BrandBrush}" />
             <TextBlock Style="{StaticResource BodyText}" Margin="0,6,0,0" TextWrapping="Wrap"
                        Text="连上本机 OBS 后，可解锁控制台远程控制、一键智能诊断与场景模板落地。现在先用知识库排查问题也同样顺畅。" />
+            <!--
+              获取官方 OBS（V2.9.1）：这张卡只在「未连上 OBS」时出现，正好覆盖
+              「机器上还没有 OBS / 装到了下载站的仿冒包」这类用户，给两条官方入口。
+            -->
+            <StackPanel Orientation="Horizontal" Margin="0,9,0,0">
+              <TextBlock Style="{StaticResource CaptionText}" VerticalAlignment="Center"
+                         Text="还没装 OBS？" />
+              <Button Content="官网下载页" Style="{StaticResource LinkButton}"
+                      Margin="6,0,0,0" Click="OnOpenObsDownload" />
+              <TextBlock Style="{StaticResource CaptionText}" VerticalAlignment="Center"
+                         Text="·" Margin="5,0,0,0" />
+              <Button Content="GitHub 发布页" Style="{StaticResource LinkButton}"
+                      Margin="5,0,0,0" Click="OnOpenObsGitHub" />
+              <TextBlock Style="{StaticResource CaptionText}" VerticalAlignment="Center"
+                         Text="· 只从这两处下载，谨防仿冒站" Margin="5,0,0,0" />
+            </StackPanel>
           </StackPanel>
           <Button Grid.Column="1" Style="{StaticResource PrimaryButton}"
                   VerticalAlignment="Center" Margin="12,0,0,0" Click="OnConnectGuideClick">

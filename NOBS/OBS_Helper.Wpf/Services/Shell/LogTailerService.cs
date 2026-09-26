@@ -68,19 +68,10 @@ public sealed class LogTailerService : IDisposable
     /// <summary>logs 目录下最新的会话日志；目录不存在 / 为空返回 null。</summary>
     internal static string? FindNewestLogFile()
     {
-        try
-        {
-            var dir = LogsDirectory;
-            if (!Directory.Exists(dir)) return null;
-            return Directory.GetFiles(dir, "*.log")
-                .Select(f => new FileInfo(f))
-                .OrderByDescending(f => f.LastWriteTimeUtc)
-                .FirstOrDefault()?.FullName;
-        }
-        catch (Exception)
-        {
-            return null;
-        }
+        // 注意：OBS 会话日志是 *.txt（不是 *.log）。V2.8 这里只扫 *.log，
+        // 结果在真实 OBS 上永远找不到文件、实时预警整条链路静默失效。
+        // 命中规则收敛到 ObsLogFileFinder 并配了单元测试，避免回归。
+        return ObsLogFileFinder.FindNewest(LogsDirectory);
     }
 
     private void PollSafe()

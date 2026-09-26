@@ -192,8 +192,11 @@ public class ObsLogAnalyzerTests
     [Fact]
     public void Analyze_EncoderTriage_Nvenc_SuggestsPresetAndFpsCap()
     {
+        // 输入对齐真实 OBS 格式：编码器标识行形如 "[jim_nvenc: 'simple_video_stream'] settings:"，
+        // 二级字段用 Tab 缩进（旧测试写成 "[jim_nvenc] bitrate: 9000"，那并不是 OBS 的真实输出）。
         var input =
-            "[jim_nvenc] bitrate: 9000\n" +
+            "[jim_nvenc: 'simple_video_stream'] settings:\n" +
+            "\tbitrate:        9000\n" +
             "skipped frames due to encoding lag: 500/10000 (5.0%)\n";
         var report = _analyzer.Analyze(input);
         var triage = report.Findings.FirstOrDefault(f => f.Code == "LOG-TRIAGE-ENCODE");

@@ -126,19 +126,47 @@ public sealed class ObsLogAnalyzer
 
     // ------------------------------------------------------------ 环境信息解析
 
+    /// <summary>
+    /// 真实 OBS 日志每行都带 "HH:mm:ss.mmm: " 前缀（如 <c>19:41:42.564: CPU Name: AMD Ryzen 9 3900X</c>），
+    /// 而早期版本的规则直接用了 <c>^</c> 纯行首锚定，在真实日志上永远匹配不到 ——
+    /// 实测 OBS 32.2.2 的真实日志里 CPU / 内存 / 系统版本 / 帧率 / 码率全部解析为空。
+    ///
+    /// 这里统一用「可选时间戳前缀」代替纯行首：既保留锚定语义（不被正文里的同名字段误伤），
+    /// 又能吃到真实日志；随后的 <c>\s*</c> 吃掉 OBS 用 Tab 缩进的二级字段。
+    /// </summary>
+    private const string LineStart = @"^(?:\d{1,2}:\d{2}:\d{2}[.,]\d{1,3}:\s*)?\s*";
+
     // OBS 日志版本行实为 "OBS 30.0.0 (64-bit, windows)"（不带 "Studio"），但个别文案/旧版会带 "Studio"，
     // 因此把 "Studio" 做成可选段，避免只认其中一种导致版本与平台永远解析不出来。
     private static readonly Regex ReVersion = new(@"OBS(?:\s+Studio)?\s+([\d.]+(?:-[\w.]+)?)\s*(?:\(([^)]+)\))?", Opts);
-    private static readonly Regex ReCpu = new(@"^\s*CPU Name:\s*(.+)$", Opts);
-    private static readonly Regex ReMemory = new(@"^\s*Physical Memory:\s*(.+)$", Opts);
-    private static readonly Regex ReWinVer = new(@"^\s*Windows Version:\s*(.+)$", Opts);
-    private static readonly Regex ReMacVer = new(@"^\s*OS Name:\s*(.+)$", Opts);
-    private static readonly Regex ReGpu = new(@"(?:Loading up D3D11 on adapter|Adapter\s*\d*:?\s*|renderer:)\s*(.+?)\s*(?:\(\d+\))?\s*$", Opts);
+    private static readonly Regex ReCpu = new(LineStart + @"CPU Name:\s*(.+)$", Opts);
+    private static readonly Regex ReMemory = new(LineStart + @"Physical Memory:\s*(.+)$", Opts);
+    private static readonly Regex ReWinVer = new(LineStart + @"Windows Version:\s*(.+)$", Opts);
+    private static readonly Regex ReMacVer = new(LineStart + @"OS Name:\s*(.+)$", Opts);
+
+    // OBS 实际用于渲染的适配器：32.x 打印 "Loading up D3D11 on adapter NVIDIA GeForce RTX 2080 Ti (0)"，
+    // 末尾括号里是适配器序号，需要剥掉。
+    private static readonly Regex ReGpuActive =
+        new(@"Loading up (?:D3D11|OpenGL|Vulkan|Metal) on adapter\s+(.+?)\s*(?:\(\d+\))?\s*$", Opts);
+
+    // 系统枚举出的适配器清单："  Adapter 0: NVIDIA GeForce RTX 2080 Ti"。
+    // 必须要求 "Adapter" 后面跟编号：早期写法把序号段做成可选（Adapter\s*\d*:?\s*），
+    // 于是 "Available Video Adapters: " 里的 "Adapters:" 被当成适配器，Gpu 被解析成垃圾值 "s:"，
+    // 连带双显卡错位检测（依赖 Adapters 与 Gpu）在任何真实日志上都失效。
+    private static readonly Regex ReGpuAdapter = new(@"Adapter\s+\d+\s*:\s*(.+?)\s*$", Opts);
+
     private static readonly Regex ReBaseRes = new(@"base resolution:\s*(\d+x\d+)", Opts);
     private static readonly Regex ReOutRes = new(@"output resolution:\s*(\d+x\d+)", Opts);
-    private static readonly Regex ReFps = new(@"^\s*fps:\s*([\d/.]+)", Opts);
-    private static readonly Regex ReEncoder = new(@"\[(x264|obs_x264|NVENC encoder|jim_nvenc|obs_qsv11|QSV Encoder|h264_texture_amf|av1_texture_amf|AMF Encoder|VideoToolbox[^\]:]*)[^\]]*\]", Opts);
-    private static readonly Regex ReBitrate = new(@"^\s*(?:bitrate|rate_control.*bitrate)[:=]\s*(\d+)", Opts);
+    private static readonly Regex ReFps = new(LineStart + @"fps:\s*([\d/.]+)", Opts);
+
+    // 编码器标识行："[obs-nvenc: 'advanced_video_stream'] settings:"、"[obs_x264: ...] settings:"。
+    // 两个历史缺陷：一是名单里没有 OBS 28 起 NVENC 的新模块名 obs-nvenc（旧名 jim_nvenc），
+    // 二是没区分「设置块」与「[obs-nvenc] NVENC version: 13.0 …」这类模块自述行。
+    // 这里要求行尾是 settings:，即 OBS 真正创建编码器时打印的那一行，语义明确且不会误配。
+    private static readonly Regex ReEncoder = new(
+        @"\[([^\]\n]{0,60}?(?:x264|nvenc|qsv|amf|av1|aom|svt|videotoolbox)[^\]\n]{0,60}?)\]\s*settings:", Opts);
+
+    private static readonly Regex ReBitrate = new(LineStart + @"(?:bitrate|rate_control.*bitrate)[:=]\s*(\d+)", Opts);
     private static readonly Regex ReSampleRate = new(@"samples per sec:\s*(\d+)", Opts);
 
     // OBS 收尾时打印的三类丢帧统计
@@ -243,7 +271,14 @@ public sealed class ObsLogAnalyzer
         // —— 音频 ——
         new() {
             Code = "LOG-AUDIO-BUFFER", Severity = LogSeverity.Warning, ProblemId = "av-desync",
-            Pattern = new Regex(@"adding \d+ milliseconds of audio buffering|Max audio buffering reached", Opts),
+            // 「音频缓冲不断增长」的信号是总量在涨，而不是「出现过缓冲」：真实 OBS 日志每次启动
+            // 都会打印一行 "adding 42 milliseconds of audio buffering, total audio buffering is now
+            // 42 milliseconds"（实测 OBS 32.2.2），按原文匹配会让每个健康日志都报一条警告。
+            // 这里改为只在总量 ≥ 100ms（真正值得关注的量）或 OBS 明确报出缓冲上限时才提示；
+            // 「添加量 == 总量」这种一次性初始缓冲不再误报。
+            Pattern = new Regex(
+                @"adding \d+ milliseconds of audio buffering, total audio buffering is now [1-9]\d{2,} milliseconds|Max audio buffering reached",
+                Opts),
             Title = "音频缓冲不断增长（音画不同步风险）",
             Suggestion = "把所有音频设备的采样率统一为 48 kHz；减少 USB 声卡/蓝牙设备；必要时给对应源设置同步偏移。"
         },
@@ -349,9 +384,21 @@ public sealed class ObsLogAnalyzer
         // —— 色彩 / 画质（V2.7）——
         new() {
             Code = "LOG-COLOR-RANGE", Severity = LogSeverity.Info, ProblemId = "cf-colorrange",
-            Pattern = new Regex(@"(?:color|colour)[_ ]?range:?\s*full\b", Opts),
+            // OBS 30 前后的日志格式变了：老版打印独立的 "color range: Full" / "color space: Rec. 709"，
+            // 32.x 合并成一行 "YUV mode:          Rec. 709/Partial"（色彩空间/范围）。
+            // 只认老格式的话，新版日志里这条规则永远不会命中，色彩范围体检在日志侧等于失效。
+            Pattern = new Regex(@"(?:color|colour)[_ ]?range:?\s*full\b|yuv\s+mode:\s*[^\n]*?/\s*full\b", Opts),
             Title = "色彩范围设置为 Full（画面发灰的常见原因）",
             Suggestion = "Full 范围在多数直播平台按 Limited 解读，观众端会发灰、对比度下降；本地播放正常不代表观众端正常。除非全链路确认为 Full，建议改回 Limited。详见知识库条目。"
+        },
+
+        new() {
+            Code = "LOG-PLUGIN-DUPLICATE", Severity = LogSeverity.Warning, ProblemId = "cr-plugin",
+            // 实测真实日志：同一插件存在两份副本时 OBS 会告警
+            // "Dock id 'obs-helper-dock' already used!  Duplicate library?"
+            Pattern = new Regex(@"Duplicate library|Dock id '[^']+' already used", Opts),
+            Title = "插件重复安装（同一模块被注册两次）",
+            Suggestion = "OBS 报「already used / Duplicate library」，说明同一个插件在本机存在两份副本：常见于更新插件时旧文件没被覆盖，或同时装在 OBS 安装目录与全局插件目录（%ProgramData%\\obs-studio\\plugins）。只保留一份后完全退出并重启 OBS；「插件」页的本机体检可列出已装插件与版本，便于逐项对照。"
         },
 
         // —— 推流网络补充（V2.7）——
@@ -531,30 +578,31 @@ public sealed class ObsLogAnalyzer
         if (s.OsVersion.Length == 0 && (m = ReWinVer.Match(line)).Success) s.OsVersion = m.Groups[1].Value.Trim();
         if (s.OsVersion.Length == 0 && (m = ReMacVer.Match(line)).Success) s.OsVersion = m.Groups[1].Value.Trim();
 
-        if (s.Gpu.Length == 0 && line.Contains("adapter", StringComparison.OrdinalIgnoreCase)
-            && (m = ReGpu.Match(line)).Success)
+        if ((m = ReGpuActive.Match(line)).Success)
         {
-            s.Gpu = m.Groups[1].Value.Trim();
+            var active = CleanAdapterName(m.Groups[1].Value);
+            if (s.Gpu.Length == 0) s.Gpu = active;
+            // 实际渲染的适配器同样计入清单：一是保证 Adapters 一定包含 Gpu
+            // （日志被截断时可能没有枚举段），二是视频重置 / 切换渲染器时 OBS 会重复打印该行。
+            AddAdapter(s.Adapters, active);
         }
 
         // B3：收集日志中枚举到的全部适配器（去重，上限 8 个），供双显卡错位检测
-        if (line.Contains("adapter", StringComparison.OrdinalIgnoreCase)
-            && (m = ReGpu.Match(line)).Success)
+        if ((m = ReGpuAdapter.Match(line)).Success)
         {
-            var adapterName = m.Groups[1].Value.Trim();
-            if (adapterName.Length > 0 &&
-                !s.Adapters.Contains(adapterName, StringComparer.OrdinalIgnoreCase) &&
-                s.Adapters.Count < 8)
-            {
-                s.Adapters.Add(adapterName);
-            }
+            AddAdapter(s.Adapters, CleanAdapterName(m.Groups[1].Value));
         }
 
         if (s.BaseResolution.Length == 0 && (m = ReBaseRes.Match(line)).Success) s.BaseResolution = m.Groups[1].Value;
         if (s.OutputResolution.Length == 0 && (m = ReOutRes.Match(line)).Success) s.OutputResolution = m.Groups[1].Value;
         if (s.Fps.Length == 0 && (m = ReFps.Match(line)).Success) s.Fps = NormalizeFps(m.Groups[1].Value);
         if (s.AudioSampleRate.Length == 0 && (m = ReSampleRate.Match(line)).Success) s.AudioSampleRate = m.Groups[1].Value + " Hz";
-        if (s.VideoEncoder.Length == 0 && (m = ReEncoder.Match(line)).Success) s.VideoEncoder = m.Groups[1].Value;
+        if (s.VideoEncoder.Length == 0 && (m = ReEncoder.Match(line)).Success)
+        {
+            // 只取冒号前的编码器标识（"obs-nvenc: 'advanced_video_stream'" → "obs-nvenc"）：
+            // 分诊里的 Contains 判定与界面展示都只需要编码器名，整段原样带出去太啰嗦。
+            s.VideoEncoder = m.Groups[1].Value.Split(':')[0].Trim();
+        }
         if (s.Bitrate == 0 && (m = ReBitrate.Match(line)).Success &&
             int.TryParse(m.Groups[1].Value, NumberStyles.Integer, CultureInfo.InvariantCulture, out var br))
         {
@@ -564,6 +612,25 @@ public sealed class ObsLogAnalyzer
         if ((m = ReRenderLag.Match(line)).Success) s.RenderLagRatio = ParsePercent(m.Groups[2].Value);
         if ((m = ReEncodeLag.Match(line)).Success) s.EncodingLagRatio = ParsePercent(m.Groups[3].Value);
         if ((m = ReNetDrop.Match(line)).Success) s.NetworkDropRatio = ParsePercent(m.Groups[2].Value);
+    }
+
+    /// <summary>
+    /// 清洗适配器名：去首尾空白与引号，并剥掉末尾可能残留的驱动序号括号（如 "NVIDIA ... (0)"），
+    /// 让界面展示与 ReDiscreteGpu / ReIntegratedGpu 的关键字判定保持一致。
+    /// </summary>
+    private static string CleanAdapterName(string raw)
+    {
+        var s = raw.Trim().Trim('"').Trim();
+        // 只剥「名字最末尾」的一层 "(数字)"：Intel(R) UHD Graphics 630 这类合法名字不受影响。
+        return Regex.Replace(s, @"\s*\(\d+\)\s*$", "").Trim();
+    }
+
+    /// <summary>把适配器并入清单：去重（大小写不敏感）、忽略空值、上限 8 个。</summary>
+    private static void AddAdapter(List<string> adapters, string name)
+    {
+        if (name.Length == 0 || adapters.Count >= 8) return;
+        if (adapters.Contains(name, StringComparer.OrdinalIgnoreCase)) return;
+        adapters.Add(name);
     }
 
     /// <summary>OBS 的 fps 可能写成 "60/1" 或 "59.94"，统一成可读形式。</summary>

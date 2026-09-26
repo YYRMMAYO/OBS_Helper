@@ -150,10 +150,10 @@ Artifacts land in `NOBS\PAKE\windows\`:
 - `OBS_Helper_Setup_2.9.0.exe` — installer
 - `OBS_Helper_Portable_2.9.0.zip` — unzip-and-run portable build
 - `OBS_Helper_Update_2.9.0.zip` — incremental update package (contains `update_manifest.json`, used by the in-app updater)
-- `OBS_Helper_Manifest_2.9.0.json` — full file manifest (SHA-256) for verification
 - `OBS_Helper_Portable_2.9.0.exe` — single-file build (with `-SingleFile`)
-- `OBS_Helper_Plugins_1.4.json` — plugin directory v1.4 (independent hot-update asset)
-- `manifests/manifest_<ver>.json` — per-version manifest archive (delta diff base)
+- `OBS_Helper_Plugins_1.4.json` — plugin directory v1.4 (independent hot-update asset, published with the release)
+- `OBS_Helper_Knowledge_2.2.json` — issue database v2.2 (independent hot-update asset, published with the release)
+- `manifests/manifest_<ver>.json` — per-version file manifest (SHA-256, delta diff base; not published as a release asset)
 
 ## Project Structure
 

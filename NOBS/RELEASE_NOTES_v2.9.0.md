@@ -158,5 +158,6 @@ V2.8 的「实时日志尾随预警」按 `*.log` 查找 OBS 会话日志，但 
 | `OBS_Helper_Portable_2.9.0.zip` | 解压即用便携包 |
 | `OBS_Helper_Update_2.9.0.zip` | 增量更新包（应用内「增量更新」使用） |
 | `OBS_Helper_Plugins_1.4.json` | 插件广场目录（v1.4，独立热更新资产） |
+| `OBS_Helper_Knowledge_2.2.json` | 问题库（v2.2，独立热更新资产；本轮未改动，随版一并提供） |
 
 已装 2.1.x ~ 2.8.x 的用户可直接走应用内「增量更新」升级到 2.9.0。

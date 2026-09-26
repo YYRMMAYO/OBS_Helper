@@ -213,10 +213,10 @@ python scripts\verify_delta.py --old PAKE\windows\OBS_Helper_Portable_2.0.0.zip 
 - `OBS_Helper_Setup_2.9.0.exe` — 安装包
 - `OBS_Helper_Portable_2.9.0.zip` — 解压即用
 - `OBS_Helper_Update_2.9.0.zip` — 增量更新包（含 `update_manifest.json`，应用内增量更新用）
-- `OBS_Helper_Manifest_2.9.0.json` — 完整文件清单（SHA-256，比对/核验用）
 - `OBS_Helper_Portable_2.9.0.exe` — 单文件（需 `-SingleFile`）
-- `OBS_Helper_Plugins_1.4.json` — 插件广场目录 v1.4（独立热更新资产）
-- `manifests/manifest_<ver>.json` — 各版本完整清单存档（增量包 diff 基准）
+- `OBS_Helper_Plugins_1.4.json` — 插件广场目录 v1.4（独立热更新资产，随 Release 发布）
+- `OBS_Helper_Knowledge_2.2.json` — 问题库 v2.2（独立热更新资产，随 Release 发布）
+- `manifests/manifest_<ver>.json` — 各版本完整文件清单（SHA-256，增量包 diff 基准；不随 Release 发布）
 
 ## 工程结构
 

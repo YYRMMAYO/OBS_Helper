@@ -139,6 +139,8 @@ SceneTemplateService 场景模板：在线落地（建专属配置集合 → 逐
 | 系统监控 | `SystemMonitorService` | 每秒采样 CPU/内存/磁盘；`PerformancePage` 订阅展示；预警阈值见 Tray |
 | 场景自动切换 | `SceneAutoSwitcher` | 正则匹配窗口标题，**ReDoS 超时保护**（匹配超时中止） |
 | 定时停止 | `ControlTimerService` | 录制/推流定时停止 |
+| 新手引导 | `OnboardingGuide`（纯逻辑）+ `MainWindow` 覆盖层 | 步骤清单与游标状态机可单测；「已完成」只记一个偏好键；「减少动画」时不播动效 |
+| OBS 日志定位 | `ObsLogFileFinder` | 认 `.txt` / `.log` 两种扩展名（OBS 会话日志是 `.txt`），按修改时间取最新 |
 
 ## 11. 线程模型
 
@@ -147,7 +149,7 @@ SceneTemplateService 场景模板：在线落地（建专属配置集合 → 逐
   - WebSocket 收包循环（`ObsWebSocketClient.ReceiveLoop`）→ 事件经 Dispatcher 封送；
   - 系统采样计时器（`SystemMonitorService`）→ 数据发布到 UI 线程；
   - AI / HTTP / 文件 IO → `async/await`（`ConfigureAwait(false)` 后自行封送）；
-  - 自检模式（`OBS_SELFTEST=1`）→ 无界面跑 14 条路由自检，结果写 `selftest_result.txt`。
+  - 自检模式（`OBS_SELFTEST=1`）→ 无界面跑 17 条路由 + 新手引导覆盖层 + 迷你小窗共 19 项自检，结果写 `selftest_result.txt`。
 - **跨线程事件约定**：服务只发布事件，不直接碰控件；页面在事件处理器里用 `Dispatcher` 或服务已封送的回调更新 UI。
 
 ## 12. 日志与错误处理
@@ -185,5 +187,5 @@ SceneTemplateService 场景模板：在线落地（建专属配置集合 → 逐
 
 - `build.ps1`：`dotnet publish`（Release、R2R、自包含单文件）→ Inno Setup 安装包 → 便携 zip；产物到 `PAKE/windows/`（gitignore）。
 - 免费 AI 密钥：构建期由 `scripts/embed_free_ai_key.ps1` 注入 `Assets/free_ai_key.json`（真实密钥不入库）。
-- 自检：`OBS_SELFTEST=1` 无界面跑 14 条路由自检，结果写 `selftest_result.txt`——「编译过但运行炸」类错误的最有效拦截。
+- 自检：`OBS_SELFTEST=1` 无界面跑 17 条路由 + 新手引导覆盖层 + 迷你小窗共 19 项自检，结果写 `selftest_result.txt`——「编译过但运行炸」类错误的最有效拦截。
 - 数据脚本：`scripts/add_problems.py` / `add_templates.py` 可复用改知识库 / 模板数据。

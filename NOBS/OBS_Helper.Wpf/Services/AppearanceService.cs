@@ -82,9 +82,9 @@ public sealed record AccentScheme(
 {
     public static readonly AccentScheme[] Catalog =
     [
-        new("teal", "青瓷绿", "#157a70",
-            "#157a70", "#12655d", "#0e5049", "#dcf0ec", "#105f57",
-            "#45c6b6", "#5cd4c5", "#38b7a8", "#10312d", "#86dfd3", "#06231e"),
+        new("teal", "深青", "#1a6b5a",
+            "#1a6b5a", "#165c4d", "#114a3e", "#ddeee6", "#145244",
+            "#4cc9a8", "#5fd4b8", "#3fbb9a", "#0f2e25", "#82dcc8", "#071e17"),
         new("blue", "海盐蓝", "#3d6da0",
             "#3d6da0", "#33608f", "#274c73", "#e3edf7", "#2e567e",
             "#6fa9dc", "#85b9e4", "#5b99cf", "#14273d", "#a3cdf0", "#0a2036"),
@@ -94,9 +94,9 @@ public sealed record AccentScheme(
         new("deepteal", "深海松石", "#0f766e",
             "#0f766e", "#0d6560", "#0a5350", "#d7f0ec", "#0b5b55",
             "#4ec6ba", "#64d2c7", "#41b5aa", "#0d2c29", "#90ddd4", "#06211e"),
-        new("violet", "雾紫（经典）", "#7b2ff7",
-            "#7b2ff7", "#6a1fd0", "#4d15ad", "#efe6ff", "#5a1fc4",
-            "#a685f5", "#b79df9", "#a184f0", "#2a1f47", "#cbb6fb", "#170b33"),
+        new("violet", "雾紫", "#6c42c9",
+            "#6c42c9", "#5c36b0", "#472a8e", "#ede5fc", "#4e2fa0",
+            "#9b7ef0", "#ad94f5", "#9070e8", "#251c3f", "#c4aff8", "#140a30"),
     ];
 
     public static readonly AccentScheme Default = Catalog[0];
@@ -402,10 +402,10 @@ public sealed class AppearanceService : IDisposable
         res["CardShadow"] = NewShadow(dark ? 0.35 : 0.10, blur: 18, depth: 2);
         res["CardShadowStrong"] = NewShadow(dark ? 0.50 : 0.16, blur: 24, depth: 4);
 
-        // ---- 圆角（与 CSS --radius / --radius-sm 对齐）
-        res["CornerRadiusLg"] = new CornerRadius(14);
-        res["CornerRadiusMd"] = new CornerRadius(10);
-        res["CornerRadiusSm"] = new CornerRadius(6);
+        // ---- 圆角（紧凑风格，减少 AI 感）
+        res["CornerRadiusLg"] = new CornerRadius(8);
+        res["CornerRadiusMd"] = new CornerRadius(6);
+        res["CornerRadiusSm"] = new CornerRadius(4);
 
         // ---- 字号档位
         var f = FontScale switch

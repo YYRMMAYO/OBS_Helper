@@ -17,14 +17,14 @@
     深浅色通用，中性色不随主题切换。
   -->
 
-  <!-- 【v2.7.1 强调色体系】默认品牌色 = 青瓷绿（AccentScheme.Catalog[0]），
+  <!-- 【v2.7.1 强调色体系】默认品牌色 = 深青（AccentScheme.Catalog[0]），
        运行时 AppearanceService.Apply() 会按用户选择覆盖为同名键。 -->
-  <SolidColorBrush PresentationOptions:Freeze="True" x:Key="BrandBrush" Color="#157a70" />
-  <SolidColorBrush PresentationOptions:Freeze="True" x:Key="BrandDarkBrush" Color="#105f57" />
-  <SolidColorBrush PresentationOptions:Freeze="True" x:Key="BrandSoftBrush" Color="#dcf0ec" />
+  <SolidColorBrush PresentationOptions:Freeze="True" x:Key="BrandBrush" Color="#1a6b5a" />
+  <SolidColorBrush PresentationOptions:Freeze="True" x:Key="BrandDarkBrush" Color="#145244" />
+  <SolidColorBrush PresentationOptions:Freeze="True" x:Key="BrandSoftBrush" Color="#ddeee6" />
   <!-- 【UI 优化 v1.10】主按钮悬停 / 按下：用真实色阶代替透明度过场，悬停更明确、按下更沉 -->
-  <SolidColorBrush PresentationOptions:Freeze="True" x:Key="BrandHoverBrush" Color="#12655d" />
-  <SolidColorBrush PresentationOptions:Freeze="True" x:Key="BrandPressedBrush" Color="#0e5049" />
+  <SolidColorBrush PresentationOptions:Freeze="True" x:Key="BrandHoverBrush" Color="#165c4d" />
+  <SolidColorBrush PresentationOptions:Freeze="True" x:Key="BrandPressedBrush" Color="#114a3e" />
   <!-- 【v2.7.1】品牌底反衬文字（运行时按主题覆盖：深色=深字压亮底） -->
   <SolidColorBrush PresentationOptions:Freeze="True" x:Key="BrandForegroundBrush" Color="#ffffff" />
   <SolidColorBrush PresentationOptions:Freeze="True" x:Key="DangerForegroundBrush" Color="#ffffff" />
@@ -81,9 +81,9 @@
   <DropShadowEffect x:Key="CardShadowStrong" BlurRadius="24" ShadowDepth="4" Direction="270"
                     Opacity="0.16" Color="#000000" />
 
-  <CornerRadius x:Key="CornerRadiusLg">14</CornerRadius>
-  <CornerRadius x:Key="CornerRadiusMd">10</CornerRadius>
-  <CornerRadius x:Key="CornerRadiusSm">6</CornerRadius>
+  <CornerRadius x:Key="CornerRadiusLg">8</CornerRadius>
+  <CornerRadius x:Key="CornerRadiusMd">6</CornerRadius>
+  <CornerRadius x:Key="CornerRadiusSm">4</CornerRadius>
 
   <sys:Double x:Key="FontScaleFactor">1.0</sys:Double>
   <sys:Double x:Key="FontSizeXs">11</sys:Double>

@@ -193,8 +193,8 @@
 
   <Style x:Key="BaseButton" TargetType="Button">
     <Setter Property="FontSize" Value="{DynamicResource FontSizeBase}" />
-    <Setter Property="Padding" Value="16,9" />
-    <Setter Property="MinHeight" Value="36" />
+    <Setter Property="Padding" Value="14,7" />
+    <Setter Property="MinHeight" Value="34" />
     <Setter Property="Cursor" Value="Hand" />
     <Setter Property="HorizontalContentAlignment" Value="Center" />
     <Setter Property="VerticalContentAlignment" Value="Center" />
@@ -215,10 +215,10 @@
           <ControlTemplate.Triggers>
             <Trigger Property="IsKeyboardFocused" Value="True">
               <Setter TargetName="Bd" Property="BorderBrush" Value="{DynamicResource BrandBrush}" />
-              <Setter TargetName="Bd" Property="BorderThickness" Value="2" />
+              <Setter TargetName="Bd" Property="BorderThickness" Value="1.5" />
             </Trigger>
             <Trigger Property="IsEnabled" Value="False">
-              <Setter TargetName="Bd" Property="Opacity" Value="0.45" />
+              <Setter TargetName="Bd" Property="Opacity" Value="0.40" />
               <Setter Property="Cursor" Value="Arrow" />
             </Trigger>
           </ControlTemplate.Triggers>
@@ -229,17 +229,17 @@
 
   <Style x:Key="PrimaryButton" TargetType="Button" BasedOn="{StaticResource BaseButton}">
     <Setter Property="Background" Value="{DynamicResource BrandBrush}" />
-    <!-- 【v2.7.1】反衬文字走资源：浅色=白字压深底，深色=深字压亮底 -->
     <Setter Property="Foreground" Value="{DynamicResource BrandForegroundBrush}" />
-    <Setter Property="BorderThickness" Value="0" />
+    <Setter Property="BorderBrush" Value="{DynamicResource BrandDarkBrush}" />
+    <Setter Property="BorderThickness" Value="0,0,0,1" />
     <Setter Property="FontWeight" Value="SemiBold" />
     <Style.Triggers>
-      <!-- 【UI 优化 v1.10】真实色阶悬停 / 按下（替代统一透明度过场）：悬停微亮、按下更沉 -->
       <Trigger Property="IsMouseOver" Value="True">
         <Setter Property="Background" Value="{DynamicResource BrandHoverBrush}" />
       </Trigger>
       <Trigger Property="IsPressed" Value="True">
         <Setter Property="Background" Value="{DynamicResource BrandPressedBrush}" />
+        <Setter Property="BorderThickness" Value="0" />
       </Trigger>
     </Style.Triggers>
   </Style>
@@ -252,7 +252,7 @@
     <Style.Triggers>
       <Trigger Property="IsMouseOver" Value="True">
         <Setter Property="Background" Value="{DynamicResource Surface2Brush}" />
-        <Setter Property="BorderBrush" Value="{DynamicResource BrandBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource MutedBrush}" />
       </Trigger>
       <Trigger Property="IsPressed" Value="True">
         <Setter Property="Background" Value="{DynamicResource Surface3Brush}" />
@@ -264,10 +264,10 @@
     <Setter Property="Background" Value="Transparent" />
     <Setter Property="Foreground" Value="{DynamicResource BrandBrush}" />
     <Setter Property="BorderThickness" Value="0" />
-    <Setter Property="Padding" Value="10,6" />
+    <Setter Property="Padding" Value="10,5" />
     <Style.Triggers>
       <Trigger Property="IsMouseOver" Value="True">
-        <Setter Property="Background" Value="{DynamicResource BrandSoftBrush}" />
+        <Setter Property="Background" Value="{DynamicResource Surface3Brush}" />
       </Trigger>
       <Trigger Property="IsPressed" Value="True">
         <Setter Property="Foreground" Value="{DynamicResource BrandPressedBrush}" />
@@ -277,7 +277,6 @@
 
   <Style x:Key="DangerButton" TargetType="Button" BasedOn="{StaticResource BaseButton}">
     <Setter Property="Background" Value="{DynamicResource DangerBrush}" />
-    <!-- 【v2.7.1】反衬文字走资源：深色模式深红字压亮红底，白字仅 2.8:1 不达标 -->
     <Setter Property="Foreground" Value="{DynamicResource DangerForegroundBrush}" />
     <Setter Property="BorderThickness" Value="0" />
     <Setter Property="FontWeight" Value="SemiBold" />
@@ -362,12 +361,12 @@
     <Setter Property="Cursor" Value="Hand" />
     <Setter Property="Foreground" Value="{DynamicResource MutedBrush}" />
     <Setter Property="FontSize" Value="{DynamicResource FontSizeBase}" />
-    <Setter Property="Margin" Value="8,2" />
+    <Setter Property="Margin" Value="6,1" />
     <Setter Property="Template">
       <Setter.Value>
         <ControlTemplate TargetType="RadioButton">
-          <Border x:Name="Bd" Background="Transparent" CornerRadius="{DynamicResource CornerRadiusMd}"
-                  Padding="10,9">
+          <Border x:Name="Bd" Background="Transparent" CornerRadius="{DynamicResource CornerRadiusSm}"
+                  Padding="9,7">
             <StackPanel Orientation="Horizontal">
               <!-- 矢量图标：描边色跟随主题（Muted），选中切品牌色；Tag 为空时宽度为 0 不占位 -->
               <Path x:Name="Icon" Data="{TemplateBinding Tag}" Stretch="Uniform"
@@ -406,7 +405,7 @@
     <Setter Property="Cursor" Value="Hand" />
     <Setter Property="Foreground" Value="{DynamicResource TextBrush}" />
     <Setter Property="FontSize" Value="{DynamicResource FontSizeSm}" />
-    <Setter Property="Padding" Value="14,7" />
+    <Setter Property="Padding" Value="12,6" />
     <Setter Property="Template">
       <Setter.Value>
         <ControlTemplate TargetType="RadioButton">
@@ -548,7 +547,7 @@
       <Setter.Value>
         <ControlTemplate TargetType="CheckBox">
           <StackPanel Orientation="Horizontal" Background="Transparent">
-            <Border x:Name="Box" Width="20" Height="20" CornerRadius="5"
+            <Border x:Name="Box" Width="20" Height="20" CornerRadius="4"
                     Background="{DynamicResource SurfaceBrush}"
                     BorderBrush="{DynamicResource LineBrush}" BorderThickness="1.5"
                     VerticalAlignment="Center">

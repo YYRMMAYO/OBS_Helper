@@ -27,9 +27,9 @@ NOBS/
 | 文件 | 行数 | 职责 |
 |---|---|---|
 | `App.xaml` | - | 应用资源字典装配（主题、图标、控件样式）。 |
-| `App.xaml.cs` | 262 | 启动入口：单实例 Mutex、异常三挂钩（Dispatcher/AppDomain/Unobserved）、启动服务装配、`HeadlessTest` 自检模式。 |
+| `App.xaml.cs` | - | 启动入口：单实例 Mutex、异常三挂钩（Dispatcher/AppDomain/Unobserved）、启动服务装配、`HeadlessTest` 自检模式、新手引导重播事件。 |
 | `AppServices.cs` | 125 | 组合根：20 个服务的手工 Lazy 单例装配（刻意不用 DI 容器）。 |
-| `MainWindow.xaml` / `.xaml.cs` | 385 | 主窗口：导航框架、页面路由表、页面过渡动画、托盘联动。 |
+| `MainWindow.xaml` / `.xaml.cs` | - | 主窗口：导航框架、页面路由表、页面过渡动画、托盘联动、**新手引导覆盖层**（首次启动分步引导 + 设置页即时重播）。 |
 | `app.manifest` | - | Windows 清单（DPI 感知、执行级别）。 |
 
 ### 2.2 Models（数据模型）
@@ -135,6 +135,8 @@ NOBS/
 | `Services/Shell/SceneAutoSwitcher.cs` | 185 | 场景自动切换（正则匹配，带 ReDoS 超时保护）。 |
 | `Services/Shell/ControlTimerService.cs` | 148 | 定时停止（录制/推流）控制。 |
 | `Services/Shell/DiskProbe.cs` | 42 | 固定磁盘剩余空间枚举。 |
+| `Services/Shell/OnboardingGuide.cs` | - | **新手引导纯逻辑**（V2.9）：步骤清单 + 游标状态机 + 是否展示判定，可单测。 |
+| `Services/Shell/ObsLogFileFinder.cs` | - | **OBS 会话日志定位纯逻辑**（V2.9）：同时认 `.txt` / `.log`，按修改时间取最新（OBS 日志是 `.txt`，V2.8 只扫 `*.log` 导致实时预警从未运行）。 |
 
 ### 2.4 Controls（自定义控件）
 
@@ -164,9 +166,9 @@ NOBS/
 | `Views/PerformancePage.xaml(.cs)` | 210 | 监控页（CPU/内存/磁盘 + 走势图 + 状态色）。 |
 | `Views/ObsConfigPage.xaml(.cs)` | 412 | OBS 配置管理页（备份/恢复/重置/定位）。 |
 | `Views/TemplatePage.xaml(.cs)` | 343 | 场景模板页（在线落地 / 离线导出）。 |
-| `Views/SettingsPage.xaml(.cs)` | 786 | 设置页（AI、连接、热键、外观、更新等全部设置）。 |
+| `Views/SettingsPage.xaml(.cs)` | 786 | 设置页（AI、连接、热键、外观、**新手引导重播**、更新等全部设置）。 |
 | `Views/SetupPage.xaml(.cs)` | 220 | 新手搭建流程六步引导 + 竖屏 / 多平台进阶向导（V2.2）。 |
-| `Views/PluginsPage.xaml(.cs)` | 800 | 插件广场：目录热更新 + 本机体检 + 下载角标 + AI 预算提示 + 关注（V2.2）。 |
+| `Views/PluginsPage.xaml(.cs)` | - | 插件广场：目录热更新 + 目录版本/复核日期 + 维护状态标注（V2.9）+ 本机体检 + 下载角标 + AI 预算提示 + 关注（V2.2）。 |
 | `Views/ToolboxPage.xaml(.cs)` | 330 | 工具箱（V2.6）：录像工具 / 参数处方 / 隐私清单 / 冲突扫描 / 带宽计算 / 版本情报 / 快捷键速查。 |
 | `Views/SetupWizardWindow.xaml(.cs)` | 250 | 分步向导窗口（竖屏双画布 / 多平台推流，V2.2）。 |
 | `Views/GuidePage.xaml(.cs)` | 95 | 使用指引（随包资源）。 |
@@ -176,9 +178,9 @@ NOBS/
 
 | 文件 | 职责 |
 |---|---|
-| `Services/Plugins/PluginCatalog.cs` | 目录模型与纯逻辑：JSON 解析、DLL 名匹配、分类分组、repo 归一化。 |
+| `Services/Plugins/PluginCatalog.cs` | 目录模型与纯逻辑：JSON 解析、DLL 名匹配、分类分组、repo 归一化、维护状态（`maintain` / `maintainNote`）判定。 |
 | `Services/Plugins/PluginCatalogService.cs` | 目录数据访问（外部覆盖文件优先，内嵌种子兜底，可热重载）。 |
-| `Services/Plugins/PluginScannerCore.cs` | 本机插件扫描纯逻辑（枚举 DLL + 版本信息，只读）。 |
+| `Services/Plugins/PluginScannerCore.cs` | 本机插件扫描纯逻辑（枚举 DLL + 版本信息，只读）+ 候选目录合并 + **OBS 32.x 一插件一目录布局路径推导**（V2.9）。 |
 | `Services/Plugins/LocalPluginScanner.cs` | OBS 安装目录候选定位与体检入口（复用 ObsPathService 探测）。 |
 | `Services/Plugins/PluginReleaseService.cs` | GitHub Releases 最新版本查询（内存 + 磁盘双层缓存、在途合并、失败静默）。 |
 | `Services/Plugins/PluginWatchService.cs` | 关注插件启动静默查新（24h 节流，仅 Toast）。 |
@@ -230,6 +232,7 @@ NOBS/
 | `docs/ARCHITECTURE.md` | 架构总览（本仓库）。 |
 | `docs/CODEBASE.md` | 本文件：代码清单。 |
 | `docs/API免费实现方案.md` | 免费 AI 通道的实现方案设计稿。 |
+| `docs/PLUGIN_AUDIT_2026-09.md` | **插件广场目录 v1.4 全量复核报告**（V2.9）：逐条实测数据、收录口径、剔除 / 新增 / 维护放缓清单。 |
 | `docs/reviews/REVIEW_2026-08-08*.md` | 各版本发布审查报告（v1.7.0 / v1.7.1 / v1.8.0 / v1.8.1）。 |
 
 ## 5. 快速定位索引
@@ -246,3 +249,5 @@ NOBS/
 - **改托盘 / 热键 / 小窗 / 监控** → `Services/Shell/`
 - **改主题 / 样式** → `Themes/`（Palette / Controls / Icons）+ `AppearanceService.cs`
 - **改页面 UI** → `Views/` + `Controls/`
+- **改新手引导（步骤文案 / 顺序）** → `Services/Shell/OnboardingGuide.cs`（文案与游标纯逻辑）+ `MainWindow.xaml`（覆盖层外观）；设置页入口在 `Views/SettingsPage.xaml(.cs)`
+- **改插件广场数据（收录 / 维护状态）** → `Assets/plugins.json` + `docs/PLUGIN_AUDIT_2026-09.md`（复核报告），模型在 `Services/Plugins/PluginCatalog.cs`

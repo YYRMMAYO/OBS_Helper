@@ -13,7 +13,7 @@
 
         <StackPanel Grid.Column="0">
           <TextBlock Style="{StaticResource MutedText}" TextWrapping="Wrap"
-                     Text="精选社区常用插件，卡片直达项目主页与 Releases 下载；装前请留意卡片上的「维护」标注。" />
+                     Text="{DynamicResource Loc.plugin.intro}" />
           <!-- 目录版本与复核日期：由代码按当前生效的目录数据填写（V2.9） -->
           <TextBlock x:Name="CatalogMetaText" Style="{StaticResource CaptionText}"
                      Margin="0,4,0,0" TextWrapping="Wrap" />
@@ -22,7 +22,7 @@
         <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center" Margin="18,0,0,0">
           <TextBox x:Name="SearchBox" Style="{StaticResource AppTextBox}"
                    Width="200" Padding="10,6"
-                   ToolTip="输入名称或功能关键词，筛选下方插件"
+                   ToolTip="{DynamicResource Loc.plugin.searchPlaceholder}"
                    TextChanged="OnSearchTextChanged" />
         </StackPanel>
       </Grid>
@@ -39,14 +39,14 @@
 
             <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
               <TextBlock x:Name="HealthTitleText" Style="{StaticResource BodyText}" FontWeight="SemiBold"
-                         VerticalAlignment="Center" Text="本机已装插件体检（只读）" />
+                         VerticalAlignment="Center" Text="{DynamicResource Loc.plugin.health.title}" />
             </StackPanel>
 
             <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
               <Button x:Name="HealthToggleButton" Style="{StaticResource LinkButton}"
-                      Click="OnToggleHealthClick" Content="展开" />
+                      Click="OnToggleHealthClick" Content="{DynamicResource Loc.plugin.health.expand}" />
               <Button x:Name="HealthRefreshButton" Style="{StaticResource LinkButton}" Margin="12,0,0,0"
-                      Click="OnRescanClick" Content="重新扫描" ToolTip="只读重新扫描本机已装插件（含非 C 盘安装位置）" />
+                      Click="OnRescanClick" Content="{DynamicResource Loc.plugin.health.rescan}" ToolTip="{DynamicResource Loc.plugin.health.rescanTip}" />
             </StackPanel>
           </Grid>
 
@@ -59,7 +59,7 @@
       </Border>
 
       <!-- 官方 / 社区入口 -->
-      <TextBlock Style="{StaticResource SectionTitle}" Text="官方与社区入口" Margin="2,16,0,8" />
+      <TextBlock Style="{StaticResource SectionTitle}" Text="{DynamicResource Loc.plugin.entries.title}" Margin="2,16,0,8" />
       <WrapPanel x:Name="ResourceHost" />
 
       <!-- 从 StreamFX 平滑迁移（B4）：内容行由代码构建，点击直达对应替代插件卡片 -->
@@ -67,9 +67,9 @@
               Visibility="Collapsed">
         <StackPanel>
           <TextBlock Style="{StaticResource BodyText}" FontWeight="SemiBold"
-                     Text="从 StreamFX 平滑迁移（该插件已停止维护）" />
+                     Text="{DynamicResource Loc.plugin.migrate.title}" />
           <TextBlock Style="{StaticResource MutedText}" Margin="0,5,0,0" TextWrapping="Wrap"
-                     Text="StreamFX 在 OBS 30+ 上兼容性持续恶化，是老教程用户的高频故障源。以下单一职责轻量插件可逐一替代其常用功能，全部维护活跃：" />
+                     Text="{DynamicResource Loc.plugin.migrate.desc}" />
           <StackPanel x:Name="MigrationList" Margin="0,8,0,0" />
         </StackPanel>
       </Border>
@@ -78,7 +78,7 @@
       <WrapPanel x:Name="CategoryPanel" Margin="0,6,0,2" />
 
       <TextBlock x:Name="EmptyText" Style="{StaticResource MutedText}" Margin="2,16,0,0"
-                 Text="没有匹配的插件，换个关键词试试。"
+                 Text="{DynamicResource Loc.plugin.empty}"
                  Visibility="Collapsed" />
 
       <StackPanel x:Name="ListHost" Margin="0,8,0,0" />
@@ -86,9 +86,9 @@
       <!-- 安装提示 -->
       <Border Style="{StaticResource SoftPanel}" Margin="0,18,0,0" Padding="14,12">
         <StackPanel>
-          <TextBlock Style="{StaticResource BodyText}" FontWeight="SemiBold" Text="安装小贴士" />
+          <TextBlock Style="{StaticResource BodyText}" FontWeight="SemiBold" Text="{DynamicResource Loc.plugin.tips.title}" />
           <TextBlock Style="{StaticResource MutedText}" Margin="0,6,0,0" TextWrapping="Wrap"
-                     Text="· 插件只在 OBS 启动时加载，安装后需完全退出并重启 OBS 才生效；&#10;· Windows 插件多为 .exe 安装器或 zip 包；OBS 32.1+ 的「工具 → 插件管理器」会装到「一插件一目录」的插件根（%ProgramData%\obs-studio\plugins\&lt;插件名&gt;\bin\64bit），手动解压 zip 则放到 OBS 安装目录的 obs-plugins\64bit；&#10;· 同一个插件不要装两份（更新时旧文件没被覆盖，或同时装在插件根与安装目录），OBS 会报「Duplicate library」并可能崩溃 —— 可用本页上方的本机体检逐项核对；&#10;· OBS 32.2 曾出现带依赖的插件首次加载失败，32.2.2 已修复；插件报错时先确认 OBS 是否已更新到最新版；&#10;· 装前先看项目主页有没有对应 OBS 大版本的发行包，卡片上的「维护」状态可作参考。" />
+                     Text="{DynamicResource Loc.plugin.tips.body}" />
         </StackPanel>
       </Border>
 

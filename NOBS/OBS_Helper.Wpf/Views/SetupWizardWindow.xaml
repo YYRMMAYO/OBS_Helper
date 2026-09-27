@@ -1,7 +1,7 @@
 <Window x:Class="OBS_Helper.Wpf.Views.SetupWizardWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="搭建向导"
+        Title="{DynamicResource Loc.wizard.title}"
         Width="600" Height="640"
         MinWidth="520" MinHeight="480"
         WindowStartupLocation="CenterOwner"
@@ -44,8 +44,8 @@
           <ColumnDefinition Width="Auto" />
         </Grid.ColumnDefinitions>
         <TextBlock Grid.Column="0" Style="{StaticResource CaptionText}" VerticalAlignment="Center"
-                   Text="步骤中的按钮可直达对应知识库条目或插件卡片；本向导只做引导，不会修改 OBS 设置。" />
-        <Button Grid.Column="1" Style="{StaticResource PrimaryButton}" Content="知道了"
+                   Text="{DynamicResource Loc.wizard.footer}" />
+        <Button Grid.Column="1" Style="{StaticResource PrimaryButton}" Content="{DynamicResource Loc.wizard.gotIt}"
                 Padding="18,7" Click="OnCloseClick" />
       </Grid>
     </Border>

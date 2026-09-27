@@ -1,3 +1,4 @@
+using OBS_Helper.Wpf.Localization;
 namespace OBS_Helper.Wpf.Services.Obs;
 
 /// <summary>色彩体检单项结论（纯数据，供单元测试与界面复用）。</summary>
@@ -36,8 +37,8 @@ public static class ColorCheckCore
             items.Add(new ColorCheckItem
             {
                 Status = "ok",
-                Title = "色彩范围",
-                Detail = "未自定义（默认 Limited / 部分），与绝大多数平台和观众端匹配。"
+                Title = Strings.T("colorcheck.range.title"),
+                Detail = Strings.T("colorcheck.range.default")
             });
         }
         else if (range.Equals("partial", StringComparison.OrdinalIgnoreCase) ||
@@ -46,8 +47,8 @@ public static class ColorCheckCore
             items.Add(new ColorCheckItem
             {
                 Status = "ok",
-                Title = "色彩范围",
-                Detail = $"当前 {range}，安全值。"
+                Title = Strings.T("colorcheck.range.title"),
+                Detail = Strings.T("colorcheck.range.ok", range)
             });
         }
         else if (range.Equals("full", StringComparison.OrdinalIgnoreCase) ||
@@ -56,9 +57,8 @@ public static class ColorCheckCore
             items.Add(new ColorCheckItem
             {
                 Status = "warn",
-                Title = "色彩范围：Full 可能导致画面发灰",
-                Detail = "当前为 Full（完全）：本地播放正常，但多数直播平台按 Limited 解读，画面会发灰、对比度下降。" +
-                         "\n建议：设置 → 高级 → 视频把色彩范围改回「Limited / 部分」，除非你明确知道全链路都是 Full。",
+                Title = Strings.T("colorcheck.range.fullTitle"),
+                Detail = Strings.T("colorcheck.range.fullDetail"),
                 ProblemId = "cf-colorrange"
             });
         }
@@ -67,8 +67,8 @@ public static class ColorCheckCore
             items.Add(new ColorCheckItem
             {
                 Status = "info",
-                Title = "色彩范围",
-                Detail = $"读到非标准值「{range}」，建议在 设置 → 高级 → 视频 里核对一遍。"
+                Title = Strings.T("colorcheck.range.title"),
+                Detail = Strings.T("colorcheck.range.unknown", range)
             });
         }
 
@@ -79,8 +79,8 @@ public static class ColorCheckCore
             items.Add(new ColorCheckItem
             {
                 Status = "ok",
-                Title = "色彩空间",
-                Detail = "未自定义（默认 Rec.709），SDR 直播 / 录制的安全值。"
+                Title = Strings.T("colorcheck.space.title"),
+                Detail = Strings.T("colorcheck.space.default")
             });
         }
         else if (space.StartsWith("709", StringComparison.OrdinalIgnoreCase) ||
@@ -89,8 +89,8 @@ public static class ColorCheckCore
             items.Add(new ColorCheckItem
             {
                 Status = "ok",
-                Title = "色彩空间",
-                Detail = $"当前 {space}，安全值。"
+                Title = Strings.T("colorcheck.space.title"),
+                Detail = Strings.T("colorcheck.space.ok", space)
             });
         }
         else if (space.Contains("2100", StringComparison.OrdinalIgnoreCase) ||
@@ -100,9 +100,8 @@ public static class ColorCheckCore
             items.Add(new ColorCheckItem
             {
                 Status = "info",
-                Title = "色彩空间：HDR（Rec.2100）",
-                Detail = "检测到 HDR 色彩空间：仅在采集、合成、编码到平台全链路都支持 HDR 时才有意义；" +
-                         "SDR 平台观看会出现偏灰或过饱和。普通 SDR 直播请改回 Rec.709。"
+                Title = Strings.T("colorcheck.space.hdrTitle"),
+                Detail = Strings.T("colorcheck.space.hdrDetail")
             });
         }
         else
@@ -110,9 +109,8 @@ public static class ColorCheckCore
             items.Add(new ColorCheckItem
             {
                 Status = "warn",
-                Title = "色彩空间非标准值",
-                Detail = $"当前「{space}」不是 Rec.709：不同设备解读不一致会造成偏色。" +
-                         "\n建议：设置 → 高级 → 视频改为 Rec.709。",
+                Title = Strings.T("colorcheck.space.unknownTitle"),
+                Detail = Strings.T("colorcheck.space.unknownDetail", space),
                 ProblemId = "cf-colorspace"
             });
         }
@@ -124,8 +122,8 @@ public static class ColorCheckCore
             items.Add(new ColorCheckItem
             {
                 Status = "ok",
-                Title = "色彩格式",
-                Detail = "未自定义（默认 NV12），兼容性最好。"
+                Title = Strings.T("colorcheck.format.title"),
+                Detail = Strings.T("colorcheck.format.default")
             });
         }
         else if (format.Contains("nv12", StringComparison.OrdinalIgnoreCase))
@@ -133,8 +131,8 @@ public static class ColorCheckCore
             items.Add(new ColorCheckItem
             {
                 Status = "ok",
-                Title = "色彩格式",
-                Detail = "NV12，8-bit 标准值，所有平台均支持。"
+                Title = Strings.T("colorcheck.format.title"),
+                Detail = Strings.T("colorcheck.format.ok")
             });
         }
         else if (format.Contains("p010", StringComparison.OrdinalIgnoreCase) ||
@@ -143,8 +141,8 @@ public static class ColorCheckCore
             items.Add(new ColorCheckItem
             {
                 Status = "info",
-                Title = "色彩格式：10-bit（P010）",
-                Detail = "10-bit 仅在 HDR 输出场景有意义；SDR 直播用 NV12 即可，10-bit 还会增加编码负担。"
+                Title = Strings.T("colorcheck.format.tenBitTitle"),
+                Detail = Strings.T("colorcheck.format.tenBitDetail")
             });
         }
         else if (format.Contains("argb", StringComparison.OrdinalIgnoreCase) ||
@@ -154,9 +152,8 @@ public static class ColorCheckCore
             items.Add(new ColorCheckItem
             {
                 Status = "warn",
-                Title = "色彩格式用了 RGB（ARGB/RGBA）",
-                Detail = "RGB 格式部分编码器与平台不支持或需转换，可能带来性能损耗与兼容性问题。" +
-                         "\n建议：改回 NV12（设置 → 高级 → 视频）。",
+                Title = Strings.T("colorcheck.format.rgbTitle"),
+                Detail = Strings.T("colorcheck.format.rgbDetail"),
                 ProblemId = "cf-colorspace"
             });
         }
@@ -165,8 +162,8 @@ public static class ColorCheckCore
             items.Add(new ColorCheckItem
             {
                 Status = "info",
-                Title = "色彩格式",
-                Detail = $"读到非标准值「{format}」，建议核对 设置 → 高级 → 视频。"
+                Title = Strings.T("colorcheck.format.title"),
+                Detail = Strings.T("colorcheck.format.unknown", format)
             });
         }
 

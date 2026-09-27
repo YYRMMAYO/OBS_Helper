@@ -95,8 +95,8 @@ public partial class ConsolePage : UserControl, INavigationAware
         // 已经加密存过密码时，密码框留空即可复用，提示改成对应说明
         var hasStored = await SafeBoolAsync(AppServices.ObsSettings.HasStoredPasswordAsync);
         PasswordHintText.Text = hasStored
-            ? "已保存过密码，留空即使用已保存的密码。"
-            : "obs-websocket 密码（可留空）";
+            ? Strings.T("console.passwordSaved")
+            : Strings.T("console.passwordPlaceholder");
 
         await SafeAsync(AppServices.Obs.RefreshAllAsync);
 
@@ -195,7 +195,7 @@ public partial class ConsolePage : UserControl, INavigationAware
 
                 var flagText = new TextBlock
                 {
-                    Text = "当前",
+                    Text = Strings.T("console.sceneCurrent"),
                     FontWeight = FontWeights.Bold,
                     VerticalAlignment = VerticalAlignment.Center,
                     Margin = new Thickness(8, 0, 0, 0),
@@ -323,7 +323,7 @@ public partial class ConsolePage : UserControl, INavigationAware
             Width = 38,
             Height = 38,
             Padding = new Thickness(0),
-            ToolTip = "静音切换"
+            ToolTip = Strings.T("console.muteToggle")
         };
         muteButton.Click += OnMuteClick;
         Grid.SetColumn(muteButton, 0);
@@ -383,22 +383,22 @@ public partial class ConsolePage : UserControl, INavigationAware
     private void RenderOutputs(ObsConnectionService obs)
     {
         var rec = obs.RecordStatus;
-        var recLabel = rec.Active ? (rec.Paused ? "已暂停" : "进行中") : "未开始";
-        RecordButtonText.Text = "录制：" + recLabel;
+        var recLabel = rec.Active ? (rec.Paused ? Strings.T("console.state.paused") : Strings.T("console.state.inProgress")) : Strings.T("console.state.idle");
+        RecordButtonText.Text = Strings.T("console.record.prefix", recLabel);
         RecordStatusPill.Tag = rec.Active ? "danger" : "info";
         RecordStatusPill.Content = recLabel;
         ApplyActiveLook(RecordButton, rec.Active);
 
         var streamActive = obs.StreamStatus.Active;
-        var streamLabel = streamActive ? "进行中" : "未开始";
-        StreamButtonText.Text = "推流：" + streamLabel;
+        var streamLabel = streamActive ? Strings.T("console.state.inProgress") : Strings.T("console.state.idle");
+        StreamButtonText.Text = Strings.T("console.stream.prefix", streamLabel);
         StreamStatusPill.Tag = streamActive ? "danger" : "info";
         StreamStatusPill.Content = streamLabel;
         ApplyActiveLook(StreamButton, streamActive);
 
         var vcamActive = obs.VirtualCamStatus.Active;
-        var vcamLabel = vcamActive ? "开启" : "关闭";
-        VirtualCamButtonText.Text = "虚拟摄像头：" + vcamLabel;
+        var vcamLabel = vcamActive ? Strings.T("console.vcam.on") : Strings.T("console.vcam.off");
+        VirtualCamButtonText.Text = Strings.T("console.vcam.prefix", vcamLabel);
         VirtualCamStatusPill.Tag = vcamActive ? "ok" : "info";
         VirtualCamStatusPill.Content = vcamLabel;
         ApplyActiveLook(VirtualCamButton, vcamActive);
@@ -426,12 +426,12 @@ public partial class ConsolePage : UserControl, INavigationAware
         var host = HostInput.Text.Trim();
         if (host.Length == 0)
         {
-            ShowConnectError("请填写主机地址，默认是 127.0.0.1。");
+            ShowConnectError(Strings.T("console.err.host"));
             return;
         }
         if (!int.TryParse(PortInput.Text.Trim(), NumberStyles.Integer, Inv, out var port) || port is < 1 or > 65535)
         {
-            ShowConnectError("端口必须是 1~65535 之间的数字，obs-websocket 默认 4455。");
+            ShowConnectError(Strings.T("console.err.port"));
             return;
         }
 
@@ -439,7 +439,7 @@ public partial class ConsolePage : UserControl, INavigationAware
         var password = PasswordInput.Password;
 
         SetBusy(true);
-        ConnectButton.Content = "连接中…";
+        ConnectButton.Content = Strings.T("badge.connecting");
         ConnectErrorText.Visibility = Visibility.Collapsed;
         try
         {
@@ -459,9 +459,9 @@ public partial class ConsolePage : UserControl, INavigationAware
             if (!useStored) await AppServices.ObsSettings.SetPasswordAsync(password, remember);
 
             // 连接是跨网络的长操作，挂全局加载遮罩（P0）；页面内按钮态并行保留
-            AppServices.Busy.Show("正在连接 OBS…");
+            AppServices.Busy.Show(Strings.T("console.connectingBusy"));
             await AppServices.Obs.ConnectAsync(useStored ? null : password);
-            if (AppServices.Obs.IsConnected) AppServices.Toast.Show("已连接 OBS", "ok");
+            if (AppServices.Obs.IsConnected) AppServices.Toast.Show(Strings.T("console.connected"), "ok");
         }
         catch (Exception ex)
         {
@@ -469,7 +469,7 @@ public partial class ConsolePage : UserControl, INavigationAware
         }
         finally
         {
-            ConnectButton.Content = "连接";
+            ConnectButton.Content = Strings.T("console.connect");
             SetBusy(false);
             AppServices.Busy.Hide();
             Render();
@@ -494,19 +494,19 @@ public partial class ConsolePage : UserControl, INavigationAware
     private async void OnDisconnectClick(object sender, RoutedEventArgs e)
     {
         if (_busy) return;
-        if (!ConfirmDialog.Show("断开连接", "确定要断开与 OBS 的连接吗？")) return;
+        if (!ConfirmDialog.Show(Strings.T("console.disconnectTitle"), Strings.T("console.disconnectMessage"))) return;
 
         SetBusy(true);
-        AppServices.Busy.Show("正在断开连接…");
+        AppServices.Busy.Show(Strings.T("console.disconnectingBusy"));
         try
         {
             await AppServices.Obs.DisconnectAsync();
             HideOpError();
-            AppServices.Toast.Show("已断开 OBS", "info");
+            AppServices.Toast.Show(Strings.T("console.disconnected"), "info");
         }
         catch (Exception ex)
         {
-            ShowOpError("断开失败：" + ex.Message);
+            ShowOpError(Strings.T("console.disconnectFailed") + ex.Message);
         }
         finally
         {
@@ -519,8 +519,8 @@ public partial class ConsolePage : UserControl, INavigationAware
     private async void OnSceneClick(object sender, RoutedEventArgs e)
     {
         if (sender is not Button button || button.Tag is not string sceneName) return;
-        await RunAsync("切换场景", () => AppServices.Obs.SetSceneAsync(sceneName),
-            onSuccess: () => AppServices.Toast.Show($"已切换到「{sceneName}」", "ok"));
+        await RunAsync(Strings.T("console.op.switchScene"), () => AppServices.Obs.SetSceneAsync(sceneName),
+            onSuccess: () => AppServices.Toast.Show(Strings.T("console.sceneSwitched", sceneName), "ok"));
     }
 
     private async void OnSceneItemToggled(object sender, RoutedEventArgs e)
@@ -529,7 +529,7 @@ public partial class ConsolePage : UserControl, INavigationAware
 
         var enabled = check.IsChecked == true;
         var scene = AppServices.Obs.CurrentScene;
-        await RunAsync(enabled ? "显示元素" : "隐藏元素",
+        await RunAsync(enabled ? Strings.T("console.op.showItem") : Strings.T("console.op.hideItem"),
             () => AppServices.Obs.SetSceneItemEnabledAsync(scene, itemId, enabled));
     }
 
@@ -541,7 +541,7 @@ public partial class ConsolePage : UserControl, INavigationAware
         if (input is null) return;
 
         var muted = !input.Muted;
-        await RunAsync(muted ? "静音" : "取消静音", () => AppServices.Obs.SetMuteAsync(inputName, muted));
+        await RunAsync(muted ? Strings.T("console.op.mute") : Strings.T("console.op.unmute"), () => AppServices.Obs.SetMuteAsync(inputName, muted));
     }
 
     private void OnVolumeChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
@@ -564,7 +564,7 @@ public partial class ConsolePage : UserControl, INavigationAware
         if (_pendingVolume is not { } pending) return;
         _pendingVolume = null;
 
-        await RunAsync("调整音量", async () =>
+        await RunAsync(Strings.T("console.op.volume"), async () =>
         {
             var result = await AppServices.Obs.SetVolumeDbAsync(pending.Name, pending.Db);
             if (result.Ok)
@@ -582,12 +582,12 @@ public partial class ConsolePage : UserControl, INavigationAware
     {
         if (AppServices.Obs.RecordStatus.Active)
         {
-            if (!ConfirmDialog.Show("停止录制", "确定要停止当前录制吗？")) return;
-            await RunAsync("停止录制", () => AppServices.Obs.StopRecordAsync());
+            if (!ConfirmDialog.Show(Strings.T("console.stopRecordTitle"), Strings.T("console.stopRecordMessage"))) return;
+            await RunAsync(Strings.T("console.op.stopRecord"), () => AppServices.Obs.StopRecordAsync());
         }
         else
         {
-            await RunAsync("开始录制", () => AppServices.Obs.StartRecordAsync());
+            await RunAsync(Strings.T("console.op.startRecord"), () => AppServices.Obs.StartRecordAsync());
         }
     }
 
@@ -595,12 +595,12 @@ public partial class ConsolePage : UserControl, INavigationAware
     {
         if (AppServices.Obs.StreamStatus.Active)
         {
-            if (!ConfirmDialog.Show("停止推流", "确定要停止当前推流吗？观众将立即断开。")) return;
-            await RunAsync("停止推流", () => AppServices.Obs.StopStreamAsync());
+            if (!ConfirmDialog.Show(Strings.T("console.stopStreamTitle"), Strings.T("console.stopStreamMessage"))) return;
+            await RunAsync(Strings.T("console.op.stopStream"), () => AppServices.Obs.StopStreamAsync());
         }
         else
         {
-            await RunAsync("开始推流", () => AppServices.Obs.StartStreamAsync());
+            await RunAsync(Strings.T("console.op.startStream"), () => AppServices.Obs.StartStreamAsync());
         }
     }
 
@@ -608,9 +608,9 @@ public partial class ConsolePage : UserControl, INavigationAware
     {
         // 虚拟摄像头开关不影响正在进行的直播，按原版设计不做二次确认
         if (AppServices.Obs.VirtualCamStatus.Active)
-            await RunAsync("关闭虚拟摄像头", () => AppServices.Obs.StopVirtualCamAsync());
+            await RunAsync(Strings.T("console.op.stopVcam"), () => AppServices.Obs.StopVirtualCamAsync());
         else
-            await RunAsync("开启虚拟摄像头", () => AppServices.Obs.StartVirtualCamAsync());
+            await RunAsync(Strings.T("console.op.startVcam"), () => AppServices.Obs.StartVirtualCamAsync());
     }
 
     // -------------------------------------------------------------- 定时停止 / 录制目录
@@ -644,9 +644,9 @@ public partial class ConsolePage : UserControl, INavigationAware
 
         if (running && AppServices.Timer.Current is { } t)
         {
-            var label = t.Target == TimerTarget.Record ? "录制" : "推流";
+            var label = t.Target == TimerTarget.Record ? Strings.T("console.timer.record") : Strings.T("console.timer.stream");
             var rem = AppServices.Timer.RemainingSeconds;
-            TimerCountdownText.Text = $"{label} · {TimeSpan.FromSeconds(rem):mm\\:ss} 后自动停止";
+            TimerCountdownText.Text = Strings.T("console.timer.countdown", label, TimeSpan.FromSeconds(rem).ToString(@"mm\:ss"));
         }
         else
         {
@@ -667,18 +667,18 @@ public partial class ConsolePage : UserControl, INavigationAware
             var dir = await AppServices.Obs.GetRecordDirectoryAsync();
             if (string.IsNullOrEmpty(dir))
             {
-                RecordDirHintText.Text = "OBS 未返回录制目录（可能尚未设置或版本过旧）。";
+                RecordDirHintText.Text = Strings.T("console.recordDir.none");
                 RecordDirHintText.Visibility = Visibility.Visible;
                 return;
             }
 
             var ok = AppServices.Host.OpenFolder(dir);
-            RecordDirHintText.Text = ok ? $"已打开：{dir}" : $"目录不存在或无法打开：{dir}";
+            RecordDirHintText.Text = ok ? Strings.T("console.recordDir.opened", dir) : Strings.T("console.recordDir.failed", dir);
             RecordDirHintText.Visibility = Visibility.Visible;
         }
         catch (Exception ex)
         {
-            RecordDirHintText.Text = "获取录制目录失败：" + ex.Message;
+            RecordDirHintText.Text = Strings.T("console.recordDir.error") + ex.Message;
             RecordDirHintText.Visibility = Visibility.Visible;
         }
         finally
@@ -702,11 +702,11 @@ public partial class ConsolePage : UserControl, INavigationAware
                 HideOpError();
                 onSuccess?.Invoke();
             }
-            else ShowOpError($"{what}失败：{Describe(result)}");
+            else ShowOpError(Strings.T("console.opFailed", what, Describe(result)));
         }
         catch (Exception ex)
         {
-            ShowOpError($"{what}失败：{ex.Message}");
+            ShowOpError(Strings.T("console.opFailed", what, ex.Message));
         }
         finally
         {
@@ -716,7 +716,7 @@ public partial class ConsolePage : UserControl, INavigationAware
     }
 
     private static string Describe(ObsRequestResult result)
-        => !string.IsNullOrWhiteSpace(result.Comment) ? result.Comment! : $"OBS 返回错误码 {result.Code}";
+        => !string.IsNullOrWhiteSpace(result.Comment) ? result.Comment! : Strings.T("console.opErrorCode", result.Code);
 
     private void SetBusy(bool busy)
     {

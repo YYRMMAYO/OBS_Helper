@@ -60,7 +60,7 @@ public sealed class ObsBackupService
     {
         var loc = await _paths.LocateAsync();
         if (!loc.Exists)
-            throw new InvalidOperationException("未找到本机 OBS 配置目录，无法备份。");
+            throw new InvalidOperationException(Strings.T("backup.noObsConfig"));
 
         var stamp = DateTime.Now.ToString("yyyyMMdd_HHmmss");
         var safeReason = SanitizeFileName(reason);
@@ -81,11 +81,11 @@ public sealed class ObsBackupService
     {
         var loc = await _paths.LocateAsync();
         if (!loc.Exists)
-            throw new InvalidOperationException("未找到本机 OBS 配置目录，无法导出。");
+            throw new InvalidOperationException(Strings.T("backup.exportNoObsConfig"));
 
         if (File.Exists(zipPath)) File.Delete(zipPath);
         Directory.CreateDirectory(Path.GetDirectoryName(zipPath)!);
-        await Task.Run(() => BuildZip(zipPath, loc, includeKey, includePluginConfig, "导出", p));
+        await Task.Run(() => BuildZip(zipPath, loc, includeKey, includePluginConfig, Strings.T("backup.kind.export"), p));
     }
 
     /// <summary>把 OBS 配置按「config/…」相对路径打包进 zip（密钥可选脱敏），并写入 manifest.json。</summary>
@@ -113,7 +113,7 @@ public sealed class ObsBackupService
     /// <summary>打包 basic/scenes/*.json 场景集合。</summary>
     private void AddSceneCollections(ZipArchive zip, string configDir, List<string> scenes, ref int entryCount, IProgress<string>? p)
     {
-        p?.Report("正在打包场景集合…");
+        p?.Report(Strings.T("backup.progress.scenes"));
         var scenesDir = Path.Combine(configDir, "basic", "scenes");
         if (!Directory.Exists(scenesDir)) return;
 
@@ -129,7 +129,7 @@ public sealed class ObsBackupService
     /// <summary>打包 basic/profiles/*（服务密钥可选脱敏，脱敏清单记入 redacted）。</summary>
     private void AddProfiles(ZipArchive zip, string configDir, bool includeKey, List<string> profiles, List<string> redacted, ref int entryCount, IProgress<string>? p)
     {
-        p?.Report("正在打包配置文件…");
+        p?.Report(Strings.T("backup.progress.profiles"));
         var profilesDir = Path.Combine(configDir, "basic", "profiles");
         if (!Directory.Exists(profilesDir)) return;
 
@@ -159,7 +159,7 @@ public sealed class ObsBackupService
     /// <summary>打包 global.ini / user.ini 全局设置。</summary>
     private void AddGlobalSettings(ZipArchive zip, string configDir, ref int entryCount, IProgress<string>? p)
     {
-        p?.Report("正在打包全局设置…");
+        p?.Report(Strings.T("backup.progress.global"));
         foreach (var ini in new[] { "global.ini", "user.ini" })
         {
             var path = Path.Combine(configDir, ini);
@@ -172,7 +172,7 @@ public sealed class ObsBackupService
     /// <summary>打包 plugin_config（可选）。</summary>
     private void AddPluginConfig(ZipArchive zip, string configDir, ref int entryCount, IProgress<string>? p)
     {
-        p?.Report("正在打包插件配置…");
+        p?.Report(Strings.T("backup.progress.pluginConfig"));
         var pc = Path.Combine(configDir, "plugin_config");
         if (!Directory.Exists(pc)) return;
 
@@ -190,7 +190,7 @@ public sealed class ObsBackupService
     private void AddManifest(ZipArchive zip, ObsConfigLocation loc, bool includeKey, bool includePluginConfig, string reason,
         List<string> scenes, List<string> profiles, List<string> redacted, int entryCount, IProgress<string>? p)
     {
-        p?.Report("正在写入清单…");
+        p?.Report(Strings.T("backup.progress.manifest"));
         var manifest = new BackupManifestFile
         {
             schema = 1,
@@ -269,7 +269,7 @@ public sealed class ObsBackupService
         return await Task.Run(() =>
         {
             if (!File.Exists(zipPath))
-                return new BackupManifest(false, "文件不存在。", 0, 0, false, Array.Empty<string>(), Array.Empty<string>(), Array.Empty<string>());
+                return new BackupManifest(false, Strings.T("backup.fileMissing"), 0, 0, false, Array.Empty<string>(), Array.Empty<string>(), Array.Empty<string>());
 
             var scan = ScanZip(zipPath);
             if (!scan.Ok)
@@ -288,27 +288,27 @@ public sealed class ObsBackupService
     {
         try
         {
-            p.Report("正在预检备份包…");
+            p.Report(Strings.T("backup.progress.precheck"));
             var scan = ScanZip(zipPath);
             if (!scan.Ok)
                 return new ObsImportResult(false, scan.Reason, null, 0, 0);
 
             var loc = await _paths.LocateAsync();
             if (!loc.Exists)
-                return new ObsImportResult(false, "未找到本机 OBS 配置目录，无法导入。", null, 0, 0);
+                return new ObsImportResult(false, Strings.T("backup.importNoConfig"), null, 0, 0);
 
             if (_paths.IsObsRunning())
-                return new ObsImportResult(false, "OBS 正在运行，请先完全退出 OBS 后再导入（否则配置文件会被占用）。", null, 0, 0);
+                return new ObsImportResult(false, Strings.T("backup.importObsRunning"), null, 0, 0);
 
-            p.Report("正在创建导入前自动备份（含密钥，以便可恢复）…");
+            p.Report(Strings.T("backup.progress.preImportBackup"));
             string? autoBackup;
             try
             {
-                autoBackup = await CreateBackupAsync("导入前自动备份", includeKey: true, includePluginConfig: true, null);
+                autoBackup = await CreateBackupAsync(Strings.T("backup.reason.preImport"), includeKey: true, includePluginConfig: true, null);
             }
             catch (Exception ex)
             {
-                return new ObsImportResult(false, $"导入前自动备份失败，已中止导入以保护现有配置：{ex.Message}", null, 0, 0);
+                return new ObsImportResult(false, Strings.T("backup.importPreBackupFailed", ex.Message), null, 0, 0);
             }
 
             var (importedCollections, importedProfiles) = ExtractIntoConfig(zipPath, loc, scan, mode, p);
@@ -317,7 +317,7 @@ public sealed class ObsBackupService
         }
         catch (Exception ex)
         {
-            return new ObsImportResult(false, $"导入失败：{ex.Message}", null, 0, 0);
+            return new ObsImportResult(false, Strings.T("backup.importFailed", ex.Message), null, 0, 0);
         }
     }
 
@@ -335,7 +335,7 @@ public sealed class ObsBackupService
 
             if (mode == ObsImportMode.Overwrite)
             {
-                p.Report("正在移走现有配置（保留在回收站可恢复）…");
+                p.Report(Strings.T("backup.progress.moveAside"));
                 StageExistingConfig(tx, configDir);
             }
 
@@ -366,7 +366,7 @@ public sealed class ObsBackupService
                 }
             }
 
-            p.Report("正在提交…");
+            p.Report(Strings.T("backup.progress.commit"));
             tx.Commit();
         }
 
@@ -396,7 +396,7 @@ public sealed class ObsBackupService
         if (mode == ObsImportMode.Merge && File.Exists(Path.Combine(configDir, "basic", "scenes", fileName)))
         {
             ExtractSceneCollectionMerge(zip, entry, configDir);
-            p.Report($"已合并场景集合（重命名避免冲突）：{fileName}");
+            p.Report(Strings.T("backup.progress.mergedCollection", fileName));
         }
         else
         {
@@ -413,7 +413,7 @@ public sealed class ObsBackupService
         var profName = seg[3];
         if (mode == ObsImportMode.Merge && machineKeys.ContainsKey(profName))
         {
-            p.Report($"已跳过同名配置「{profName}」（合并模式不覆盖）。");
+            p.Report(Strings.T("backup.progress.skippedProfile", profName));
             return;
         }
         var rest = string.Join("/", seg.Skip(4));
@@ -459,23 +459,23 @@ public sealed class ObsBackupService
             foreach (var entry in zip.Entries)
             {
                 scan.EntryCount++;
-                if (scan.EntryCount > MaxEntries) { scan.Ok = false; scan.Reason = "备份包条目过多（疑似异常）。"; return scan; }
+                if (scan.EntryCount > MaxEntries) { scan.Ok = false; scan.Reason = Strings.T("scan.tooManyEntries"); return scan; }
 
                 var rel = NormalizeEntryName(entry.FullName);
-                if (rel is null) { scan.Ok = false; scan.Reason = $"条目路径非法（疑似路径穿越）：{entry.FullName}"; return scan; }
+                if (rel is null) { scan.Ok = false; scan.Reason = Strings.T("scan.pathEscape", entry.FullName); return scan; }
                 if (rel == "manifest.json") continue;
                 if (!rel.StartsWith("config/", StringComparison.OrdinalIgnoreCase)) { scan.Skipped.Add(rel); continue; }
 
                 // 扩展名黑名单：直接拒绝整包
                 var ext = Path.GetExtension(rel);
-                if (ForbiddenExt.Contains(ext)) { scan.Ok = false; scan.Reason = $"备份包含危险文件类型（{ext}），已拒绝以防执行恶意代码。"; return scan; }
+                if (ForbiddenExt.Contains(ext)) { scan.Ok = false; scan.Reason = Strings.T("scan.forbiddenExt", ext); return scan; }
 
                 // 炸弹防护
-                if (entry.Length > MaxEntryBytes) { scan.Ok = false; scan.Reason = $"单条条目过大（{entry.Length / 1024 / 1024}MB），疑似压缩炸弹。"; return scan; }
+                if (entry.Length > MaxEntryBytes) { scan.Ok = false; scan.Reason = Strings.T("scan.entryTooLarge", entry.Length / 1024 / 1024); return scan; }
                 total += entry.Length;
-                if (total > MaxTotalBytes) { scan.Ok = false; scan.Reason = "备份包解压后过大（>512MB），疑似压缩炸弹。"; return scan; }
+                if (total > MaxTotalBytes) { scan.Ok = false; scan.Reason = Strings.T("scan.totalTooLarge"); return scan; }
                 if (entry.CompressedLength > 0 && entry.Length / (double)entry.CompressedLength > MaxRatio)
-                { scan.Ok = false; scan.Reason = "检测到异常压缩比，疑似压缩炸弹。"; return scan; }
+                { scan.Ok = false; scan.Reason = Strings.T("scan.badRatio"); return scan; }
 
                 // 白名单外的扩展名：跳过（不拒绝）
                 if (!AllowedExt.Contains(ext)) { scan.Skipped.Add(rel); continue; }
@@ -511,7 +511,7 @@ public sealed class ObsBackupService
         catch (Exception ex)
         {
             scan.Ok = false;
-            scan.Reason = $"无法读取备份包：{ex.Message}";
+            scan.Reason = Strings.T("scan.unreadable", ex.Message);
             return scan;
         }
     }
@@ -540,7 +540,7 @@ public sealed class ObsBackupService
         else
         {
             var orig = node["name"]?.GetValue<string>() ?? Path.GetFileNameWithoutExtension(entry.Name);
-            node["name"] = orig + " (导入)";
+            node["name"] = orig + Strings.T("backup.progress.importedSuffix");
             text = node.ToJsonString(new JsonSerializerOptions { WriteIndented = true });
             baseName = Slugify(orig);
         }

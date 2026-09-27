@@ -25,8 +25,9 @@ public partial class MainWindow : Window
 {
     private readonly NavigationService _nav = new();
 
-    /// <summary>路由 → (导航项, 标题, 副标题)。没有导航项的页面第一个元素为 null。</summary>
-    private readonly Dictionary<string, (RadioButton? Tab, string Title, string Subtitle)> _meta;
+    /// <summary>路由 → (导航项, 标题键, 副标题键)。标题与副标题存**文案键**而不是成品文案：
+    /// 语言切换后顶栏要跟着变，所以取文案的时机放在渲染时（见 OnNavigated / RefreshHeaderForLanguage）。</summary>
+    private readonly Dictionary<string, (RadioButton? Tab, string TitleKey, string SubtitleKey)> _meta;
 
     /// <summary>切换导航高亮时抑制 Checked 事件，避免自己触发自己。</summary>
     private bool _syncingNav;
@@ -41,22 +42,22 @@ public partial class MainWindow : Window
 
         _meta = new(StringComparer.OrdinalIgnoreCase)
         {
-            [Routes.Home] = (NavHome, "首页", "按分类查问题，或直接问助手"),
-            [Routes.Search] = (NavSearch, "搜索问题", "输入关键词，边打边找"),
-            [Routes.Assistant] = (NavAssistant, "问我一下", "描述你遇到的现象，我来定位"),
-            [Routes.Diagnostic] = (NavDiagnostic, "智能诊断", "连上 OBS 后一键体检"),
-            [Routes.Setup] = (NavSetup, "直播搭建", "从零到开播的完整流程"),
-            [Routes.Templates] = (NavTemplates, "场景模板", "一键搭好整套场景与来源"),
-            [Routes.Plugins] = (NavPlugins, "插件广场", "常用 OBS 插件分类导航，直达官方下载"),
-            [Routes.Toolbox] = (NavToolbox, "工具箱", "录像工具 · 冲突扫描 · 带宽计算 · 版本情报"),
-            [Routes.Console] = (NavConsole, "OBS 控制台", "远程控制场景、录制与推流"),
-            [Routes.Performance] = (NavPerformance, "系统监控", "CPU / 内存 / 网络 / 磁盘实时曲线"),
-            [Routes.Guide] = (NavGuide, "排障指引", "通用排查思路与速查手册"),
-            [Routes.Settings] = (NavSettings, "设置", "诊断引擎、外观与关于"),
-            [Routes.Category] = (null, "分类", ""),
-            [Routes.Problem] = (null, "问题详情", ""),
-            [Routes.Logs] = (null, "日志分析", "离线解析 OBS 日志，定位异常"),
-            [Routes.ObsConfig] = (null, "OBS 配置管理", "备份、导入导出与重置"),
+            [Routes.Home] = (NavHome, "page.home.title", "page.home.subtitle"),
+            [Routes.Search] = (NavSearch, "page.search.title", "page.search.subtitle"),
+            [Routes.Assistant] = (NavAssistant, "page.assistant.title", "page.assistant.subtitle"),
+            [Routes.Diagnostic] = (NavDiagnostic, "page.diagnostic.title", "page.diagnostic.subtitle"),
+            [Routes.Setup] = (NavSetup, "page.setup.title", "page.setup.subtitle"),
+            [Routes.Templates] = (NavTemplates, "page.templates.title", "page.templates.subtitle"),
+            [Routes.Plugins] = (NavPlugins, "page.plugins.title", "page.plugins.subtitle"),
+            [Routes.Toolbox] = (NavToolbox, "page.toolbox.title", "page.toolbox.subtitle"),
+            [Routes.Console] = (NavConsole, "page.console.title", "page.console.subtitle"),
+            [Routes.Performance] = (NavPerformance, "page.performance.title", "page.performance.subtitle"),
+            [Routes.Guide] = (NavGuide, "page.guide.title", "page.guide.subtitle"),
+            [Routes.Settings] = (NavSettings, "page.settings.title", "page.settings.subtitle"),
+            [Routes.Category] = (null, "page.category.title", ""),
+            [Routes.Problem] = (null, "page.problem.title", ""),
+            [Routes.Logs] = (null, "page.logs.title", "page.logs.subtitle"),
+            [Routes.ObsConfig] = (null, "page.obsconfig.title", "page.obsconfig.subtitle"),
         };
 
         RegisterRoutes();
@@ -74,6 +75,7 @@ public partial class MainWindow : Window
 
         // 设置页「重新展示引导」→ 立即重播（静态事件解耦，见 App.RequestOnboardingReset）
         App.OnboardingResetRequested += OnOnboardingResetRequested;
+        AppServices.Localization.Changed += OnLanguageChanged;
         BuildOnboardingDots();
     }
 
@@ -238,7 +240,7 @@ public partial class MainWindow : Window
         var step = OnboardingGuide.Step(_onboardingStep);
         OnbStepTitle.Text = step.Title;
         OnbStepDesc.Text = step.Description;
-        OnbStepCounter.Text = $"第 {_onboardingStep + 1} / {OnboardingGuide.StepCount} 步";
+        OnbStepCounter.Text = Strings.T("onb.stepCounter", _onboardingStep + 1, OnboardingGuide.StepCount);
 
         var accent = (System.Windows.Media.Brush)FindResource("BrandBrush");
         var idle = (System.Windows.Media.Brush)FindResource("MutedBrush");
@@ -254,7 +256,7 @@ public partial class MainWindow : Window
             : Visibility.Visible;
 
         // 最后一步：主按钮变成「开始使用」，不再提供「跳过」（跳过与完成在此处等价）
-        OnbNextBtn.Content = OnboardingGuide.IsLast(_onboardingStep) ? "开始使用" : "下一步";
+        OnbNextBtn.Content = OnboardingGuide.IsLast(_onboardingStep) ? Strings.T("onb.start") : Strings.T("onb.next");
         OnbSkipBtn.Visibility = OnboardingGuide.IsLast(_onboardingStep)
             ? Visibility.Collapsed
             : Visibility.Visible;
@@ -270,8 +272,8 @@ public partial class MainWindow : Window
     private string PageNameOf(string route)
     {
         if (string.IsNullOrEmpty(route)) return "";
-        return _meta.TryGetValue(route, out var meta) && !string.IsNullOrWhiteSpace(meta.Title)
-            ? meta.Title
+        return _meta.TryGetValue(route, out var meta) && !string.IsNullOrWhiteSpace(meta.TitleKey)
+            ? Strings.T(meta.TitleKey)
             : route;
     }
 
@@ -316,7 +318,7 @@ public partial class MainWindow : Window
                 Tag = link,
                 Padding = new Thickness(12, 6, 12, 6),
                 Margin = new Thickness(0, 0, 8, 6),
-                ToolTip = link.External ? "用默认浏览器打开官方页面" : $"打开「{PageNameOf(link.Target)}」"
+                ToolTip = link.External ? Strings.T("onb.tipExternal") : Strings.T("onb.tipInternal", PageNameOf(link.Target))
             };
             button.Click += OnOnboardingLinkClick;
             OnbLinks.Children.Add(button);
@@ -335,7 +337,7 @@ public partial class MainWindow : Window
             if (link.External)
             {
                 var ok = await AppServices.Host.OpenExternalAsync(link.Target).ConfigureAwait(true);
-                if (!ok) AppServices.Toast.Show("打不开浏览器，请手动访问 " + link.Target, "error");
+                if (!ok) AppServices.Toast.Show(Strings.T("common.openBrowserFailed") + link.Target, "error");
                 return;
             }
 
@@ -471,7 +473,7 @@ public partial class MainWindow : Window
             if (updated)
             {
                 AppServices.Problems.Reload();
-                AppServices.Toast.Show($"知识库已更新到 v{newVersion}", "ok");
+                AppServices.Toast.Show(Strings.T("settings.kb.updated", newVersion), "ok");
             }
         }
         catch (Exception)
@@ -486,7 +488,7 @@ public partial class MainWindow : Window
             if (pluginsUpdated)
             {
                 AppServices.PluginCatalog.Reload();
-                AppServices.Toast.Show($"插件目录已更新到 v{pluginsVersion}", "ok");
+                AppServices.Toast.Show(Strings.T("settings.kb.pluginsUpdated", pluginsVersion), "ok");
             }
         }
         catch (Exception)
@@ -500,9 +502,9 @@ public partial class MainWindow : Window
             var updates = await AppServices.PluginWatch.CheckForUpdatesAsync().ConfigureAwait(false);
             if (updates.Count > 0)
             {
-                var names = string.Join("、", updates.Take(3).Select(u => $"{u.PluginName} {u.NewTag}"));
-                if (updates.Count > 3) names += $" 等 {updates.Count} 个";
-                AppServices.Toast.Show($"关注的插件有新版本：{names}", "info");
+                var names = string.Join(", ", updates.Take(3).Select(u => $"{u.PluginName} {u.NewTag}"));
+                if (updates.Count > 3) names += Strings.T("main.watchedMore", updates.Count);
+                AppServices.Toast.Show(Strings.T("main.watchedUpdates", names), "info");
             }
         }
         catch (Exception)
@@ -546,9 +548,16 @@ public partial class MainWindow : Window
     }
 
     /// <summary>
-    /// 自动化自检：遍历全部 15 个路由（含带参数的分类页 / 问题详情页），
+    /// 自动化自检：遍历全部 17 个路由（含带参数的分类页 / 问题详情页），
     /// 捕获 XAML 解析、构造函数、OnNavigatedToAsync 各阶段异常，汇总写入 <c>selftest_result.txt</c>。
     /// 这是「编译通过但运行时才炸」类错误（尤其 <c>{Static|Dynamic}Resource</c> 拼错）最有效的拦截手段。
+    ///
+    /// 报告文本（以及本方法里的检查项描述）**保持中文**（V2.9.2 的边界约定）：
+    /// 它是给开发者 / CI 看的构建产物，不是界面内容，混入界面语言反而让跨版本比对变难。
+    /// 用户可见的报错与提示一律走文案表。
+    ///
+    /// V2.9.2 追加两项：**文案资源解析**（三个代表性控件的实际取值）与
+    /// **语言切换往返**（中 → 英 → 中，断言文案与顶栏即时跟随且能还原）。
     /// </summary>
     private async Task RunSelfTestAsync()
     {
@@ -620,10 +629,11 @@ public partial class MainWindow : Window
 
                 // OnbTargetText 在路由名查不到时会回退成路由名本身，所以「读到的不是路由名」即证明
                 // 这一步的路由确实在主窗口路由表里（否则界面上会出现 home / console 这种英文名）。
+                var expectedName = _meta.TryGetValue(step.Route, out var stepMeta) ? Strings.T(stepMeta.TitleKey) : step.Route;
                 if (string.IsNullOrWhiteSpace(OnbTargetText.Text))
                     onboardingProblems.Add($"第 {i + 1} 步没有显示对应页面");
-                else if (string.Equals(OnbTargetText.Text, step.Route, StringComparison.OrdinalIgnoreCase))
-                    onboardingProblems.Add($"第 {i + 1} 步的页面名未命中路由表（{step.Route}）");
+                else if (!string.Equals(OnbTargetText.Text, expectedName, StringComparison.Ordinal))
+                    onboardingProblems.Add($"第 {i + 1} 步的页面名未命中路由表（{step.Route}：显示 {OnbTargetText.Text}，期望 {expectedName}）");
                 if (OnbLinks.Children.Count != step.Links.Count)
                     onboardingProblems.Add($"第 {i + 1} 步跳转按钮 {OnbLinks.Children.Count}/{step.Links.Count}");
                 if (!string.Equals(AppServices.Navigation?.CurrentRoute, step.Route, StringComparison.OrdinalIgnoreCase))
@@ -675,12 +685,80 @@ public partial class MainWindow : Window
             results.Add($"FAIL  mini      -> {ex.GetType().Name}: {ex.Message}");
         }
 
+        // 文案资源解析（V2.9.2）：XAML 上的文案走 {DynamicResource Loc.*}，只有 LocalizationService
+        // 把这些键写进 Application.Resources 才解析得出来；解析失败是**静默**的（控件留空，
+        // 编译期与运行期都不报错），所以这里在自检里钉住几个代表性控件的实际取值。
+        try
+        {
+            var navText = NavHome.Content as string;
+            var topSettingsText = (NavSettings.Content as string);
+            var onboardingSkip = OnbSkipBtn.Content as string;
+            var resolved = new List<string>();
+            if (string.IsNullOrWhiteSpace(navText) || navText.StartsWith("Loc.", StringComparison.Ordinal))
+                resolved.Add($"导航项（Content={navText ?? "null"}）");
+            if (string.IsNullOrWhiteSpace(topSettingsText) || topSettingsText.StartsWith("Loc.", StringComparison.Ordinal))
+                resolved.Add($"导航项设置（Content={topSettingsText ?? "null"}）");
+            if (string.IsNullOrWhiteSpace(onboardingSkip) || onboardingSkip.StartsWith("Loc.", StringComparison.Ordinal))
+                resolved.Add($"引导跳过按钮（Content={onboardingSkip ?? "null"}）");
+
+            results.Add(resolved.Count == 0
+                ? $"PASS  i18n      (文案资源解析：{navText})"
+                : $"FAIL  i18n      -> 未解析的 {string.Join("；", resolved)}");
+        }
+        catch (Exception ex)
+        {
+            results.Add($"FAIL  i18n      -> {ex.GetType().Name}: {ex.Message}");
+        }
+
+        // 语言切换（V2.9.2）：走**生产路径**跑一遍中 → 英 → 中，断言文案真的跟着变、且往返后回到原状。
+        // 这条覆盖的是「DynamicResource 文案在切换时是否即时生效 + 页面重放是否正常」，
+        // 单测覆盖不到（需要真实 WPF 资源字典与窗口）。
+        //
+        // 注意：SetLanguage 会写偏好。这里先记下原值、结束时用同一个 API 还原，
+        // 避免自检把开发机/CI 上的语言选择改掉（还原值就是默认的中文）。
+        try
+        {
+            var originalLanguage = Strings.Current;
+            var switchingProblems = new List<string>();
+
+            AppServices.Localization.SetLanguage(Strings.EnUs);
+            await WaitForUiIdleAsync().ConfigureAwait(true);
+            if (!string.Equals(NavHome.Content as string, "Home", StringComparison.Ordinal))
+                switchingProblems.Add($"切到英文后导航项仍是「{NavHome.Content}」");
+            if (!string.Equals(Strings.Current, Strings.EnUs, StringComparison.Ordinal))
+                switchingProblems.Add("Strings.Current 未切到英文");
+
+            // 顶栏标题应当等于「当前路由」的英文标题 —— 自检结束时的当前路由不一定是首页
+            // （引导最后一步把界面切到了搭建页），所以按当前路由取期望值，而不是写死首页标题。
+            if (_meta.TryGetValue(_nav.CurrentRoute, out var currentMeta))
+            {
+                var expectedTitle = Strings.T(currentMeta.TitleKey);
+                if (!string.Equals(PageTitle.Text, expectedTitle, StringComparison.Ordinal))
+                    switchingProblems.Add($"切到英文后顶栏标题未跟随（{_nav.CurrentRoute}：显示 {PageTitle.Text}，期望 {expectedTitle}）");
+            }
+
+            AppServices.Localization.SetLanguage(originalLanguage);
+            await WaitForUiIdleAsync().ConfigureAwait(true);
+            if (!string.Equals(NavHome.Content as string, Strings.T("nav.home"), StringComparison.Ordinal))
+                switchingProblems.Add($"切回中文后导航项未还原（{NavHome.Content}）");
+            if (!string.Equals(Strings.Current, originalLanguage, StringComparison.Ordinal))
+                switchingProblems.Add("语言未还原");
+
+            results.Add(switchingProblems.Count == 0
+                ? $"PASS  i18n-swap (中 → 英 → 中，文案与顶栏均即时跟随：{NavHome.Content})"
+                : $"FAIL  i18n-swap -> {string.Join("；", switchingProblems)}");
+        }
+        catch (Exception ex)
+        {
+            results.Add($"FAIL  i18n-swap -> {ex.GetType().Name}: {ex.Message}");
+        }
+
         var ok = results.Count(r => r.StartsWith("PASS"));
         var fail = results.Count - ok;
         var report = new StringBuilder();
         report.AppendLine($"OBS_Helper WPF 自检  {DateTime.Now:yyyy-MM-dd HH:mm:ss}");
-        // 总数不能只写 cases.Length：列表里还有引导覆盖层与小窗两项非路由检查
-        report.AppendLine($"检查项: {ok} PASS / {fail} FAIL  （路由 {cases.Length} 项 + 新手引导 + 迷你小窗）");
+        // 总数不能只写 cases.Length：列表里还有引导覆盖层 / 小窗 / 文案解析三项非路由检查
+        report.AppendLine($"检查项: {ok} PASS / {fail} FAIL  （路由 {cases.Length} 项 + 新手引导 + 迷你小窗 + 文案资源 + 语言切换）");
         report.AppendLine(new string('-', 60));
         foreach (var line in results) report.AppendLine(line);
         if (App.HeadlessErrors.Count > 0)
@@ -701,6 +779,7 @@ public partial class MainWindow : Window
     {
         // 静态事件持有本窗口引用：退出时退订，避免残留引用
         App.OnboardingResetRequested -= OnOnboardingResetRequested;
+        AppServices.Localization.Changed -= OnLanguageChanged;
         // 退出时断开 OBS，避免 WebSocket 线程拖住进程
         try { await AppServices.Obs.DisposeAsync(); } catch { /* 退出路径，忽略 */ }
         AppServices.Appearance.Dispose();
@@ -719,8 +798,7 @@ public partial class MainWindow : Window
         {
             e.Cancel = true;
             Hide();
-            AppServices.Tray.Notify("已最小化到托盘",
-                "OBS 排障助手仍在后台运行，双击托盘图标或从托盘菜单可恢复窗口。");
+            AppServices.Tray.Notify(Strings.T("tray.minimizedTitle"), Strings.T("tray.minimizedMessage"));
         }
     }
 
@@ -779,9 +857,9 @@ public partial class MainWindow : Window
 
         if (_meta.TryGetValue(route, out var meta))
         {
-            PageTitle.Text = meta.Title;
-            PageSubtitle.Text = meta.Subtitle;
-            PageSubtitle.Visibility = string.IsNullOrEmpty(meta.Subtitle)
+            PageTitle.Text = Strings.T(meta.TitleKey);
+            PageSubtitle.Text = Strings.T(meta.SubtitleKey);
+            PageSubtitle.Visibility = string.IsNullOrEmpty(meta.SubtitleKey)
                 ? Visibility.Collapsed
                 : Visibility.Visible;
 
@@ -840,6 +918,39 @@ public partial class MainWindow : Window
 
     private void SyncBackButton()
         => BackButton.Visibility = _nav.CanGoBack ? Visibility.Visible : Visibility.Collapsed;
+
+    // ------------------------------------------------------------ 语言切换（V2.9.2）
+
+    /// <summary>
+    /// 语言变化后把整窗刷新到位，四件事缺一不可：
+    /// <list type="number">
+    ///   <item>顶栏标题 / 副标题（存的是文案键，这里重新取一次）；</item>
+    ///   <item>两枚连接徽章 —— 它们属于窗口 chrome、不在页面里，重建页面刷不到；</item>
+    ///   <item>托盘菜单 —— 菜单项是 WinForms 对象、建在托盘线程上，必须让托盘服务自己重建；</item>
+    ///   <item>当前页面 —— 用「原地导航」触发页面的 OnNavigatedToAsync，让各页按新语言重建内容。
+    ///     这里刻意复用既有的页面生命周期，而不是给每个页面各写一套刷新逻辑。</item>
+    /// </list>
+    /// 纯 XAML 的文案（<c>{DynamicResource Loc.*}</c>）由 LocalizationService 写进
+    /// <c>Application.Resources</c> 时已即时生效，不需要在这里处理。
+    /// </summary>
+    private void OnLanguageChanged(string oldLanguage, string newLanguage)
+    {
+        if (!Dispatcher.CheckAccess())
+        {
+            Dispatcher.BeginInvoke(new Action(() => OnLanguageChanged(oldLanguage, newLanguage)));
+            return;
+        }
+
+        TopBadge.Refresh();
+        SideBadge.Refresh();
+        AppServices.Tray.RefreshLanguage();
+
+        var route = _nav.CurrentRoute;
+        if (string.IsNullOrEmpty(route)) return;
+
+        // 原地重放：不进返回栈、不补历史，等价于「刷新当前页」
+        _nav.Navigate(route, _nav.CurrentParameter, pushHistory: false);
+    }
 
     private void OnNavChecked(object sender, RoutedEventArgs e)
     {

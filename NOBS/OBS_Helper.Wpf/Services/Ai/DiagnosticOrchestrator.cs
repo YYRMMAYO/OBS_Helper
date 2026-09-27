@@ -115,10 +115,10 @@ public sealed class DiagnosticOrchestrator
                 return await Fallback(_local, ctx, query, FreeQuotaExhaustedMessage(provider)).ConfigureAwait(false);
             case FreeConsumeResult.TooSoon:
                 return await Fallback(_local, ctx, query,
-                    $"免费 AI 触发本地低频保护：两次请求之间至少间隔 {FreeRateLimiter.MinIntervalSeconds} 秒，请稍后再试；本次已改用本地的搜索助手。").ConfigureAwait(false);
+                    Strings.T("ai.orchestrator.tooSoon", FreeRateLimiter.MinIntervalSeconds)).ConfigureAwait(false);
             default:
                 // 未来新增的枚举值：按「未放行」保守处理，避免意外直通免费端点
-                return await Fallback(_local, ctx, query, "免费 AI 暂不可用，本次改用本地的搜索助手。").ConfigureAwait(false);
+                return await Fallback(_local, ctx, query, Strings.T("ai.orchestrator.freeUnavailable")).ConfigureAwait(false);
         }
 
         var free = await _free.DiagnoseAsync(ctx, query);
@@ -128,11 +128,15 @@ public sealed class DiagnosticOrchestrator
     }
 
     private static string FreeQuotaExhaustedMessage(FreeAiProvider provider)
-        => $"今日{provider switch
+    {
+        var channel = provider switch
         {
-            FreeAiProvider.Pollinations => "Pollinations（国外免 Key）",
-            _ => "智谱免费 AI",
-        }}额度（{FreeRateLimiter.MaxPerDay(provider)} 次/天）已用完，本次改用本地的搜索助手；每天 0 点自动恢复，或切换到「云端大模型」使用自己的 API。";
+            FreeAiProvider.Pollinations => Strings.T("ai.orchestrator.provider.pollinations"),
+            _ => Strings.T("ai.orchestrator.provider.zhipu"),
+        };
+
+        return Strings.T("ai.orchestrator.quotaExhausted", channel, FreeRateLimiter.MaxPerDay(provider));
+    }
 
     private async Task<DiagnosticResult> Fallback(LocalDiagnosticEngine local, DiagnosticContext ctx, string? query, string? error)
     {

@@ -34,7 +34,7 @@
 
 ## 3. 组合根：AppServices（无 DI 容器）
 
-`AppServices.cs` 是唯一的服务装配点：**27 个 Lazy 单例**，构造函数注入依赖，刻意不用 DI 容器（服务数少、依赖是静态树、零依赖、启动快、依赖关系一屏可见）。
+`AppServices.cs` 是唯一的服务装配点：**28 个 Lazy 单例**，构造函数注入依赖，刻意不用 DI 容器（服务数少、依赖是静态树、零依赖、启动快、依赖关系一屏可见）。
 
 ```text
 Store ─┬─ BookmarkService ── AssistantService
@@ -202,3 +202,37 @@ SceneTemplateService 场景模板：在线落地（建专属配置集合 → 逐
 - 免费 AI 密钥：构建期由 `scripts/embed_free_ai_key.ps1` 注入 `Assets/free_ai_key.json`（真实密钥不入库）。
 - 自检：`OBS_SELFTEST=1` 无界面跑 17 条路由 + 新手引导覆盖层 + 迷你小窗共 19 项自检，结果写 `selftest_result.txt`——「编译过但运行炸」类错误的最有效拦截。引导一项会**逐步真实导航**并校验「页面名与路由表一致」「跳转按钮数量与步骤定义一致」「站外链接落在官方域名」。
 - 数据脚本：`scripts/add_problems.py` / `add_templates.py` 可复用改知识库 / 模板数据。
+
+## 16. 国际化（V2.9.2）
+
+三块拼起来：**纯 BCL 的文案表** + **写进 Application.Resources 的语言服务** + **数据驱动的跨语言判定**。
+
+```
+Localization/Strings.cs           文案表入口：当前语言、T(key)、T(key, args)、键集、语言归一化
+Localization/StringTableZhHans.cs 中文文案（默认语言）
+Localization/StringTableEnUs.cs   英文文案
+Localization/DataValues.cs        数据驱动展示值的跨语言判定（severity / level / badge）
+Services/LocalizationService.cs   语言服务：偏好持久化、写 Application.Resources、广播 Changed
+```
+
+- **零 WPF 依赖**：`Strings` / `DataValues` 只用 BCL，因此被单测工程直接链接编译的纯逻辑文件
+  （日志分析器、录前自检、各类体检核心、带宽/编码顾问 …）与界面共用同一份文案表。零第三方包的原则不变。
+- **即时生效**与换肤同路：`LocalizationService.Apply()` 把当前语言的整表写进
+  `Application.Resources`（键 `Loc.<文案键>`），XAML 用 `{DynamicResource Loc.*}` 引用 ——
+  语言与主题因此都走 DynamicResource，改一处即整窗生效，不需要重建窗口。
+- **代码里拼出来的文案**：服务层与页面在取文案时调用 `Strings.T(...)`；
+  语言变化由 `LocalizationService.Changed` 广播，`MainWindow.OnLanguageChanged` 负责
+  ① 重取顶栏标题 / 副标题（`_meta` 存的是**文案键**而不是成品文案）、
+  ② 刷新两枚连接徽章、③ 让托盘重建菜单、④ 把**当前页面原地重放一次**
+  （`Navigate(CurrentRoute, CurrentParameter, pushHistory: false)`）—— 复用页面既有的
+  `OnNavigatedToAsync` 生命周期，避免给每个页面各写一套刷新逻辑。
+- **纯逻辑层不许缓存文案**：静态字段里冻住 `Strings.T(...)` 会让语言切换后拿不到新值。
+  受影响的几处已改为**属性**（引导步骤、搭建向导、助手示例问句、工具箱处方、AI 工具 schema）。
+- **跨语言的展示值**：知识库的 `severity` / `level`、插件角标是展示文案，但被逻辑用来排序与配色，
+  且本机已下载的外部知识库可能是另一种语言写的 —— 判定由 `DataValues` 统一做（两种取值都认）；
+  冲突软件扫描把 `RiskLevel`（逻辑，`high`/`medium`/`info`）与 `Risk`（展示）拆开，
+  否则 XAML 的 `DataTrigger` 在中英切换后会全部落空。
+- **首启语言来源**：`用户选择 > 安装向导写的 language.ini > 简体中文`。
+  安装脚本把向导里选定的语言写进 `{app}\language.ini`；应用只在「用户没在应用内选过」时采用它。
+- **日志与诊断的边界**：`FileLogger` 落盘的技术日志（分类 + 消息）保持中文 —— 它们是排障材料而不是界面内容，
+  混入界面语言反而让跨版本比对与检索变难；用户可见的报错/提示全部走文案表。

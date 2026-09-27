@@ -36,19 +36,19 @@ public partial class MiniControlWindow : Window
         var obs = AppServices.Obs;
         var connected = obs.IsConnected;
 
-        StatusText.Text = connected ? "已连接 · 就绪" : "未连接 OBS";
+        StatusText.Text = connected ? Strings.T("mini.statusConnected") : Strings.T("mini.statusDisconnected");
         StatusText.SetResourceReference(TextBlock.ForegroundProperty, connected ? "OkBrush" : "WarnBrush");
 
         var rec = obs.RecordStatus.Active;
-        RecordButtonText.Text = rec ? "停止录制" : "开始录制";
+        RecordButtonText.Text = rec ? Strings.T("mini.stopRecord") : Strings.T("mini.startRecord");
         ApplyActiveState(RecordButton, RecordButtonText, rec, connected);
 
         var stream = obs.StreamStatus.Active;
-        StreamButtonText.Text = stream ? "停止推流" : "开始推流";
+        StreamButtonText.Text = stream ? Strings.T("mini.stopStream") : Strings.T("mini.startStream");
         ApplyActiveState(StreamButton, StreamButtonText, stream, connected);
 
         var vcam = obs.VirtualCamStatus.Active;
-        VcamButtonText.Text = vcam ? "关闭虚拟摄像头" : "开启虚拟摄像头";
+        VcamButtonText.Text = vcam ? Strings.T("mini.vcamOff") : Strings.T("mini.vcamOn");
         ApplyActiveState(VcamButton, VcamButtonText, vcam, connected);
     }
 

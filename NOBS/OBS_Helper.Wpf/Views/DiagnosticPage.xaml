@@ -1,4 +1,4 @@
-﻿<UserControl x:Class="OBS_Helper.Wpf.Views.DiagnosticPage"
+<UserControl x:Class="OBS_Helper.Wpf.Views.DiagnosticPage"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
 
@@ -6,12 +6,12 @@
     <StackPanel Margin="22,18,22,26">
 
       <TextBlock Style="{StaticResource MutedText}"
-                 Text="本地的搜索助手 / 免费 AI / 云端大模型三种引擎，按清单与日志逐项排查。" />
+                 Text="{DynamicResource Loc.diagnostic.intro}" />
 
       <!-- ============================================ 智能诊断 -->
       <Border Style="{StaticResource Card}" Margin="0,14,0,0">
         <StackPanel>
-          <TextBlock Style="{StaticResource SectionTitle}" Text="智能诊断" />
+          <TextBlock Style="{StaticResource SectionTitle}" Text="{DynamicResource Loc.page.diagnostic.title}" />
 
           <!-- 引擎与已载入日志报告的提示，进入页面时重新计算 -->
           <TextBlock x:Name="EngineText" Style="{StaticResource MutedText}" />
@@ -20,14 +20,14 @@
           <WrapPanel x:Name="CloudHintPanel" Margin="0,8,0,0" Visibility="Collapsed">
             <TextBlock x:Name="CloudHintText" Style="{StaticResource MutedText}"
                        VerticalAlignment="Center" />
-            <Button Content="去 AI 设置 →" Style="{StaticResource LinkButton}"
+            <Button Content="{DynamicResource Loc.diagnostic.goAiSettings}" Style="{StaticResource LinkButton}"
                     Margin="8,0,0,0" VerticalAlignment="Center" Click="OnOpenSettings" />
           </WrapPanel>
 
           <WrapPanel x:Name="ObsHintPanel" Margin="0,6,0,0" Visibility="Collapsed">
             <TextBlock Style="{StaticResource MutedText}" VerticalAlignment="Center"
-                       Text="未连接 OBS：本地的搜索助手依然可用，连上后可一并检查实时运行状态。" />
-            <Button Content="打开控制台 →" Style="{StaticResource LinkButton}"
+                       Text="{DynamicResource Loc.diagnostic.offline}" />
+            <Button Content="{DynamicResource Loc.diagnostic.openConsole}" Style="{StaticResource LinkButton}"
                     Margin="8,0,0,0" VerticalAlignment="Center" Click="OnOpenConsole" />
           </WrapPanel>
 
@@ -39,17 +39,17 @@
 
             <TextBox x:Name="QueryBox" Grid.Column="0"
                      Style="{StaticResource AppTextBox}"
-                     Tag="例如：推流一直重连、编码过载掉帧…" />
+                     Tag="{DynamicResource Loc.diagnostic.placeholder}" />
 
             <Button x:Name="DiagnoseButton" Grid.Column="1" Margin="10,0,0,0"
                     Style="{StaticResource PrimaryButton}"
-                    Content="诊断" Click="OnDiagnose" />
+                    Content="{DynamicResource Loc.diagnostic.run}" Click="OnDiagnose" />
           </Grid>
 
           <!-- 云端一次问答可能几十秒，必须给明确的忙碌态 -->
           <TextBlock x:Name="BusyText" Margin="0,10,0,0"
                      Style="{StaticResource MutedText}" Visibility="Collapsed"
-                     Text="正在分析…（AI 引擎可能需要数十秒，请勿关闭页面）" />
+                     Text="{DynamicResource Loc.diagnostic.analyzing}" />
 
           <StackPanel x:Name="ResultPanel" Margin="0,12,0,0" Visibility="Collapsed">
             <TextBlock x:Name="ErrorText" Visibility="Collapsed" TextWrapping="Wrap"
@@ -67,15 +67,15 @@
 
             <StackPanel x:Name="ItemList" Margin="0,10,0,0" />
 
-            <Button x:Name="ExportButton" Content="导出诊断报告（Markdown）"
+            <Button x:Name="ExportButton" Content="{DynamicResource Loc.diagnostic.export}"
                     Style="{StaticResource GhostButton}" HorizontalAlignment="Left"
                     Margin="0,12,0,0" IsEnabled="False" Click="OnExportReport" />
           </StackPanel>
 
           <StackPanel Orientation="Horizontal" Margin="0,14,0,0">
-            <Button Content="打开日志分析 →" Style="{StaticResource LinkButton}"
+            <Button Content="{DynamicResource Loc.diagnostic.openLogs}" Style="{StaticResource LinkButton}"
                     Margin="0,0,18,0" Click="OnOpenLogs" />
-            <Button Content="AI 设置 →" Style="{StaticResource LinkButton}"
+            <Button Content="{DynamicResource Loc.diagnostic.aiSettings}" Style="{StaticResource LinkButton}"
                     Click="OnOpenSettings" />
           </StackPanel>
         </StackPanel>
@@ -90,13 +90,13 @@
               <ColumnDefinition Width="Auto" />
             </Grid.ColumnDefinitions>
 
-            <TextBlock Grid.Column="0" Style="{StaticResource SectionTitle}" Text="录前自检（只读）" />
+            <TextBlock Grid.Column="0" Style="{StaticResource SectionTitle}" Text="{DynamicResource Loc.diagnostic.preflight}" />
             <Button x:Name="PreflightButton" Grid.Column="1" Style="{StaticResource SecondaryButton}"
-                    VerticalAlignment="Center" Content="一键自检" Click="OnPreflightRun" />
+                    VerticalAlignment="Center" Content="{DynamicResource Loc.diagnostic.preflight.run}" Click="OnPreflightRun" />
           </Grid>
 
           <TextBlock Style="{StaticResource MutedText}" Margin="0,4,0,0" TextWrapping="Wrap"
-                     Text="开播 / 开录前自动核对 OBS 配置：录制格式是否防崩溃的 MKV、录制路径与磁盘空间、编码器、音频采样率与麦克风设置。只读不改任何文件。" />
+                     Text="{DynamicResource Loc.diagnostic.preflight.desc}" />
 
           <StackPanel x:Name="PreflightList" Margin="0,10,0,0" />
         </StackPanel>
@@ -105,7 +105,7 @@
       <!-- ============================================ 快速自检清单 -->
       <Border Style="{StaticResource Card}" Margin="0,14,0,0">
         <StackPanel>
-          <TextBlock Style="{StaticResource SectionTitle}" Text="① 快速自检清单" />
+          <TextBlock Style="{StaticResource SectionTitle}" Text="{DynamicResource Loc.diagnostic.checklist}" />
 
           <ProgressBar x:Name="CheckProgress" Style="{StaticResource AppProgressBar}"
                        Minimum="0" Maximum="100" Value="0" />
@@ -115,7 +115,7 @@
 
           <StackPanel x:Name="CheckList" Margin="0,12,0,0" />
 
-          <Button Content="重置清单" Style="{StaticResource GhostButton}"
+          <Button Content="{DynamicResource Loc.diagnostic.checklist.reset}" Style="{StaticResource GhostButton}"
                   HorizontalAlignment="Left" Margin="0,8,0,0" Click="OnResetChecks" />
         </StackPanel>
       </Border>
@@ -123,58 +123,58 @@
       <!-- ============================================ Windows 配置与日志 -->
       <Border Style="{StaticResource Card}" Margin="0,14,0,0">
         <StackPanel>
-          <TextBlock Style="{StaticResource SectionTitle}" Text="② Windows 配置与日志" />
+          <TextBlock Style="{StaticResource SectionTitle}" Text="{DynamicResource Loc.diagnostic.windows}" />
 
           <TextBlock Style="{StaticResource BodyText}" Margin="0,0,0,6">
-            <Run FontWeight="Bold" Text="配置目录：" /><Run
+            <Run FontWeight="Bold" Text="{DynamicResource Loc.diagnostic.configDir}" /><Run
                  FontFamily="Cascadia Mono, Consolas, Courier New" Text="%AppData%\obs-studio" />
           </TextBlock>
 
           <TextBlock Style="{StaticResource BodyText}" Margin="0,0,0,6">
-            <Run FontWeight="Bold" Text="场景备份：" /><Run
+            <Run FontWeight="Bold" Text="{DynamicResource Loc.diagnostic.sceneBackup}" /><Run
                  FontFamily="Cascadia Mono, Consolas, Courier New"
                  Text="%AppData%\obs-studio\sceneCollections" />
           </TextBlock>
 
           <WrapPanel Margin="0,0,0,6">
             <TextBlock Style="{StaticResource BodyText}" VerticalAlignment="Center">
-              <Run FontWeight="Bold" Text="日志分析：" /><Run
-                   Text="在 OBS 中 帮助 → 日志文件 → 上传日志，或访问" />
+              <Run FontWeight="Bold" Text="{DynamicResource Loc.diagnostic.logAnalysis}" /><Run
+                   Text="{DynamicResource Loc.diagnostic.logHint}" />
             </TextBlock>
-            <Button Content="OBS 官方日志分析器" Style="{StaticResource LinkButton}"
+            <Button Content="{DynamicResource Loc.diagnostic.officialAnalyzer}" Style="{StaticResource LinkButton}"
                     Margin="6,0,0,0" VerticalAlignment="Center" Click="OnOpenAnalyzer" />
           </WrapPanel>
 
           <TextBlock Style="{StaticResource MutedText}" Margin="0,4,0,0"
-                     Text="把分析结果（URL 或关键警告）对照本应用的「崩溃 / 兼容性」分类排查。" />
+                     Text="{DynamicResource Loc.diagnostic.logHint2}" />
         </StackPanel>
       </Border>
 
       <!-- ============================================ 关于 macOS 端 -->
       <Border Style="{StaticResource Card}" Margin="0,14,0,0">
         <StackPanel>
-          <TextBlock Style="{StaticResource SectionTitle}" Text="③ 关于 macOS 端" />
+          <TextBlock Style="{StaticResource SectionTitle}" Text="{DynamicResource Loc.diagnostic.macos}" />
 
           <TextBlock Style="{StaticResource BodyText}" Margin="0,0,0,8">
-            <Run Text="OBS Studio 提供 macOS 版，本应用同样覆盖 macOS 下的常见问题（黑屏、权限、音频设备等）。在 macOS 上首次使用请务必在" /><Run
-                 FontWeight="Bold" Text=" 系统设置 → 隐私与安全性 " /><Run Text="中授予 OBS 以下权限：" />
+            <Run Text="{DynamicResource Loc.diagnostic.macos.desc1}" /><Run
+                 FontWeight="Bold" Text="{DynamicResource Loc.diagnostic.macos.desc2}" /><Run Text="{DynamicResource Loc.diagnostic.macos.desc3}" />
           </TextBlock>
 
           <TextBlock Style="{StaticResource BodyText}" Margin="0,0,0,4">
-            <Run FontWeight="Bold" Text="屏幕录制：" /><Run Text="否则显示器 / 窗口捕获会黑屏或空白。" />
+            <Run FontWeight="Bold" Text="{DynamicResource Loc.diagnostic.macos.screen}" /><Run Text="{DynamicResource Loc.diagnostic.macos.screenDesc}" />
           </TextBlock>
           <TextBlock Style="{StaticResource BodyText}" Margin="0,0,0,4">
-            <Run FontWeight="Bold" Text="麦克风：" /><Run Text="否则无法采集麦克风音频。" />
+            <Run FontWeight="Bold" Text="{DynamicResource Loc.diagnostic.macos.mic}" /><Run Text="{DynamicResource Loc.diagnostic.macos.micDesc}" />
           </TextBlock>
           <TextBlock Style="{StaticResource BodyText}" Margin="0,0,0,4">
-            <Run FontWeight="Bold" Text="摄像头（如使用）：" /><Run Text="否则视频源不可用。" />
+            <Run FontWeight="Bold" Text="{DynamicResource Loc.diagnostic.macos.camera}" /><Run Text="{DynamicResource Loc.diagnostic.macos.cameraDesc}" />
           </TextBlock>
           <TextBlock Style="{StaticResource BodyText}" Margin="0,0,0,4">
-            <Run FontWeight="Bold" Text="辅助功能（部分捕获方式）：" /><Run Text="提升窗口捕获稳定性。" />
+            <Run FontWeight="Bold" Text="{DynamicResource Loc.diagnostic.macos.a11y}" /><Run Text="{DynamicResource Loc.diagnostic.macos.a11yDesc}" />
           </TextBlock>
 
           <TextBlock Style="{StaticResource MutedText}" Margin="0,8,0,0"
-                     Text="macOS 编码建议优先使用 Apple 硬件编码器（Apple H264 / HEVC）；若录制 / 推流异常，可切换为 x264 软件编码排查。" />
+                     Text="{DynamicResource Loc.diagnostic.macos.encoder}" />
         </StackPanel>
       </Border>
 

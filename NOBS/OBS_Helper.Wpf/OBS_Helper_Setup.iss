@@ -1,4 +1,4 @@
-; OBS 排障助手（WPF 版）Windows 安装包脚本（Inno Setup 6）
+﻿; OBS 排障助手（WPF 版）Windows 安装包脚本（Inno Setup 6）
 ;
 ; 源目录：OBS_Helper.Wpf\bin\Release\net10.0-windows\win-x64\publish
 ;    （自包含发布，含 .NET 运行时；界面与知识库都在程序集内，无需附带站点文件）
@@ -6,16 +6,21 @@
 ;
 ; 脚本内所有路径相对本 .iss 所在目录（OBS_Helper.Wpf），可在任意机器上构建。
 ; 正常由 ..\build.ps1 调用，也可以直接用 ISCC.exe 单独编译。
+;
+; 【编码】本文件按 UTF-8 **带 BOM** 保存：Inno Setup 6 见到 BOM 一定按 UTF-8 解析（实测无 BOM 时
+; 它也会自动识别 UTF-8，带上 BOM 只是更明确 —— 换编辑器或换旧版 ISCC 都不会退化成按 ANSI 读，
+; 那会让中文整片变成乱码）。改动本文件后请确认 BOM 没有被编辑器丢掉。
 
 #define MyAppName "OBS 排障助手"
 ; 版本号默认与 csproj 对齐；build.ps1 会用 /DMyAppVersion=<ver> 覆盖此值。
 ; 用 #ifndef：ISPP 中命令行 /D 定义过的符号在脚本里不应再 #define 覆盖。
 #ifndef MyAppVersion
-#define MyAppVersion "2.9.1"
+#define MyAppVersion "2.9.2"
 #endif
 #define MyAppPublisher "OBS Helper"
 #define MyAppExeName "OBS_Helper.exe"
-; AppId 与旧的 Blazor 版不同：两版可以并存安装，升级路径互不干扰
+; AppId 与旧的 Blazor 版不同：两版可以并存安装，升级路径互不干扰。
+; AppId 固定不变的另一个理由：安装目录 / 卸载项 / 升级识别都不随安装语言变化。
 #define MyAppId "{{4C9F2D18-5B63-4A7E-8E21-9D3A6C4B1F72}"
 
 [Setup]
@@ -24,10 +29,13 @@ AppName={#MyAppName}
 AppVersion={#MyAppVersion}
 AppVerName={#MyAppName} {#MyAppVersion}
 AppPublisher={#MyAppPublisher}
+; 目录名与 AppName 一样固定为中文品牌名：Inno 会记住这个目录并在升级时复用，
+; 若随语言变化，英文用户重装会装到第二个目录、应用内的增量更新也会找不到目标文件。
 DefaultDirName={autopf}\{#MyAppName}
 DefaultGroupName={#MyAppName}
 AllowNoIcons=yes
-UninstallDisplayName={#MyAppName}
+; 卸载项的显示名跟随安装语言（{cm:} 在这条指令上是受支持的）
+UninstallDisplayName={cm:UninstallDisplayName}
 UninstallDisplayIcon={app}\{#MyAppExeName}
 
 OutputDir=..\PAKE\windows
@@ -43,32 +51,62 @@ VersionInfoCopyright=Copyright (c) 2026 OBS Helper
 Compression=lzma2
 SolidCompression=yes
 WizardStyle=modern
+; 语言选择（V2.9.2）：先在向导里让用户选语言，默认中文。
+; LanguageDetectionMethod=none → 不做系统语言探测，直接用 [Languages] 的第一条（简体中文）；
+; ShowLanguageDialog=yes → 明确要求弹出语言选择页，不受语言条数影响。
+ShowLanguageDialog=yes
+LanguageDetectionMethod=none
 ; 自包含发布只有 x64 产物，装到 32 位系统上跑不起来，直接拦掉
 ArchitecturesAllowed=x64compatible
 ArchitecturesInstallIn64BitMode=x64compatible
 PrivilegesRequired=admin
 
 [Languages]
-Name: "chinese"; MessagesFile: "compiler:Default.isl"
+; 顺序即默认值：第一条是简体中文（默认语言），第二条是英文。
+; 两条都指向 .isl 消息文件，安装向导自身的文字也随之切换。
+; 选定结果经 [INI] 写入 {app}\language.ini，应用首启时读取（见 Services/LocalizationService）。
+Name: "chinesesimplified"; MessagesFile: "compiler:Languages\ChineseSimplified.isl"
+Name: "english"; MessagesFile: "compiler:Default.isl"
+
+[CustomMessages]
+; 随安装语言切换的可见文案（快捷方式 / 任务 / 完成页）
+chinesesimplified.UninstallDisplayName=OBS 排障助手
+english.UninstallDisplayName=OBS Helper
+chinesesimplified.AppShortcut=OBS 排障助手
+english.AppShortcut=OBS Helper
+chinesesimplified.UninstallShortcut=卸载 OBS 排障助手
+english.UninstallShortcut=Uninstall OBS Helper
+chinesesimplified.DesktopIcon=创建桌面快捷方式(&D)
+english.DesktopIcon=Create a &desktop shortcut
+chinesesimplified.AdditionalIcons=附加任务：
+english.AdditionalIcons=Additional tasks:
+chinesesimplified.LaunchApp=安装完成后启动 OBS 排障助手
+english.LaunchApp=Launch OBS Helper when the installation finishes
 
 [Files]
 Source: "bin\Release\net10.0-windows\win-x64\publish\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
 Source: "..\LICENSE"; DestDir: "{app}"; Flags: ignoreversion
 
+[INI]
+; 安装时选定的语言 → 应用首启的默认语言。
+; 应用侧只在该文件存在、且用户**没有**在应用内选过语言时采用它，因此升级 / 重装不会覆盖用户的选择。
+Filename: "{app}\language.ini"; Section: "app"; Key: "language"; String: "{language}"
+
 [Icons]
-Name: "{group}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"
-Name: "{group}\卸载 {#MyAppName}"; Filename: "{uninstallexe}"
-Name: "{autodesktop}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; Tasks: desktopicon
+Name: "{group}\{cm:AppShortcut}"; Filename: "{app}\{#MyAppExeName}"
+Name: "{group}\{cm:UninstallShortcut}"; Filename: "{uninstallexe}"
+Name: "{autodesktop}\{cm:AppShortcut}"; Filename: "{app}\{#MyAppExeName}"; Tasks: desktopicon
 
 [Tasks]
-Name: "desktopicon"; Description: "创建桌面快捷方式(&D)"; GroupDescription: "附加任务："; Flags: unchecked
+Name: "desktopicon"; Description: "{cm:DesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked
 
 [Run]
-Filename: "{app}\{#MyAppExeName}"; Description: "安装完成后启动 {#MyAppName}"; Flags: nowait postinstall skipifsilent
+Filename: "{app}\{#MyAppExeName}"; Description: "{cm:LaunchApp}"; Flags: nowait postinstall skipifsilent
 
 [UninstallDelete]
 ; 用户的偏好与加密的凭据存在 %LocalAppData%\OBS_Helper 下。
-; 这里只在卸载时清掉应用自己写的两个文件，不删整个目录，避免误伤。
+; 这里只在卸载时清掉应用自己写的文件，不删整个目录，避免误伤。
+Type: files; Name: "{app}\language.ini"
 Type: files; Name: "{localappdata}\OBS_Helper\prefs.json"
 Type: files; Name: "{localappdata}\OBS_Helper\secrets.dat"
 Type: dirifempty; Name: "{localappdata}\OBS_Helper"

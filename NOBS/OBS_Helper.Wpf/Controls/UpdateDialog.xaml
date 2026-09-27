@@ -22,7 +22,7 @@
     <StackPanel>
       <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
         <TextBlock Text="🎉" FontSize="18" VerticalAlignment="Center" Margin="0,0,9,0" />
-        <TextBlock x:Name="TitleText" Text="发现新版本"
+        <TextBlock x:Name="TitleText" Text="{DynamicResource Loc.update.title}"
                    FontSize="{DynamicResource FontSizeMd}" FontWeight="SemiBold"
                    Foreground="{DynamicResource TextBrush}" VerticalAlignment="Center" />
       </StackPanel>
@@ -31,31 +31,31 @@
                  FontSize="{DynamicResource FontSizeBase}"
                  Foreground="{DynamicResource TextBrush}"
                  LineHeight="21">
-        <Run x:Name="CurrentRun" Text="当前版本 1.2.0" />&#x0a;<Run x:Name="LatestRun" Text="最新版本 V1.3.0" FontWeight="SemiBold" />
+        <Run x:Name="CurrentRun" Text="{DynamicResource Loc.update.currentUnknown}" />&#x0a;<Run x:Name="LatestRun" Text="{DynamicResource Loc.update.latestUnknown}" FontWeight="SemiBold" />
       </TextBlock>
 
       <Border Background="{DynamicResource OkSoftBrush}"
               CornerRadius="{DynamicResource CornerRadiusMd}"
               Padding="12,10" Margin="0,14,0,0">
         <StackPanel>
-          <TextBlock Text="请选择更新方式"
+          <TextBlock Text="{DynamicResource Loc.update.chooseMethod}"
                      FontSize="{DynamicResource FontSizeXs}"
                      Foreground="{DynamicResource MutedBrush}" Margin="0,0,0,8" />
 
           <!-- 方式〇：增量更新（推荐） -->
           <TextBlock TextWrapping="Wrap" FontSize="{DynamicResource FontSizeBase}"
                      Foreground="{DynamicResource TextBrush}" LineHeight="21">
-            <Run Text="方式〇 · 增量更新（推荐，下载小）：" FontWeight="SemiBold" />
+            <Run Text="{DynamicResource Loc.update.delta.head}" FontWeight="SemiBold" />
           </TextBlock>
           <TextBlock TextWrapping="Wrap" FontSize="{DynamicResource FontSizeSm}"
                      Foreground="{DynamicResource MutedBrush}" Margin="0,4,0,0" LineHeight="20">
-            只下载自上一版本以来的变更文件，完成后自动重启应用完成升级；安装版需一次管理员授权。
+            {DynamicResource Loc.update.delta.desc}
           </TextBlock>
           <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
             <Button x:Name="DeltaButton" Style="{StaticResource PrimaryButton}"
-                    Content="增量更新全部功能" MinWidth="170" Click="OnDeltaUpdate" />
+                    Content="{DynamicResource Loc.update.delta.button}" MinWidth="170" Click="OnDeltaUpdate" />
             <Button x:Name="KbOnlyButton" Style="{StaticResource SecondaryButton}"
-                    Content="仅更新知识库" MinWidth="120" Margin="10,0,0,0" Click="OnKbOnlyUpdate" />
+                    Content="{DynamicResource Loc.update.kbOnly.button}" MinWidth="120" Margin="10,0,0,0" Click="OnKbOnlyUpdate" />
           </StackPanel>
           <TextBlock x:Name="KbStatusText" TextWrapping="Wrap"
                      FontSize="{DynamicResource FontSizeSm}"
@@ -73,10 +73,10 @@
           <!-- 方式一：蓝奏云网盘（浏览器打开） -->
           <TextBlock TextWrapping="Wrap" FontSize="{DynamicResource FontSizeBase}"
                      Foreground="{DynamicResource TextBrush}" LineHeight="21">
-            <Run Text="方式一 · 蓝奏云网盘（浏览器打开）：" FontWeight="SemiBold" />
+            <Run Text="{DynamicResource Loc.update.lanzou.head}" FontWeight="SemiBold" />
           </TextBlock>
           <StackPanel Orientation="Horizontal" Margin="0,6,0,10">
-            <TextBlock Text="网盘更新密码：" VerticalAlignment="Center"
+            <TextBlock Text="{DynamicResource Loc.update.lanzou.password}" VerticalAlignment="Center"
                        FontSize="{DynamicResource FontSizeBase}"
                        Foreground="{DynamicResource TextBrush}" />
             <Border Background="{DynamicResource SurfaceBrush}"
@@ -88,23 +88,23 @@
                          TextAlignment="Center" MinWidth="64" />
             </Border>
             <Button x:Name="LanzouButton" Style="{StaticResource SecondaryButton}"
-                    Content="打开蓝奏云下载" MinWidth="150" Margin="14,0,0,0"
+                    Content="{DynamicResource Loc.update.lanzou.button}" MinWidth="150" Margin="14,0,0,0"
                     Click="OnDownloadLanzou" />
           </StackPanel>
 
           <Border Style="{StaticResource HLine}" Margin="0,0,0,10" />
 
           <!-- 方式二：应用内下载（GitHub Release） -->
-          <TextBlock Text="方式二 · 应用内下载（GitHub Release）"
+          <TextBlock Text="{DynamicResource Loc.update.github.head}"
                      FontSize="{DynamicResource FontSizeBase}" FontWeight="SemiBold"
                      Foreground="{DynamicResource TextBrush}" />
           <TextBlock TextWrapping="Wrap" FontSize="{DynamicResource FontSizeSm}"
                      Foreground="{DynamicResource MutedBrush}" Margin="0,4,0,8" LineHeight="20">
-            在应用内直接从 GitHub Release 下载最新安装包（不用开浏览器），下载完成后自动启动安装程序。
+            {DynamicResource Loc.update.github.desc}
           </TextBlock>
 
           <Button x:Name="GithubDownloadButton" Style="{StaticResource PrimaryButton}"
-                  Content="应用内下载" HorizontalAlignment="Left"
+                  Content="{DynamicResource Loc.update.github.button}" HorizontalAlignment="Left"
                   MinWidth="150" Click="OnDownloadGithub" />
 
           <StackPanel x:Name="GithubProgressPanel" Visibility="Collapsed" Margin="0,10,0,0">
@@ -118,14 +118,14 @@
       </Border>
 
       <TextBlock Style="{StaticResource CaptionText}" Margin="2,8,0,0"
-                 Text="应用内下载走 GitHub，网络受限时请改用方式一；也可以直接访问 GitHub Release 页查看发布说明与历史版本。" />
+                 Text="{DynamicResource Loc.update.github.footnote}" />
 
       <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,16,0,0">
         <Button x:Name="ReleasePageButton" Style="{StaticResource GhostButton}"
-                Content="GitHub Release 页" MinWidth="110" Margin="0,0,10,0"
+                Content="{DynamicResource Loc.update.releasePage.button}" MinWidth="110" Margin="0,0,10,0"
                 Click="OnOpenReleasePage" />
         <Button x:Name="LaterButton" Style="{StaticResource SecondaryButton}"
-                Content="稍后再说" MinWidth="96"
+                Content="{DynamicResource Loc.update.later.button}" MinWidth="96"
                 IsCancel="True" Click="OnLater" />
       </StackPanel>
     </StackPanel>

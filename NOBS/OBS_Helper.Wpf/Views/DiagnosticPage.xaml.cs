@@ -26,14 +26,14 @@ public partial class DiagnosticPage : UserControl, INavigationAware
 
     private readonly List<CheckItem> _checks = new()
     {
-        new CheckItem { Text = "OBS 以管理员身份运行（右键 → 以管理员身份运行）" },
-        new CheckItem { Text = "编码器使用硬件编码（NVENC / AMF / QSV）" },
-        new CheckItem { Text = "视频码率不超过实际上行速度的 75%" },
-        new CheckItem { Text = "捕获方式正确（游戏/窗口/显示器，且双显卡统一 GPU）" },
-        new CheckItem { Text = "音频采样率统一为 48kHz" },
-        new CheckItem { Text = "关闭 Chrome / Discord 等程序的硬件加速" },
-        new CheckItem { Text = "使用有线网络推流（避免 WiFi 2.4G）" },
-        new CheckItem { Text = "推流服务器与串流密钥正确" }
+        new CheckItem { Text = Strings.T("diagnostic.check.1") },
+        new CheckItem { Text = Strings.T("diagnostic.check.2") },
+        new CheckItem { Text = Strings.T("diagnostic.check.3") },
+        new CheckItem { Text = Strings.T("diagnostic.check.4") },
+        new CheckItem { Text = Strings.T("diagnostic.check.5") },
+        new CheckItem { Text = Strings.T("diagnostic.check.6") },
+        new CheckItem { Text = Strings.T("diagnostic.check.7") },
+        new CheckItem { Text = Strings.T("diagnostic.check.8") }
     };
 
     private bool _diagnosing;
@@ -65,22 +65,22 @@ public partial class DiagnosticPage : UserControl, INavigationAware
         var ai = AppServices.AiSettings;
         var engineName = ai.Mode switch
         {
-            DiagnosticEngineMode.Free => "免费 AI（内置）",
-            DiagnosticEngineMode.Cloud => "云端大模型",
-            _ => "本地的搜索助手"
+            DiagnosticEngineMode.Free => Strings.T("engine.free"),
+            DiagnosticEngineMode.Cloud => Strings.T("engine.cloud"),
+            _ => Strings.T("engine.local")
         };
 
         EngineText.Inlines.Clear();
-        EngineText.Inlines.Add(new Run("当前引擎："));
+        EngineText.Inlines.Add(new Run(Strings.T("diagnostic.currentEngine")));
         EngineText.Inlines.Add(new Run(engineName) { FontWeight = FontWeights.SemiBold });
 
         var report = AppServices.Orchestrator.LatestReport;
         if (report is { HasIssues: true })
-            EngineText.Inlines.Add(new Run($" · 已载入日志分析报告（{report.Findings.Count} 项发现）"));
+            EngineText.Inlines.Add(new Run(Strings.T("diagnostic.logReportLoaded", report.Findings.Count)));
 
         // 选了云端但配置不完整：直接告诉用户会走本地，并给出配置入口
         var cloudReady = AppServices.Orchestrator.CanUseCloud;
-        CloudHintText.Text = "云端引擎尚未配置完整（需 https 接口地址 + 已保存的 API Key），本次诊断将使用本地的搜索助手。";
+        CloudHintText.Text = Strings.T("diagnostic.cloudNotConfigured");
         CloudHintPanel.Visibility = ai.Mode == DiagnosticEngineMode.Cloud && !cloudReady ? Visibility.Visible : Visibility.Collapsed;
 
         ObsHintPanel.Visibility = AppServices.Obs.IsConnected ? Visibility.Collapsed : Visibility.Visible;
@@ -95,9 +95,9 @@ public partial class DiagnosticPage : UserControl, INavigationAware
         _diagnosing = true;
         _lastQuery = QueryBox.Text;
         DiagnoseButton.IsEnabled = false;
-        DiagnoseButton.Content = "分析中…";
+        DiagnoseButton.Content = Strings.T("diagnostic.buttonAnalyzing");
         BusyText.Visibility = Visibility.Visible;
-        AppServices.Busy.Show("正在智能诊断…");
+        AppServices.Busy.Show(Strings.T("diagnostic.busy"));
 
         try
         {
@@ -113,7 +113,7 @@ public partial class DiagnosticPage : UserControl, INavigationAware
         {
             _diagnosing = false;
             DiagnoseButton.IsEnabled = true;
-            DiagnoseButton.Content = "诊断";
+            DiagnoseButton.Content = Strings.T("diagnostic.run");
             BusyText.Visibility = Visibility.Collapsed;
             AppServices.Busy.Hide();
             RefreshHeader();
@@ -130,13 +130,13 @@ public partial class DiagnosticPage : UserControl, INavigationAware
         ItemList.Children.Clear();
 
         var failed = !r.Success;
-        ErrorText.Text = r.Error ?? "诊断失败，请稍后重试。";
+        ErrorText.Text = r.Error ?? Strings.T("diagnostic.failed");
         ErrorText.Visibility = failed ? Visibility.Visible : Visibility.Collapsed;
 
         // 回退时 Success 仍为 true，Error 里带着云端失败原因，这里单独说明一次
         FallbackText.Text = failed || string.IsNullOrEmpty(r.Error)
-            ? "已自动回退到本地离线引擎。"
-            : $"已自动回退到本地离线引擎（{r.Error}）。";
+            ? Strings.T("diagnostic.fellBack")
+            : Strings.T("diagnostic.fellBackWithReason", r.Error);
         FallbackText.Visibility = r.FellBackToLocal ? Visibility.Visible : Visibility.Collapsed;
 
         if (failed)
@@ -207,7 +207,7 @@ public partial class DiagnosticPage : UserControl, INavigationAware
         {
             var link = new Button
             {
-                Content = "查看分步方案 →",
+                Content = Strings.T("problem.viewSteps"),
                 Tag = it.ProblemId,
                 Style = TryFindResource("LinkButton") as Style,
                 HorizontalAlignment = HorizontalAlignment.Left,
@@ -226,7 +226,7 @@ public partial class DiagnosticPage : UserControl, INavigationAware
             {
                 var pluginLink = new Button
                 {
-                    Content = $"在插件广场查看「{entry.Name}」→",
+                    Content = Strings.T("plugin.viewInSquare", entry.Name),
                     Tag = entry.Id,
                     Style = TryFindResource("LinkButton") as Style,
                     HorizontalAlignment = HorizontalAlignment.Left,
@@ -316,7 +316,7 @@ public partial class DiagnosticPage : UserControl, INavigationAware
     {
         var done = _checks.Count(c => c.Done);
         CheckProgress.Value = _checks.Count == 0 ? 0 : 100.0 * done / _checks.Count;
-        CheckCountText.Text = $"已完成 {done} / {_checks.Count}";
+        CheckCountText.Text = Strings.T("diagnostic.checkProgress", done, _checks.Count);
     }
 
     // -------------------------------------------------------------- 跳转
@@ -338,7 +338,7 @@ public partial class DiagnosticPage : UserControl, INavigationAware
 
         var btn = (Button)sender;
         btn.IsEnabled = false;
-        btn.Content = "检查中…";
+        btn.Content = Strings.T("diagnostic.preflight.checking");
 
         try
         {
@@ -347,13 +347,13 @@ public partial class DiagnosticPage : UserControl, INavigationAware
         }
         catch (Exception)
         {
-            AppServices.Toast.Show("录前自检失败，请稍后重试", "warn");
+            AppServices.Toast.Show(Strings.T("diagnostic.preflight.failed"), "warn");
         }
         finally
         {
             _preflightRunning = false;
             btn.IsEnabled = true;
-            btn.Content = "一键自检";
+            btn.Content = Strings.T("diagnostic.preflight.run");
         }
     }
 
@@ -362,10 +362,10 @@ public partial class DiagnosticPage : UserControl, INavigationAware
         PreflightList.Children.Clear();
 
         var head = report.FailCount > 0
-            ? $"发现问题 {report.FailCount} 项 · 建议 {report.WarnCount} 项"
+            ? Strings.T("diagnostic.preflight.failWarn", report.FailCount, report.WarnCount)
             : report.WarnCount > 0
-                ? $"无阻塞问题，{report.WarnCount} 项可优化"
-                : "全部通过";
+                ? Strings.T("diagnostic.preflight.warnOnly", report.WarnCount)
+                : Strings.T("diagnostic.preflight.allPass");
         var headText = MakeText(head, "FontSizeSm",
             report.FailCount > 0 ? "DangerBrush" : report.WarnCount > 0 ? "WarnBrush" : "OkBrush");
         headText.FontWeight = FontWeights.SemiBold;
@@ -415,7 +415,7 @@ public partial class DiagnosticPage : UserControl, INavigationAware
         {
             var link = new Button
             {
-                Content = "查看分步方案 →",
+                Content = Strings.T("problem.viewSteps"),
                 Tag = item.ProblemId,
                 Style = TryFindResource("LinkButton") as Style,
                 HorizontalAlignment = HorizontalAlignment.Left,
@@ -464,31 +464,33 @@ public partial class DiagnosticPage : UserControl, INavigationAware
         if (result is null || (result.Items.Count == 0 && string.IsNullOrWhiteSpace(result.Summary))) return;
 
         var sb = new StringBuilder();
-        sb.AppendLine("# OBS 诊断报告");
+        sb.AppendLine(Strings.T("diagnostic.report.title"));
         sb.AppendLine();
-        sb.AppendLine($"- 生成时间：{result.CreatedAt:yyyy-MM-dd HH:mm:ss}");
-        sb.AppendLine($"- 引擎：{(result.Engine switch
-        {
-            "free" => "免费内置 AI",
-            "cloud" => "云端大模型",
-            _ => "本地规则引擎"
-        })}{(result.FellBackToLocal ? "（云端/免费失败已回退本地）" : "")}");
-        sb.AppendLine($"- 问题描述：{_lastQuery.Trim()}");
+        sb.AppendLine(Strings.T("diagnostic.report.generatedAt", result.CreatedAt.ToString("yyyy-MM-dd HH:mm:ss")));
+        sb.AppendLine(Strings.T("diagnostic.report.engine",
+            (result.Engine switch
+            {
+                "free" => Strings.T("engine.reportFree"),
+                "cloud" => Strings.T("engine.reportCloud"),
+                _ => Strings.T("engine.reportLocal")
+            }),
+            result.FellBackToLocal ? Strings.T("diagnostic.report.fellBack") : ""));
+        sb.AppendLine(Strings.T("diagnostic.report.query", _lastQuery.Trim()));
         sb.AppendLine();
 
         if (!string.IsNullOrWhiteSpace(result.Summary))
         {
-            sb.AppendLine("## 结论");
+            sb.AppendLine(Strings.T("diagnostic.report.summaryHeading"));
             sb.AppendLine();
             sb.AppendLine(result.Summary);
             sb.AppendLine();
         }
 
-        sb.AppendLine("## 发现");
+        sb.AppendLine(Strings.T("diagnostic.report.findingsHeading"));
         sb.AppendLine();
         foreach (var it in result.Items)
         {
-            sb.AppendLine($"### [{it.SeverityText}] {it.Title}（来源：{it.Source}）");
+            sb.AppendLine(Strings.T("diagnostic.report.item", it.SeverityText, it.Title, it.Source));
             if (!string.IsNullOrWhiteSpace(it.Reason))
             {
                 sb.AppendLine();
@@ -503,13 +505,13 @@ public partial class DiagnosticPage : UserControl, INavigationAware
         }
 
         sb.AppendLine("---");
-        sb.AppendLine("由 OBS 排障助手生成");
+        sb.AppendLine(Strings.T("diagnostic.report.footer"));
 
         var dialog = new Microsoft.Win32.SaveFileDialog
         {
-            Title = "导出诊断报告",
-            Filter = "Markdown 文档 (*.md)|*.md|文本文件 (*.txt)|*.txt",
-            FileName = $"OBS诊断报告_{DateTime.Now:yyyyMMdd_HHmmss}.md",
+            Title = Strings.T("diagnostic.exportTitle"),
+            Filter = Strings.T("diagnostic.exportFilter"),
+            FileName = Strings.T("diagnostic.exportFileName", DateTime.Now.ToString("yyyyMMdd_HHmmss")),
             DefaultExt = ".md",
             AddExtension = true
         };
@@ -518,7 +520,7 @@ public partial class DiagnosticPage : UserControl, INavigationAware
         try
         {
             File.WriteAllText(dialog.FileName, sb.ToString(), new UTF8Encoding(false));
-            AppServices.Toast.Show($"诊断报告已导出：{Path.GetFileName(dialog.FileName)}", "ok");
+            AppServices.Toast.Show(Strings.T("diagnostic.exported", Path.GetFileName(dialog.FileName)), "ok");
         }
         catch (Exception ex)
         {

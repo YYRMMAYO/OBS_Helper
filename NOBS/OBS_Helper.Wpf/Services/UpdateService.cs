@@ -1,3 +1,4 @@
+using OBS_Helper.Wpf.Localization;
 using System.IO;
 using System.Net.Http;
 using System.Reflection;
@@ -163,7 +164,7 @@ public sealed class UpdateService
         {
             Status = UpdateCheckStatus.Failed,
             CurrentVersion = typeof(UpdateService).Assembly.GetName().Version,
-            Error = lastError ?? "检查更新失败。",
+            Error = lastError ?? Strings.T("update.checkFailedGeneric"),
         };
         return _lastResult;
     }
@@ -190,7 +191,7 @@ public sealed class UpdateService
                 {
                     Status = UpdateCheckStatus.Failed,
                     CurrentVersion = current,
-                    Error = "GitHub 返回的 tag 中无法解析出版本号。",
+                    Error = Strings.T("update.tagUnparsable"),
                 }, null);
             }
 
@@ -283,7 +284,7 @@ public sealed class UpdateService
 
             var best = FindBestRelease(doc.RootElement);
             if (best is null)
-                return new GitHubReleaseInfo(null, null, "GitHub 上还没有发布过带安装包的版本。");
+                return new GitHubReleaseInfo(null, null, Strings.T("update.noSetupRelease"));
 
             return new GitHubReleaseInfo(best.Tag, best.AssetUrl, null);
         }
@@ -364,7 +365,7 @@ public sealed class UpdateService
         return await FindNamedAssetAsync(
             name => name.StartsWith("OBS_Helper_Update_", StringComparison.OrdinalIgnoreCase)
                  && name.EndsWith(".zip", StringComparison.OrdinalIgnoreCase),
-            "GitHub 上还没有发布过增量更新包。").ConfigureAwait(false);
+            Strings.T("update.noDeltaRelease")).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -376,7 +377,7 @@ public sealed class UpdateService
         return await FindNamedAssetAsync(
             name => name.StartsWith("OBS_Helper_Knowledge_", StringComparison.OrdinalIgnoreCase)
                  && name.EndsWith(".json", StringComparison.OrdinalIgnoreCase),
-            "GitHub 上还没有发布过独立知识库文件。").ConfigureAwait(false);
+            Strings.T("update.noKbRelease")).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -388,7 +389,7 @@ public sealed class UpdateService
         return await FindNamedAssetAsync(
             name => name.StartsWith("OBS_Helper_Plugins_", StringComparison.OrdinalIgnoreCase)
                  && name.EndsWith(".json", StringComparison.OrdinalIgnoreCase),
-            "GitHub 上还没有发布过插件目录文件。").ConfigureAwait(false);
+            Strings.T("update.noPluginsRelease")).ConfigureAwait(false);
     }
 
     /// <summary>遍历全部 Release，取「版本号最高且带指定命名资产」的一条；找不到返回 Error。</summary>

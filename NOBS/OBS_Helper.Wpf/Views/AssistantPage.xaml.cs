@@ -106,7 +106,7 @@ public partial class AssistantPage : UserControl
         var scorePill = new Border
         {
             Style = TryFindResource("Pill") as Style,
-            Child = MakeText($"匹配 {m.Score}", "FontSizeXs", "BrandBrush", wrap: false)
+            Child = MakeText(Strings.T("assistant.score", m.Score), "FontSizeXs", "BrandBrush", wrap: false)
         };
         scorePill.SetResourceReference(Border.BackgroundProperty, "BrandSoftBrush");
         Grid.SetColumn(scorePill, 1);
@@ -117,7 +117,7 @@ public partial class AssistantPage : UserControl
 
         if (!string.IsNullOrEmpty(m.Reason))
         {
-            var reason = MakeText($"命中：{m.Reason}", "FontSizeSm", "MutedBrush");
+            var reason = MakeText(Strings.T("assistant.hits", m.Reason), "FontSizeSm", "MutedBrush");
             reason.Margin = new Thickness(0, 6, 0, 0);
             body.Children.Add(reason);
         }

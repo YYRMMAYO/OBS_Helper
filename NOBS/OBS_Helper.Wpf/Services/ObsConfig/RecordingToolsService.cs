@@ -8,7 +8,7 @@ namespace OBS_Helper.Wpf.Services.ObsConfig;
 public sealed record RecordingDirResult(string? Dir, string Source, bool Exists)
 {
     public static readonly RecordingDirResult NotFound =
-        new(null, "未找到", false);
+        new(null, Strings.T("recording.dir.notFound"), false);
 }
 
 /// <summary>
@@ -63,7 +63,7 @@ public sealed class RecordingToolsService
         foreach (var key in new[] { "advout.recfilepath", "simpleoutput.filepath" })
         {
             if (ini.TryGetValue(key, out var dir) && !string.IsNullOrWhiteSpace(dir) && Directory.Exists(dir))
-                return new RecordingDirResult(dir, $"OBS 配置（{key}）", true);
+                return new RecordingDirResult(dir, Strings.T("recording.dir.fromConfig", key), true);
         }
         return DefaultVideos();
     }
@@ -73,7 +73,7 @@ public sealed class RecordingToolsService
         try
         {
             var videos = Environment.GetFolderPath(Environment.SpecialFolder.MyVideos);
-            if (!string.IsNullOrEmpty(videos)) return new RecordingDirResult(videos, "系统「视频」文件夹（OBS 默认）", Directory.Exists(videos));
+            if (!string.IsNullOrEmpty(videos)) return new RecordingDirResult(videos, Strings.T("recording.dir.videosDefault"), Directory.Exists(videos));
         }
         catch (Exception) { }
         return RecordingDirResult.NotFound;
@@ -84,7 +84,7 @@ public sealed class RecordingToolsService
     {
         try
         {
-            if (string.IsNullOrWhiteSpace(dir) || !Directory.Exists(dir)) return "目录不存在。";
+            if (string.IsNullOrWhiteSpace(dir) || !Directory.Exists(dir)) return Strings.T("recording.dir.openMissing");
             using var _ = Process.Start(new ProcessStartInfo
             {
                 FileName = dir,
@@ -94,7 +94,7 @@ public sealed class RecordingToolsService
         }
         catch (Exception ex)
         {
-            return $"打开失败：{ex.Message}";
+            return Strings.T("recording.dir.openFailed", ex.Message);
         }
     }
 
@@ -164,15 +164,13 @@ public sealed class RecordingToolsService
         try
         {
             if (string.IsNullOrWhiteSpace(input) || !File.Exists(input))
-                return (false, "文件不存在。");
+                return (false, Strings.T("recording.remux.fileMissing"));
 
             var ffmpeg = FindFfmpeg();
             if (ffmpeg is null)
             {
                 return (false,
-                    "本机未找到 ffmpeg。\n" +
-                    "替代方案：① OBS 内 文件 → 录像转封装（无需 ffmpeg）；" +
-                    "② 从 ffmpeg.org 或 gyan.dev 下载后加入 PATH 再试。");
+                    Strings.T("recording.remux.noFfmpegShort"));
             }
 
             var output = BuildOutputPath(input);
@@ -187,7 +185,7 @@ public sealed class RecordingToolsService
             };
 
             using var proc = Process.Start(psi);
-            if (proc is null) return (false, "无法启动 ffmpeg 进程。");
+            if (proc is null) return (false, Strings.T("recording.remux.startFailed"));
 
             var stderrTask = proc.StandardError.ReadToEndAsync();
             await proc.WaitForExitAsync().ConfigureAwait(false);
@@ -197,15 +195,15 @@ public sealed class RecordingToolsService
             {
                 var tail = stderr.Length > 400 ? stderr[^400..] : stderr;
                 FileLogger.Warn("RecordingTools", $"重封装失败 exit={proc.ExitCode}: {tail}");
-                return (false, $"重封装失败（exit {proc.ExitCode}）。文件可能已损坏或不是有效媒体文件。\n{tail}");
+                return (false, Strings.T("recording.remux.failed", proc.ExitCode, tail));
             }
 
-            return (true, $"完成：{output}");
+            return (true, Strings.T("recording.remux.done", output));
         }
         catch (Exception ex)
         {
             FileLogger.Warn("RecordingTools", $"重封装异常：{ex.Message}");
-            return (false, $"重封装异常：{ex.Message}");
+            return (false, Strings.T("recording.remux.exception", ex.Message));
         }
     }
 

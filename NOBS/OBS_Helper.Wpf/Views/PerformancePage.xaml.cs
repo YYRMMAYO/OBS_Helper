@@ -126,7 +126,7 @@ public partial class PerformancePage : UserControl, INavigationAware
         {
             DisksPanel.Children.Add(new TextBlock
             {
-                Text = "未检测到固定磁盘。",
+                Text = Strings.T("perf.noDisk"),
                 Style = (Style)FindResource("MutedText")
             });
             return;
@@ -163,7 +163,7 @@ public partial class PerformancePage : UserControl, INavigationAware
 
             var text = new TextBlock
             {
-                Text = $"剩余 {d.FreeGb:0.0} G / {d.TotalGb:0.0} G",
+                Text = Strings.T("perf.diskRemaining", d.FreeGb, d.TotalGb),
                 VerticalAlignment = VerticalAlignment.Center,
                 MinWidth = 130,
                 TextAlignment = TextAlignment.Right
@@ -184,14 +184,14 @@ public partial class PerformancePage : UserControl, INavigationAware
         var obs = AppServices.Obs;
         if (!obs.IsConnected)
         {
-            ObsStatusText.Text = "未连接 OBS。连接后这里会显示渲染帧率、丢帧率与 OBS 报告的性能数据。";
+            ObsStatusText.Text = Strings.T("perf.obsOffline");
             ObsFpsText.Text = "—";
             ObsRenderSkipText.Text = "—";
             ObsOutputSkipText.Text = "—";
             return;
         }
 
-        ObsStatusText.Text = $"已连接 OBS {obs.Profile.ObsVersion}";
+        ObsStatusText.Text = Strings.T("perf.obsConnected", obs.Profile.ObsVersion);
         ObsFpsText.Text = obs.Stats.ActiveFps.ToString("0.0", Inv);
         ObsRenderSkipText.Text = (obs.Stats.RenderSkipRatio * 100).ToString("0.##", Inv) + "%";
         ObsOutputSkipText.Text = (obs.Stats.OutputSkipRatio * 100).ToString("0.##", Inv) + "%";

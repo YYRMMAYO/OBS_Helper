@@ -34,7 +34,7 @@ public partial class GuidePage : UserControl, INavigationAware
             var md = await AppServices.Problems.GetGuideMarkdownAsync();
             if (string.IsNullOrWhiteSpace(md))
             {
-                ShowError("内置指引资源为空或缺失。");
+                ShowError(Strings.T("guide.empty"));
                 return;
             }
 

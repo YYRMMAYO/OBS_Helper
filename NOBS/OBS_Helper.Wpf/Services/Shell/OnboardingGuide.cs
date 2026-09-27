@@ -1,3 +1,4 @@
+using OBS_Helper.Wpf.Localization;
 using OBS_Helper.Wpf.Navigation;
 using OBS_Helper.Wpf.Services.Update;
 
@@ -51,51 +52,51 @@ public static class OnboardingGuide
     /// 否则用户按着引导找不到入口 —— 这是这类引导最常见的失效方式）；
     /// <see cref="OnboardingStep.Route"/> 必须是真的注册过的路由（有单测校验）。
     /// </summary>
-    public static IReadOnlyList<OnboardingStep> Steps { get; } = new OnboardingStep[]
+    /// <summary>
+    /// 引导步骤（V2.9.2）。做成属性而不是静态字段：文案与跳转按钮标签都取自文案表，
+    /// 语言切换后要能立刻换一套（首启时语言已经定下来，但设置页可随时重播引导）。
+    /// </summary>
+    public static IReadOnlyList<OnboardingStep> Steps => new OnboardingStep[]
     {
         new(
-            "第一步 · 连上 OBS",
-            "已经帮你打开了「控制台」：填地址与密码即可连接（默认本机 4455 端口），连上后能远程切换场景、控制录制与推流，顶栏与左下角的连接徽章会实时显示状态。" +
-            "连不上也不影响使用——查问题、看日志、做体检都是离线可用的；机器上还没有 OBS 就从下面走官方渠道装一个。",
+            Strings.T("onb.step1.title"),
+            Strings.T("onb.step1.desc"),
             Routes.Console,
             new OnboardingLink[]
             {
-                new("官网下载 OBS", ObsDownloadLinks.OfficialDownload, External: true),
+                new(Strings.T("onb.link.downloadObs"), ObsDownloadLinks.OfficialDownload, External: true),
             }),
 
         new(
-            "第二步 · 出问题先来这里",
-            "「首页」按分类翻常见问题，「搜索」敲关键词直接找，说不清现象就交给「助手」用一句话描述。" +
-            "手上已经有 OBS 日志时，直接点「日志分析」，会自动脱敏并逐条定位异常。",
+            Strings.T("onb.step2.title"),
+            Strings.T("onb.step2.desc"),
             Routes.Home,
             new OnboardingLink[]
             {
-                new("搜索问题", Routes.Search),
-                new("问我一下", Routes.Assistant),
-                new("日志分析", Routes.Logs),
+                new(Strings.T("onb.link.search"), Routes.Search),
+                new(Strings.T("onb.link.assistant"), Routes.Assistant),
+                new(Strings.T("onb.link.logs"), Routes.Logs),
             }),
 
         new(
-            "第三步 · 一键体检",
-            "连上 OBS 后到「诊断」跑自检清单与智能诊断（云端 / 免费 / 本地三通道，没网也能用）。" +
-            "「工具箱」另有八个只读体检卡——色彩范围、采样率、黑屏专项、音频设备、虚拟摄像头、磁盘写入、编码顾问、推流节点探测，外加录像工具、冲突扫描、带宽计算器等实用小工具。",
+            Strings.T("onb.step3.title"),
+            Strings.T("onb.step3.desc"),
             Routes.Diagnostic,
             new OnboardingLink[]
             {
-                new("工具箱", Routes.Toolbox),
+                new(Strings.T("onb.link.toolbox"), Routes.Toolbox),
             }),
 
         new(
-            "第四步 · 开播、装修与调教",
-            "「搭建」是零基础到开播的分步向导，「模板」一键落地整套场景与来源，「插件」按分类直达官方下载。" +
-            "「监控」实时看 CPU / 内存 / 磁盘；「设置」里能换主题色与字号、配全局热键、决定关闭窗口时是否缩到托盘继续守护。",
+            Strings.T("onb.step4.title"),
+            Strings.T("onb.step4.desc"),
             Routes.Setup,
             new OnboardingLink[]
             {
-                new("场景模板", Routes.Templates),
-                new("插件广场", Routes.Plugins),
-                new("系统监控", Routes.Performance),
-                new("设置", Routes.Settings),
+                new(Strings.T("onb.link.templates"), Routes.Templates),
+                new(Strings.T("onb.link.plugins"), Routes.Plugins),
+                new(Strings.T("onb.link.performance"), Routes.Performance),
+                new(Strings.T("onb.link.settings"), Routes.Settings),
             }),
     };
 

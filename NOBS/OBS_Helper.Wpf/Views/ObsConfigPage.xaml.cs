@@ -40,20 +40,20 @@ public partial class ObsConfigPage : UserControl, INavigationAware
             _location = await AppServices.ObsPaths.LocateAsync();
             if (_location.Exists)
             {
-                ConfigPathText.Text = $"配置目录：{_location.ConfigDir}";
+                ConfigPathText.Text = Strings.T("obsconfig.path", _location.ConfigDir);
                 ConfigDetailText.Text = _location.IsPortable
-                    ? "检测到便携版 OBS（portable_mode.txt），配置在 OBS 安装目录下。"
-                    : "标准安装版，配置位于 %AppData%\\obs-studio。";
+                    ? Strings.T("obsconfig.portable")
+                    : Strings.T("obsconfig.standard");
             }
             else
             {
-                ConfigPathText.Text = "未找到 OBS 配置目录，请点击「手动指定」。";
-                ConfigDetailText.Text = "程序会自动尝试常规路径（%AppData%\\obs-studio 与便携版目录）。如果没有检测到，请在下方手动选择。";
+                ConfigPathText.Text = Strings.T("obsconfig.notFound");
+                ConfigDetailText.Text = Strings.T("obsconfig.notFoundDetail");
             }
         }
         catch (Exception ex)
         {
-            ConfigPathText.Text = $"检测异常：{ex.Message}";
+            ConfigPathText.Text = Strings.T("obsconfig.detectError", ex.Message);
             ConfigDetailText.Text = "";
         }
     }
@@ -61,14 +61,14 @@ public partial class ObsConfigPage : UserControl, INavigationAware
     private async void OnDetectClick(object sender, RoutedEventArgs e)
     {
         await RefreshLocationAsync();
-        ShowResult("✅", "已重新检测 OBS 配置目录。");
+        ShowResult("✅", Strings.T("obsconfig.redetected"));
     }
 
     private async void OnManualPathClick(object sender, RoutedEventArgs e)
     {
         var dialog = new OpenFolderDialog
         {
-            Title = "选择 OBS 配置目录（obs-studio）",
+            Title = Strings.T("obsconfig.pickTitle"),
         };
 
         if (dialog.ShowDialog() != true) return;
@@ -78,7 +78,7 @@ public partial class ObsConfigPage : UserControl, INavigationAware
 
         AppServices.Store.SetItem(ObsPathService.OverrideKey, path);
         await RefreshLocationAsync();
-        ShowResult("✅", $"已手动指定配置目录为：{path}（重启后仍生效，可在下次检测时覆盖）。");
+        ShowResult("✅", Strings.T("obsconfig.manualSet", path));
     }
 
     // -------------------------------------------------------------- 备份 / 导出
@@ -92,13 +92,13 @@ public partial class ObsConfigPage : UserControl, INavigationAware
 
             if (backups.Count == 0)
             {
-                BackupListHint.Text = "暂无本地备份记录。";
+                BackupListHint.Text = Strings.T("obsconfig.backupsEmpty");
                 BackupListHint.Visibility = Visibility.Visible;
                 BackupList.Visibility = Visibility.Collapsed;
                 return;
             }
 
-            BackupListHint.Text = $"共 {backups.Count} 条自动备份（存在本程序数据目录下）：";
+            BackupListHint.Text = Strings.T("obsconfig.backupsCount", backups.Count);
             BackupListHint.Visibility = Visibility.Visible;
             BackupList.Visibility = Visibility.Visible;
 
@@ -118,7 +118,7 @@ public partial class ObsConfigPage : UserControl, INavigationAware
             {
                 var more = new TextBlock
                 {
-                    Text = $"  （还有 {backups.Count - 10} 条更早的备份）"
+                    Text = Strings.T("obsconfig.backupsMore", backups.Count - 10)
                 };
                 more.SetResourceReference(TextBlock.FontSizeProperty, "FontSizeXs");
                 more.SetResourceReference(TextBlock.ForegroundProperty, "MutedBrush");
@@ -127,7 +127,7 @@ public partial class ObsConfigPage : UserControl, INavigationAware
         }
         catch
         {
-            BackupListHint.Text = "无法读取备份列表。";
+            BackupListHint.Text = Strings.T("obsconfig.backupsUnavailable");
             BackupListHint.Visibility = Visibility.Visible;
         }
     }
@@ -135,18 +135,18 @@ public partial class ObsConfigPage : UserControl, INavigationAware
     private async void OnCreateBackup(object sender, RoutedEventArgs e)
     {
         if (_busy) return;
-        SetBusy(true, "正在创建备份…");
+        SetBusy(true, Strings.T("obsconfig.creatingBackup"));
         try
         {
             var includeKey = IncludeKeyCheck.IsChecked == true;
             var path = await AppServices.ObsBackups.CreateBackupAsync(
-                "手动创建", includeKey: includeKey, includePluginConfig: true);
+                Strings.T("obsconfig.manualReason"), includeKey: includeKey, includePluginConfig: true);
             await RefreshBackupListAsync();
-            ShowResult("✅", $"备份已创建，保存位置：\n{path}");
+            ShowResult("✅", Strings.T("obsconfig.backupCreated", path));
         }
         catch (Exception ex)
         {
-            ShowResult("❌", $"备份失败：{ex.Message}");
+            ShowResult("❌", Strings.T("obsconfig.backupFailed", ex.Message));
             App.ReportError(ErrorCodes.BackupFailed, ex);
         }
         finally { SetBusy(false); }
@@ -158,24 +158,24 @@ public partial class ObsConfigPage : UserControl, INavigationAware
 
         var dialog = new SaveFileDialog
         {
-            Title = "导出 OBS 配置",
-            FileName = $"OBS_备份_{DateTime.Now:yyyyMMdd_HHmm}",
+            Title = Strings.T("obsconfig.exportDialogTitle"),
+            FileName = Strings.T("obsconfig.exportFileName", DateTime.Now.ToString("yyyyMMdd_HHmm")),
             DefaultExt = ".zip",
-            Filter = "ZIP 压缩包 (*.zip)|*.zip"
+            Filter = Strings.T("obsconfig.zipFilter")
         };
 
         if (dialog.ShowDialog() != true) return;
 
-        SetBusy(true, "正在导出配置…");
+        SetBusy(true, Strings.T("obsconfig.exporting"));
         try
         {
             var includeKey = IncludeKeyCheck.IsChecked == true;
             await AppServices.ObsBackups.ExportToAsync(dialog.FileName, includeKey, true);
-            ShowResult("✅", $"已导出到：{dialog.FileName}");
+            ShowResult("✅", Strings.T("obsconfig.exported", dialog.FileName));
         }
         catch (Exception ex)
         {
-            ShowResult("❌", $"导出失败：{ex.Message}");
+            ShowResult("❌", Strings.T("obsconfig.exportFailed", ex.Message));
             App.ReportError(ErrorCodes.BackupFailed, ex);
         }
         finally { SetBusy(false); }
@@ -195,22 +195,22 @@ public partial class ObsConfigPage : UserControl, INavigationAware
 
         var dialog = new OpenFileDialog
         {
-            Title = mode == ObsImportMode.Overwrite ? "选择备份 ZIP（将覆盖当前配置）" : "选择备份 ZIP（将合并到当前配置）",
-            Filter = "ZIP 压缩包 (*.zip)|*.zip"
+            Title = mode == ObsImportMode.Overwrite ? Strings.T("obsconfig.importPickOverwrite") : Strings.T("obsconfig.importPickMerge"),
+            Filter = Strings.T("obsconfig.zipFilter")
         };
 
         if (dialog.ShowDialog() != true) return;
 
-        var label = mode == ObsImportMode.Overwrite ? "覆盖" : "合并";
+        var label = mode == ObsImportMode.Overwrite ? Strings.T("obsconfig.modeOverwrite") : Strings.T("obsconfig.modeMerge");
         if (!ConfirmDialog.Show(
-                $"导入并{label}配置",
-                $"将用选中备份包以「{label}」模式导入 OBS 配置。导入前会自动创建当前配置的备份。\n\n确认继续？",
-                "导入", "取消"))
+                Strings.T("obsconfig.importConfirmTitle", label),
+                Strings.T("obsconfig.importConfirmMessage", label),
+                Strings.T("obsconfig.importConfirmButton"), Strings.T("common.cancel")))
         {
             return;
         }
 
-        SetBusy(true, "正在导入配置…");
+        SetBusy(true, Strings.T("obsconfig.importing"));
         try
         {
             var progress = new Progress<string>(msg =>
@@ -225,20 +225,20 @@ public partial class ObsConfigPage : UserControl, INavigationAware
             var result = await AppServices.ObsBackups.ImportAsync(dialog.FileName, mode, progress);
             if (result.Ok)
             {
-                var detail = $"导入完成：{result.ImportedCollections} 个场景集合、{result.ImportedProfiles} 个 Profile。";
+                var detail = Strings.T("obsconfig.importDone", result.ImportedCollections, result.ImportedProfiles);
                 if (!string.IsNullOrEmpty(result.AutoBackupPath))
-                    detail += $"\n\n导入前的自动备份：{result.AutoBackupPath}";
+                    detail += Strings.T("obsconfig.importAutoBackup", result.AutoBackupPath);
                 ShowResult("✅", detail);
             }
             else
             {
-                ShowResult("❌", $"导入失败：{result.Error}");
+                ShowResult("❌", Strings.T("obsconfig.importFailed", result.Error));
                 App.ReportError(ErrorCodes.ImportRejected);
             }
         }
         catch (Exception ex)
         {
-            ShowResult("❌", $"导入过程中出现异常：{ex.Message}");
+            ShowResult("❌", Strings.T("obsconfig.importException", ex.Message));
             App.ReportError(ErrorCodes.ImportRejected, ex);
         }
         finally
@@ -256,19 +256,19 @@ public partial class ObsConfigPage : UserControl, INavigationAware
 
         if (!AppServices.Obs.IsConnected)
         {
-            ShowResult("⚠️", "轻度重置需要先连接 OBS WebSocket，请先去「OBS 控制台」完成连接。");
+            ShowResult("⚠️", Strings.T("obsconfig.lightNeedsConnection"));
             return;
         }
 
         if (!ConfirmDialog.Show(
-                "轻度重置",
-                "将在 OBS 中新建一个名为「初始设置 (OBS 助手)」的干净配置集合，重置分辨率到 1920×1080@30，并切换过去。原有配置不会被删除。\n\n操作前会自动备份当前配置，确认继续？",
-                "重置", "取消"))
+                Strings.T("obsconfig.lightTitle"),
+                Strings.T("obsconfig.lightMessage"),
+                Strings.T("obsconfig.resetConfirmButton"), Strings.T("common.cancel")))
         {
             return;
         }
 
-        SetBusy(true, "正在轻度重置…");
+        SetBusy(true, Strings.T("obsconfig.lightBusy"));
         try
         {
             var progress = new Progress<string>(msg =>
@@ -283,22 +283,22 @@ public partial class ObsConfigPage : UserControl, INavigationAware
             var result = await AppServices.ObsReset.LightResetAsync(progress);
             if (result.Ok)
             {
-                var msg = "轻度重置完成！已切换到新的干净配置集「初始设置 (OBS 助手)」。";
+                var msg = Strings.T("obsconfig.lightDone");
                 if (!string.IsNullOrEmpty(result.AutoBackupPath))
-                    msg += $"\n\n自动备份：{result.AutoBackupPath}";
+                    msg += Strings.T("obsconfig.autoBackupLine", result.AutoBackupPath);
                 if (!string.IsNullOrEmpty(result.Note))
                     msg += $"\n\n{result.Note}";
                 ShowResult("✅", msg);
             }
             else
             {
-                ShowResult("❌", $"重置失败：{result.Note ?? "未知错误"}");
+                ShowResult("❌", Strings.T("obsconfig.resetFailed", result.Note ?? Strings.T("common.unknown")));
                 App.ReportError(ErrorCodes.ResetFailed);
             }
         }
         catch (Exception ex)
         {
-            ShowResult("❌", $"重置异常：{ex.Message}");
+            ShowResult("❌", Strings.T("obsconfig.resetException", ex.Message));
             App.ReportError(ErrorCodes.ResetFailed, ex);
         }
         finally
@@ -316,15 +316,15 @@ public partial class ObsConfigPage : UserControl, INavigationAware
         if (proc.IsRunning)
         {
             ShowResult("⚠️",
-                $"检测到 OBS 正在运行（进程：{proc.ProcessName}）。彻底重置需要完全退出 OBS（包括系统托盘里的图标），请先手动退出后重试。");
+                Strings.T("obsconfig.obsRunning", proc.ProcessName));
             App.ReportError(ErrorCodes.ObsRunning);
             return;
         }
 
         if (!ConfirmDialog.Show(
-                "⚠️ 彻底重置 OBS",
-                "将删除当前所有场景、Profile、插件设置与 global.ini，恢复到第一次安装 OBS 时的空白状态。\n\n操作前会自动创建一份包含密钥的完整备份，但仍建议再做一份导出。\n\n确认继续？",
-                "彻底重置", "取消",
+                Strings.T("obsconfig.fullTitle"),
+                Strings.T("obsconfig.fullMessage"),
+                Strings.T("obsconfig.fullButton"), Strings.T("common.cancel"),
                 danger: true))
         {
             return;
@@ -332,15 +332,15 @@ public partial class ObsConfigPage : UserControl, INavigationAware
 
         // 二次确认
         if (!ConfirmDialog.Show(
-                "再次确认 — 彻底重置",
-                "此操作不可撤销。删除后无法恢复当前配置（备份除外）。\n\n真的要继续吗？",
-                "确认重置", "取消",
+                Strings.T("obsconfig.fullConfirmTitle"),
+                Strings.T("obsconfig.fullConfirmMessage"),
+                Strings.T("obsconfig.fullConfirmButton"), Strings.T("common.cancel"),
                 danger: true))
         {
             return;
         }
 
-        SetBusy(true, "正在彻底重置…");
+        SetBusy(true, Strings.T("obsconfig.fullBusy"));
         try
         {
             var progress = new Progress<string>(msg =>
@@ -357,15 +357,15 @@ public partial class ObsConfigPage : UserControl, INavigationAware
 
             if (result.Ok)
             {
-                var msg = "彻底重置完成！OBS 已恢复到初始状态。";
+                var msg = Strings.T("obsconfig.fullDone");
                 if (!string.IsNullOrEmpty(result.AutoBackupPath))
-                    msg += $"\n\n完整备份已保存至：{result.AutoBackupPath}\n如需恢复，请用上面的「导入」功能选中该 ZIP 文件。";
+                    msg += Strings.T("obsconfig.fullBackupLine", result.AutoBackupPath);
                 if (!string.IsNullOrEmpty(result.Note)) msg += $"\n\n{result.Note}";
                 ShowResult("✅", msg);
             }
             else
             {
-                ShowResult("❌", $"重置未能完成：{result.Note ?? "已尝试回滚。原配置备份保存在备份列表中。"}");
+                ShowResult("❌", Strings.T("obsconfig.fullFailed", result.Note ?? Strings.T("obsconfig.fullFailedFallback")));
                 App.ReportError(ErrorCodes.ResetFailed);
             }
 
@@ -373,7 +373,7 @@ public partial class ObsConfigPage : UserControl, INavigationAware
         }
         catch (Exception ex)
         {
-            ShowResult("❌", $"重置过程发生异常：{ex.Message}\n\n程序已尝试回滚，原配置备份保存在备份列表中。");
+            ShowResult("❌", Strings.T("obsconfig.fullException", ex.Message));
             App.ReportError(ErrorCodes.ResetFailed, ex);
         }
         finally
@@ -399,7 +399,7 @@ public partial class ObsConfigPage : UserControl, INavigationAware
         LightResetButton.IsEnabled = !busy;
         FullResetButton.IsEnabled = !busy;
 
-        if (busy) AppServices.Busy.Show(message ?? "处理中…");
+        if (busy) AppServices.Busy.Show(message ?? Strings.T("common.busy"));
         else AppServices.Busy.Hide();
     }
 

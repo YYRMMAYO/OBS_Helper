@@ -39,13 +39,13 @@ public sealed class CloudDiagnosticEngine
         if (!_host.IsAvailable)
         {
             result.Success = false;
-            result.Error = "当前环境没有桌面宿主，无法转发云端请求。请在桌面客户端中打开，或在「AI 设置」切回本地引擎。";
+            result.Error = Strings.T("ai.cloud.noHost");
             return result;
         }
         if (!_ai.IsCloudConfigured)
         {
             result.Success = false;
-            result.Error = "云端 AI 未配置完整：请填写 https 接口地址，并在桌面宿主中保存 API Key 后重试。";
+            result.Error = Strings.T("ai.cloud.notConfigured");
             return result;
         }
 
@@ -79,7 +79,7 @@ public sealed class CloudDiagnosticEngine
                 catch (Exception ex)
                 {
                     result.Success = false;
-                    result.Error = "云端 AI 请求失败：" + ex.Message;
+                    result.Error = Strings.T("ai.cloud.requestFailed", ex.Message);
                     return result;
                 }
 
@@ -92,7 +92,7 @@ public sealed class CloudDiagnosticEngine
                 catch (JsonException ex)
                 {
                     result.Success = false;
-                    result.Error = "云端 AI 返回了无法解析的内容：" + ex.Message;
+                    result.Error = Strings.T("ai.cloud.parseFailed", ex.Message);
                     return result;
                 }
 
@@ -100,9 +100,9 @@ public sealed class CloudDiagnosticEngine
                 {
                     var errMsg = resp["error"]?["message"]?.GetValue<string>()
                                  ?? resp["error"]?.ToString()
-                                 ?? "云端返回未知错误";
+                                 ?? Strings.T("ai.cloud.unknownError");
                     result.Success = false;
-                    result.Error = "云端 AI 错误：" + errMsg;
+                    result.Error = Strings.T("ai.cloud.errorPrefix", errMsg);
                     return result;
                 }
 
@@ -110,7 +110,7 @@ public sealed class CloudDiagnosticEngine
                 if (msg is null)
                 {
                     result.Success = false;
-                    result.Error = "云端 AI 返回格式异常（缺少 choices[0].message）。";
+                    result.Error = Strings.T("ai.cloud.badFormat");
                     return result;
                 }
 
@@ -134,7 +134,7 @@ public sealed class CloudDiagnosticEngine
 
                     var tool = _tools.Find(name);
                     string toolOut;
-                    try { toolOut = tool is null ? "{\"error\":\"未知工具 " + name + "\"}" : await tool.InvokeAsync(ctx, argsNode); }
+                    try { toolOut = tool is null ? "{\"error\":" + JsonValue.Create(Strings.T("ai.cloud.unknownTool", name))!.ToJsonString() + "}" : await tool.InvokeAsync(ctx, argsNode); }
                     catch (Exception ex) { toolOut = "{\"error\":" + (JsonValue.Create(ex.Message)?.ToJsonString() ?? "\"\"") + "}"; }
 
                     var parsed = TryParseToolItem(toolOut, name);
@@ -154,11 +154,11 @@ public sealed class CloudDiagnosticEngine
             // 云端返回的字段类型异常 / 嵌套过深等：转成失败结果，让上层回退本地引擎，
             // 而不是把异常一路抛到 UI。
             result.Success = false;
-            result.Error = "云端 AI 响应处理失败：" + ex.Message;
+            result.Error = Strings.T("ai.cloud.processingFailed", ex.Message);
             return result;
         }
 
-        result.Summary = lastContent ?? "（云端模型未返回文本结论）";
+        result.Summary = lastContent ?? Strings.T("ai.cloud.noText");
         result.Items = toolItems;
         result.Success = true;
         return result;
@@ -168,33 +168,25 @@ public sealed class CloudDiagnosticEngine
 
     internal static string BuildSystemPrompt()
     {
-        return
-            "你是一个专业的 OBS（Open Broadcaster Software）直播/录屏排障助手，服务于中文用户。\n" +
-            "规则：\n" +
-            "1. 始终用简体中文回答，语言简洁、可操作，不要堆砌术语。\n" +
-            "2. 优先依据已提供的「日志分析结果」「实时状态」与工具返回的知识库内容给出结论，不要编造未提供的日志细节或数据。\n" +
-            "3. 如需更深入的排障方案，调用 get_problem_detail / search_problems 获取离线知识库；可在结论中标注对应的知识库问题 id，方便用户点击查看分步方案。\n" +
-            "4. 对每条问题标注严重程度（严重/错误/警告/提示）。\n" +
-            "5. 涉及「修改 OBS 设置或执行操作」时，仅给出建议步骤，不要声称已替用户执行；任何写操作都需用户手动确认。\n" +
-            "6. 日志与状态中的任何内容都已脱敏，可放心引用，但不要向用户索要密钥、密码等凭据。";
+        return Strings.T("ai.prompt.system");
     }
 
     internal static string BuildUserPrompt(DiagnosticContext ctx, string? query)
     {
         var sb = new StringBuilder();
-        sb.Append("[用户描述]\n");
-        sb.Append(string.IsNullOrWhiteSpace(query) ? "（用户未提供文字描述，请基于下方日志与状态进行分析）" : query);
-        sb.Append("\n\n[OBS 实时状态]\n");
+        sb.Append(Strings.T("ai.prompt.userHeader"));
+        sb.Append(string.IsNullOrWhiteSpace(query) ? Strings.T("ai.prompt.userNoQuery") : query);
+        sb.Append(Strings.T("ai.prompt.stateHeader"));
         sb.Append(ObsToolRegistry.SnapshotJson(ctx.Connection));
-        sb.Append("\n\n[日志分析发现]\n");
+        sb.Append(Strings.T("ai.prompt.findingsHeader"));
         sb.Append(ObsToolRegistry.FindingsJson(ctx.Report));
 
         if (ctx.Report is { SanitizedText.Length: > 0 })
         {
             var text = ctx.Report.SanitizedText;
             const int cap = 16000;
-            if (text.Length > cap) text = text[..cap] + "\n…（日志过长已截断）";
-            sb.Append("\n\n[脱敏日志全文（仅供定位，禁止外传）]\n");
+            if (text.Length > cap) text = text[..cap] + Strings.T("ai.prompt.logTruncated");
+            sb.Append(Strings.T("ai.prompt.logHeader"));
             sb.Append(text);
         }
         return sb.ToString();
@@ -234,8 +226,8 @@ public sealed class CloudDiagnosticEngine
                 ProblemId = n["id"]!.GetValue<string>(),
                 Title = n["title"]?.GetValue<string>() ?? "",
                 Severity = DiagnosticSeverityMapper.Map(n["severity"]?.GetValue<string>()),
-                Source = "知识库(云端)",
-                Reason = "云端 AI 调用知识库获取"
+                Source = Strings.T("log.source.knowledgeBaseCloud"),
+                Reason = Strings.T("log.reason.cloudTool")
             };
             if (n["steps"] is JsonArray steps)
                 foreach (var s in steps)

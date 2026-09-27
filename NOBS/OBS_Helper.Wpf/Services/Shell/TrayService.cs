@@ -117,7 +117,7 @@ public sealed class TrayService : IDisposable
             {
                 var lowest = DiskProbe.Sample().OrderBy(d => d.FreeGb).FirstOrDefault();
                 if (lowest is null || lowest.FreeGb >= DiskWarnGb) return;
-                Notify("磁盘空间不足", $"{lowest.Name} 盘剩余仅 {lowest.FreeGb:0.0} GB，录制文件可能中断，请及时清理。");
+                Notify(Strings.T("tray.diskLowTitle"), Strings.T("tray.diskLowMessage", lowest.Name, lowest.FreeGb));
             }
             catch (Exception)
             {
@@ -155,24 +155,24 @@ public sealed class TrayService : IDisposable
 
             if (_recordItem is not null)
             {
-                _recordItem.Text = rec ? "停止录制（进行中）" : "开始录制";
+                _recordItem.Text = rec ? Strings.T("tray.stopRecord") : Strings.T("tray.startRecord");
                 _recordItem.Enabled = _obs.IsConnected;
             }
             if (_streamItem is not null)
             {
-                _streamItem.Text = stream ? "停止推流（进行中）" : "开始推流";
+                _streamItem.Text = stream ? Strings.T("tray.stopStream") : Strings.T("tray.startStream");
                 _streamItem.Enabled = _obs.IsConnected;
             }
             if (_virtualCamItem is not null)
             {
-                _virtualCamItem.Text = vcam ? "关闭虚拟摄像头" : "开启虚拟摄像头";
+                _virtualCamItem.Text = vcam ? Strings.T("tray.disableVirtualCam") : Strings.T("tray.enableVirtualCam");
                 _virtualCamItem.Enabled = _obs.IsConnected;
             }
 
-            var tip = "OBS 排障助手";
-            if (rec) tip += " · 录制中";
-            if (stream) tip += " · 推流中";
-            if (vcam) tip += " · 虚拟摄像头";
+            var tip = Strings.T("tray.tooltip");
+            if (rec) tip += Strings.T("tray.tooltipRecording");
+            if (stream) tip += Strings.T("tray.tooltipStreaming");
+            if (vcam) tip += Strings.T("tray.tooltipVirtualCam");
             _icon.Text = tip.Length > 63 ? tip[..63] : tip;   // NotifyIcon.Text 上限 63 字符
 
             NotifyStateFlips(rec, stream, vcam);
@@ -197,19 +197,19 @@ public sealed class TrayService : IDisposable
         if (rec != _lastRecActive)
         {
             _lastRecActive = rec;
-            _icon.ShowBalloonTip(4000, rec ? "录制已开始" : "录制已停止",
-                rec ? "OBS 正在录制。" : "录制已结束。", ToolTipIcon.Info);
+            _icon.ShowBalloonTip(4000, rec ? Strings.T("tray.recordStartedTitle") : Strings.T("tray.recordStoppedTitle"),
+                rec ? Strings.T("tray.recordStartedMessage") : Strings.T("tray.recordStoppedMessage"), ToolTipIcon.Info);
         }
         if (stream != _lastStreamActive)
         {
             _lastStreamActive = stream;
-            _icon.ShowBalloonTip(4000, stream ? "推流已开始" : "推流已停止",
-                stream ? "OBS 正在推流。" : "推流已结束。", ToolTipIcon.Info);
+            _icon.ShowBalloonTip(4000, stream ? Strings.T("tray.streamStartedTitle") : Strings.T("tray.streamStoppedTitle"),
+                stream ? Strings.T("tray.streamStartedMessage") : Strings.T("tray.streamStoppedMessage"), ToolTipIcon.Info);
         }
         if (vcam != _lastVcamActive)
         {
             _lastVcamActive = vcam;
-            _icon.ShowBalloonTip(4000, vcam ? "虚拟摄像头已开启" : "虚拟摄像头已关闭", "", ToolTipIcon.Info);
+            _icon.ShowBalloonTip(4000, vcam ? Strings.T("tray.vcamOnTitle") : Strings.T("tray.vcamOffTitle"), "", ToolTipIcon.Info);
         }
     }
 
@@ -247,6 +247,17 @@ public sealed class TrayService : IDisposable
 
     public void Dispose() => Stop();
 
+    /// <summary>
+    /// 语言切换后重建托盘菜单与提示文本（V2.9.2）：菜单项在托盘线程上创建，
+    /// 必须在同一线程重建，否则 WinForms 控件会跨线程访问。
+    /// </summary>
+    public void RefreshLanguage() => Post(() =>
+    {
+        if (_icon is null) return;
+        _icon.ContextMenuStrip = BuildMenu();
+        RefreshState();
+    });
+
     // ------------------------------------------------------------ 托盘线程
 
     private void TrayThreadMain()
@@ -256,7 +267,7 @@ public sealed class TrayService : IDisposable
         _icon = new NotifyIcon
         {
             Icon = LoadIcon(),
-            Text = "OBS 排障助手",
+            Text = Strings.T("tray.tooltip"),
             Visible = true,
             ContextMenuStrip = BuildMenu()
         };
@@ -272,22 +283,22 @@ public sealed class TrayService : IDisposable
     {
         var menu = new ContextMenuStrip();
 
-        var show = new ToolStripMenuItem("显示主窗口");
+        var show = new ToolStripMenuItem(Strings.T("tray.showWindow"));
         show.Click += (_, _) => ShowRequested?.Invoke();
 
-        _recordItem = new ToolStripMenuItem("开始录制");
+        _recordItem = new ToolStripMenuItem(Strings.T("tray.startRecord"));
         _recordItem.Click += (_, _) => FireAndForget(_obs.ToggleRecordAsync);
 
-        _streamItem = new ToolStripMenuItem("开始推流");
+        _streamItem = new ToolStripMenuItem(Strings.T("tray.startStream"));
         _streamItem.Click += (_, _) => FireAndForget(_obs.ToggleStreamAsync);
 
-        _virtualCamItem = new ToolStripMenuItem("开启虚拟摄像头");
+        _virtualCamItem = new ToolStripMenuItem(Strings.T("tray.enableVirtualCam"));
         _virtualCamItem.Click += (_, _) => FireAndForget(_obs.ToggleVirtualCamAsync);
 
-        var miniItem = new ToolStripMenuItem("小窗控制（录制 / 推流）");
+        var miniItem = new ToolStripMenuItem(Strings.T("tray.miniWindow"));
         miniItem.Click += (_, _) => MiniWindowRequested?.Invoke();
 
-        var exit = new ToolStripMenuItem("退出");
+        var exit = new ToolStripMenuItem(Strings.T("tray.exit"));
         exit.Click += (_, _) => ExitRequested?.Invoke();
 
         menu.Items.Add(show);

@@ -169,7 +169,7 @@ public sealed class KnowledgeBaseUpdater
 
             if (remoteJson is null)
             {
-                return (false, null, "远程知识库拉取失败（网络不可达或地址变更），本次跳过。");
+                return (false, null, Strings.T("kb.remoteFailed"));
             }
 
             // 校验：必须是合法且非空的数据，防止坏文件覆盖本地
@@ -179,7 +179,7 @@ public sealed class KnowledgeBaseUpdater
                 var parsed = PluginCatalogCore.Parse(remoteJson);
                 if (parsed is null)
                 {
-                    return (false, null, "远程插件目录内容无效，已拒绝应用。");
+                    return (false, null, Strings.T("kb.pluginsInvalid"));
                 }
                 remoteVersion = parsed.Version;
             }
@@ -197,7 +197,7 @@ public sealed class KnowledgeBaseUpdater
 
                 if (remote is null || remote.Problems.Count == 0)
                 {
-                    return (false, null, "远程知识库内容无效，已拒绝应用。");
+                    return (false, null, Strings.T("kb.invalid"));
                 }
                 remoteVersion = remote.Version;
             }
@@ -217,7 +217,7 @@ public sealed class KnowledgeBaseUpdater
             }
             catch (Exception ex)
             {
-                return (false, remoteVersion, "知识库写入本地失败：" + ex.Message);
+                return (false, remoteVersion, Strings.T("kb.writeFailed", ex.Message));
             }
 
             state.Version = remoteVersion;
@@ -228,7 +228,7 @@ public sealed class KnowledgeBaseUpdater
         catch (Exception ex)
         {
             FileLogger.Warn("KB", "知识库检查异常：" + ex.Message);
-            return (false, null, "知识库检查异常：" + ex.Message);
+            return (false, null, Strings.T("kb.checkError", ex.Message));
         }
         finally
         {

@@ -9,7 +9,7 @@
   <ScrollViewer Style="{StaticResource PageScroll}">
     <StackPanel Margin="22,18,22,26">
 
-      <TextBlock x:Name="NotFoundText" Text="未找到该问题。"
+      <TextBlock x:Name="NotFoundText" Text="{DynamicResource Loc.problem.notFound}"
                  Style="{StaticResource MutedText}"
                  HorizontalAlignment="Center" Margin="0,40,0,0"
                  Visibility="Collapsed" />
@@ -27,11 +27,11 @@
 
           <StackPanel Grid.Column="1" Orientation="Horizontal" Margin="10,0,0,0">
             <Button x:Name="CopyButton" Style="{StaticResource SecondaryButton}"
-                    Content="复制全文" Margin="0,0,8,0"
-                    ToolTip="把这条方案的全部文字复制到剪贴板"
+                    Content="{DynamicResource Loc.problem.copyAll}" Margin="0,0,8,0"
+                    ToolTip="{DynamicResource Loc.problem.copyAllTip}"
                     Click="OnCopyAll" />
             <Button x:Name="BookmarkButton" Style="{StaticResource SecondaryButton}"
-                    Content="☆ 收藏" Click="OnToggleBookmark" />
+                    Content="{DynamicResource Loc.problem.bookmark.off}" Click="OnToggleBookmark" />
           </StackPanel>
         </Grid>
 
@@ -41,7 +41,7 @@
         <!-- 症状表现 -->
         <Border Style="{StaticResource Card}" Margin="0,14,0,0">
           <StackPanel>
-            <TextBlock Text="症状表现" Style="{StaticResource SectionTitle}" Margin="0,0,0,8" />
+            <TextBlock Text="{DynamicResource Loc.problem.symptoms}" Style="{StaticResource SectionTitle}" Margin="0,0,0,8" />
             <StackPanel x:Name="SymptomList" />
           </StackPanel>
         </Border>
@@ -49,7 +49,7 @@
         <!-- 可能原因 -->
         <Border Style="{StaticResource Card}" Margin="0,12,0,0">
           <StackPanel>
-            <TextBlock Text="可能原因" Style="{StaticResource SectionTitle}" Margin="0,0,0,8" />
+            <TextBlock Text="{DynamicResource Loc.problem.causes}" Style="{StaticResource SectionTitle}" Margin="0,0,0,8" />
             <StackPanel x:Name="CauseList" />
           </StackPanel>
         </Border>
@@ -62,7 +62,7 @@
                 <ColumnDefinition Width="*" />
                 <ColumnDefinition Width="Auto" />
               </Grid.ColumnDefinitions>
-              <TextBlock Grid.Column="0" Text="分步解决方案"
+              <TextBlock Grid.Column="0" Text="{DynamicResource Loc.problem.steps}"
                          Style="{StaticResource SectionTitle}" Margin="0" />
               <TextBlock x:Name="ProgressText" Grid.Column="1"
                          Style="{StaticResource CaptionText}" VerticalAlignment="Center" />
@@ -77,7 +77,7 @@
         <Border x:Name="TipsBlock" Style="{StaticResource Card}" Margin="0,12,0,0"
                 Visibility="Collapsed">
           <StackPanel>
-            <TextBlock Text="小贴士" Style="{StaticResource SectionTitle}" Margin="0,0,0,8" />
+            <TextBlock Text="{DynamicResource Loc.problem.tips}" Style="{StaticResource SectionTitle}" Margin="0,0,0,8" />
             <StackPanel x:Name="TipList" />
           </StackPanel>
         </Border>
@@ -86,14 +86,14 @@
         <Border x:Name="LinksBlock" Style="{StaticResource Card}" Margin="0,12,0,0"
                 Visibility="Collapsed">
           <StackPanel>
-            <TextBlock Text="官方文档 / 参考链接" Style="{StaticResource SectionTitle}" Margin="0,0,0,8" />
+            <TextBlock Text="{DynamicResource Loc.problem.links}" Style="{StaticResource SectionTitle}" Margin="0,0,0,8" />
             <StackPanel x:Name="LinkList" />
           </StackPanel>
         </Border>
 
         <!-- 相关问题 -->
         <StackPanel x:Name="RelatedBlock" Margin="0,12,0,0" Visibility="Collapsed">
-          <TextBlock Text="相关问题" Style="{StaticResource SectionTitle}" Margin="0,4,0,8" />
+          <TextBlock Text="{DynamicResource Loc.problem.related}" Style="{StaticResource SectionTitle}" Margin="0,4,0,8" />
           <StackPanel x:Name="RelatedList" />
         </StackPanel>
 

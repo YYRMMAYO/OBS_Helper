@@ -14,6 +14,11 @@ public sealed class SceneTemplate
     public string Notes { get; set; } = "";
     public CanvasSpec Canvas { get; set; } = new();
     /// <summary>默认场景切换过渡名称（如「淡入淡出」），落地时设置为当前过渡。</summary>
+    /// <summary>
+    /// 默认过渡名。这是**逻辑值**而不是展示文案（V2.9.2）：它经
+    /// <c>SceneTemplateService.PickTransitionName</c> 映射到 OBS 的过渡名，别名表同时认
+    /// 「淡入淡出」/「直接切换」与 OBS 英文界面里的 Fade / Cut，所以这里保持中文默认值不会影响英文环境。
+    /// </summary>
     public string Transition { get; set; } = "淡入淡出";
     /// <summary>默认场景切换过渡时长（毫秒）。</summary>
     public int TransitionDurationMs { get; set; } = 300;

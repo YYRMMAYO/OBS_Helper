@@ -35,11 +35,11 @@ public sealed class DiagnosticItem
     /// <summary>严重度文案，便于 UI 直接显示。</summary>
     public string SeverityText => Severity switch
     {
-        DiagnosticSeverity.Critical => "严重",
-        DiagnosticSeverity.Error => "错误",
-        DiagnosticSeverity.Warning => "警告",
-        DiagnosticSeverity.Suggestion => "建议",
-        _ => "提示"
+        DiagnosticSeverity.Critical => Strings.T("severity.critical"),
+        DiagnosticSeverity.Error => Strings.T("severity.error"),
+        DiagnosticSeverity.Warning => Strings.T("severity.warning"),
+        DiagnosticSeverity.Suggestion => Strings.T("severity.suggestion"),
+        _ => Strings.T("severity.info")
     };
 }
 

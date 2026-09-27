@@ -29,6 +29,13 @@ THEMES = ROOT / "Themes"
 KEY_RE = re.compile(r'x:Key="([^"]+)"')
 REF_RE = re.compile(r"\{(?:Static|Dynamic)Resource\s+([^\}\s,]+)\s*\}")
 
+# 文案键（V2.9.2）：界面文案走 {DynamicResource Loc.<键>}，键定义在 C# 文案表里
+# （Localization/StringTableZhHans.cs 等），不在 Themes/ 下。
+# 这里把文案表里的键也读进来，映射成 XAML 里真正引用的 Loc.<键>。
+LOCALIZATION_DIR = ROOT / "Localization"
+LOC_KEY_RE = re.compile(r'\["([^"]+)"\]\s*=')
+LOC_PREFIX = "Loc."
+
 # WPF 自带的资源键，不在我们的字典里也能解析出来
 BUILTIN_PREFIXES = ("System", "{x:Static", "ToolBar.", "Menu", "GridView")
 
@@ -56,6 +63,16 @@ def main() -> int:
     for f in theme_files:
         global_keys |= collect_keys(f)
     print(f"全局资源键 {len(global_keys)} 个（Themes/ 下 {len(theme_files)} 个字典：{', '.join(p.name for p in theme_files)}）")
+
+    # 文案键：Localization/StringTable*.cs 里的键 → XAML 引用的 Loc.<键>
+    loc_keys: set[str] = set()
+    if LOCALIZATION_DIR.is_dir():
+        table_files = sorted(LOCALIZATION_DIR.glob("StringTable*.cs"))
+        for f in table_files:
+            for key in LOC_KEY_RE.findall(f.read_text(encoding="utf-8-sig")):
+                loc_keys.add(LOC_PREFIX + key)
+        print(f"文案键 {len(loc_keys)} 个（{', '.join(p.name for p in table_files)}）")
+    global_keys |= loc_keys
 
     xamls = sorted(p for p in ROOT.rglob("*.xaml") if "obj" not in p.parts and "bin" not in p.parts)
 

@@ -86,7 +86,7 @@ public partial class SearchPage : UserControl, INavigationAware
         var categories = await AppServices.Problems.GetCategoriesAsync();
         _categoryTitles = categories.ToDictionary(c => c.Id, c => c.Title);
 
-        var chips = new List<Chip> { new() { Id = "", Label = "全部", IsAll = true } };
+        var chips = new List<Chip> { new() { Id = "", Label = Strings.T("search.all"), IsAll = true } };
         chips.AddRange(categories.Select(c => new Chip
         {
             Id = c.Id,
@@ -112,8 +112,8 @@ public partial class SearchPage : UserControl, INavigationAware
         Render(results);
 
         CountText.Text = string.IsNullOrWhiteSpace(query)
-            ? $"共 {results.Count} 个方案，输入关键词可缩小范围"
-            : $"找到 {results.Count} 条结果";
+            ? Strings.T("search.hintAll", results.Count)
+            : Strings.T("search.hintFound", results.Count);
 
         EmptyText.Visibility = results.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
     }

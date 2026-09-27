@@ -36,7 +36,7 @@ public sealed class ColorCheckService
                 return new ColorCheckResult
                 {
                     Ok = false,
-                    Message = "未找到 OBS 配置目录。若为自定义安装，请先在「设置 → OBS 配置管理」手动指定目录后重试。"
+                    Message = Strings.T("colorcheck.service.noConfig")
                 };
             }
 
@@ -48,7 +48,7 @@ public sealed class ColorCheckService
                 return new ColorCheckResult
                 {
                     Ok = false,
-                    Message = "global.ini 中没有 Profile 记录（OBS 可能从未保存过设置）；先在 OBS 里随便改一项设置并关闭后重试。"
+                    Message = Strings.T("colorcheck.service.noProfile")
                 };
             }
 
@@ -59,7 +59,7 @@ public sealed class ColorCheckService
                 return new ColorCheckResult
                 {
                     Ok = false,
-                    Message = $"找不到 Profile「{profileDir}」的 basic.ini，无法检查色彩设置。"
+                    Message = Strings.T("colorcheck.service.noBasicIni", profileDir)
                 };
             }
 
@@ -75,7 +75,7 @@ public sealed class ColorCheckService
             return new ColorCheckResult
             {
                 Ok = false,
-                Message = $"色彩体检过程出现异常：{ex.Message}。请稍后重试。"
+                Message = Strings.T("colorcheck.service.exception", ex.Message)
             };
         }
     }

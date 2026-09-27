@@ -33,38 +33,38 @@ public static class ObsSafePath
         var root = Resolve(allowedRoot);
         var target = Resolve(fullPath);
         if (target.Length == 0)
-            throw new ObsSafePathException($"路径无法解析：{fullPath}");
+            throw new ObsSafePathException(Strings.T("safepath.unresolvable", fullPath));
 
         // 闸 2：必须落在 root 之下
         if (!IsUnder(root, target))
-            throw new ObsSafePathException($"路径越界，不在 OBS 配置目录内：{fullPath}");
+            throw new ObsSafePathException(Strings.T("safepath.outOfRoot", fullPath));
 
         // 闸 3：root 必须是 obs-studio，且确属 OBS 配置
         var rootDir = new DirectoryInfo(root);
         if (!string.Equals(rootDir.Name, "obs-studio", StringComparison.OrdinalIgnoreCase))
-            throw new ObsSafePathException("只允许操作 obs-studio 配置目录。");
+            throw new ObsSafePathException(Strings.T("safepath.onlyObsStudio"));
         if (!Directory.Exists(Path.Combine(root, "basic")) &&
             !File.Exists(Path.Combine(root, "global.ini")))
-            throw new ObsSafePathException("不是有效的 OBS 配置目录（缺少 basic/ 与 global.ini）。");
+            throw new ObsSafePathException(Strings.T("safepath.notObsConfig"));
 
         // 闸 4：不能是盘符根
         if (IsDriveRoot(target))
-            throw new ObsSafePathException("不能删除磁盘根目录。");
+            throw new ObsSafePathException(Strings.T("safepath.driveRoot"));
 
         // 闸 5：不能是 root 自身
         if (string.Equals(target, root, StringComparison.OrdinalIgnoreCase))
-            throw new ObsSafePathException("不能删除 OBS 配置根目录本身。");
+            throw new ObsSafePathException(Strings.T("safepath.rootItself"));
 
         // 闸 6：名禁用集合 + 系统关键目录根
         var name = Path.GetFileName(target.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar));
         if (ForbiddenSubdirNames.Contains(name))
-            throw new ObsSafePathException($"永不触碰 {name} 目录。");
+            throw new ObsSafePathException(Strings.T("safepath.forbiddenDir", name));
         if (IsSystemRoot(target))
-            throw new ObsSafePathException("目标位于系统关键目录内，拒绝操作。");
+            throw new ObsSafePathException(Strings.T("safepath.systemDir"));
 
         // 闸 7：拒绝符号链接 / junction
         if (IsReparsePoint(target))
-            throw new ObsSafePathException("拒绝操作符号链接 / junction，防止路径逃逸。");
+            throw new ObsSafePathException(Strings.T("safepath.reparsePoint"));
     }
 
     /// <summary>在允许的 root 内才可写入（用于导入落盘）。比删除更宽松：允许在 root 之下任意创建。</summary>
@@ -73,20 +73,20 @@ public static class ObsSafePath
         var root = Resolve(allowedRoot);
         var target = Resolve(fullPath);
         if (target.Length == 0)
-            throw new ObsSafePathException($"路径无法解析：{fullPath}");
+            throw new ObsSafePathException(Strings.T("safepath.unresolvable", fullPath));
 
         if (!IsUnder(root, target))
-            throw new ObsSafePathException($"写路径越界，不在 OBS 配置目录内：{fullPath}");
+            throw new ObsSafePathException(Strings.T("safepath.writeOutOfRoot", fullPath));
 
         var rootDir = new DirectoryInfo(root);
         if (!string.Equals(rootDir.Name, "obs-studio", StringComparison.OrdinalIgnoreCase))
-            throw new ObsSafePathException("只允许写入 obs-studio 配置目录。");
+            throw new ObsSafePathException(Strings.T("safepath.onlyWriteObsStudio"));
 
         if (IsSystemRoot(target))
-            throw new ObsSafePathException("目标位于系统关键目录内，拒绝写入。");
+            throw new ObsSafePathException(Strings.T("safepath.writeSystemDir"));
 
         if (IsReparsePoint(target))
-            throw new ObsSafePathException("拒绝写入符号链接 / junction。");
+            throw new ObsSafePathException(Strings.T("safepath.writeReparsePoint"));
     }
 
     /// <summary>判断路径是否为符号链接 / junction（reparse point）。无法判定时保守返回 false。</summary>

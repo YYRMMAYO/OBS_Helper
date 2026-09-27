@@ -1,3 +1,4 @@
+using OBS_Helper.Wpf.Localization;
 namespace OBS_Helper.Wpf.Models;
 
 /// <summary>
@@ -8,7 +9,13 @@ public class Step
     public string Title { get; set; } = "";
     public string Detail { get; set; } = "";
     /// <summary>难度：基础 / 进阶</summary>
-    public string Level { get; set; } = "基础";
+        /// <summary>步骤难度展示文案；数据缺省时按当前语言给出「基础」。</summary>
+    public string Level
+    {
+        get => string.IsNullOrWhiteSpace(_level) ? Strings.T("model.level.basic") : _level;
+        set => _level = value ?? "";
+    }
+    private string _level = "";
 }
 
 /// <summary>
@@ -33,7 +40,13 @@ public class Problem
     public string[] Platforms { get; set; } = System.Array.Empty<string>();
 
     /// <summary>严重度：常见 / 一般 / 严重</summary>
-    public string Severity { get; set; } = "常见";
+    /// <summary>严重度展示文案；数据缺省时按当前语言给出「常见」。</summary>
+    public string Severity
+    {
+        get => string.IsNullOrWhiteSpace(_severity) ? Strings.T("model.severity.common") : _severity;
+        set => _severity = value ?? "";
+    }
+    private string _severity = "";
 
     public string[] Symptoms { get; set; } = System.Array.Empty<string>();
     public string[] Causes { get; set; } = System.Array.Empty<string>();

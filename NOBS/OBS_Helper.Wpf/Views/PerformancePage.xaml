@@ -11,8 +11,8 @@
           <ColumnDefinition Width="Auto" />
         </Grid.ColumnDefinitions>
         <TextBlock Grid.Column="0" Style="{StaticResource MutedText}"
-                   Text="本机 CPU / 内存 / 网络 / 磁盘实时监控，每秒采样一次。结合 OBS 的渲染帧率与丢帧数据，可定位卡顿到底是系统瓶颈还是 OBS 设置问题。" />
-        <Button Grid.Column="1" Content="前往智能诊断" Style="{StaticResource SecondaryButton}"
+                   Text="{DynamicResource Loc.perf.intro}" />
+        <Button Grid.Column="1" Content="{DynamicResource Loc.perf.goDiagnostic}" Style="{StaticResource SecondaryButton}"
                 Margin="12,0,0,0" Click="OnOpenDiagnostic" />
       </Grid>
 
@@ -22,39 +22,39 @@
           <StackPanel>
             <TextBlock x:Name="CpuValueText" Text="—" FontSize="{DynamicResource FontSizeXl}"
                        FontWeight="Bold" Foreground="{DynamicResource BrandBrush}" />
-            <TextBlock Text="CPU 占用" Style="{StaticResource CaptionText}" Margin="0,2,0,0" />
+            <TextBlock Text="{DynamicResource Loc.perf.cpu}" Style="{StaticResource CaptionText}" Margin="0,2,0,0" />
           </StackPanel>
         </Border>
         <Border Style="{StaticResource Card}" Margin="0,0,10,0" Padding="14,12">
           <StackPanel>
             <TextBlock x:Name="MemValueText" Text="—" FontSize="{DynamicResource FontSizeXl}"
                        FontWeight="Bold" Foreground="{DynamicResource BrandBrush}" />
-            <TextBlock Text="内存占用" Style="{StaticResource CaptionText}" Margin="0,2,0,0" />
+            <TextBlock Text="{DynamicResource Loc.perf.memory}" Style="{StaticResource CaptionText}" Margin="0,2,0,0" />
           </StackPanel>
         </Border>
         <Border Style="{StaticResource Card}" Margin="0,0,10,0" Padding="14,12">
           <StackPanel>
             <TextBlock x:Name="NetValueText" Text="—" FontSize="{DynamicResource FontSizeXl}"
                        FontWeight="Bold" Foreground="{DynamicResource BrandBrush}" />
-            <TextBlock Text="网络下行" Style="{StaticResource CaptionText}" Margin="0,2,0,0" />
+            <TextBlock Text="{DynamicResource Loc.perf.netDown}" Style="{StaticResource CaptionText}" Margin="0,2,0,0" />
           </StackPanel>
         </Border>
         <Border Style="{StaticResource Card}" Padding="14,12">
           <StackPanel>
             <TextBlock x:Name="DiskValueText" Text="—" FontSize="{DynamicResource FontSizeXl}"
                        FontWeight="Bold" Foreground="{DynamicResource BrandBrush}" />
-            <TextBlock Text="磁盘剩余（最少盘）" Style="{StaticResource CaptionText}" Margin="0,2,0,0" />
+            <TextBlock Text="{DynamicResource Loc.perf.diskFree}" Style="{StaticResource CaptionText}" Margin="0,2,0,0" />
           </StackPanel>
         </Border>
       </UniformGrid>
 
       <!-- ================================================== 曲线区 -->
-      <TextBlock Style="{StaticResource SectionTitle}" Text="近 2 分钟趋势" Margin="0,20,0,10" />
+      <TextBlock Style="{StaticResource SectionTitle}" Text="{DynamicResource Loc.perf.trend}" Margin="0,20,0,10" />
       <UniformGrid Columns="2">
         <Border Style="{StaticResource Card}" Margin="0,0,10,10" Padding="14">
           <StackPanel>
             <StackPanel Orientation="Horizontal">
-              <TextBlock Text="CPU 占用" FontWeight="SemiBold"
+              <TextBlock Text="{DynamicResource Loc.perf.cpu}" FontWeight="SemiBold"
                          Foreground="{DynamicResource TextBrush}" />
               <TextBlock x:Name="CpuTrendValue" Style="{StaticResource CaptionText}"
                          Margin="8,1,0,0" VerticalAlignment="Center" />
@@ -66,7 +66,7 @@
         <Border Style="{StaticResource Card}" Margin="0,0,0,10" Padding="14">
           <StackPanel>
             <StackPanel Orientation="Horizontal">
-              <TextBlock Text="内存占用" FontWeight="SemiBold"
+              <TextBlock Text="{DynamicResource Loc.perf.memory}" FontWeight="SemiBold"
                          Foreground="{DynamicResource TextBrush}" />
               <TextBlock x:Name="MemTrendValue" Style="{StaticResource CaptionText}"
                          Margin="8,1,0,0" VerticalAlignment="Center" />
@@ -78,7 +78,7 @@
         <Border Style="{StaticResource Card}" Margin="0,0,10,0" Padding="14">
           <StackPanel>
             <StackPanel Orientation="Horizontal">
-              <TextBlock Text="网络下行" FontWeight="SemiBold"
+              <TextBlock Text="{DynamicResource Loc.perf.netDown}" FontWeight="SemiBold"
                          Foreground="{DynamicResource TextBrush}" />
               <TextBlock x:Name="NetDownTrendValue" Style="{StaticResource CaptionText}"
                          Margin="8,1,0,0" VerticalAlignment="Center" />
@@ -90,7 +90,7 @@
         <Border Style="{StaticResource Card}" Padding="14">
           <StackPanel>
             <StackPanel Orientation="Horizontal">
-              <TextBlock Text="网络上行" FontWeight="SemiBold"
+              <TextBlock Text="{DynamicResource Loc.perf.netUp}" FontWeight="SemiBold"
                          Foreground="{DynamicResource TextBrush}" />
               <TextBlock x:Name="NetUpTrendValue" Style="{StaticResource CaptionText}"
                          Margin="8,1,0,0" VerticalAlignment="Center" />
@@ -102,33 +102,33 @@
       </UniformGrid>
 
       <!-- ================================================== OBS 状态 -->
-      <TextBlock Style="{StaticResource SectionTitle}" Text="OBS 运行状态" Margin="0,20,0,10" />
+      <TextBlock Style="{StaticResource SectionTitle}" Text="{DynamicResource Loc.perf.obsStatus}" Margin="0,20,0,10" />
       <Border Style="{StaticResource Card}" Padding="14">
         <StackPanel>
           <TextBlock x:Name="ObsStatusText" Style="{StaticResource MutedText}"
-                     Text="未连接 OBS。连接后这里会显示渲染帧率、丢帧率与 OBS 报告的性能数据。" />
+                     Text="{DynamicResource Loc.perf.obsOffline}" />
           <UniformGrid Columns="3" Margin="0,12,0,0">
             <StackPanel>
               <TextBlock x:Name="ObsFpsText" Text="—" FontSize="{DynamicResource FontSizeLg}"
                          FontWeight="Bold" Foreground="{DynamicResource BrandBrush}" />
-              <TextBlock Text="渲染 FPS" Style="{StaticResource CaptionText}" Margin="0,2,0,0" />
+              <TextBlock Text="{DynamicResource Loc.perf.renderFps}" Style="{StaticResource CaptionText}" Margin="0,2,0,0" />
             </StackPanel>
             <StackPanel>
               <TextBlock x:Name="ObsRenderSkipText" Text="—" FontSize="{DynamicResource FontSizeLg}"
                          FontWeight="Bold" Foreground="{DynamicResource BrandBrush}" />
-              <TextBlock Text="渲染丢帧" Style="{StaticResource CaptionText}" Margin="0,2,0,0" />
+              <TextBlock Text="{DynamicResource Loc.metric.renderSkip}" Style="{StaticResource CaptionText}" Margin="0,2,0,0" />
             </StackPanel>
             <StackPanel>
               <TextBlock x:Name="ObsOutputSkipText" Text="—" FontSize="{DynamicResource FontSizeLg}"
                          FontWeight="Bold" Foreground="{DynamicResource BrandBrush}" />
-              <TextBlock Text="编码丢帧" Style="{StaticResource CaptionText}" Margin="0,2,0,0" />
+              <TextBlock Text="{DynamicResource Loc.metric.encodeSkip}" Style="{StaticResource CaptionText}" Margin="0,2,0,0" />
             </StackPanel>
           </UniformGrid>
         </StackPanel>
       </Border>
 
       <!-- ================================================== 磁盘明细 -->
-      <TextBlock Style="{StaticResource SectionTitle}" Text="磁盘空间" Margin="0,20,0,10" />
+      <TextBlock Style="{StaticResource SectionTitle}" Text="{DynamicResource Loc.perf.diskSpace}" Margin="0,20,0,10" />
       <Border Style="{StaticResource Card}" Padding="14">
         <StackPanel x:Name="DisksPanel" />
       </Border>

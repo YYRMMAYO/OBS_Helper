@@ -1,3 +1,4 @@
+using OBS_Helper.Wpf.Localization;
 using System.Diagnostics;
 using System.Globalization;
 
@@ -11,7 +12,7 @@ public sealed record IngestPingResult(IngestTarget Target, double? RttMs)
 {
     /// <summary>展示用文本：失败时给出可读原因。</summary>
     public string RttText => RttMs is null
-        ? "连接失败"
+        ? Strings.T("ingest.failed")
         : $"{RttMs.Value.ToString("0", CultureInfo.InvariantCulture)} ms";
 
     public bool Ok => RttMs is not null;
@@ -34,10 +35,10 @@ public static class IngestPingService
     /// <summary>内置候选节点快照：仅收录长期稳定的官方通用入口，随包数据可在后续版本更新。</summary>
     public static readonly IngestTarget[] DefaultTargets =
     {
-        new("B站 · 主力推流入口", "live-push.bilivideo.com"),
-        new("Twitch · 全球聚合入口", "ingest.global.contribute.live-video.net"),
-        new("YouTube · RTMP 入口", "a.rtmp.youtube.com"),
-        new("自定义 / 其他平台", "填写你的服务器地址"),
+        new(Strings.T("ingest.node.bilibili"), "live-push.bilivideo.com"),
+        new(Strings.T("ingest.node.twitch"), "ingest.global.contribute.live-video.net"),
+        new(Strings.T("ingest.node.youtube"), "a.rtmp.youtube.com"),
+        new(Strings.T("ingest.node.custom"), Strings.T("ingest.customHint")),
     };
 
     /// <summary>

@@ -6,19 +6,19 @@
     <StackPanel Margin="22,18,22,26">
 
       <TextBlock Style="{StaticResource MutedText}"
-                 Text="录屏与直播的实用工具合集：录像文件管理、参数处方、隐私清单、冲突软件扫描、推流带宽计算、色彩 / 采样率 / 磁盘 / 编码体检与节点探测。所有检查均为只读，不会改动你的 OBS 配置。" />
+                 Text="{DynamicResource Loc.toolbox.intro}" />
 
       <!-- ================================================== 录像工具 -->
-      <TextBlock Style="{StaticResource SectionTitle}" Text="录像工具" Margin="0,16,0,10" />
+      <TextBlock Style="{StaticResource SectionTitle}" Text="{DynamicResource Loc.toolbox.recordingTools}" Margin="0,16,0,10" />
       <Border Style="{StaticResource Card}" Padding="14">
         <StackPanel>
           <StackPanel Orientation="Horizontal">
-            <Button Content="打开录像目录" Style="{StaticResource PrimaryButton}" Click="OnOpenRecordingDir" />
-            <Button Content="MKV / Hybrid MP4 转 MP4（无损）" Style="{StaticResource SecondaryButton}"
+            <Button Content="{DynamicResource Loc.toolbox.openRecordingDir}" Style="{StaticResource PrimaryButton}" Click="OnOpenRecordingDir" />
+            <Button Content="{DynamicResource Loc.toolbox.remux}" Style="{StaticResource SecondaryButton}"
                     Margin="10,0,0,0" Click="OnRemuxPickFile" />
           </StackPanel>
           <TextBlock x:Name="RecordingDirText" Style="{StaticResource MutedText}" Margin="0,10,0,0"
-                     TextWrapping="Wrap" Text="点击「打开录像目录」自动从 OBS 配置解析当前保存位置（未自定义时为系统「视频」文件夹）。" />
+                     TextWrapping="Wrap" Text="{DynamicResource Loc.toolbox.recordingDirHint}" />
           <TextBlock x:Name="FfmpegText" Style="{StaticResource CaptionText}" Margin="0,6,0,0"
                      TextWrapping="Wrap" Text="" />
           <TextBlock x:Name="RemuxResultText" Style="{StaticResource BodyText}" Margin="0,8,0,0"
@@ -27,7 +27,7 @@
       </Border>
 
       <!-- ================================================== 参数处方 -->
-      <TextBlock Style="{StaticResource SectionTitle}" Text="场景化参数处方" Margin="0,20,0,10" />
+      <TextBlock Style="{StaticResource SectionTitle}" Text="{DynamicResource Loc.toolbox.prescription}" Margin="0,20,0,10" />
       <Border Style="{StaticResource Card}" Padding="14">
         <StackPanel>
           <Grid>
@@ -36,10 +36,10 @@
               <ColumnDefinition Width="*" />
               <ColumnDefinition Width="Auto" />
             </Grid.ColumnDefinitions>
-            <TextBlock Grid.Column="0" Text="场景：" VerticalAlignment="Center" Foreground="{DynamicResource TextBrush}" />
+            <TextBlock Grid.Column="0" Text="{DynamicResource Loc.toolbox.prescription.scene}" VerticalAlignment="Center" Foreground="{DynamicResource TextBrush}" />
             <ComboBox Grid.Column="1" x:Name="PresetCombo" Style="{StaticResource AppComboBox}"
                       Margin="8,0,0,0" SelectionChanged="OnPresetChanged" />
-            <Button Grid.Column="2" Content="复制处方" Style="{StaticResource SecondaryButton}"
+            <Button Grid.Column="2" Content="{DynamicResource Loc.toolbox.prescription.copy}" Style="{StaticResource SecondaryButton}"
                     Margin="12,0,0,0" Click="OnCopyPreset" />
           </Grid>
           <TextBox x:Name="PresetText" Style="{StaticResource AppCodeBox}" Margin="0,10,0,0"
@@ -49,27 +49,27 @@
       </Border>
 
       <!-- ================================================== 隐私模式清单 -->
-      <TextBlock Style="{StaticResource SectionTitle}" Text="录前隐私清单" Margin="0,20,0,10" />
+      <TextBlock Style="{StaticResource SectionTitle}" Text="{DynamicResource Loc.toolbox.privacy}" Margin="0,20,0,10" />
       <Border Style="{StaticResource Card}" Padding="14">
         <StackPanel>
           <TextBlock Style="{StaticResource MutedText}" TextWrapping="Wrap"
-                     Text="屏幕捕获是「所见即所得」，正式开录前花 30 秒过一遍这张清单，避免消息弹窗与敏感信息入镜。" />
+                     Text="{DynamicResource Loc.toolbox.privacy.desc}" />
           <TextBlock Style="{StaticResource BodyText}" Margin="0,10,0,0" TextWrapping="Wrap"
-                     Text="1. 开启勿扰 / 专注助手，屏蔽通知横幅&#10;2. 收起桌面图标与任务栏小组件、关闭聊天预览&#10;3. 改用窗口捕获只录目标应用，天然隔离弹窗&#10;4. 浏览器：无痕窗口、隐藏书签栏、退出多余账号&#x0a;5. 先试录 5 秒回放检查画面边缘" />
+                     Text="{DynamicResource Loc.toolbox.privacy.checklist}" />
           <StackPanel Orientation="Horizontal" Margin="0,12,0,0">
-            <Button Content="打开专注助手设置" Style="{StaticResource SecondaryButton}" Click="OnOpenFocusAssist" />
-            <Button Content="打开通知设置" Style="{StaticResource SecondaryButton}" Margin="10,0,0,0" Click="OnOpenNotifications" />
-            <Button Content="打开个性化设置" Style="{StaticResource SecondaryButton}" Margin="10,0,0,0" Click="OnOpenPersonalization" />
+            <Button Content="{DynamicResource Loc.toolbox.privacy.focus}" Style="{StaticResource SecondaryButton}" Click="OnOpenFocusAssist" />
+            <Button Content="{DynamicResource Loc.toolbox.privacy.notifications}" Style="{StaticResource SecondaryButton}" Margin="10,0,0,0" Click="OnOpenNotifications" />
+            <Button Content="{DynamicResource Loc.toolbox.privacy.personalization}" Style="{StaticResource SecondaryButton}" Margin="10,0,0,0" Click="OnOpenPersonalization" />
           </StackPanel>
         </StackPanel>
       </Border>
 
       <!-- ================================================== 冲突软件扫描 -->
-      <TextBlock Style="{StaticResource SectionTitle}" Text="冲突软件扫描" Margin="0,20,0,10" />
+      <TextBlock Style="{StaticResource SectionTitle}" Text="{DynamicResource Loc.toolbox.conflicts}" Margin="0,20,0,10" />
       <Border Style="{StaticResource Card}" Padding="14">
         <StackPanel>
           <StackPanel Orientation="Horizontal">
-            <Button Content="扫描正在运行的进程" Style="{StaticResource PrimaryButton}" Click="OnScanConflicts" />
+            <Button Content="{DynamicResource Loc.toolbox.conflicts.scan}" Style="{StaticResource PrimaryButton}" Click="OnScanConflicts" />
             <TextBlock x:Name="ConflictSummaryText" Style="{StaticResource CaptionText}"
                        Margin="12,0,0,0" VerticalAlignment="Center" Text="" />
           </StackPanel>
@@ -85,10 +85,10 @@
                           <Style TargetType="TextBlock">
                             <Setter Property="Foreground" Value="{DynamicResource WarnBrush}" />
                             <Style.Triggers>
-                              <DataTrigger Binding="{Binding Risk}" Value="高">
+                              <DataTrigger Binding="{Binding RiskLevel}" Value="high">
                                 <Setter Property="Foreground" Value="{DynamicResource DangerBrush}" />
                               </DataTrigger>
-                              <DataTrigger Binding="{Binding Risk}" Value="中">
+                              <DataTrigger Binding="{Binding RiskLevel}" Value="medium">
                                 <Setter Property="Foreground" Value="{DynamicResource WarnBrush}" />
                               </DataTrigger>
                             </Style.Triggers>
@@ -104,21 +104,21 @@
             </ItemsControl.ItemTemplate>
           </ItemsControl>
           <TextBlock x:Name="ConflictEmptyText" Style="{StaticResource MutedText}" Visibility="Collapsed"
-                     Text="未发现已知冲突软件。若仍遇到崩溃 / 黑屏，可参考知识库「Nahimic / RivaTuner 等组件干扰」条目进一步排查。" />
+                     Text="{DynamicResource Loc.toolbox.conflicts.none}" />
         </StackPanel>
       </Border>
 
       <!-- ================================================== 带宽计算器 -->
-      <TextBlock Style="{StaticResource SectionTitle}" Text="推流带宽计算器" Margin="0,20,0,10" />
+      <TextBlock Style="{StaticResource SectionTitle}" Text="{DynamicResource Loc.toolbox.bandwidth}" Margin="0,20,0,10" />
       <Border Style="{StaticResource Card}" Padding="14">
         <StackPanel>
           <StackPanel Orientation="Horizontal">
-            <TextBlock Text="实测上行带宽（Mbps）：" VerticalAlignment="Center" Foreground="{DynamicResource TextBrush}" />
+            <TextBlock Text="{DynamicResource Loc.toolbox.bandwidth.upload}" VerticalAlignment="Center" Foreground="{DynamicResource TextBrush}" />
             <TextBox x:Name="UploadInput" Style="{StaticResource AppTextBox}" Width="110"
                      MaxLength="6" Text="10" TextChanged="OnBandwidthInputChanged"
                      PreviewTextInput="OnNumericPreviewTextInput" />
             <TextBlock x:Name="RecommendHint" Style="{StaticResource CaptionText}" Margin="12,0,0,0"
-                       VerticalAlignment="Center" Text="可在测速网站获取上行数值；直播看上行不看下行（上限 10000Mbps）。" />
+                       VerticalAlignment="Center" Text="{DynamicResource Loc.toolbox.bandwidth.uploadHint}" />
           </StackPanel>
 
           <TextBlock x:Name="RecommendText" Style="{StaticResource BodyText}" Margin="0,10,0,0"
@@ -127,17 +127,17 @@
           <Border Style="{StaticResource HLine}" Margin="0,12" />
 
           <StackPanel Orientation="Horizontal">
-            <TextBlock Text="多路推流：" VerticalAlignment="Center" Foreground="{DynamicResource TextBrush}" />
+            <TextBlock Text="{DynamicResource Loc.toolbox.bandwidth.streams}" VerticalAlignment="Center" Foreground="{DynamicResource TextBrush}" />
             <TextBox x:Name="StreamCountInput" Style="{StaticResource AppTextBox}" Width="70" Margin="8,0,0,0"
                      MaxLength="2" TextChanged="OnBandwidthInputChanged"
                      PreviewTextInput="OnNumericPreviewTextInput" />
-            <TextBlock Text="路 × 每路码率" VerticalAlignment="Center" Margin="8,0,0,0" Foreground="{DynamicResource TextBrush}" />
+            <TextBlock Text="{DynamicResource Loc.toolbox.bandwidth.perStream}" VerticalAlignment="Center" Margin="8,0,0,0" Foreground="{DynamicResource TextBrush}" />
             <TextBox x:Name="StreamBitrateInput" Style="{StaticResource AppTextBox}" Width="90" Margin="8,0,0,0"
                      MaxLength="6" TextChanged="OnBandwidthInputChanged"
                      PreviewTextInput="OnNumericPreviewTextInput" />
             <TextBlock Text="kbps" VerticalAlignment="Center" Margin="6,0,0,0" Foreground="{DynamicResource MutedBrush}" />
             <TextBlock Style="{StaticResource CaptionText}" Margin="12,0,0,0"
-                       VerticalAlignment="Center" Text="上限：32 路 × 100000kbps" />
+                       VerticalAlignment="Center" Text="{DynamicResource Loc.toolbox.bandwidth.limit}" />
           </StackPanel>
           <TextBlock x:Name="MultiStreamText" Style="{StaticResource BodyText}" Margin="0,10,0,0"
                      TextWrapping="Wrap" Text="" />
@@ -145,14 +145,14 @@
       </Border>
 
       <!-- ================================================== 色彩体检（V2.7） -->
-      <TextBlock Style="{StaticResource SectionTitle}" Text="色彩体检" Margin="0,20,0,10" />
+      <TextBlock Style="{StaticResource SectionTitle}" Text="{DynamicResource Loc.toolbox.colorCheck}" Margin="0,20,0,10" />
       <Border Style="{StaticResource Card}" Padding="14">
         <StackPanel>
           <StackPanel Orientation="Horizontal">
-            <Button Content="检查色彩设置" Style="{StaticResource PrimaryButton}" Click="OnRunColorCheck" />
+            <Button Content="{DynamicResource Loc.toolbox.colorCheck.run}" Style="{StaticResource PrimaryButton}" Click="OnRunColorCheck" />
             <TextBlock x:Name="ColorSummaryText" Style="{StaticResource CaptionText}"
                        Margin="12,0,0,0" VerticalAlignment="Center"
-                       Text="画面发灰 / 泛白多半是色彩范围或色彩空间设置不当，只读检查当前 Profile 的配置。" />
+                       Text="{DynamicResource Loc.toolbox.colorCheck.desc}" />
           </StackPanel>
           <ItemsControl x:Name="ColorCheckList" Margin="0,10,0,0">
             <ItemsControl.ItemTemplate>
@@ -170,14 +170,14 @@
       </Border>
 
       <!-- ================================================== 音频采样率体检（V2.7） -->
-      <TextBlock Style="{StaticResource SectionTitle}" Text="音频采样率体检" Margin="0,20,0,10" />
+      <TextBlock Style="{StaticResource SectionTitle}" Text="{DynamicResource Loc.toolbox.sampleRate}" Margin="0,20,0,10" />
       <Border Style="{StaticResource Card}" Padding="14">
         <StackPanel>
           <StackPanel Orientation="Horizontal">
-            <Button Content="检查采样率一致性" Style="{StaticResource PrimaryButton}" Click="OnRunSampleRateCheck" />
+            <Button Content="{DynamicResource Loc.toolbox.sampleRate.run}" Style="{StaticResource PrimaryButton}" Click="OnRunSampleRateCheck" />
             <TextBlock x:Name="SampleRateSummaryText" Style="{StaticResource CaptionText}"
                        Margin="12,0,0,0" VerticalAlignment="Center"
-                       Text="音质发闷、爆音、音画漂移的典型根因：系统设备与 OBS 的采样率不一致。" />
+                       Text="{DynamicResource Loc.toolbox.sampleRate.desc}" />
           </StackPanel>
           <TextBlock x:Name="SampleRateText" Style="{StaticResource BodyText}" Margin="0,10,0,0"
                      TextWrapping="Wrap" Visibility="Collapsed" />
@@ -185,14 +185,14 @@
       </Border>
 
       <!-- ================================================== 黑屏专项体检（V2.8） -->
-      <TextBlock Style="{StaticResource SectionTitle}" Text="黑屏专项体检" Margin="0,20,0,10" />
+      <TextBlock Style="{StaticResource SectionTitle}" Text="{DynamicResource Loc.toolbox.graphics}" Margin="0,20,0,10" />
       <Border Style="{StaticResource Card}" Padding="14">
         <StackPanel>
           <StackPanel Orientation="Horizontal">
-            <Button Content="检查系统图形环境" Style="{StaticResource PrimaryButton}" Click="OnRunGraphicsEnvCheck" />
+            <Button Content="{DynamicResource Loc.toolbox.graphics.run}" Style="{StaticResource PrimaryButton}" Click="OnRunGraphicsEnvCheck" />
             <TextBlock x:Name="GraphicsEnvSummaryText" Style="{StaticResource CaptionText}"
                        Margin="12,0,0,0" VerticalAlignment="Center"
-                       Text="黑屏是提及率第一的问题：逐项只读检查管理员权限、GPU 偏好、HAGS、Game DVR、游戏模式、显卡驱动与电源供电。" />
+                       Text="{DynamicResource Loc.toolbox.graphics.desc}" />
           </StackPanel>
           <ItemsControl x:Name="GraphicsEnvList" Margin="0,10,0,0">
             <ItemsControl.ItemTemplate>
@@ -208,19 +208,19 @@
           </ItemsControl>
           <TextBlock x:Name="GraphicsEnvEmptyText" Style="{StaticResource MutedText}" Visibility="Visible"
                      Margin="0,4,0,0" TextWrapping="Wrap"
-                     Text="尚未检查。全部探测均为只读，「建议」项会给出对应系统设置页的直达路径，不会替你改动任何设置。" />
+                     Text="{DynamicResource Loc.toolbox.notChecked.graphics}" />
         </StackPanel>
       </Border>
 
       <!-- ================================================== 音频设备深度体检（V2.8） -->
-      <TextBlock Style="{StaticResource SectionTitle}" Text="音频设备深度体检" Margin="0,20,0,10" />
+      <TextBlock Style="{StaticResource SectionTitle}" Text="{DynamicResource Loc.toolbox.audioHealth}" Margin="0,20,0,10" />
       <Border Style="{StaticResource Card}" Padding="14">
         <StackPanel>
           <StackPanel Orientation="Horizontal">
-            <Button Content="检查音频系统状态" Style="{StaticResource PrimaryButton}" Click="OnRunAudioHealthCheck" />
+            <Button Content="{DynamicResource Loc.toolbox.audioHealth.run}" Style="{StaticResource PrimaryButton}" Click="OnRunAudioHealthCheck" />
             <TextBlock x:Name="AudioHealthSummaryText" Style="{StaticResource CaptionText}"
                        Margin="12,0,0,0" VerticalAlignment="Center"
-                       Text="麦克风无声 / BGM 忽然变小的根因常在系统侧：隐私权限、通信压音量、音频服务与 OBS 所选设备漂移。" />
+                       Text="{DynamicResource Loc.toolbox.audioHealth.desc}" />
           </StackPanel>
           <ItemsControl x:Name="AudioHealthList" Margin="0,10,0,0">
             <ItemsControl.ItemTemplate>
@@ -236,19 +236,19 @@
           </ItemsControl>
           <TextBlock x:Name="AudioHealthEmptyText" Style="{StaticResource MutedText}" Visibility="Visible"
                      Margin="0,4,0,0" TextWrapping="Wrap"
-                     Text="尚未检查。连接 OBS 后检查会把「OBS 里选的输入」和「系统活动录音设备」做一次对照，未连接时跳过该对照项。" />
+                     Text="{DynamicResource Loc.toolbox.notChecked.audio}" />
         </StackPanel>
       </Border>
 
       <!-- ================================================== 虚拟摄像头体检（V2.8） -->
-      <TextBlock Style="{StaticResource SectionTitle}" Text="虚拟摄像头体检" Margin="0,20,0,10" />
+      <TextBlock Style="{StaticResource SectionTitle}" Text="{DynamicResource Loc.toolbox.vcam}" Margin="0,20,0,10" />
       <Border Style="{StaticResource Card}" Padding="14">
         <StackPanel>
           <StackPanel Orientation="Horizontal">
-            <Button Content="检查虚拟摄像头" Style="{StaticResource PrimaryButton}" Click="OnRunVirtualCamCheck" />
+            <Button Content="{DynamicResource Loc.toolbox.vcam.run}" Style="{StaticResource PrimaryButton}" Click="OnRunVirtualCamCheck" />
             <TextBlock x:Name="VcamSummaryText" Style="{StaticResource CaptionText}"
                        Margin="12,0,0,0" VerticalAlignment="Center"
-                       Text="腾讯会议等软件里找不到「OBS Virtual Camera」？先看驱动注册是否在位，再按排查树处理。" />
+                       Text="{DynamicResource Loc.toolbox.vcam.desc}" />
           </StackPanel>
           <ItemsControl x:Name="VcamCheckList" Margin="0,10,0,0">
             <ItemsControl.ItemTemplate>
@@ -264,17 +264,17 @@
           </ItemsControl>
           <TextBlock x:Name="VcamEmptyText" Style="{StaticResource MutedText}" Visibility="Visible"
                      Margin="0,4,0,0" TextWrapping="Wrap"
-                     Text="尚未检查。开启虚拟摄像头的开关在控制台页；本体检只读探测驱动注册与插件文件，不会改动系统。" />
+                     Text="{DynamicResource Loc.toolbox.notChecked.vcam}" />
         </StackPanel>
       </Border>
 
       <!-- ================================================== 磁盘写入基准（V2.7） -->
-      <TextBlock Style="{StaticResource SectionTitle}" Text="磁盘写入基准" Margin="0,20,0,10" />
+      <TextBlock Style="{StaticResource SectionTitle}" Text="{DynamicResource Loc.toolbox.disk}" Margin="0,20,0,10" />
       <Border Style="{StaticResource Card}" Padding="14">
         <StackPanel>
           <StackPanel Orientation="Horizontal">
-            <Button Content="测试录像盘写入速度" Style="{StaticResource PrimaryButton}" Click="OnRunDiskBenchmark" />
-            <TextBlock Text="计划录像码率：" Margin="12,0,0,0" VerticalAlignment="Center" Foreground="{DynamicResource TextBrush}" />
+            <Button Content="{DynamicResource Loc.toolbox.disk.run}" Style="{StaticResource PrimaryButton}" Click="OnRunDiskBenchmark" />
+            <TextBlock Text="{DynamicResource Loc.toolbox.disk.bitrate}" Margin="12,0,0,0" VerticalAlignment="Center" Foreground="{DynamicResource TextBrush}" />
             <TextBox x:Name="DiskBitrateInput" Style="{StaticResource AppTextBox}" Width="90"
                      MaxLength="7" PreviewTextInput="OnNumericPreviewTextInput"
                      Text="20000" />
@@ -282,17 +282,17 @@
           </StackPanel>
           <TextBlock x:Name="DiskBenchmarkText" Style="{StaticResource BodyText}" Margin="0,10,0,0"
                      TextWrapping="Wrap"
-                     Text="向录像目录写入 256MB 临时文件测顺序写速度，对照码率需求给出结论，测完立即删除临时文件。「编码正常但录像卡顿」多半是磁盘写入不足。" />
+                     Text="{DynamicResource Loc.toolbox.disk.desc}" />
         </StackPanel>
       </Border>
 
       <!-- ================================================== 编码顾问（V2.7） -->
-      <TextBlock Style="{StaticResource SectionTitle}" Text="编码顾问" Margin="0,20,0,10" />
+      <TextBlock Style="{StaticResource SectionTitle}" Text="{DynamicResource Loc.toolbox.encoder}" Margin="0,20,0,10" />
       <Border Style="{StaticResource Card}" Padding="14">
         <StackPanel>
           <StackPanel Orientation="Horizontal">
-            <Button Content="按我的显卡生成参数" Style="{StaticResource PrimaryButton}" Click="OnRunEncoderAdvice" />
-            <CheckBox x:Name="DualEncodeCheck" Content="边播边录（双编码）" Margin="14,0,0,0"
+            <Button Content="{DynamicResource Loc.toolbox.encoder.run}" Style="{StaticResource PrimaryButton}" Click="OnRunEncoderAdvice" />
+            <CheckBox x:Name="DualEncodeCheck" Content="{DynamicResource Loc.toolbox.encoder.dual}" Margin="14,0,0,0"
                       VerticalAlignment="Center" Foreground="{DynamicResource TextBrush}" />
           </StackPanel>
           <TextBox x:Name="EncoderAdviceText" Style="{StaticResource AppCodeBox}" Margin="0,10,0,0"
@@ -302,14 +302,14 @@
       </Border>
 
       <!-- ================================================== 推流节点探测（V2.7） -->
-      <TextBlock Style="{StaticResource SectionTitle}" Text="推流节点延迟探测" Margin="0,20,0,10" />
+      <TextBlock Style="{StaticResource SectionTitle}" Text="{DynamicResource Loc.toolbox.ingest}" Margin="0,20,0,10" />
       <Border Style="{StaticResource Card}" Padding="14">
         <StackPanel>
           <StackPanel Orientation="Horizontal">
-            <Button Content="测试候选节点" Style="{StaticResource PrimaryButton}" Click="OnRunIngestPing" />
-            <TextBlock Text="自定义地址（可选）：" Margin="12,0,0,0" VerticalAlignment="Center" Foreground="{DynamicResource TextBrush}" />
+            <Button Content="{DynamicResource Loc.toolbox.ingest.run}" Style="{StaticResource PrimaryButton}" Click="OnRunIngestPing" />
+            <TextBlock Text="{DynamicResource Loc.toolbox.ingest.custom}" Margin="12,0,0,0" VerticalAlignment="Center" Foreground="{DynamicResource TextBrush}" />
             <TextBox x:Name="CustomHostInput" Style="{StaticResource AppTextBox}" Width="220"
-                     ToolTip="格式：host 或 host:port，留空则只测内置候选" />
+                     ToolTip="{DynamicResource Loc.toolbox.ingest.customTip}" />
           </StackPanel>
           <ItemsControl x:Name="IngestList" Margin="0,10,0,0">
             <ItemsControl.ItemTemplate>
@@ -326,42 +326,42 @@
           </ItemsControl>
           <TextBlock x:Name="IngestHintText" Style="{StaticResource CaptionText}" Margin="0,4,0,0"
                      TextWrapping="Wrap"
-                     Text="ping 低只是必要条件：入围节点请各实推 10 分钟，比较状态栏丢帧后再定。结果按 RTT 升序排列。" />
+                     Text="{DynamicResource Loc.toolbox.ingest.note}" />
         </StackPanel>
       </Border>
 
       <!-- ================================================== 浏览器源健康检查（V2.7） -->
-      <TextBlock Style="{StaticResource SectionTitle}" Text="浏览器源健康检查" Margin="0,20,0,10" />
+      <TextBlock Style="{StaticResource SectionTitle}" Text="{DynamicResource Loc.toolbox.browserSource}" Margin="0,20,0,10" />
       <Border Style="{StaticResource Card}" Padding="14">
         <StackPanel>
           <TextBlock Style="{StaticResource BodyText}" TextWrapping="Wrap"
-                     Text="告警挂件空白 / 弹幕面板卡住时按这张清单处理：&#x0a;1. 把挂件 URL 复制到普通浏览器打开：打不开 = URL 已过期，回告警后台重新生成并更新到 OBS&#x0a;2. URL 有效 → 右键来源「刷新」；仍不行删除该来源重建并粘贴新 URL&#x0a;3. 多个面板都异常 → 完全退出 OBS 后清理内置浏览器缓存（下方按钮可直达目录），重启 OBS&#x0a;4. 自定义浏览器 Dock 没有刷新入口：移除后重新添加同地址等效强制重载（详见知识库条目）" />
+                     Text="{DynamicResource Loc.toolbox.browserSource.checklist}" />
           <StackPanel Orientation="Horizontal" Margin="0,12,0,0">
-            <Button Content="打开 OBS 配置目录" Style="{StaticResource SecondaryButton}" Click="OnOpenObsConfigDir" />
+            <Button Content="{DynamicResource Loc.toolbox.browserSource.openConfig}" Style="{StaticResource SecondaryButton}" Click="OnOpenObsConfigDir" />
           </StackPanel>
         </StackPanel>
       </Border>
 
       <!-- ================================================== OBS 新版本情报 -->
-      <TextBlock Style="{StaticResource SectionTitle}" Text="OBS 新版本情报" Margin="0,20,0,10" />
+      <TextBlock Style="{StaticResource SectionTitle}" Text="{DynamicResource Loc.toolbox.release}" Margin="0,20,0,10" />
       <Border Style="{StaticResource Card}" Padding="14">
         <StackPanel>
           <StackPanel Orientation="Horizontal">
-            <Button Content="查询最新版本" Style="{StaticResource PrimaryButton}" Click="OnFetchRelease" />
-            <Button Content="前往发布页" Style="{StaticResource SecondaryButton}" Margin="10,0,0,0" Click="OnOpenReleaseUrl" />
+            <Button Content="{DynamicResource Loc.toolbox.release.query}" Style="{StaticResource PrimaryButton}" Click="OnFetchRelease" />
+            <Button Content="{DynamicResource Loc.toolbox.release.openPage}" Style="{StaticResource SecondaryButton}" Margin="10,0,0,0" Click="OnOpenReleaseUrl" />
           </StackPanel>
           <TextBlock x:Name="ReleaseText" Style="{StaticResource BodyText}" Margin="0,10,0,0"
                      TextWrapping="Wrap"
-                     Text="联网查询 obsproject/obs-studio 的最新 Release（含版本号、日期与要点摘要），帮你判断是否值得升级。结果本地缓存，失败时展示离线快照。" />
+                     Text="{DynamicResource Loc.toolbox.release.desc}" />
         </StackPanel>
       </Border>
 
       <!-- ================================================== 获取官方 OBS（V2.9.1） -->
-      <TextBlock Style="{StaticResource SectionTitle}" Text="获取官方 OBS" Margin="0,20,0,10" />
+      <TextBlock Style="{StaticResource SectionTitle}" Text="{DynamicResource Loc.setup.officialObs}" Margin="0,20,0,10" />
       <ctl:ObsDownloadCard />
 
       <!-- ================================================== 快捷键速查 -->
-      <TextBlock Style="{StaticResource SectionTitle}" Text="常用快捷键速查" Margin="0,20,0,10" />
+      <TextBlock Style="{StaticResource SectionTitle}" Text="{DynamicResource Loc.toolbox.shortcuts}" Margin="0,20,0,10" />
       <Border Style="{StaticResource Card}" Padding="14">
         <Grid>
           <Grid.ColumnDefinitions>
@@ -369,14 +369,14 @@
             <ColumnDefinition Width="*" />
           </Grid.ColumnDefinitions>
           <StackPanel Grid.Column="0">
-            <TextBlock Style="{StaticResource CaptionText}" Text="OBS 默认快捷键" Margin="0,0,0,6" />
+            <TextBlock Style="{StaticResource CaptionText}" Text="{DynamicResource Loc.toolbox.shortcuts.obsDefault}" Margin="0,0,0,6" />
             <TextBlock Style="{StaticResource BodyText}" LineHeight="26"
-                       Text="F11 —— 全屏预览（非推流全屏）&#x0a;Ctrl+1 ~ Ctrl+9 —— 切换到对应场景&#x0a;Alt+鼠标拖拽来源 —— 裁剪边缘&#x0a;Ctrl+Alt+拖拽 —— 拉伸变换来源&#x0a;Ctrl+S —— 吸附对齐开关&#x0a;Ctrl+D —— 置顶选中来源&#x0a;Ctrl+Z / Ctrl+Y —— 撤销 / 重做（32.1+）" />
+                       Text="{DynamicResource Loc.toolbox.shortcuts.obsDefaultList}" />
           </StackPanel>
           <StackPanel Grid.Column="1" Margin="16,0,0,0">
-            <TextBlock Style="{StaticResource CaptionText}" Text="建议在 设置 → 快捷键 自定义" Margin="0,0,0,6" />
+            <TextBlock Style="{StaticResource CaptionText}" Text="{DynamicResource Loc.toolbox.shortcuts.suggested}" Margin="0,0,0,6" />
             <TextBlock Style="{StaticResource BodyText}" LineHeight="26"
-                       Text="开始 / 停止录制 —— 如 Ctrl+Alt+R&#x0a;开始 / 停止推流 —— 如 Ctrl+Alt+S&#x0a;保存回放片段 —— 如 F9（配合回放缓冲）&#x0a;静音 / 取消静音麦克风 —— 如 Ctrl+Alt+M&#x0a;截图输出画面 —— 如 F10&#x0a;切换场景集合 / 配置文件 —— 多套工作环境一键换" />
+                       Text="{DynamicResource Loc.toolbox.shortcuts.suggestedList}" />
           </StackPanel>
         </Grid>
       </Border>

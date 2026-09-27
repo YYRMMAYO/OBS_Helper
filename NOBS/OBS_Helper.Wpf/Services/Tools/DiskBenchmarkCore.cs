@@ -1,3 +1,4 @@
+using OBS_Helper.Wpf.Localization;
 namespace OBS_Helper.Wpf.Services.Tools;
 
 /// <summary>磁盘写入基准的一次判定结论。</summary>
@@ -41,16 +42,14 @@ public static class DiskBenchmarkCore
             {
                 Pass = false,
                 Status = "fail",
-                Advice = "未能得到有效的测速结果。请确认所选目录可写后重试。"
+                Advice = Strings.T("diskbench.invalid")
             };
         }
 
         var required = RequiredMbps(bitrateKbps);
         var ratio = writeMbps / required;
 
-        var head =
-            $"实测顺序写入 {FormatSpeed(writeMbps)}。" +
-            $"\n按录像码率 {bitrateKbps}kbps 计算，需要持续写入 ≥ {FormatSpeed(required)}（含 50% 冗余）。";
+        var head = Strings.T("diskbench.head", FormatSpeed(writeMbps), bitrateKbps, FormatSpeed(required));
 
         if (ratio >= 2.0)
         {
@@ -58,7 +57,7 @@ public static class DiskBenchmarkCore
             {
                 Pass = true,
                 Status = "ok",
-                Advice = head + "\n结论：余量充足，可以放心录制。"
+                Advice = head + Strings.T("diskbench.ok")
             };
         }
 
@@ -68,7 +67,7 @@ public static class DiskBenchmarkCore
             {
                 Pass = false,
                 Status = "warn",
-                Advice = head + "\n结论：勉强够用但余量偏小。录制时避免同盘下载 / 素材整理等 IO 任务；SSD 保持 15% 以上空闲空间。"
+                Advice = head + Strings.T("diskbench.tight")
             };
         }
 
@@ -76,8 +75,7 @@ public static class DiskBenchmarkCore
         {
             Pass = false,
             Status = "fail",
-            Advice = head + "\n结论：不足以稳定支撑该码率的录像。" +
-                "\n建议：改用 SSD / NVMe 作为录制盘；或降低录像码率 / 开启自动分段；机械硬盘建议只做成品归档。"
+            Advice = head + Strings.T("diskbench.fail")
         };
     }
 

@@ -54,7 +54,7 @@ public partial class HomePage : UserControl, INavigationAware
                 Title = c.Title,
                 Description = c.Description,
                 Semantic = c.Semantic,
-                CountText = $"{counts.GetValueOrDefault(c.Id, 0)} 个方案"
+                CountText = Strings.T("home.categoryCount", counts.GetValueOrDefault(c.Id, 0))
             }).ToList();
 
             var error = AppServices.Problems.LoadError;
@@ -97,11 +97,11 @@ public partial class HomePage : UserControl, INavigationAware
         try
         {
             var ok = await AppServices.Host.OpenExternalAsync(url).ConfigureAwait(true);
-            if (!ok) AppServices.Toast.Show("打不开浏览器，请手动访问 " + url, "error");
+            if (!ok) AppServices.Toast.Show(Strings.T("common.openBrowserFailed") + url, "error");
         }
         catch (Exception ex)
         {
-            AppServices.Toast.Show("打开链接失败：" + ex.Message, "error");
+            AppServices.Toast.Show(Strings.T("common.openLinkError", ex.Message), "error");
         }
     }
 

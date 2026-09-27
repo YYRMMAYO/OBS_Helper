@@ -1,3 +1,4 @@
+using OBS_Helper.Wpf.Localization;
 using System.Globalization;
 
 namespace OBS_Helper.Wpf.Services.Tools;
@@ -52,7 +53,7 @@ public static class BandwidthAdvisorCore
     public static BandwidthRecommendation Recommend(double uploadMbps)
     {
         if (double.IsNaN(uploadMbps) || uploadMbps <= 0)
-            return BandwidthRecommendation.NotViable("请输入有效的上行带宽数值。");
+            return BandwidthRecommendation.NotViable(Strings.T("bandwidth.invalid"));
 
         // 钳制异常大的输入，避免后续整型换算溢出
         uploadMbps = Clamp(uploadMbps, MaxUploadMbps);
@@ -63,19 +64,18 @@ public static class BandwidthAdvisorCore
         if (safeKbps < 1500)
         {
             return BandwidthRecommendation.NotViable(
-                $"上行 {uploadMbps:0.#}Mbps 不足以稳定直播（安全码率仅约 {safeKbps}kbps）。" +
-                "\n建议：改用有线网络；关闭占用上行的程序（网盘同步 / 下载）；或降低需求后再试。");
+                Strings.T("bandwidth.notViable", uploadMbps, safeKbps));
         }
 
         // 档位从高到低匹配
         var (bitrate, resolution, fps, extra) = safeKbps switch
         {
-            >= 8000 => (8000, "1920x1080", 60, "1080p60 高画质档，适合游戏 / 高动态内容。"),
-            >= 6000 => (6000, "1920x1080", 60, "1080p60 主流档；若编码过载可降到 30fps 保画质。"),
-            >= 4500 => (4500, "1920x1080", 30, "1080p30 稳妥档，人像 / 桌面类内容足够清晰。"),
-            >= 3000 => (3000, "1280x720", 60, "720p60 流畅档，优先保帧率。"),
-            >= 2000 => (2000, "1280x720", 30, "720p30 入门档，静态画面场景可用。"),
-            _ => (1500, "960x540 或更低", 30, "勉强可播档，强烈建议先改善网络。")
+            >= 8000 => (8000, "1920x1080", 60, Strings.T("bandwidth.tier.8000")),
+            >= 6000 => (6000, "1920x1080", 60, Strings.T("bandwidth.tier.6000")),
+            >= 4500 => (4500, "1920x1080", 30, Strings.T("bandwidth.tier.4500")),
+            >= 3000 => (3000, "1280x720", 60, Strings.T("bandwidth.tier.3000")),
+            >= 2000 => (2000, "1280x720", 30, Strings.T("bandwidth.tier.2000")),
+            _ => (1500, Strings.T("bandwidth.tier.lowRes"), 30, Strings.T("bandwidth.tier.low"))
         };
 
         return new BandwidthRecommendation
@@ -85,10 +85,7 @@ public static class BandwidthAdvisorCore
             Resolution = resolution,
             Fps = fps,
             Advice =
-                $"实测上行 {uploadMbps:0.##}Mbps，按 65% 安全系数 ≈ {safeKbps}kbps 可用。\n" +
-                $"推荐：码率 {bitrate}kbps · 输出分辨率 {resolution} · {fps}fps。\n" +
-                $"{extra}\n" +
-                "提示：开启动态码率（设置 → 推流 → 网络相关）可在波动时自动降码；WiFi 不稳时换有线。"
+                Strings.T("bandwidth.advice", uploadMbps, safeKbps, bitrate, resolution, fps, extra)
         };
     }
 
@@ -107,7 +104,7 @@ public static class BandwidthAdvisorCore
     public static string DescribeMultiStream(double uploadMbps, int streams, int singleBitrateKbps)
     {
         if (streams <= 0 || singleBitrateKbps <= 0)
-            return "请填写有效的路数与单路码率。";
+            return Strings.T("bandwidth.multiInvalid");
 
         streams = Math.Clamp(streams, 1, MaxStreams);
         singleBitrateKbps = Math.Clamp(singleBitrateKbps, 1, MaxSingleBitrateKbps);
@@ -117,15 +114,13 @@ public static class BandwidthAdvisorCore
         var total = streams * singleBitrateKbps;
         var ok = CanSustain(uploadMbps, streams, singleBitrateKbps);
 
-        var head = $"{streams} 路 × {singleBitrateKbps}kbps = 总码率 {total}kbps，" +
-                   $"按 20% 冗余需要上行 ≥ {required.ToString("0.##", CultureInfo.InvariantCulture)}Mbps。";
+        var head = Strings.T("bandwidth.multiHead", streams, singleBitrateKbps, total, required.ToString("0.##", CultureInfo.InvariantCulture));
         if (!ok)
         {
-            return head + $"\n当前上行 {uploadMbps:0.##}Mbps 不够用。" +
-                "\n建议：降低单路码率、减少路数；或使用支持转发的多播服务（如 Restream）把上行压力交给服务端。";
+            return head + Strings.T("bandwidth.multiNotEnough", uploadMbps);
         }
         var margin = uploadMbps - required;
-        return head + $"\n当前上行 {uploadMbps:0.##}Mbps 可以承载，余量 {margin:0.##}Mbps。" +
-            (margin < 1 ? "\n注意：余量偏小，直播中避免其他设备占用上行（网盘 / 下载 / 其他主播）。" : "");
+        return head + Strings.T("bandwidth.multiOk", uploadMbps, margin) +
+            (margin < 1 ? Strings.T("bandwidth.multiTight") : "");
     }
 }

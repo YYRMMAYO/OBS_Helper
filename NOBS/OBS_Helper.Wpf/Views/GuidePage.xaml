@@ -12,7 +12,7 @@
       <StackPanel Margin="22,18,22,26">
 
         <TextBlock x:Name="LoadingText" Style="{StaticResource MutedText}"
-                   Text="正在加载指引…" Margin="2,6,0,0" />
+                   Text="{DynamicResource Loc.guide.loading}" Margin="2,6,0,0" />
 
         <!-- 内置资源读不出来时的兜底：给出报错码之外的自助提示 -->
         <Border x:Name="ErrorPanel" Style="{StaticResource Card}"
@@ -20,12 +20,12 @@
                 BorderBrush="{DynamicResource DangerBrush}"
                 Visibility="Collapsed">
           <StackPanel>
-            <TextBlock Text="⚠️ 无法加载排障指引"
+            <TextBlock Text="{DynamicResource Loc.guide.errorTitle}"
                        FontSize="{DynamicResource FontSizeMd}" FontWeight="SemiBold"
                        Foreground="{DynamicResource DangerBrush}" TextWrapping="Wrap" />
             <TextBlock x:Name="ErrorText" Style="{StaticResource MutedText}" Margin="0,7,0,0" />
             <TextBlock Style="{StaticResource MutedText}" Margin="0,5,0,0"
-                       Text="请确认应用已完整安装；若重装后仍然失败，可改用「智能诊断」或「问我一下」。" />
+                       Text="{DynamicResource Loc.guide.errorDesc}" />
           </StackPanel>
         </Border>
 
@@ -41,7 +41,7 @@
             Width="212" Margin="0,18,22,26" VerticalAlignment="Top" MaxHeight="560"
             Visibility="Collapsed">
       <DockPanel>
-        <TextBlock DockPanel.Dock="Top" Text="本页目录"
+        <TextBlock DockPanel.Dock="Top" Text="{DynamicResource Loc.guide.toc}"
                    Style="{StaticResource CaptionText}" Margin="2,0,0,9" />
         <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
           <StackPanel x:Name="TocList" />

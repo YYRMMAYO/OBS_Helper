@@ -55,10 +55,10 @@ public partial class ProblemCard : UserControl
 
     private Brush SeverityBrush(string severity, bool soft)
     {
-        var key = severity switch
+        var key = DataValues.ClassifySeverity(severity) switch
         {
-            "严重" => soft ? "DangerSoftBrush" : "DangerBrush",
-            "常见" => soft ? "WarnSoftBrush" : "WarnBrush",
+            DataValues.SeverityKind.Critical => soft ? "DangerSoftBrush" : "DangerBrush",
+            DataValues.SeverityKind.Common => soft ? "WarnSoftBrush" : "WarnBrush",
             _ => soft ? "InfoSoftBrush" : "InfoBrush"
         };
         return TryFindResource(key) as Brush ?? Brushes.Gray;
@@ -72,7 +72,7 @@ public partial class ProblemCard : UserControl
         StarButton.Foreground = on
             ? (TryFindResource("WarnBrush") as Brush ?? Brushes.Goldenrod)
             : (TryFindResource("MutedBrush") as Brush ?? Brushes.Gray);
-        StarButton.ToolTip = on ? "取消收藏" : "收藏";
+        StarButton.ToolTip = on ? Strings.T("problem.bookmark.remove") : Strings.T("problem.bookmark.add");
     }
 
     private void OnOpen(object sender, RoutedEventArgs e)

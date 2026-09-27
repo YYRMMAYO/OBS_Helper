@@ -77,22 +77,22 @@ public sealed class SceneTemplateService
     {
         var tpl = (await LoadAsync()).FirstOrDefault(t => t.Id == templateId);
         if (tpl is null)
-            return new ApplyResult(false, 0, 0, Array.Empty<string>(), "未找到该模板。");
+            return new ApplyResult(false, 0, 0, Array.Empty<string>(), Strings.T("scene.apply.notFound"));
 
         if (!_obs.IsConnected)
-            return new ApplyResult(false, 0, 0, Array.Empty<string>(), "未连接到 OBS，无法在线落地。请先在控制台连接，或使用「导出场景集合 JSON」。");
+            return new ApplyResult(false, 0, 0, Array.Empty<string>(), Strings.T("scene.apply.notConnected"));
 
         var transitionNotes = new List<string>();
         try
         {
-            p.Report("正在读取 OBS 可用来源类型…");
+            p.Report(Strings.T("scene.apply.progress.readSources"));
             var available = await LoadAvailableInputKindsAsync(ct);
 
             // 读取可用过渡，落地时把模板默认过渡设为当前过渡
             var transitionNames = await LoadTransitionNamesAsync(ct);
 
-            p.Report("正在新建模板专属配置集合…");
-            await EnsureSceneCollectionAsync(ct, $"模板 · {tpl.Title}");
+            p.Report(Strings.T("scene.apply.progress.newCollection"));
+            await EnsureSceneCollectionAsync(ct, Strings.T("scene.apply.collectionName", tpl.Title));
 
             if (applyCanvas)
                 await ApplyCanvasAsync(tpl, p, ct);
@@ -101,10 +101,10 @@ public sealed class SceneTemplateService
 
             var (created, skipped, placeholders) = await CreateAllScenesAsync(tpl, available, transitionNames, transitionNotes, p, ct);
 
-            p.Report("正在切换到主场景…");
+            p.Report(Strings.T("scene.apply.progress.switchMain"));
             await SwitchToFirstSceneAsync(tpl, ct);
 
-            p.Report("正在刷新状态…");
+            p.Report(Strings.T("scene.apply.progress.refresh"));
             await _obs.RefreshAllAsync();
 
             // 快捷键：obs-websocket 无设置场景快捷键的 API，落地后提示用户
@@ -114,15 +114,15 @@ public sealed class SceneTemplateService
                 placeholders.InsertRange(0, transitionNotes);
 
             return new ApplyResult(true, created, skipped, placeholders,
-                skipped > 0 ? $"已落地，但有 {skipped} 个来源未能创建（多为本地设备 / 文件需在 OBS 中补齐）。" : null);
+                skipped > 0 ? Strings.T("scene.apply.partial", skipped) : null);
         }
         catch (OperationCanceledException)
         {
-            return new ApplyResult(false, 0, 0, Array.Empty<string>(), "操作已取消。");
+            return new ApplyResult(false, 0, 0, Array.Empty<string>(), Strings.T("scene.apply.cancelled"));
         }
         catch (Exception ex)
         {
-            return new ApplyResult(false, 0, 0, Array.Empty<string>(), $"模板落地失败：{ex.Message}");
+            return new ApplyResult(false, 0, 0, Array.Empty<string>(), Strings.T("scene.apply.failed", ex.Message));
         }
     }
 
@@ -140,7 +140,7 @@ public sealed class SceneTemplateService
     /// <summary>按模板画布设置 OBS 视频分辨率与帧率。</summary>
     private async Task ApplyCanvasAsync(SceneTemplate tpl, IProgress<string> p, CancellationToken ct)
     {
-        p.Report("正在设置画布分辨率…");
+        p.Report(Strings.T("scene.apply.progress.canvas"));;
         var canvas = tpl.Canvas;
         await _obs.RawRequestAsync("SetVideoSettings", new
         {
@@ -162,7 +162,7 @@ public sealed class SceneTemplateService
         var cur = PickTransitionName(tpl.Transition, transitionNames);
         if (cur is null)
         {
-            notes.Add($"模板默认过渡「{tpl.Transition}」在 OBS 中不可用，已保持 OBS 原过渡。");
+            notes.Add(Strings.T("scene.apply.transitionUnavailable", tpl.Transition));
             return;
         }
 
@@ -181,7 +181,7 @@ public sealed class SceneTemplateService
 
         foreach (var scene in tpl.Scenes)
         {
-            p.Report($"正在创建场景「{scene.Name}」…");
+            p.Report(Strings.T("scene.apply.progress.createScene", scene.Name));
             var cs = await _obs.RawRequestAsync("CreateScene", new { sceneName = scene.Name }, ct);
             if (!cs.Ok) { skipped++; continue; }
             created++;
@@ -197,7 +197,7 @@ public sealed class SceneTemplateService
                 catch (Exception ex)
                 {
                     skipped++;
-                    placeholders.Add($"{scene.Name} / {src.Name}：创建失败（{ex.Message}），已跳过。");
+                    placeholders.Add(Strings.T("scene.apply.sceneFail", scene.Name, src.Name, ex.Message));
                 }
             }
         }
@@ -220,7 +220,7 @@ public sealed class SceneTemplateService
         }, ct);
 
         if (!ovOk.Ok && ovName is null)
-            notes.Add($"场景「{scene.Name}」的过渡覆盖未生效（{Describe(ovOk)}）。");
+            notes.Add(Strings.T("scene.apply.transitionOverrideFailed", scene.Name, Describe(ovOk)));
     }
 
     /// <summary>落地后切到模板的第一个场景作为主场景。</summary>
@@ -235,7 +235,7 @@ public sealed class SceneTemplateService
     {
         var hotkeyScenes = tpl.Scenes.Where(s => !string.IsNullOrWhiteSpace(s.Hotkey)).ToList();
         if (hotkeyScenes.Count == 0) return;
-        notes.Add("场景切换快捷键（" + string.Join(" / ", hotkeyScenes.Select(s => $"{s.Hotkey} → {s.Name}")) + "）需在 OBS 中手动绑定，或改用「导出场景集合 JSON」方式导入后自动生效。");
+        notes.Add(Strings.T("scene.apply.hotkeyHint", string.Join(" / ", hotkeyScenes.Select(s => $"{s.Hotkey} → {s.Name}"))));
     }
 
     /// <summary>创建一个来源：优先复用跨场景共享输入，否则新建；随后应用变换、层级与显隐，并追加占位提示。</summary>
@@ -268,7 +268,7 @@ public sealed class SceneTemplateService
     {
         var ci = await _obs.RawRequestAsync("CreateSceneItem", new { sceneName, sourceName = existingInput, sceneItemEnabled = src.Enabled }, ct);
         if (!ci.Ok || ci.Data is not JsonElement cid || !cid.TryGetProperty("sceneItemId", out var siid) || siid.ValueKind != JsonValueKind.Number)
-            throw new InvalidOperationException("复用来源失败：" + Describe(ci));
+            throw new InvalidOperationException(Strings.T("scene.apply.reuseFailed", Describe(ci)));
         return (siid.GetInt32(), existingInput);
     }
 
@@ -282,8 +282,8 @@ public sealed class SceneTemplateService
         var kind = PickKind(src, available);
         if (kind is null)
         {
-            placeholders.Add($"{sceneName} / {src.Name}：来源类型不可用，需在 OBS 中手动添加。");
-            throw new InvalidOperationException("来源类型不可用");
+            placeholders.Add(Strings.T("scene.apply.sourceUnavailable", sceneName, src.Name));
+            throw new InvalidOperationException(Strings.T("scene.apply.sourceTypeUnavailable"));
         }
 
         var ci = await _obs.RawRequestAsync("CreateInput", new
@@ -309,7 +309,7 @@ public sealed class SceneTemplateService
             return (fsiid.GetInt32(), src.Name);
 
         placeholders.Add($"{sceneName} / {src.Name}：{Describe(ci)}");
-        throw new InvalidOperationException("创建来源失败");
+        throw new InvalidOperationException(Strings.T("scene.apply.createSourceFailed"));
     }
 
     /// <summary>应用来源层级：OBS index 0 = 最上，模板 zOrder 0 = 最底，故 index = count-1-zOrder。</summary>
@@ -359,12 +359,12 @@ public sealed class SceneTemplateService
     public async Task<string> ExportToObsAsync(string templateId, string? outDir, CancellationToken ct)
     {
         var tpl = (await LoadAsync()).FirstOrDefault(t => t.Id == templateId);
-        if (tpl is null) throw new InvalidOperationException("未找到该模板。");
+        if (tpl is null) throw new InvalidOperationException(Strings.T("scene.apply.notFound"));
 
         var dir = ResolveExportDir(outDir);
         Directory.CreateDirectory(dir);
 
-        var collectionName = $"模板 · {tpl.Title}";
+        var collectionName = Strings.T("scene.apply.collectionName", tpl.Title);
         var json = BuildSceneCollectionJson(tpl, collectionName);
         var text = json.ToJsonString(new JsonSerializerOptions { WriteIndented = true });
 
@@ -522,7 +522,7 @@ public sealed class SceneTemplateService
             ["current_scene"] = tpl.Scenes.Count > 0 ? tpl.Scenes[0].Name : "",
             ["current_program_scene"] = tpl.Scenes.Count > 0 ? tpl.Scenes[0].Name : "",
             ["canvases"] = new JsonArray(),
-            ["current_transition"] = string.IsNullOrWhiteSpace(tpl.Transition) ? "淡入淡出" : tpl.Transition,
+            ["current_transition"] = string.IsNullOrWhiteSpace(tpl.Transition) ? Strings.T("scene.quickTransition.fade") : tpl.Transition,
             ["transition_duration"] = tpl.TransitionDurationMs > 0 ? tpl.TransitionDurationMs : 300,
             ["transitions"] = new JsonArray(),
             ["quick_transitions"] = BuildQuickTransitions(),
@@ -714,9 +714,9 @@ public sealed class SceneTemplateService
     private static JsonArray BuildQuickTransitions()
     {
         var arr = new JsonArray();
-        arr.Add(new JsonObject { ["name"] = "直接切换", ["duration"] = 300, ["hotkeys"] = new JsonArray(), ["id"] = 1, ["fade_to_black"] = false });
-        arr.Add(new JsonObject { ["name"] = "淡入淡出", ["duration"] = 300, ["hotkeys"] = new JsonArray(), ["id"] = 2, ["fade_to_black"] = false });
-        arr.Add(new JsonObject { ["name"] = "淡入淡出", ["duration"] = 300, ["hotkeys"] = new JsonArray(), ["id"] = 3, ["fade_to_black"] = true });
+        arr.Add(new JsonObject { ["name"] = Strings.T("scene.quickTransition.cut"), ["duration"] = 300, ["hotkeys"] = new JsonArray(), ["id"] = 1, ["fade_to_black"] = false });
+        arr.Add(new JsonObject { ["name"] = Strings.T("scene.quickTransition.fade"), ["duration"] = 300, ["hotkeys"] = new JsonArray(), ["id"] = 2, ["fade_to_black"] = false });
+        arr.Add(new JsonObject { ["name"] = Strings.T("scene.quickTransition.fade"), ["duration"] = 300, ["hotkeys"] = new JsonArray(), ["id"] = 3, ["fade_to_black"] = true });
         return arr;
     }
 
@@ -774,7 +774,7 @@ public sealed class SceneTemplateService
                     {
                         var suv = su.GetString() ?? "";
                         if (!uuids.Contains(suv))
-                            throw new InvalidOperationException($"场景集合 JSON 不一致：source_uuid {suv} 在 sources 中找不到。");
+                            throw new InvalidOperationException(Strings.T("scene.apply.collectionMismatch", suv));
                     }
                 }
             }
@@ -854,7 +854,7 @@ public sealed class SceneTemplateService
 
         var verify = await _obs.RawRequestAsync("GetSceneCollectionList", null, ct);
         if (verify.Ok && CollectionExists(verify.Data, name)) return name;
-        throw new InvalidOperationException("新建模板配置集合失败。");
+        throw new InvalidOperationException(Strings.T("scene.apply.newCollectionFailed"));
     }
 
     private static bool CollectionExists(System.Text.Json.JsonElement? data, string name)
@@ -868,7 +868,7 @@ public sealed class SceneTemplateService
     }
 
     private static string Describe(ObsRequestResult r)
-        => !string.IsNullOrWhiteSpace(r.Comment) ? r.Comment! : $"OBS 返回错误码 {r.Code}";
+        => !string.IsNullOrWhiteSpace(r.Comment) ? r.Comment! : Strings.T("scene.apply.errorCode", r.Code);
 
     internal static string Slugify(string s)
     {

@@ -4,40 +4,52 @@
   <ScrollViewer Style="{StaticResource PageScroll}">
     <StackPanel Margin="22,18,22,26" MaxWidth="760" HorizontalAlignment="Left">
 
+      <!-- ==================================================== 语言（V2.9.2） -->
+      <Border Style="{StaticResource Card}" Margin="0,0,0,16">
+        <StackPanel>
+          <TextBlock Text="{DynamicResource Loc.language.section}" Style="{StaticResource SectionTitle}" />
+          <TextBlock Style="{StaticResource MutedText}" Margin="0,0,0,12"
+                     Text="{DynamicResource Loc.language.hint}" />
+
+          <!-- 语言切换条：选项由 code-behind 按 Strings.Supported 生成，增语言不必改 XAML -->
+          <StackPanel x:Name="LanguagePanel" Orientation="Horizontal" />
+        </StackPanel>
+      </Border>
+
       <!-- ==================================================== AI 诊断引擎 -->
       <Border Style="{StaticResource Card}" Margin="0,0,0,16">
         <StackPanel>
-          <TextBlock Text="AI 诊断引擎" Style="{StaticResource SectionTitle}" />
+          <TextBlock Text="{DynamicResource Loc.settings.ai.title}" Style="{StaticResource SectionTitle}" />
           <TextBlock Style="{StaticResource MutedText}" Margin="0,0,0,12"
-                     Text="默认使用本地的搜索助手（无需联网、不依赖密钥，只在本机问题库中匹配）。「免费 AI」无需注册与 API Key，由内置的免费通道提供，本地强制每日限次，适合低频使用。也可切换到云端大模型：接口地址与模型名保存在设置文件里，API Key 单独经 Windows DPAPI 加密存储，不写入设置文件、不随日志外泄。" />
+                     Text="{DynamicResource Loc.settings.ai.desc}" />
 
           <StackPanel Orientation="Horizontal">
-            <RadioButton x:Name="ModeLocal" GroupName="SettingsEngineMode" Content="本地的搜索助手"
+            <RadioButton x:Name="ModeLocal" GroupName="SettingsEngineMode" Content="{DynamicResource Loc.settings.ai.engine.local}"
                          Style="{StaticResource SegmentButton}" Checked="OnModeChecked" />
-            <RadioButton x:Name="ModeFree" GroupName="SettingsEngineMode" Content="免费 AI（内置）"
+            <RadioButton x:Name="ModeFree" GroupName="SettingsEngineMode" Content="{DynamicResource Loc.settings.ai.engine.free}"
                          Style="{StaticResource SegmentButton}" Checked="OnModeChecked" />
-            <RadioButton x:Name="ModeCloud" GroupName="SettingsEngineMode" Content="云端大模型（自己的 API）"
+            <RadioButton x:Name="ModeCloud" GroupName="SettingsEngineMode" Content="{DynamicResource Loc.settings.ai.engine.cloud}"
                          Style="{StaticResource SegmentButton}" Checked="OnModeChecked" />
           </StackPanel>
 
           <!-- 免费内置 AI：无需任何配置，选中即用；只展示模型名与本地限额 -->
           <StackPanel x:Name="FreePanel" Visibility="Collapsed" Margin="0,4,0,0">
             <TextBlock Style="{StaticResource CaptionText}" Margin="2,8,0,0"
-                       Text="内置免费 AI，开箱即用。本地端强制限频：智谱通道每天最多 10 次、Pollinations 通道每天最多 20 次（每次发起计 1 次，失败重试也计数），两次请求间隔至少 10 秒，每天 0 点自动恢复；两通道各自独立计数，超出后自动回退本地引擎。" />
+                       Text="{DynamicResource Loc.settings.ai.free.desc}" />
             <TextBlock x:Name="FreeKeyStatusText" Style="{StaticResource CaptionText}"
                        Margin="2,6,0,0" Foreground="{DynamicResource WarnBrush}" Visibility="Collapsed" />
 
-            <TextBlock Text="免费通道" Style="{StaticResource MutedText}" Margin="2,10,0,0" />
+            <TextBlock Text="{DynamicResource Loc.settings.ai.free.channel}" Style="{StaticResource MutedText}" Margin="2,10,0,0" />
             <StackPanel Orientation="Horizontal" Margin="2,4,0,0">
               <RadioButton x:Name="FreeProviderZhipu" GroupName="SettingsFreeProvider"
-                           Content="智谱免费模型（国内 · 内置密钥）"
+                           Content="{DynamicResource Loc.settings.ai.free.provider.zhipu}"
                            Style="{StaticResource SegmentButton}" Checked="OnFreeProviderChanged" />
               <RadioButton x:Name="FreeProviderPollinations" GroupName="SettingsFreeProvider"
-                           Content="Pollinations（国外 · 免 Key）"
+                           Content="{DynamicResource Loc.settings.ai.free.provider.pollinations}"
                            Style="{StaticResource SegmentButton}" Checked="OnFreeProviderChanged" />
             </StackPanel>
             <TextBlock Style="{StaticResource CaptionText}" Margin="2,6,0,0"
-                       Text="智谱国内直连最稳（密钥加密内置在安装包中，默认免费模型为实测稳定的 glm-4-flash-250414）；Pollinations 无需任何密钥，但需要能访问国外网络。两通道各自独立限频（智谱 10 次/天、Pollinations 20 次/天），间隔保护共用。" />
+                       Text="{DynamicResource Loc.settings.ai.free.providerDesc}" />
 
             <Grid Margin="0,12,0,0">
               <Grid.ColumnDefinitions>
@@ -45,20 +57,20 @@
                 <ColumnDefinition Width="Auto" />
               </Grid.ColumnDefinitions>
               <StackPanel Grid.Column="0" Margin="0,0,10,0">
-                <TextBlock Text="模型" Style="{StaticResource MutedText}" Margin="0,0,0,5" />
+                <TextBlock Text="{DynamicResource Loc.settings.ai.free.model}" Style="{StaticResource MutedText}" Margin="0,0,0,5" />
                 <ComboBox x:Name="FreeModelBox" Style="{StaticResource AppComboBox}"
                           ItemContainerStyle="{StaticResource AppComboBoxItem}"
                           IsEditable="False" SelectedValuePath="Tag" DisplayMemberPath="Content" />
                 <TextBlock Style="{StaticResource CaptionText}" Margin="2,4,0,0"
-                           Text="仅列出智谱当前线上可用的免费模型编码（防止填成显示名/过期编码导致请求 400）。" />
+                           Text="{DynamicResource Loc.settings.ai.free.modelHint}" />
               </StackPanel>
-              <Button Grid.Column="1" Content="保存" Style="{StaticResource SecondaryButton}"
+              <Button Grid.Column="1" Content="{DynamicResource Loc.settings.save}" Style="{StaticResource SecondaryButton}"
                       VerticalAlignment="Bottom" Click="OnSaveFreeModel" />
             </Grid>
 
             <TextBlock x:Name="FreeQuotaText" Style="{StaticResource MutedText}" Margin="2,10,0,0" />
             <TextBlock Style="{StaticResource CaptionText}" Margin="2,6,0,0"
-                       Text="免费通道不支持知识库工具调用，结论直接来自模型对脱敏日志与实时状态的分析；需要多轮深度排查时，可切换到「云端大模型」接入自己的 API。" />
+                       Text="{DynamicResource Loc.settings.ai.free.noTools}" />
             <TextBlock x:Name="FreeStatusText" Style="{StaticResource MutedText}"
                        Margin="0,10,0,0" Visibility="Collapsed" />
           </StackPanel>
@@ -66,19 +78,19 @@
           <!-- 只有选「云端」才展开：本地模式下这些字段没有任何意义 -->
           <StackPanel x:Name="CloudPanel" Visibility="Collapsed" Margin="0,4,0,0">
 
-            <TextBlock Text="接口地址（https）" Style="{StaticResource MutedText}" Margin="0,8,0,5" />
+            <TextBlock Text="{DynamicResource Loc.settings.ai.cloud.url}" Style="{StaticResource MutedText}" Margin="0,8,0,5" />
             <TextBox x:Name="CloudUrlBox" Style="{StaticResource AppTextBox}"
                      Tag="https://api.example.com/v1/chat/completions" />
 
-            <TextBlock Text="密钥键名" Style="{StaticResource MutedText}" Margin="0,12,0,5" />
+            <TextBlock Text="{DynamicResource Loc.settings.ai.cloud.keyName}" Style="{StaticResource MutedText}" Margin="0,12,0,5" />
             <TextBox x:Name="CloudKeyNameBox" Style="{StaticResource AppTextBox}" Tag="obs_ai_apikey" />
             <TextBlock Style="{StaticResource CaptionText}" Margin="2,5,0,0"
-                       Text="API Key 在本机加密存储中的条目名，不是密钥本身。多套配置可用不同键名区分。" />
+                       Text="{DynamicResource Loc.settings.ai.cloud.keyNameHint}" />
 
-            <TextBlock Text="模型名" Style="{StaticResource MutedText}" Margin="0,12,0,5" />
+            <TextBlock Text="{DynamicResource Loc.settings.ai.cloud.model}" Style="{StaticResource MutedText}" Margin="0,12,0,5" />
             <TextBox x:Name="CloudModelBox" Style="{StaticResource AppTextBox}" Tag="gpt-4o-mini" />
 
-            <Button Content="保存云端配置" Style="{StaticResource SecondaryButton}"
+            <Button Content="{DynamicResource Loc.settings.ai.cloud.save}" Style="{StaticResource SecondaryButton}"
                     HorizontalAlignment="Left" Margin="0,14,0,0" Click="OnSaveCloud" />
 
             <Border Style="{StaticResource HLine}" />
@@ -90,27 +102,27 @@
                 <ColumnDefinition Width="Auto" />
               </Grid.ColumnDefinitions>
               <PasswordBox x:Name="ApiKeyBox" Grid.Column="0" Style="{StaticResource AppPasswordBox}" />
-              <Button x:Name="SaveKeyButton" Grid.Column="1" Content="保存密钥"
+              <Button x:Name="SaveKeyButton" Grid.Column="1" Content="{DynamicResource Loc.settings.ai.cloud.saveKey}"
                       Style="{StaticResource PrimaryButton}" Margin="10,0,0,0" Click="OnSaveKey" />
             </Grid>
 
             <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
-              <TextBlock Text="本机存储状态" Style="{StaticResource CaptionText}"
+              <TextBlock Text="{DynamicResource Loc.settings.ai.cloud.status}" Style="{StaticResource CaptionText}"
                          VerticalAlignment="Center" Margin="0,0,8,0" />
               <Border x:Name="KeyStatusPill" Style="{StaticResource Pill}">
-                <TextBlock x:Name="KeyStatusText" Text="未保存"
+                <TextBlock x:Name="KeyStatusText" Text="{DynamicResource Loc.settings.ai.cloud.notSaved}"
                            FontSize="{DynamicResource FontSizeXs}"
                            Foreground="{DynamicResource MutedBrush}" />
               </Border>
-              <Button x:Name="ClearKeyButton" Content="清除密钥" Style="{StaticResource GhostButton}"
+              <Button x:Name="ClearKeyButton" Content="{DynamicResource Loc.settings.ai.cloud.clearKey}" Style="{StaticResource GhostButton}"
                       Foreground="{DynamicResource DangerBrush}" Margin="6,0,0,0" Click="OnClearKey" />
             </StackPanel>
             <TextBlock Style="{StaticResource CaptionText}" Margin="2,6,0,0"
-                       Text="出于安全考虑，已保存的密钥不会回显；需要更换时直接粘贴新值再保存即可。" />
+                       Text="{DynamicResource Loc.settings.ai.cloud.keyHint}" />
 
             <TextBlock x:Name="CloudWarnText" Style="{StaticResource MutedText}"
                        Foreground="{DynamicResource WarnBrush}" Margin="0,10,0,0" Visibility="Collapsed"
-                       Text="请填写 https 接口地址与密钥键名，并保存 API Key 后，云端诊断才会启用；未配置完成时诊断会自动回退到本地引擎。" />
+                       Text="{DynamicResource Loc.settings.ai.cloud.notConfigured}" />
 
             <TextBlock x:Name="AiStatusText" Style="{StaticResource MutedText}"
                        Margin="0,10,0,0" Visibility="Collapsed" />
@@ -121,56 +133,56 @@
       <!-- ==================================================== 外观与无障碍 -->
       <Border Style="{StaticResource Card}" Margin="0,0,0,16">
         <StackPanel>
-          <TextBlock Text="外观与无障碍" Style="{StaticResource SectionTitle}" />
+          <TextBlock Text="{DynamicResource Loc.settings.appearance.title}" Style="{StaticResource SectionTitle}" />
 
-          <TextBlock Text="主题" Style="{StaticResource MutedText}" Margin="0,2,0,7" />
+          <TextBlock Text="{DynamicResource Loc.settings.appearance.theme}" Style="{StaticResource MutedText}" Margin="0,2,0,7" />
           <WrapPanel>
-            <RadioButton x:Name="ThemeSystem" GroupName="SettingsTheme" Content="跟随系统"
+            <RadioButton x:Name="ThemeSystem" GroupName="SettingsTheme" Content="{DynamicResource Loc.settings.appearance.theme.system}"
                          Style="{StaticResource SegmentButton}" Checked="OnThemeChecked" />
-            <RadioButton x:Name="ThemeLight" GroupName="SettingsTheme" Content="浅色"
+            <RadioButton x:Name="ThemeLight" GroupName="SettingsTheme" Content="{DynamicResource Loc.settings.appearance.theme.light}"
                          Style="{StaticResource SegmentButton}" Checked="OnThemeChecked" />
-            <RadioButton x:Name="ThemeDark" GroupName="SettingsTheme" Content="深色"
+            <RadioButton x:Name="ThemeDark" GroupName="SettingsTheme" Content="{DynamicResource Loc.settings.appearance.theme.dark}"
                          Style="{StaticResource SegmentButton}" Checked="OnThemeChecked" />
           </WrapPanel>
 
           <!-- 【v2.7.1 强调色体系】品牌主色色板：按钮 / 选中态 / 小标等全局品牌色 -->
-          <TextBlock Text="主题色" Style="{StaticResource MutedText}" Margin="0,10,0,7" />
+          <TextBlock Text="{DynamicResource Loc.settings.appearance.accent}" Style="{StaticResource MutedText}" Margin="0,10,0,7" />
           <WrapPanel x:Name="AccentPanel" Margin="0,0,0,2" />
 
-          <TextBlock Text="字号" Style="{StaticResource MutedText}" Margin="0,10,0,7" />
+          <TextBlock Text="{DynamicResource Loc.settings.appearance.font}" Style="{StaticResource MutedText}" Margin="0,10,0,7" />
           <WrapPanel>
-            <RadioButton x:Name="FontSm" GroupName="SettingsFontScale" Content="小"
+            <RadioButton x:Name="FontSm" GroupName="SettingsFontScale" Content="{DynamicResource Loc.settings.appearance.font.sm}"
                          Style="{StaticResource SegmentButton}" Checked="OnFontScaleChecked" />
-            <RadioButton x:Name="FontMd" GroupName="SettingsFontScale" Content="标准"
+            <RadioButton x:Name="FontMd" GroupName="SettingsFontScale" Content="{DynamicResource Loc.settings.appearance.font.md}"
                          Style="{StaticResource SegmentButton}" Checked="OnFontScaleChecked" />
-            <RadioButton x:Name="FontLg" GroupName="SettingsFontScale" Content="大"
+            <RadioButton x:Name="FontLg" GroupName="SettingsFontScale" Content="{DynamicResource Loc.settings.appearance.font.lg}"
                          Style="{StaticResource SegmentButton}" Checked="OnFontScaleChecked" />
-            <RadioButton x:Name="FontXl" GroupName="SettingsFontScale" Content="特大"
+            <RadioButton x:Name="FontXl" GroupName="SettingsFontScale" Content="{DynamicResource Loc.settings.appearance.font.xl}"
                          Style="{StaticResource SegmentButton}" Checked="OnFontScaleChecked" />
           </WrapPanel>
 
           <Border Style="{StaticResource HLine}" />
 
-          <CheckBox x:Name="HighContrastSwitch" Style="{StaticResource AppSwitch}" Content="高对比度"
+          <CheckBox x:Name="HighContrastSwitch" Style="{StaticResource AppSwitch}" Content="{DynamicResource Loc.settings.appearance.highContrast}"
                     Checked="OnHighContrastToggled" Unchecked="OnHighContrastToggled" />
           <TextBlock Style="{StaticResource CaptionText}" Margin="52,5,0,0"
-                     Text="加深文字与边框的对比，弱光环境或视力不佳时更易读。" />
+                     Text="{DynamicResource Loc.settings.appearance.highContrastDesc}" />
 
-          <CheckBox x:Name="ReduceMotionSwitch" Style="{StaticResource AppSwitch}" Content="减少动画"
+          <CheckBox x:Name="ReduceMotionSwitch" Style="{StaticResource AppSwitch}" Content="{DynamicResource Loc.settings.appearance.reduceMotion}"
                     Margin="0,14,0,0" Checked="OnReduceMotionToggled" Unchecked="OnReduceMotionToggled" />
           <TextBlock Style="{StaticResource CaptionText}" Margin="52,5,0,0"
-                     Text="关闭界面过渡动效，适合对动态画面敏感的用户。" />
+                     Text="{DynamicResource Loc.settings.appearance.reduceMotionDesc}" />
 
           <!-- ============================================ 自定义背景（v1.10） -->
           <Border Style="{StaticResource HLine}" Margin="0,14,0,0" />
 
-          <TextBlock Text="自定义背景" Style="{StaticResource MutedText}" Margin="0,2,0,7" />
+          <TextBlock Text="{DynamicResource Loc.settings.appearance.background}" Style="{StaticResource MutedText}" Margin="0,2,0,7" />
           <WrapPanel>
-            <RadioButton x:Name="BgDefault" GroupName="SettingsBackground" Content="默认"
+            <RadioButton x:Name="BgDefault" GroupName="SettingsBackground" Content="{DynamicResource Loc.settings.bg.default}"
                          Style="{StaticResource SegmentButton}" Checked="OnBgModeChecked" />
-            <RadioButton x:Name="BgColor" GroupName="SettingsBackground" Content="纯色"
+            <RadioButton x:Name="BgColor" GroupName="SettingsBackground" Content="{DynamicResource Loc.settings.bg.color}"
                          Style="{StaticResource SegmentButton}" Checked="OnBgModeChecked" />
-            <RadioButton x:Name="BgImage" GroupName="SettingsBackground" Content="图片"
+            <RadioButton x:Name="BgImage" GroupName="SettingsBackground" Content="{DynamicResource Loc.settings.bg.image}"
                          Style="{StaticResource SegmentButton}" Checked="OnBgModeChecked" />
           </WrapPanel>
 
@@ -178,22 +190,22 @@
           <WrapPanel x:Name="BgColorPanel" Margin="0,10,0,0" Visibility="Collapsed">
             <Border x:Name="BgSwatchLight" Width="30" Height="30" CornerRadius="8" Margin="0,0,8,8"
                     Background="#f4f4fb" BorderBrush="{DynamicResource LineBrush}" BorderThickness="1"
-                    Cursor="Hand" ToolTip="浅灰" MouseLeftButtonUp="OnBgSwatchClick" Tag="#f4f4fb" />
+                    Cursor="Hand" ToolTip="{DynamicResource Loc.settings.bg.swatch.gray}" MouseLeftButtonUp="OnBgSwatchClick" Tag="#f4f4fb" />
             <Border x:Name="BgSwatchBlue" Width="30" Height="30" CornerRadius="8" Margin="0,0,8,8"
                     Background="#e8f0fe" BorderBrush="{DynamicResource LineBrush}" BorderThickness="1"
-                    Cursor="Hand" ToolTip="浅蓝" MouseLeftButtonUp="OnBgSwatchClick" Tag="#e8f0fe" />
+                    Cursor="Hand" ToolTip="{DynamicResource Loc.settings.bg.swatch.blue}" MouseLeftButtonUp="OnBgSwatchClick" Tag="#e8f0fe" />
             <Border x:Name="BgSwatchGreen" Width="30" Height="30" CornerRadius="8" Margin="0,0,8,8"
                     Background="#e7f6ee" BorderBrush="{DynamicResource LineBrush}" BorderThickness="1"
-                    Cursor="Hand" ToolTip="浅绿" MouseLeftButtonUp="OnBgSwatchClick" Tag="#e7f6ee" />
+                    Cursor="Hand" ToolTip="{DynamicResource Loc.settings.bg.swatch.green}" MouseLeftButtonUp="OnBgSwatchClick" Tag="#e7f6ee" />
             <Border x:Name="BgSwatchWarm" Width="30" Height="30" CornerRadius="8" Margin="0,0,8,8"
                     Background="#fef4e6" BorderBrush="{DynamicResource LineBrush}" BorderThickness="1"
-                    Cursor="Hand" ToolTip="暖米" MouseLeftButtonUp="OnBgSwatchClick" Tag="#fef4e6" />
+                    Cursor="Hand" ToolTip="{DynamicResource Loc.settings.bg.swatch.beige}" MouseLeftButtonUp="OnBgSwatchClick" Tag="#fef4e6" />
             <Border x:Name="BgSwatchPink" Width="30" Height="30" CornerRadius="8" Margin="0,0,8,8"
                     Background="#fdeceb" BorderBrush="{DynamicResource LineBrush}" BorderThickness="1"
-                    Cursor="Hand" ToolTip="浅粉" MouseLeftButtonUp="OnBgSwatchClick" Tag="#fdeceb" />
+                    Cursor="Hand" ToolTip="{DynamicResource Loc.settings.bg.swatch.pink}" MouseLeftButtonUp="OnBgSwatchClick" Tag="#fdeceb" />
             <Border x:Name="BgSwatchDark" Width="30" Height="30" CornerRadius="8" Margin="0,0,8,8"
                     Background="#14151d" BorderBrush="{DynamicResource LineBrush}" BorderThickness="1"
-                    Cursor="Hand" ToolTip="深墨" MouseLeftButtonUp="OnBgSwatchClick" Tag="#14151d" />
+                    Cursor="Hand" ToolTip="{DynamicResource Loc.settings.bg.swatch.ink}" MouseLeftButtonUp="OnBgSwatchClick" Tag="#14151d" />
             <TextBlock x:Name="BgColorHint" Style="{StaticResource CaptionText}"
                        VerticalAlignment="Center" Margin="2,0,0,8" />
           </WrapPanel>
@@ -205,16 +217,16 @@
                 <ColumnDefinition Width="Auto" />
                 <ColumnDefinition Width="*" />
               </Grid.ColumnDefinitions>
-              <Button Grid.Column="0" Content="选择图片…" Style="{StaticResource SecondaryButton}"
+              <Button Grid.Column="0" Content="{DynamicResource Loc.settings.bg.pickImage}" Style="{StaticResource SecondaryButton}"
                       Click="OnPickBgImage" />
-              <Button x:Name="BgClearImageButton" Grid.Column="1" Content="清除"
+              <Button x:Name="BgClearImageButton" Grid.Column="1" Content="{DynamicResource Loc.settings.bg.clearImage}"
                       Style="{StaticResource GhostButton}" Margin="8,0,0,0"
                       VerticalAlignment="Center" Click="OnClearBgImage" Visibility="Collapsed" />
             </Grid>
             <TextBlock x:Name="BgImagePathText" Style="{StaticResource CaptionText}"
                        Margin="2,6,0,0" TextWrapping="Wrap" />
             <TextBlock Style="{StaticResource CaptionText}" Margin="2,4,0,0"
-                       Text="支持 jpg / png / bmp 等常见图片格式；仅保存在本机设置中，不会上传。深色主题下图片会自动压暗，保证文字可读。" />
+                       Text="{DynamicResource Loc.settings.bg.imageHint}" />
           </StackPanel>
         </StackPanel>
       </Border>
@@ -222,38 +234,38 @@
       <!-- ==================================================== 后台与遥控 -->
       <Border Style="{StaticResource Card}" Margin="0,0,0,16">
         <StackPanel>
-          <TextBlock Text="后台与遥控" Style="{StaticResource SectionTitle}" />
+          <TextBlock Text="{DynamicResource Loc.settings.shell.title}" Style="{StaticResource SectionTitle}" />
           <TextBlock Style="{StaticResource MutedText}" Margin="0,0,0,12"
-                     Text="关闭窗口时最小化到系统托盘，录制 / 推流状态变化弹系统通知；全局热键让窗口不在前台也能控制 OBS。" />
+                     Text="{DynamicResource Loc.settings.shell.desc}" />
 
           <CheckBox x:Name="CloseToTraySwitch" Style="{StaticResource AppSwitch}"
-                    Content="关闭窗口时最小化到托盘"
+                    Content="{DynamicResource Loc.settings.shell.closeToTray}"
                     Checked="OnShellSettingToggled" Unchecked="OnShellSettingToggled" />
           <TextBlock Style="{StaticResource CaptionText}" Margin="52,5,0,0"
-                     Text="点窗口右上角 ✕ 时隐藏到托盘而不是退出；从托盘菜单「退出」才会真正结束程序。" />
+                     Text="{DynamicResource Loc.settings.shell.closeToTrayDesc}" />
 
           <CheckBox x:Name="NotifyStateSwitch" Style="{StaticResource AppSwitch}"
-                     Content="录制 / 推流状态变化时弹出系统通知" Margin="0,14,0,0"
+                     Content="{DynamicResource Loc.settings.shell.notify}" Margin="0,14,0,0"
                      Checked="OnShellSettingToggled" Unchecked="OnShellSettingToggled" />
 
           <CheckBox x:Name="RecordWatchdogSwitch" Style="{StaticResource AppSwitch}"
-                     Content="录制守护（断连 / 卡死时强提醒）"
+                     Content="{DynamicResource Loc.settings.shell.watchdog}"
                      Checked="OnShellSettingToggled" Unchecked="OnShellSettingToggled" />
           <TextBlock Style="{StaticResource CaptionText}" Margin="52,5,0,0" TextWrapping="Wrap"
-                     Text="直播 / 录制中若与 OBS 断连、OBS 疑似无响应或重连后录制丢失，立即弹托盘强提醒，避免「录完才发现是空文件」。" />
+                     Text="{DynamicResource Loc.settings.shell.watchdogDesc}" />
 
           <CheckBox x:Name="RealtimeLogAlertSwitch" Style="{StaticResource AppSwitch}"
-                     Content="实时日志预警（掉帧 / 过载 / 断流）"
+                     Content="{DynamicResource Loc.settings.shell.logAlert}"
                      Checked="OnShellSettingToggled" Unchecked="OnShellSettingToggled" />
           <TextBlock Style="{StaticResource CaptionText}" Margin="52,5,0,0" TextWrapping="Wrap"
-                     Text="后台只读尾随 OBS 最新日志，直播中出现丢帧、编码过载、断流等特征时托盘提醒；同类告警 90 秒内不重复。" />
+                     Text="{DynamicResource Loc.settings.shell.logAlertDesc}" />
 
           <Border Style="{StaticResource HLine}" Margin="0,16,0,0" />
 
-          <TextBlock Text="全局热键" FontWeight="SemiBold" Margin="0,0,0,10"
+          <TextBlock Text="{DynamicResource Loc.settings.hotkey.title}" FontWeight="SemiBold" Margin="0,0,0,10"
                      Foreground="{DynamicResource TextBrush}" />
           <TextBlock Style="{StaticResource CaptionText}" Margin="2,0,0,12"
-                     Text="主键支持字母 / 数字 / F1~F12。勾选后立即生效；被其他程序占用的组合会在这里提示。" />
+                     Text="{DynamicResource Loc.settings.hotkey.desc}" />
 
           <StackPanel Margin="0,0,0,12">
             <!-- 录制 -->
@@ -268,10 +280,10 @@
                 <ColumnDefinition Width="56" />
                 <ColumnDefinition Width="*" />
               </Grid.ColumnDefinitions>
-              <TextBlock Grid.Column="0" Text="录制开关" VerticalAlignment="Center"
+              <TextBlock Grid.Column="0" Text="{DynamicResource Loc.hotkey.record}" VerticalAlignment="Center"
                          Foreground="{DynamicResource TextBrush}" FontSize="{DynamicResource FontSizeSm}" />
               <CheckBox x:Name="RecHotkeyEnabled" Grid.Column="1" VerticalAlignment="Center"
-                        ToolTip="启用该热键" Checked="OnHotkeyToggled" Unchecked="OnHotkeyToggled" />
+                        ToolTip="{DynamicResource Loc.settings.hotkey.enableTip}" Checked="OnHotkeyToggled" Unchecked="OnHotkeyToggled" />
               <CheckBox x:Name="RecHotkeyCtrl" Grid.Column="2" Content="Ctrl" VerticalAlignment="Center"
                         Checked="OnHotkeyToggled" Unchecked="OnHotkeyToggled" />
               <CheckBox x:Name="RecHotkeyAlt" Grid.Column="3" Content="Alt" VerticalAlignment="Center"
@@ -297,10 +309,10 @@
                 <ColumnDefinition Width="56" />
                 <ColumnDefinition Width="*" />
               </Grid.ColumnDefinitions>
-              <TextBlock Grid.Column="0" Text="推流开关" VerticalAlignment="Center"
+              <TextBlock Grid.Column="0" Text="{DynamicResource Loc.hotkey.stream}" VerticalAlignment="Center"
                          Foreground="{DynamicResource TextBrush}" FontSize="{DynamicResource FontSizeSm}" />
               <CheckBox x:Name="StreamHotkeyEnabled" Grid.Column="1" VerticalAlignment="Center"
-                        ToolTip="启用该热键" Checked="OnHotkeyToggled" Unchecked="OnHotkeyToggled" />
+                        ToolTip="{DynamicResource Loc.settings.hotkey.enableTip}" Checked="OnHotkeyToggled" Unchecked="OnHotkeyToggled" />
               <CheckBox x:Name="StreamHotkeyCtrl" Grid.Column="2" Content="Ctrl" VerticalAlignment="Center"
                         Checked="OnHotkeyToggled" Unchecked="OnHotkeyToggled" />
               <CheckBox x:Name="StreamHotkeyAlt" Grid.Column="3" Content="Alt" VerticalAlignment="Center"
@@ -326,10 +338,10 @@
                 <ColumnDefinition Width="56" />
                 <ColumnDefinition Width="*" />
               </Grid.ColumnDefinitions>
-              <TextBlock Grid.Column="0" Text="虚拟摄像头" VerticalAlignment="Center"
+              <TextBlock Grid.Column="0" Text="{DynamicResource Loc.hotkey.virtualCam}" VerticalAlignment="Center"
                          Foreground="{DynamicResource TextBrush}" FontSize="{DynamicResource FontSizeSm}" />
               <CheckBox x:Name="VcamHotkeyEnabled" Grid.Column="1" VerticalAlignment="Center"
-                        ToolTip="启用该热键" Checked="OnHotkeyToggled" Unchecked="OnHotkeyToggled" />
+                        ToolTip="{DynamicResource Loc.settings.hotkey.enableTip}" Checked="OnHotkeyToggled" Unchecked="OnHotkeyToggled" />
               <CheckBox x:Name="VcamHotkeyCtrl" Grid.Column="2" Content="Ctrl" VerticalAlignment="Center"
                         Checked="OnHotkeyToggled" Unchecked="OnHotkeyToggled" />
               <CheckBox x:Name="VcamHotkeyAlt" Grid.Column="3" Content="Alt" VerticalAlignment="Center"
@@ -355,10 +367,10 @@
                 <ColumnDefinition Width="56" />
                 <ColumnDefinition Width="*" />
               </Grid.ColumnDefinitions>
-              <TextBlock Grid.Column="0" Text="小窗控制" VerticalAlignment="Center"
+              <TextBlock Grid.Column="0" Text="{DynamicResource Loc.hotkey.miniWindow}" VerticalAlignment="Center"
                          Foreground="{DynamicResource TextBrush}" FontSize="{DynamicResource FontSizeSm}" />
               <CheckBox x:Name="MiniHotkeyEnabled" Grid.Column="1" VerticalAlignment="Center"
-                        ToolTip="启用该热键" Checked="OnHotkeyToggled" Unchecked="OnHotkeyToggled" />
+                        ToolTip="{DynamicResource Loc.settings.hotkey.enableTip}" Checked="OnHotkeyToggled" Unchecked="OnHotkeyToggled" />
               <CheckBox x:Name="MiniHotkeyCtrl" Grid.Column="2" Content="Ctrl" VerticalAlignment="Center"
                         Checked="OnHotkeyToggled" Unchecked="OnHotkeyToggled" />
               <CheckBox x:Name="MiniHotkeyAlt" Grid.Column="3" Content="Alt" VerticalAlignment="Center"
@@ -384,10 +396,10 @@
                 <ColumnDefinition Width="56" />
                 <ColumnDefinition Width="*" />
               </Grid.ColumnDefinitions>
-              <TextBlock Grid.Column="0" Text="显示/隐藏窗口" VerticalAlignment="Center"
+              <TextBlock Grid.Column="0" Text="{DynamicResource Loc.hotkey.toggleWindow}" VerticalAlignment="Center"
                          Foreground="{DynamicResource TextBrush}" FontSize="{DynamicResource FontSizeSm}" />
               <CheckBox x:Name="WinHotkeyEnabled" Grid.Column="1" VerticalAlignment="Center"
-                        ToolTip="启用该热键" Checked="OnHotkeyToggled" Unchecked="OnHotkeyToggled" />
+                        ToolTip="{DynamicResource Loc.settings.hotkey.enableTip}" Checked="OnHotkeyToggled" Unchecked="OnHotkeyToggled" />
               <CheckBox x:Name="WinHotkeyCtrl" Grid.Column="2" Content="Ctrl" VerticalAlignment="Center"
                         Checked="OnHotkeyToggled" Unchecked="OnHotkeyToggled" />
               <CheckBox x:Name="WinHotkeyAlt" Grid.Column="3" Content="Alt" VerticalAlignment="Center"
@@ -408,7 +420,7 @@
               <ColumnDefinition Width="Auto" />
               <ColumnDefinition Width="*" />
             </Grid.ColumnDefinitions>
-            <Button Grid.Column="0" Content="保存热键设置" Style="{StaticResource PrimaryButton}"
+            <Button Grid.Column="0" Content="{DynamicResource Loc.settings.hotkey.save}" Style="{StaticResource PrimaryButton}"
                     HorizontalAlignment="Left" Click="OnSaveHotkeys" />
             <TextBlock x:Name="HotkeyStatusText" Grid.Column="1" Style="{StaticResource CaptionText}"
                        VerticalAlignment="Center" Margin="12,0,0,0" TextWrapping="Wrap" />
@@ -419,12 +431,12 @@
       <!-- ==================================================== 场景自动切换 -->
       <Border Style="{StaticResource Card}" Margin="0,0,0,16">
         <StackPanel>
-          <TextBlock Text="场景自动切换" Style="{StaticResource SectionTitle}" />
+          <TextBlock Text="{DynamicResource Loc.settings.autoSwitch.title}" Style="{StaticResource SectionTitle}" />
           <TextBlock Style="{StaticResource MutedText}" Margin="0,0,0,12"
-                     Text="根据「前台窗口的标题」自动把 OBS 切到指定场景——比如切到游戏窗口时自动进游戏画面，切回浏览器时自动切回待机画面。规则按顺序匹配，第一条命中生效。" />
+                     Text="{DynamicResource Loc.settings.autoSwitch.desc}" />
 
           <CheckBox x:Name="AutoSwitchEnabled" Style="{StaticResource AppSwitch}"
-                    Content="启用场景自动切换" Margin="0,0,0,12"
+                    Content="{DynamicResource Loc.settings.autoSwitch.enable}" Margin="0,0,0,12"
                     Checked="OnAutoSwitchToggled" Unchecked="OnAutoSwitchToggled" />
 
           <StackPanel x:Name="AutoSwitchRulesPanel" Margin="0,0,0,12" />
@@ -434,40 +446,40 @@
               <ColumnDefinition Width="Auto" />
               <ColumnDefinition Width="*" />
             </Grid.ColumnDefinitions>
-            <Button Grid.Column="0" Content="添加规则" Style="{StaticResource SecondaryButton}"
+            <Button Grid.Column="0" Content="{DynamicResource Loc.settings.autoSwitch.addRule}" Style="{StaticResource SecondaryButton}"
                     HorizontalAlignment="Left" Click="OnAddAutoSwitchRule" />
             <TextBlock x:Name="AutoSwitchStatusText" Grid.Column="1" Style="{StaticResource CaptionText}"
                        VerticalAlignment="Center" Margin="12,0,0,0" TextWrapping="Wrap" />
           </Grid>
           <TextBlock Style="{StaticResource CaptionText}" Margin="2,8,0,0"
-                     Text="「包含」为标题关键词（不区分大小写）；「正则」可写复杂匹配，如 ^Google Chrome。目标场景需先连接 OBS 才能列出。" />
+                     Text="{DynamicResource Loc.settings.autoSwitch.note}" />
         </StackPanel>
       </Border>
 
       <!-- ==================================================== 排障指引 -->
       <Border Style="{StaticResource Card}" Margin="0,0,0,16">
         <StackPanel>
-          <TextBlock Text="排障指引" Style="{StaticResource SectionTitle}" />
+          <TextBlock Text="{DynamicResource Loc.settings.guide.title}" Style="{StaticResource SectionTitle}" />
           <TextBlock Style="{StaticResource MutedText}" Margin="0,0,0,12"
-                     Text="汇总黑屏、编码过载、音画不同步、推流失败等常见问题的排查步骤；日志分析可离线解析 OBS 日志并自动脱敏。" />
+                     Text="{DynamicResource Loc.settings.guide.desc}" />
 
           <StackPanel Orientation="Horizontal">
-            <Button Content="打开排障指引" Style="{StaticResource PrimaryButton}"
+            <Button Content="{DynamicResource Loc.settings.guide.openGuide}" Style="{StaticResource PrimaryButton}"
                     Margin="0,0,10,0" Click="OnOpenGuide" />
-            <Button Content="打开日志分析" Style="{StaticResource SecondaryButton}" Click="OnOpenLogs" />
+            <Button Content="{DynamicResource Loc.settings.guide.openLogs}" Style="{StaticResource SecondaryButton}" Click="OnOpenLogs" />
           </StackPanel>
 
           <Border Style="{StaticResource HLine}" />
 
-          <TextBlock Text="本地数据" Style="{StaticResource MutedText}" Margin="0,0,0,4" />
+          <TextBlock Text="{DynamicResource Loc.settings.data.title}" Style="{StaticResource MutedText}" Margin="0,0,0,4" />
           <TextBlock x:Name="DataSummaryText" Style="{StaticResource CaptionText}" Margin="0,0,0,10" />
 
           <StackPanel Orientation="Horizontal">
-            <Button x:Name="ClearBookmarksButton" Content="清空收藏"
+            <Button x:Name="ClearBookmarksButton" Content="{DynamicResource Loc.settings.data.clearBookmarks}"
                     Style="{StaticResource SecondaryButton}"
                     Foreground="{DynamicResource DangerBrush}"
                     Margin="0,0,10,0" Click="OnClearBookmarks" />
-            <Button Content="重置步骤进度" Style="{StaticResource SecondaryButton}"
+            <Button Content="{DynamicResource Loc.settings.data.resetSteps}" Style="{StaticResource SecondaryButton}"
                     Foreground="{DynamicResource DangerBrush}" Click="OnClearSteps" />
           </StackPanel>
 
@@ -479,12 +491,12 @@
       <!-- ==================================================== 新手引导（V2.9.0） -->
       <Border Style="{StaticResource Card}" Margin="0,0,0,16">
         <StackPanel>
-          <TextBlock Text="新手引导" Style="{StaticResource SectionTitle}" />
+          <TextBlock Text="{DynamicResource Loc.settings.onboarding.title}" Style="{StaticResource SectionTitle}" />
           <TextBlock Style="{StaticResource MutedText}" Margin="0,0,0,12"
-                     Text="首次启动会分四步介绍「连接 OBS / 查问题 / 体检 / 开播与装修」的入口。点下面的按钮可随时重看，不必重启应用。" />
+                     Text="{DynamicResource Loc.settings.onboarding.desc}" />
 
           <StackPanel Orientation="Horizontal">
-            <Button x:Name="ReplayOnboardingButton" Content="重新展示引导"
+            <Button x:Name="ReplayOnboardingButton" Content="{DynamicResource Loc.settings.onboarding.replay}"
                     Style="{StaticResource PrimaryButton}" Click="OnReplayOnboarding" />
             <TextBlock x:Name="OnboardingStatusText" Style="{StaticResource CaptionText}"
                        VerticalAlignment="Center" Margin="12,0,0,0" Visibility="Collapsed" />
@@ -495,14 +507,14 @@
       <!-- ==================================================== OBS 配置管理 -->
       <Border Style="{StaticResource Card}" Margin="0,0,0,16">
         <StackPanel>
-          <TextBlock Text="OBS 配置管理" Style="{StaticResource SectionTitle}" />
+          <TextBlock Text="{DynamicResource Loc.settings.obsconfig.title}" Style="{StaticResource SectionTitle}" />
           <TextBlock x:Name="ObsConfigHintText" Style="{StaticResource MutedText}" Margin="0,0,0,12"
-                     Text="正在检测 OBS 配置目录…" />
+                     Text="{DynamicResource Loc.settings.obsconfig.detecting}" />
 
           <StackPanel Orientation="Horizontal">
-            <Button Content="备份 / 导入导出 / 重置" Style="{StaticResource PrimaryButton}"
+            <Button Content="{DynamicResource Loc.settings.obsconfig.open}" Style="{StaticResource PrimaryButton}"
                     Margin="0,0,10,0" Click="OnOpenObsConfig" />
-            <Button Content="场景模板" Style="{StaticResource SecondaryButton}" Click="OnOpenTemplates" />
+            <Button Content="{DynamicResource Loc.settings.obsconfig.templates}" Style="{StaticResource SecondaryButton}" Click="OnOpenTemplates" />
           </StackPanel>
         </StackPanel>
       </Border>
@@ -510,7 +522,7 @@
       <!-- ==================================================== 关于 -->
       <Border Style="{StaticResource Card}">
         <StackPanel>
-          <TextBlock Text="关于" Style="{StaticResource SectionTitle}" />
+          <TextBlock Text="{DynamicResource Loc.settings.about.title}" Style="{StaticResource SectionTitle}" />
 
           <Grid Margin="0,0,0,12">
             <Grid.ColumnDefinitions>
@@ -523,50 +535,50 @@
               <RowDefinition Height="Auto" />
             </Grid.RowDefinitions>
 
-            <TextBlock Grid.Row="0" Grid.Column="0" Text="应用版本" Style="{StaticResource MutedText}"
+            <TextBlock Grid.Row="0" Grid.Column="0" Text="{DynamicResource Loc.settings.about.appVersion}" Style="{StaticResource MutedText}"
                        Margin="0,0,16,6" />
             <TextBlock x:Name="AppVersionText" Grid.Row="0" Grid.Column="1" Text="—"
                        Style="{StaticResource BodyText}" Margin="0,0,0,6" />
 
-            <TextBlock Grid.Row="1" Grid.Column="0" Text="问题库版本" Style="{StaticResource MutedText}"
+            <TextBlock Grid.Row="1" Grid.Column="0" Text="{DynamicResource Loc.settings.about.kbVersion}" Style="{StaticResource MutedText}"
                        Margin="0,0,16,6" />
             <TextBlock x:Name="DataVersionText" Grid.Row="1" Grid.Column="1" Text="—"
                        Style="{StaticResource BodyText}" Margin="0,0,0,6" />
 
-            <TextBlock Grid.Row="2" Grid.Column="0" Text="问题库更新" Style="{StaticResource MutedText}"
+            <TextBlock Grid.Row="2" Grid.Column="0" Text="{DynamicResource Loc.settings.about.kbUpdated}" Style="{StaticResource MutedText}"
                        Margin="0,0,16,0" />
             <TextBlock x:Name="DataUpdatedText" Grid.Row="2" Grid.Column="1" Text="—"
                        Style="{StaticResource BodyText}" />
           </Grid>
 
           <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
-            <Button x:Name="CheckUpdateButton" Content="检查更新" Style="{StaticResource SecondaryButton}"
+            <Button x:Name="CheckUpdateButton" Content="{DynamicResource Loc.settings.about.checkUpdate}" Style="{StaticResource SecondaryButton}"
                     Margin="0,0,10,0" Click="OnCheckUpdate" />
-            <Button x:Name="CheckKbButton" Content="检查知识库更新" Style="{StaticResource SecondaryButton}"
+            <Button x:Name="CheckKbButton" Content="{DynamicResource Loc.settings.about.checkKb}" Style="{StaticResource SecondaryButton}"
                     Margin="0,0,10,0" Click="OnCheckKbUpdate" />
             <TextBlock x:Name="UpdateStatusText" Style="{StaticResource CaptionText}"
-                       VerticalAlignment="Center" Text="尚未检查" />
+                       VerticalAlignment="Center" Text="{DynamicResource Loc.settings.about.notChecked}" />
           </StackPanel>
           <TextBlock x:Name="KbStatusText" Style="{StaticResource CaptionText}"
                      Margin="2,0,0,12" Text="—" />
 
           <TextBlock Style="{StaticResource MutedText}"
-                     Text="离线优先的本地排障工具：界面与问题库随包发布，默认不发起任何网络请求。仅在进行更新检查（启动时自动静默检查一次，或点击上方按钮手动检查）或手动开启「免费 AI」/「云端大模型」后，才会由本应用直接发起 HTTPS 请求，密钥全程只在本机加密存储与请求头之间流转。" />
+                     Text="{DynamicResource Loc.settings.about.privacy}" />
 
           <TextBlock Style="{StaticResource MutedText}" Margin="0,8,0,0"
-                     Text="OBS 日志在分析前会自动脱敏（流密钥、路径、Token、IP 等），可放心用于排查。" />
+                     Text="{DynamicResource Loc.settings.about.sanitized}" />
 
           <StackPanel Orientation="Horizontal" Margin="0,12,0,0">
-            <Button Content="OBS 官方知识库" Style="{StaticResource LinkButton}"
+            <Button Content="{DynamicResource Loc.settings.about.officialKb}" Style="{StaticResource LinkButton}"
                     Tag="https://obsproject.com/zh-cn/kb" Margin="0,0,16,0" Click="OnOpenLink" />
-            <Button Content="OBS 日志分析器" Style="{StaticResource LinkButton}"
+            <Button Content="{DynamicResource Loc.settings.about.officialAnalyzer}" Style="{StaticResource LinkButton}"
                     Tag="https://obsproject.com/analyzer" Click="OnOpenLink" />
           </StackPanel>
 
           <Border Style="{StaticResource HLine}" />
 
           <TextBlock Style="{StaticResource CaptionText}"
-                     Text="Copyright (c) 2026 OBS Helper。第三方组件：System.Security.Cryptography.ProtectedData（MIT 许可）。问题库内容整理自 OBS 官方文档与社区经验。" />
+                     Text="{DynamicResource Loc.settings.about.copyright}" />
         </StackPanel>
       </Border>
 

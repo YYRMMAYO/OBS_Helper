@@ -11,7 +11,7 @@
         </Grid.ColumnDefinitions>
 
         <StackPanel Grid.Column="0" Margin="0,0,34,0">
-          <TextBlock x:Name="TitleText" Text="标题"
+          <TextBlock x:Name="TitleText" Text="{DynamicResource Loc.common.placeholderTitle}"
                      FontSize="{DynamicResource FontSizeBase}" FontWeight="SemiBold"
                      Foreground="{DynamicResource TextBrush}"
                      TextWrapping="Wrap" />
@@ -42,6 +42,6 @@
     <Button x:Name="StarButton" Style="{StaticResource IconButton}"
             HorizontalAlignment="Right" VerticalAlignment="Top"
             Margin="0,6,6,0" Content="☆" FontSize="16"
-            ToolTip="收藏" Click="OnToggleBookmark" />
+            ToolTip="{DynamicResource Loc.problem.bookmark.add}" Click="OnToggleBookmark" />
   </Grid>
 </UserControl>

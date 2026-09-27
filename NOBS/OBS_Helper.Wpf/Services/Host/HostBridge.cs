@@ -1,3 +1,4 @@
+using OBS_Helper.Wpf.Localization;
 using System.Diagnostics;
 using System.IO;
 using System.Net;
@@ -297,11 +298,11 @@ public sealed class HostBridge
     private static void ValidateSecretKey(string key)
     {
         if (string.IsNullOrWhiteSpace(key) || key.Length > 128)
-            throw new ArgumentException("机密键名非法。");
+            throw new ArgumentException(Strings.T("host.badSecretKey"));
         foreach (var c in key)
         {
             if (!char.IsAsciiLetterOrDigit(c) && c != '.' && c != '_' && c != '-')
-                throw new ArgumentException("机密键名包含非法字符。");
+                throw new ArgumentException(Strings.T("host.badSecretKeyChars"));
         }
     }
 
@@ -312,7 +313,7 @@ public sealed class HostBridge
         try
         {
             ValidateSecretKey(key);
-            if (value.Length > MaxSecretLength) throw new ArgumentException("机密内容过长。");
+            if (value.Length > MaxSecretLength) throw new ArgumentException(Strings.T("host.secretTooLong"));
 
             var s = LoadSecrets();
             if (value.Length == 0)
@@ -567,7 +568,7 @@ public sealed class HostBridge
                     if (socket.RemoteEndPoint is IPEndPoint remote && IsPrivateIp(remote.Address))
                     {
                         socket.Dispose();
-                        throw new UnauthorizedAccessException("拒绝连接本机 / 内网地址（含解析后的实际 IP）。");
+                        throw new UnauthorizedAccessException(Strings.T("host.ssrfBlocked"));
                     }
                     return new NetworkStream(socket, ownsSocket: true);
                 }
@@ -675,9 +676,9 @@ public sealed class HostBridge
         }
 
         if (string.IsNullOrEmpty(apiKey))
-            throw new InvalidOperationException("尚未配置 API Key。");
+            throw new InvalidOperationException(Strings.T("host.aiKeyMissing"));
         if (apiKey.Any(char.IsControl))
-            throw new ArgumentException("API Key 含有非法字符。");
+            throw new ArgumentException(Strings.T("host.aiKeyBadChars"));
 
         var auth = new AuthenticationHeaderValue("Bearer", apiKey);
         // Authorization 头已拼装完毕，显式释放 apiKey 引用以缩小密钥在托管内存中的窗口。
@@ -707,9 +708,9 @@ public sealed class HostBridge
     {
         var uri = ValidateAiUrl(url, body);
         if (string.IsNullOrEmpty(apiKey))
-            throw new InvalidOperationException("内置免费 AI 密钥为空。");
+            throw new InvalidOperationException(Strings.T("host.freeKeyEmpty"));
         if (apiKey.Any(char.IsControl))
-            throw new ArgumentException("内置免费 AI 密钥含有非法字符。");
+            throw new ArgumentException(Strings.T("host.freeKeyBadChars"));
 
         var auth = new AuthenticationHeaderValue("Bearer", apiKey);
         return AiChatPostAsync(uri, body, auth);
@@ -719,13 +720,13 @@ public sealed class HostBridge
     private static Uri ValidateAiUrl(string url, string body)
     {
         if (!Uri.TryCreate(url, UriKind.Absolute, out var uri))
-            throw new ArgumentException("接口地址不合法。");
+            throw new ArgumentException(Strings.T("host.badEndpoint"));
         if (uri.Scheme != Uri.UriSchemeHttps)
-            throw new UnauthorizedAccessException("云端 AI 接口必须使用 https。");
+            throw new UnauthorizedAccessException(Strings.T("host.httpsRequired"));
         if (IsPrivateHost(uri.Host))
-            throw new UnauthorizedAccessException("出于安全考虑，不允许请求内网或本机地址。");
+            throw new UnauthorizedAccessException(Strings.T("host.privateBlocked"));
         if (string.IsNullOrWhiteSpace(body))
-            throw new ArgumentException("请求体为空。");
+            throw new ArgumentException(Strings.T("host.emptyBody"));
         return uri;
     }
 
@@ -746,7 +747,7 @@ public sealed class HostBridge
         if (!resp.IsSuccessStatusCode)
         {
             // 只回传状态码与响应体，绝不把 Authorization 头写进任何日志或错误信息
-            throw new HttpRequestException($"云端 AI 请求失败（HTTP {(int)resp.StatusCode}）: {Truncate(text, 500)}");
+            throw new HttpRequestException(Strings.T("host.httpFailed", (int)resp.StatusCode, Truncate(text, 500)));
         }
         return text;
     }
@@ -765,7 +766,7 @@ public sealed class HostBridge
             if (n == 0) break;
             total += n;
             if (total > maxBytes)
-                throw new HttpRequestException($"云端响应体过大（>{maxBytes / (1024 * 1024)}MB），已中止读取。");
+                throw new HttpRequestException(Strings.T("host.bodyTooLarge", maxBytes / (1024 * 1024)));
             sb.Append(buf, 0, n);
         }
         return sb.ToString();

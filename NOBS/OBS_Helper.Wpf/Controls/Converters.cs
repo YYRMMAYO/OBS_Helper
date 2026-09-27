@@ -82,12 +82,12 @@ public sealed class SeverityToBrushConverter : IValueConverter
 {
     public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
     {
-        var key = (value?.ToString() ?? "").Trim() switch
+        var key = DataValues.ClassifySeverity(value?.ToString()) switch
         {
-            "严重" => "DangerBrush",
-            "常见" => "WarnBrush",
-            "一般" => "InfoBrush",
-            "进阶" => "BrandBrush",
+            DataValues.SeverityKind.Critical => "DangerBrush",
+            DataValues.SeverityKind.Common => "WarnBrush",
+            DataValues.SeverityKind.Normal => "InfoBrush",
+            DataValues.SeverityKind.Advanced => "BrandBrush",
             _ => "MutedBrush"
         };
         return Application.Current?.TryFindResource(key) ?? Application.Current?.TryFindResource("MutedBrush")!;
@@ -102,12 +102,12 @@ public sealed class SeverityToSoftBrushConverter : IValueConverter
 {
     public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
     {
-        var key = (value?.ToString() ?? "").Trim() switch
+        var key = DataValues.ClassifySeverity(value?.ToString()) switch
         {
-            "严重" => "DangerSoftBrush",
-            "常见" => "WarnSoftBrush",
-            "一般" => "InfoSoftBrush",
-            "进阶" => "BrandSoftBrush",
+            DataValues.SeverityKind.Critical => "DangerSoftBrush",
+            DataValues.SeverityKind.Common => "WarnSoftBrush",
+            DataValues.SeverityKind.Normal => "InfoSoftBrush",
+            DataValues.SeverityKind.Advanced => "BrandSoftBrush",
             _ => "Surface3Brush"
         };
         return Application.Current?.TryFindResource(key) ?? Application.Current?.TryFindResource("Surface3Brush")!;

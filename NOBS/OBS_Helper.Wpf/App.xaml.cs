@@ -212,13 +212,14 @@ public partial class App : Application
         {
             // 主窗体可能还没建出来（启动早期出错），这时不能传 owner，否则 MessageBox 自己会抛
             var owner = app.MainWindow;
+            var caption = Localization.Strings.T("app.name");
             if (owner is not null && owner.IsLoaded)
             {
-                MessageBox.Show(owner, text, "OBS 排障助手", MessageBoxButton.OK, MessageBoxImage.Warning);
+                MessageBox.Show(owner, text, caption, MessageBoxButton.OK, MessageBoxImage.Warning);
             }
             else
             {
-                MessageBox.Show(text, "OBS 排障助手", MessageBoxButton.OK, MessageBoxImage.Warning);
+                MessageBox.Show(text, caption, MessageBoxButton.OK, MessageBoxImage.Warning);
             }
         }));
     }
@@ -280,6 +281,8 @@ public partial class App : Application
 
         // 外观必须在主窗体创建前套用，否则会先闪一帧默认浅色
         AppServices.Appearance.Initialize();
+        // 语言同理：DynamicResource 的 Loc.* 键要在首帧渲染前就位，否则先闪一帧原始键名
+        AppServices.Localization.Initialize();
 
         var window = new MainWindow();
         MainWindow = window;

@@ -36,7 +36,7 @@ public partial class LogsPage : UserControl, INavigationAware
         NoHostPanel.Visibility = hosted ? Visibility.Collapsed : Visibility.Visible;
         RefreshButton.Visibility = hosted ? Visibility.Visible : Visibility.Collapsed;
         OpenDirButton.Visibility = hosted ? Visibility.Visible : Visibility.Collapsed;
-        LogDirText.Text = hosted ? $"日志目录：{HostBridge.ObsLogDirectory}" : "";
+        LogDirText.Text = hosted ? Strings.T("logs.dir", HostBridge.ObsLogDirectory) : "";
         LogDirText.Visibility = hosted ? Visibility.Visible : Visibility.Collapsed;
     }
 
@@ -52,7 +52,7 @@ public partial class LogsPage : UserControl, INavigationAware
 
     private async Task ReloadListAsync()
     {
-        SetBusy(true, "正在读取日志目录…");
+        SetBusy(true, Strings.T("logs.readingDir"));
         try
         {
             _files = await AppServices.Host.ListObsLogsAsync();
@@ -107,8 +107,8 @@ public partial class LogsPage : UserControl, INavigationAware
         _selectedPath = f.Path;
         RenderFileList();
 
-        SetBusy(true, "正在读取并分析日志…");
-        AppServices.Busy.Show("正在分析日志…");
+        SetBusy(true, Strings.T("logs.readingLog"));
+        AppServices.Busy.Show(Strings.T("logs.analyzing"));
         try
         {
             var text = await AppServices.Host.ReadObsLogAsync(f.Path);
@@ -134,8 +134,8 @@ public partial class LogsPage : UserControl, INavigationAware
 
         var dlg = new OpenFileDialog
         {
-            Title = "选择 OBS 日志文件",
-            Filter = "OBS 日志 (*.txt;*.log)|*.txt;*.log|所有文件 (*.*)|*.*",
+            Title = Strings.T("logs.pickTitle"),
+            Filter = Strings.T("logs.pickFilter"),
             CheckFileExists = true
         };
         if (Directory.Exists(HostBridge.ObsLogDirectory))
@@ -147,8 +147,8 @@ public partial class LogsPage : UserControl, INavigationAware
         _selectedPath = path;
         RenderFileList();
 
-        SetBusy(true, "正在读取并分析日志…");
-        AppServices.Busy.Show("正在分析日志…");
+        SetBusy(true, Strings.T("logs.readingLog"));
+        AppServices.Busy.Show(Strings.T("logs.analyzing"));
         try
         {
             var text = await Task.Run(() => ReadTail(path));
@@ -168,7 +168,7 @@ public partial class LogsPage : UserControl, INavigationAware
     private void OnOpenDir(object sender, RoutedEventArgs e)
     {
         if (!AppServices.Host.OpenFolder(HostBridge.ObsLogDirectory))
-            ShowHint("日志目录不存在，可能尚未运行过 OBS。");
+            ShowHint(Strings.T("logs.dirMissing"));
     }
 
     /// <summary>读取日志文本；超过 8MB 只取尾部，避免把整份大日志读进内存。</summary>
@@ -224,10 +224,9 @@ public partial class LogsPage : UserControl, INavigationAware
             {
                 Code = "LOG-AI-COST",
                 Severity = LogSeverity.Warning,
-                Title = $"检测到 AI 插件可能加剧掉帧：{string.Join("、", aiInstalled)}",
-                Suggestion = "AI 插件的实时推理有固定开销（抠像约 +5~15% CPU / 100~300MB 内存，字幕约 +5~10% CPU / 200~500MB）。" +
-                             "排查掉帧时可先临时停用对应滤镜对比验证；确需使用请降低模型档位、改用 GPU 推理，并关闭其他高占用程序。",
-                Evidence = "本机体检测到上述 AI 插件已安装，同时日志中存在渲染 / 编码滞后记录。",
+                Title = Strings.T("logs.aiPlugin.title", string.Join(", ", aiInstalled)),
+                Suggestion = Strings.T("logs.aiPlugin.suggestion"),
+                Evidence = Strings.T("logs.aiPlugin.evidence"),
                 FirstLine = 0
             });
 
@@ -251,18 +250,17 @@ public partial class LogsPage : UserControl, INavigationAware
         if (_report is null) return;
 
         ReportPanel.Visibility = Visibility.Visible;
-        ReportTitleText.Text = $"② 分析结果：{_report.SourceName}";
+        ReportTitleText.Text = Strings.T("logs.reportTitle", _report.SourceName);
 
         var has = _report.HasIssues;
-        CountText.Text = has ? $"{_report.Findings.Count} 项发现" : "未发现明显问题";
+        CountText.Text = has ? Strings.T("logs.findingsCount", _report.Findings.Count) : Strings.T("logs.noIssues");
         CountText.SetResourceReference(TextBlock.ForegroundProperty, has ? "DangerBrush" : "OkBrush");
         CountPill.SetResourceReference(Border.BackgroundProperty, has ? "DangerSoftBrush" : "OkSoftBrush");
 
         var s = _report.Summary;
         ReportMetaText.Text =
             $"OBS {Fallback(s.ObsVersion)} · {Fallback(s.Platform)} · " +
-            $"渲染滞后 {Percent(s.RenderLagRatio)} · 编码滞后 {Percent(s.EncodingLagRatio)} · " +
-            $"网络丢帧 {Percent(s.NetworkDropRatio)}";
+            Strings.T("logs.summary", Percent(s.RenderLagRatio), Percent(s.EncodingLagRatio), Percent(s.NetworkDropRatio));
 
         CopyHintText.Visibility = Visibility.Collapsed;
 
@@ -331,19 +329,19 @@ public partial class LogsPage : UserControl, INavigationAware
             {
                 var pluginLink = new Button
                 {
-                    Content = $"在插件广场查看「{entry.Name}」→",
+                    Content = Strings.T("plugin.viewInSquare", entry.Name),
                     Tag = entry.Id,
                     Style = TryFindResource("LinkButton") as Style,
                     HorizontalAlignment = HorizontalAlignment.Left,
                     Margin = new Thickness(0, 8, 0, 0),
-                    ToolTip = "查看该插件的介绍、本机安装状态与官方下载"
+                    ToolTip = Strings.T("logs.pluginCardTip")
                 };
                 pluginLink.Click += OnOpenPlugin;
                 body.Children.Add(pluginLink);
             }
             else
             {
-                var moduleText = MakeText($"嫌疑模块：{f.SuspectModule}（未收录于插件广场，可先更新或安全模式排查）",
+                var moduleText = MakeText(Strings.T("logs.suspectUnknown", f.SuspectModule),
                     "FontSizeXs", "MutedBrush");
                 moduleText.Margin = new Thickness(0, 6, 0, 0);
                 moduleText.TextWrapping = TextWrapping.Wrap;
@@ -355,7 +353,7 @@ public partial class LogsPage : UserControl, INavigationAware
         {
             var link = new Button
             {
-                Content = "查看分步方案 →",
+                Content = Strings.T("problem.viewSteps"),
                 Tag = f.ProblemId,
                 Style = TryFindResource("LinkButton") as Style,
                 HorizontalAlignment = HorizontalAlignment.Left,
@@ -391,19 +389,19 @@ public partial class LogsPage : UserControl, INavigationAware
     {
         if (string.IsNullOrEmpty(_report?.SanitizedText))
         {
-            ShowHint("这份日志没有可复制的内容。");
+            ShowHint(Strings.T("logs.nothingToCopy"));
             return;
         }
 
         try
         {
             Clipboard.SetText(_report.SanitizedText);
-            ShowHint("已复制脱敏后的日志全文。");
+            ShowHint(Strings.T("logs.copiedSanitized"));
         }
         catch (Exception)
         {
             // 剪贴板被其他进程占用时会抛异常，属可预期情况，页面内提示即可
-            ShowHint("剪贴板暂时不可用，请稍后重试。");
+            ShowHint(Strings.T("logs.clipboardUnavailable"));
         }
     }
 
@@ -445,7 +443,7 @@ public partial class LogsPage : UserControl, INavigationAware
     private static string Percent(double ratio)
         => (ratio * 100).ToString("0.##", CultureInfo.InvariantCulture) + "%";
 
-    private static string Fallback(string value) => string.IsNullOrWhiteSpace(value) ? "未知" : value;
+    private static string Fallback(string value) => string.IsNullOrWhiteSpace(value) ? Strings.T("common.unknown") : value;
 
     /// <summary>建一个跟随主题的文本块：字号与颜色都用资源引用，换肤 / 改字号时自动生效。</summary>
     private static TextBlock MakeText(string text, string sizeKey, string brushKey, bool wrap = true)

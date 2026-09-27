@@ -16,7 +16,7 @@
     <StackPanel Grid.Row="0">
 
       <TextBox x:Name="QueryBox" Style="{StaticResource AppTextBox}"
-               Tag="搜索症状或关键词，如：黑屏、推流失败、音画不同步"
+               Tag="{DynamicResource Loc.search.placeholder}"
                FontSize="{DynamicResource FontSizeMd}"
                MinHeight="42" />
 
@@ -47,7 +47,7 @@
         <StackPanel x:Name="ResultList" />
 
         <!-- 空状态：与原版文案保持一致 -->
-        <TextBlock x:Name="EmptyText" Text="没有匹配的结果，换个关键词试试。"
+        <TextBlock x:Name="EmptyText" Text="{DynamicResource Loc.search.empty}"
                    Style="{StaticResource MutedText}"
                    HorizontalAlignment="Center" Margin="0,40,0,0"
                    Visibility="Collapsed" />

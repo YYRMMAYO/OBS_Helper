@@ -18,7 +18,7 @@ public partial class ConfirmDialog : Window
     /// 弹出确认框。<paramref name="danger"/> 为 true 时确认按钮为红色。
     /// </summary>
     public static bool Show(string title, string message,
-                            string okText = "确认", string cancelText = "取消",
+                            string? okText = null, string? cancelText = null,
                             bool danger = true, string icon = "⚠️")
     {
         var dlg = new ConfirmDialog
@@ -28,8 +28,8 @@ public partial class ConfirmDialog : Window
 
         dlg.TitleText.Text = title;
         dlg.MessageText.Text = message;
-        dlg.OkButton.Content = okText;
-        dlg.CancelButton.Content = cancelText;
+        dlg.OkButton.Content = okText ?? Strings.T("common.confirm");
+        dlg.CancelButton.Content = cancelText ?? Strings.T("common.cancel");
         dlg.IconText.Text = icon;
 
         if (!danger)

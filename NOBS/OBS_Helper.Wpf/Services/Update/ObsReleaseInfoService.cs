@@ -1,3 +1,4 @@
+using OBS_Helper.Wpf.Localization;
 using System.IO;
 using System.Net.Http;
 using System.Net.Http.Headers;
@@ -14,7 +15,7 @@ public sealed record ObsReleaseInfo(
     /// <summary>来源：live = 刚从 GitHub 拉取；cache = 离线缓存回退。</summary>
     string Source)
 {
-    public string PublishedText => PublishedAt == default ? "未知" : PublishedAt.ToLocalTime().ToString("yyyy-MM-dd");
+    public string PublishedText => PublishedAt == default ? Strings.T("release.unknownDate") : PublishedAt.ToLocalTime().ToString("yyyy-MM-dd");
 }
 
 /// <summary>
@@ -238,7 +239,7 @@ public sealed class ObsReleaseInfoService
             return cached.Info with
             {
                 Source = stale ? "cache-stale" : "cache",
-                Summary = (stale ? "[离线快照]\n" : "") + cached.Info.Summary
+                Summary = (stale ? Strings.T("release.offlineSnapshot") : "") + cached.Info.Summary
             };
         }
         catch (Exception)

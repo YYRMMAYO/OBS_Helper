@@ -93,6 +93,7 @@ public partial class SettingsPage : UserControl, INavigationAware
             ReduceMotionSwitch.IsChecked = ap.Settings.ReduceMotion;
 
             BuildAccentSwatches();
+            BuildLanguageSwitcher();
 
             // 自定义背景（v1.10）
             var bgMode = ap.Settings.BackgroundMode;
@@ -127,18 +128,18 @@ public partial class SettingsPage : UserControl, INavigationAware
         {
             var provider = AppServices.AiSettings.FreeProviderMode;
             var info = await AppServices.FreeLimiter.GetInfoAsync(provider);
-            var channel = provider == FreeAiProvider.Pollinations ? "Pollinations（国外免 Key）" : "智谱免费 AI";
-            FreeQuotaText.Text = $"今日本地限额（{channel}）：已用 {info.Used} / {info.Max} 次（{info.Remaining} 次剩余，每天 0 点重置）。";
+            var channel = provider == FreeAiProvider.Pollinations ? Strings.T("settings.ai.free.channel.pollinations") : Strings.T("settings.ai.free.channel.zhipu");
+            FreeQuotaText.Text = Strings.T("settings.ai.free.quota", channel, info.Used, info.Max, info.Remaining);
         }
         catch (Exception)
         {
-            FreeQuotaText.Text = "今日本地限额：无法读取（不影响使用，额度仍按每日上限强制）。";
+            FreeQuotaText.Text = Strings.T("settings.ai.free.quotaUnavailable");
         }
 
         // 内置密钥状态：只展示「有没有」，绝不展示密钥本身；仅智谱通道需要密钥
         var keyMissing = AppServices.AiSettings.FreeProviderMode == FreeAiProvider.Zhipu && !AppServices.FreeAiKey.IsAvailable;
         FreeKeyStatusText.Text = keyMissing
-            ? "内置密钥：未打包（智谱通道不可用，会自动回退本地引擎；可改用 Pollinations 通道或换官方安装包）。"
+            ? Strings.T("settings.ai.free.keyMissing")
             : "";
         FreeKeyStatusText.Visibility = keyMissing ? Visibility.Visible : Visibility.Collapsed;
     }
@@ -157,7 +158,7 @@ public partial class SettingsPage : UserControl, INavigationAware
             has = false;
         }
 
-        KeyStatusText.Text = has ? "已保存" : "未保存";
+        KeyStatusText.Text = has ? Strings.T("settings.ai.cloud.statusSaved") : Strings.T("settings.ai.cloud.notSaved");
         KeyStatusText.SetResourceReference(TextBlock.ForegroundProperty, has ? "OkBrush" : "MutedBrush");
         KeyStatusPill.SetResourceReference(Border.BackgroundProperty, has ? "OkSoftBrush" : "Surface3Brush");
         ClearKeyButton.IsEnabled = has;
@@ -298,8 +299,8 @@ public partial class SettingsPage : UserControl, INavigationAware
     {
         var errs = AppServices.Hotkeys.RegistrationErrors;
         HotkeyStatusText.Text = errs.Count == 0
-            ? "热键已保存并生效。"
-            : "注意：" + string.Join("；", errs);
+            ? Strings.T("settings.hotkey.saved")
+            : Strings.T("settings.hotkey.failed", string.Join("; ", errs));
         HotkeyStatusText.SetResourceReference(TextBlock.ForegroundProperty, errs.Count == 0 ? "OkBrush" : "WarnBrush");
     }
 
@@ -334,7 +335,7 @@ public partial class SettingsPage : UserControl, INavigationAware
             {
                 AutoSwitchRulesPanel.Children.Add(new TextBlock
                 {
-                    Text = "还没有规则。点「＋ 添加规则」开始，比如：窗口标题含「游戏名」→ 切到「游戏」场景。",
+                    Text = Strings.T("settings.autoSwitch.empty"),
                     Style = (Style)FindResource("MutedText")
                 });
                 return;
@@ -364,7 +365,7 @@ public partial class SettingsPage : UserControl, INavigationAware
             Style = (Style)FindResource("AppCheckBox"),
             IsChecked = rule.Enabled,
             VerticalAlignment = VerticalAlignment.Center,
-            ToolTip = "启用该规则"
+            ToolTip = Strings.T("settings.autoSwitch.enableRuleTip")
         };
         enabled.Checked += (_, _) => { rule.Enabled = true; AppServices.AutoSwitcher.Save(); };
         enabled.Unchecked += (_, _) => { rule.Enabled = false; AppServices.AutoSwitcher.Save(); };
@@ -385,12 +386,12 @@ public partial class SettingsPage : UserControl, INavigationAware
 
         var regex = new CheckBox
         {
-            Content = "正则",
+            Content = Strings.T("settings.autoSwitch.regex"),
             Style = (Style)FindResource("AppCheckBox"),
             IsChecked = rule.UseRegex,
             VerticalAlignment = VerticalAlignment.Center,
             Margin = new Thickness(10, 0, 0, 0),
-            ToolTip = "按正则表达式匹配窗口标题"
+            ToolTip = Strings.T("settings.autoSwitch.regexTip")
         };
         regex.Checked += (_, _) => { rule.UseRegex = true; AppServices.AutoSwitcher.Save(); };
         regex.Unchecked += (_, _) => { rule.UseRegex = false; AppServices.AutoSwitcher.Save(); };
@@ -412,7 +413,7 @@ public partial class SettingsPage : UserControl, INavigationAware
             rule.SceneName = scene.SelectedItem as string ?? "";
             AppServices.AutoSwitcher.Save();
         };
-        scene.ToolTip = sceneNames.Count > 0 ? "目标场景" : "请先连接 OBS 获取场景列表";
+        scene.ToolTip = sceneNames.Count > 0 ? Strings.T("settings.autoSwitch.targetScene") : Strings.T("settings.autoSwitch.connectFirst");
         Grid.SetColumn(scene, 3);
 
         var delete = new Button
@@ -424,7 +425,7 @@ public partial class SettingsPage : UserControl, INavigationAware
             Padding = new Thickness(0),
             Margin = new Thickness(10, 0, 0, 0),
             VerticalAlignment = VerticalAlignment.Center,
-            ToolTip = "删除规则",
+            ToolTip = Strings.T("settings.autoSwitch.deleteRule"),
             Tag = rule
         };
         delete.Click += (_, _) =>
@@ -448,8 +449,8 @@ public partial class SettingsPage : UserControl, INavigationAware
         var count = AppServices.Bookmarks.GetAll().Count;
         ClearBookmarksButton.IsEnabled = count > 0;
         DataSummaryText.Text = count > 0
-            ? $"收藏 {count} 条；步骤勾选进度同样只保存在本机，不会上传。"
-            : "暂无收藏；步骤勾选进度只保存在本机，不会上传。";
+            ? Strings.T("settings.data.bookmarksCount", count)
+            : Strings.T("settings.data.bookmarksEmpty");
     }
 
     private async Task RefreshAboutAsync()
@@ -520,11 +521,11 @@ public partial class SettingsPage : UserControl, INavigationAware
             var model = (FreeModelBox.SelectedItem as ComboBoxItem)?.Tag as string
                         ?? AppServices.AiSettings.EffectiveFreeModel;
             await AppServices.AiSettings.SetFreeModelAsync(model);
-            SetFreeStatus($"免费 AI 模型已保存为「{AppServices.AiSettings.EffectiveFreeModel}」。");
+            SetFreeStatus(Strings.T("settings.ai.free.modelSaved", AppServices.AiSettings.EffectiveFreeModel));
         }
         catch (Exception ex)
         {
-            SetFreeStatus("保存模型失败：" + ex.Message);
+            SetFreeStatus(Strings.T("settings.ai.free.modelSaveFailed", ex.Message));
         }
     }
 
@@ -550,7 +551,7 @@ public partial class SettingsPage : UserControl, INavigationAware
         // 服务会把空键名回填成默认值，同步回输入框，免得用户以为没生效
         CloudKeyNameBox.Text = AppServices.AiSettings.Settings.CloudSecretKeyName;
 
-        SetAiStatus("云端配置已保存。");
+        SetAiStatus(Strings.T("settings.ai.cloud.saved"));
         RefreshCloudWarning();
 
         // 键名可能刚被改过，密钥状态要按新键名重查
@@ -562,7 +563,7 @@ public partial class SettingsPage : UserControl, INavigationAware
         var key = ApiKeyBox.Password;
         if (string.IsNullOrWhiteSpace(key))
         {
-            SetAiStatus("请先粘贴 API Key 再保存。");
+            SetAiStatus(Strings.T("settings.ai.cloud.needKey"));
             return;
         }
 
@@ -589,11 +590,11 @@ public partial class SettingsPage : UserControl, INavigationAware
 
         if (ok)
         {
-            SetAiStatus("API Key 已加密保存到本机。");
+            SetAiStatus(Strings.T("settings.ai.cloud.keySaved"));
         }
         else
         {
-            SetAiStatus("保存失败：本机加密存储不可用。");
+            SetAiStatus(Strings.T("settings.ai.cloud.keySaveFailed"));
             App.ReportError(ErrorCodes.SecretStoreUnavailable);
         }
 
@@ -605,15 +606,15 @@ public partial class SettingsPage : UserControl, INavigationAware
     {
         var name = string.IsNullOrWhiteSpace(CloudKeyNameBox.Text) ? "obs_ai_apikey" : CloudKeyNameBox.Text.Trim();
         if (!ConfirmDialog.Show(
-                "清除 API Key",
-                $"将从本机加密存储中删除「{name}」下保存的密钥。清除后云端诊断会回退到本地引擎，需要重新粘贴密钥才能恢复。",
-                "清除", "取消"))
+                Strings.T("settings.ai.cloud.clearTitle"),
+                Strings.T("settings.ai.cloud.clearMessage", name),
+                Strings.T("settings.ai.cloud.clearButton"), Strings.T("common.cancel")))
         {
             return;
         }
 
         var ok = await AppServices.AiSettings.ClearApiKeyAsync();
-        SetAiStatus(ok ? "已清除本机保存的 API Key。" : "清除失败：本机加密存储不可用。");
+        SetAiStatus(ok ? Strings.T("settings.ai.cloud.cleared") : Strings.T("settings.ai.cloud.clearFailed"));
         if (!ok) App.ReportError(ErrorCodes.SecretStoreUnavailable);
 
         await RefreshKeyStatusAsync();
@@ -676,7 +677,7 @@ public partial class SettingsPage : UserControl, INavigationAware
                 Margin = new Thickness(0, 0, 8, 8),
                 Cursor = Cursors.Hand,
                 Background = ParseHexBrush(scheme.Preview),
-                ToolTip = $"{scheme.Name}（{scheme.Preview}）",
+                ToolTip = $"{Strings.T("settings.accent." + scheme.Key)}（{scheme.Preview}）",
                 Tag = scheme.Key,
             };
             swatch.MouseLeftButtonUp += OnAccentSwatchClick;
@@ -712,6 +713,42 @@ public partial class SettingsPage : UserControl, INavigationAware
         var brush = new SolidColorBrush((Color)ColorConverter.ConvertFromString(hex));
         brush.Freeze();
         return brush;
+    }
+
+    // ------------------------------------------------------------ 语言（V2.9.2）
+
+    /// <summary>
+    /// 生成语言切换条：选项来自 <see cref="Strings.Supported"/>，与主题 / 字号用的是同一套段控样式。
+    /// 切换后由 <c>LocalizationService</c> 即时改语言，主窗口负责把当前页面重新渲染一遍。
+    /// </summary>
+    private void BuildLanguageSwitcher()
+    {
+        LanguagePanel.Children.Clear();
+        foreach (var language in Strings.Supported)
+        {
+            var radio = new RadioButton
+            {
+                GroupName = "SettingsLanguage",
+                Style = (Style)FindResource("SegmentButton"),
+                Content = Strings.DisplayName(language),
+                Tag = language,
+                IsChecked = string.Equals(Strings.Current, language, StringComparison.OrdinalIgnoreCase),
+            };
+            radio.Checked += OnLanguageChecked;
+            LanguagePanel.Children.Add(radio);
+        }
+    }
+
+    private void OnLanguageChecked(object sender, RoutedEventArgs e)
+    {
+        if (_syncing) return;
+        if (sender is not RadioButton { Tag: string language }) return;
+
+        // 语言切换会重放当前页面（主窗口负责），本页不必自己刷新其余控件
+        if (!AppServices.Localization.SetLanguage(language)) return;
+
+        // 段控选中态在语言切换后仍需与真实语言一致（重放前先对齐，避免「点了没反应」的错觉）
+        BuildLanguageSwitcher();
     }
 
     // ------------------------------------------------------------ 自定义背景（v1.10）
@@ -750,16 +787,16 @@ public partial class SettingsPage : UserControl, INavigationAware
             }
         }
         BgColorHint.Text = string.Equals(cur, "#f4f4fb", StringComparison.OrdinalIgnoreCase)
-            ? "点选色块可换底色"
-            : $"当前：{cur}";
+            ? Strings.T("settings.bg.swatchTip")
+            : Strings.T("settings.bg.current", cur);
     }
 
     private void OnPickBgImage(object sender, RoutedEventArgs e)
     {
         var dlg = new Microsoft.Win32.OpenFileDialog
         {
-            Title = "选择背景图片",
-            Filter = "图片文件 (*.jpg;*.jpeg;*.png;*.bmp)|*.jpg;*.jpeg;*.png;*.bmp|所有文件 (*.*)|*.*",
+            Title = Strings.T("settings.bg.pickTitle"),
+            Filter = Strings.T("settings.bg.pickFilter"),
             CheckFileExists = true
         };
         if (dlg.ShowDialog() == true)
@@ -782,8 +819,8 @@ public partial class SettingsPage : UserControl, INavigationAware
         var has = !string.IsNullOrWhiteSpace(path);
         BgClearImageButton.Visibility = has ? Visibility.Visible : Visibility.Collapsed;
         BgImagePathText.Text = has
-            ? $"当前图片：{path}"
-            : "尚未选择图片。";
+            ? Strings.T("settings.bg.currentImage", path)
+            : Strings.T("settings.bg.noImage");
     }
 
     // ------------------------------------------------------------ 指引与本地数据
@@ -798,31 +835,31 @@ public partial class SettingsPage : UserControl, INavigationAware
     {
         var count = AppServices.Bookmarks.GetAll().Count;
         if (!ConfirmDialog.Show(
-                "清空收藏",
-                $"将删除全部 {count} 条收藏，此操作无法撤销。步骤勾选进度不受影响。",
-                "清空", "取消"))
+                Strings.T("settings.data.clearBookmarksTitle"),
+                Strings.T("settings.data.clearBookmarksMessage", count),
+                Strings.T("settings.data.clearButton"), Strings.T("common.cancel")))
         {
             return;
         }
 
         AppServices.Bookmarks.Clear();
         RefreshDataSummary();
-        SetDataStatus("收藏已清空。");
+        SetDataStatus(Strings.T("settings.data.bookmarksCleared"));
     }
 
     private void OnClearSteps(object sender, RoutedEventArgs e)
     {
         if (!ConfirmDialog.Show(
-                "重置步骤进度",
-                "将清除所有问题下已勾选的排查步骤，此操作无法撤销。收藏不受影响。",
-                "重置", "取消"))
+                Strings.T("settings.data.resetStepsTitle"),
+                Strings.T("settings.data.resetStepsMessage"),
+                Strings.T("settings.data.resetButton"), Strings.T("common.cancel")))
         {
             return;
         }
 
         AppServices.Bookmarks.ClearAllSteps();
         RefreshDataSummary();
-        SetDataStatus("步骤进度已重置。");
+        SetDataStatus(Strings.T("settings.data.stepsReset"));
     }
 
     private void SetDataStatus(string text)
@@ -842,7 +879,7 @@ public partial class SettingsPage : UserControl, INavigationAware
         AppServices.Store.RemoveItem(OnboardingGuide.PrefKey);
         App.RequestOnboardingReset();
 
-        OnboardingStatusText.Text = "已重新展示，请查看主界面覆盖层。";
+        OnboardingStatusText.Text = Strings.T("settings.onboarding.replayed");
         OnboardingStatusText.Visibility = Visibility.Visible;
     }
 
@@ -862,7 +899,7 @@ public partial class SettingsPage : UserControl, INavigationAware
         var last = AppServices.Updates.LastResult;
         if (last is null)
         {
-            UpdateStatusText.Text = "尚未检查";
+            UpdateStatusText.Text = Strings.T("settings.about.notChecked");
             UpdateStatusText.SetResourceReference(TextBlock.ForegroundProperty, "MutedBrush");
             return;
         }
@@ -870,15 +907,15 @@ public partial class SettingsPage : UserControl, INavigationAware
         switch (last.Status)
         {
             case UpdateCheckStatus.UpToDate:
-                UpdateStatusText.Text = $"已是最新版本 V{CurrentVersionText(last.CurrentVersion)}";
+                UpdateStatusText.Text = Strings.T("settings.update.upToDate", CurrentVersionText(last.CurrentVersion));
                 UpdateStatusText.SetResourceReference(TextBlock.ForegroundProperty, "OkBrush");
                 break;
             case UpdateCheckStatus.UpdateAvailable:
-                UpdateStatusText.Text = $"发现新版本 V{CurrentVersionText(last.LatestVersion)}，可下载更新";
+                UpdateStatusText.Text = Strings.T("settings.update.available", CurrentVersionText(last.LatestVersion));
                 UpdateStatusText.SetResourceReference(TextBlock.ForegroundProperty, "OkBrush");
                 break;
             default:
-                UpdateStatusText.Text = "检查失败，请稍后重试";
+                UpdateStatusText.Text = Strings.T("settings.update.failed");
                 UpdateStatusText.SetResourceReference(TextBlock.ForegroundProperty, "WarnBrush");
                 break;
         }
@@ -890,7 +927,7 @@ public partial class SettingsPage : UserControl, INavigationAware
     private async void OnCheckUpdate(object sender, RoutedEventArgs e)
     {
         CheckUpdateButton.IsEnabled = false;
-        UpdateStatusText.Text = "正在检查更新…";
+        UpdateStatusText.Text = Strings.T("settings.update.checking");
         UpdateStatusText.SetResourceReference(TextBlock.ForegroundProperty, "MutedBrush");
 
         try
@@ -911,14 +948,14 @@ public partial class SettingsPage : UserControl, INavigationAware
                 }
                 catch (Exception ex)
                 {
-                    UpdateStatusText.Text = "打开更新窗口失败：" + ex.Message;
+                    UpdateStatusText.Text = Strings.T("settings.update.openDialogFailed", ex.Message);
                     UpdateStatusText.SetResourceReference(TextBlock.ForegroundProperty, "WarnBrush");
                 }
             }
         }
         catch (Exception ex)
         {
-            UpdateStatusText.Text = "检查更新失败：" + ex.Message;
+            UpdateStatusText.Text = Strings.T("settings.update.checkFailed", ex.Message);
             UpdateStatusText.SetResourceReference(TextBlock.ForegroundProperty, "WarnBrush");
         }
         finally
@@ -933,7 +970,7 @@ public partial class SettingsPage : UserControl, INavigationAware
     private async void OnCheckKbUpdate(object sender, RoutedEventArgs e)
     {
         CheckKbButton.IsEnabled = false;
-        KbStatusText.Text = "正在检查知识库…";
+        KbStatusText.Text = Strings.T("settings.kb.checking");
 
         try
         {
@@ -942,7 +979,7 @@ public partial class SettingsPage : UserControl, INavigationAware
             {
                 AppServices.Problems.Reload();
                 await RefreshAboutAsync(); // 问题库版本 / 更新日期显示同步刷新
-                KbStatusText.Text = $"知识库已更新到 v{newVersion}";
+                KbStatusText.Text = Strings.T("settings.kb.updated", newVersion);
                 KbStatusText.SetResourceReference(TextBlock.ForegroundProperty, "OkBrush");
             }
             else if (message is not null)
@@ -952,7 +989,7 @@ public partial class SettingsPage : UserControl, INavigationAware
             }
             else
             {
-                KbStatusText.Text = $"知识库已是最新（v{newVersion}）";
+                KbStatusText.Text = Strings.T("settings.kb.upToDate", newVersion);
                 KbStatusText.SetResourceReference(TextBlock.ForegroundProperty, "OkBrush");
             }
 
@@ -962,19 +999,19 @@ public partial class SettingsPage : UserControl, INavigationAware
             {
                 AppServices.PluginCatalog.Reload();
                 var prefix = KbStatusText.Text.Length > 0 ? KbStatusText.Text + "；" : "";
-                KbStatusText.Text = prefix + $"插件目录已更新到 v{pluginsVersion}";
+                KbStatusText.Text = prefix + Strings.T("settings.kb.pluginsUpdated", pluginsVersion);
                 KbStatusText.SetResourceReference(TextBlock.ForegroundProperty, "OkBrush");
             }
             else if (pluginsMessage is not null && message is null)
             {
                 // 问题库正常而插件目录通道异常时补充提示
-                KbStatusText.Text += $"；插件目录：{pluginsMessage}";
+                KbStatusText.Text += Strings.T("settings.kb.pluginsSuffix", pluginsMessage);
                 KbStatusText.SetResourceReference(TextBlock.ForegroundProperty, "WarnBrush");
             }
         }
         catch (Exception ex)
         {
-            KbStatusText.Text = "知识库检查失败：" + ex.Message;
+            KbStatusText.Text = Strings.T("settings.kb.failed", ex.Message);
             KbStatusText.SetResourceReference(TextBlock.ForegroundProperty, "WarnBrush");
         }
         finally
@@ -998,16 +1035,16 @@ public partial class SettingsPage : UserControl, INavigationAware
             var loc = await AppServices.ObsPaths.LocateAsync();
             if (loc.Exists)
             {
-                ObsConfigHintText.Text = $"已找到 OBS 配置目录：{loc.ConfigDir}";
+                ObsConfigHintText.Text = Strings.T("settings.obsconfig.found", loc.ConfigDir);
             }
             else
             {
-                ObsConfigHintText.Text = "未找到 OBS 配置目录。请确认已安装并至少启动过一次 OBS，再进入本页刷新。";
+                ObsConfigHintText.Text = Strings.T("settings.obsconfig.notFound");
             }
         }
         catch (Exception ex)
         {
-            ObsConfigHintText.Text = $"检测 OBS 配置目录时出错：{ex.Message}";
+            ObsConfigHintText.Text = Strings.T("settings.obsconfig.error", ex.Message);
         }
     }
 }

@@ -33,8 +33,8 @@ public partial class CategoryPage : UserControl, INavigationAware
             var category = await AppServices.Problems.GetCategoryAsync(id);
             if (category is null)
             {
-                SetHeader("分类", null);
-                EmptyText.Text = "未找到该分类。";
+                SetHeader(Strings.T("page.category.title"), null);
+                EmptyText.Text = Strings.T("category.notFound");
                 EmptyText.Visibility = Visibility.Visible;
                 return;
             }
@@ -46,7 +46,7 @@ public partial class CategoryPage : UserControl, INavigationAware
             DescriptionText.Text = category.Description;
 
             var problems = await AppServices.Problems.GetByCategoryAsync(id);
-            CountText.Text = $"共 {problems.Count} 个方案";
+            CountText.Text = Strings.T("category.count", problems.Count);
 
             foreach (var p in problems)
             {
@@ -57,7 +57,7 @@ public partial class CategoryPage : UserControl, INavigationAware
 
             if (problems.Count == 0)
             {
-                EmptyText.Text = "该分类下暂无方案。";
+                EmptyText.Text = Strings.T("category.empty");
                 EmptyText.Visibility = Visibility.Visible;
             }
         }

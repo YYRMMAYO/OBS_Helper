@@ -75,26 +75,26 @@ public sealed class AppearanceSettings
 /// Catalog 顺序即设置页色板展示顺序；Preview 是浅色基础色，用作色板圆点。
 /// </summary>
 public sealed record AccentScheme(
-    string Key, string Name, string Preview,
+    string Key, string Preview,
     string LightBase, string LightHover, string LightPressed, string LightSoft, string LightDark,
     string DarkBase, string DarkHover, string DarkPressed, string DarkSoft, string DarkDark,
     string DarkOn)
 {
     public static readonly AccentScheme[] Catalog =
     [
-        new("teal", "深青", "#1a6b5a",
+        new("teal", "#1a6b5a",
             "#1a6b5a", "#165c4d", "#114a3e", "#ddeee6", "#145244",
             "#4cc9a8", "#5fd4b8", "#3fbb9a", "#0f2e25", "#82dcc8", "#071e17"),
-        new("blue", "海盐蓝", "#3d6da0",
+        new("blue", "#3d6da0",
             "#3d6da0", "#33608f", "#274c73", "#e3edf7", "#2e567e",
             "#6fa9dc", "#85b9e4", "#5b99cf", "#14273d", "#a3cdf0", "#0a2036"),
-        new("sage", "鼠尾草绿", "#4b7061",
+        new("sage", "#4b7061",
             "#4b7061", "#3f6355", "#305044", "#e4eee8", "#385648",
             "#93bfab", "#a7cdbb", "#82b19c", "#16281f", "#b4d8c6", "#12241b"),
-        new("deepteal", "深海松石", "#0f766e",
+        new("deepteal", "#0f766e",
             "#0f766e", "#0d6560", "#0a5350", "#d7f0ec", "#0b5b55",
             "#4ec6ba", "#64d2c7", "#41b5aa", "#0d2c29", "#90ddd4", "#06211e"),
-        new("violet", "雾紫", "#6c42c9",
+        new("violet", "#6c42c9",
             "#6c42c9", "#5c36b0", "#472a8e", "#ede5fc", "#4e2fa0",
             "#9b7ef0", "#ad94f5", "#9070e8", "#251c3f", "#c4aff8", "#140a30"),
     ];

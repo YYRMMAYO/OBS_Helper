@@ -120,7 +120,7 @@ public sealed class GlobalHotkeyService : IDisposable
         var hwnd = _source?.Handle ?? IntPtr.Zero;
         if (hwnd == IntPtr.Zero)
         {
-            RegistrationErrors.Add("主窗口句柄不可用，热键未注册。");
+            RegistrationErrors.Add(Strings.T("hotkey.noHandle"));
             return;
         }
 
@@ -133,14 +133,14 @@ public sealed class GlobalHotkeyService : IDisposable
             var mods = ModifiersFor(binding);
             if (mods == 0 || !TryGetVk(binding.Key, out var vk))
             {
-                RegistrationErrors.Add($"{action}：键位无效（{binding.DisplayName}）。");
+                RegistrationErrors.Add(Strings.T("hotkey.invalidKey", action, binding.DisplayName));
                 continue;
             }
 
             if (!RegisterHotKey(hwnd, id, mods, vk))
             {
                 var err = Marshal.GetLastWin32Error();
-                RegistrationErrors.Add($"{binding.DisplayName} 注册失败（错误码 {err}）：可能已被其他程序占用。");
+                RegistrationErrors.Add(Strings.T("hotkey.registerFailed", binding.DisplayName, err));
             }
         }
     }

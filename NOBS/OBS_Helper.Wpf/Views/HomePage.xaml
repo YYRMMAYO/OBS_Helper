@@ -11,9 +11,9 @@
 
       <!-- 快捷入口：对应原版 hero 里的「搜索问题 / 问我一下」 -->
       <StackPanel Orientation="Horizontal">
-        <Button Style="{StaticResource PrimaryButton}" Content="搜索问题"
+        <Button Style="{StaticResource PrimaryButton}" Content="{DynamicResource Loc.home.action.search}"
                 Margin="0,0,10,0" Click="OnSearchClick" />
-        <Button Style="{StaticResource SecondaryButton}" Content="问我一下"
+        <Button Style="{StaticResource SecondaryButton}" Content="{DynamicResource Loc.home.action.ask}"
                 Click="OnAssistantClick" />
       </StackPanel>
 
@@ -28,25 +28,25 @@
             <ColumnDefinition Width="Auto" />
           </Grid.ColumnDefinitions>
           <StackPanel Grid.Column="0">
-            <TextBlock Text="欢迎使用 OBS 排障助手" Style="{StaticResource H3Text}"
+            <TextBlock Text="{DynamicResource Loc.home.welcome.title}" Style="{StaticResource H3Text}"
                        Foreground="{DynamicResource BrandBrush}" />
             <TextBlock Style="{StaticResource BodyText}" Margin="0,6,0,0" TextWrapping="Wrap"
-                       Text="连上本机 OBS 后，可解锁控制台远程控制、一键智能诊断与场景模板落地。现在先用知识库排查问题也同样顺畅。" />
+                       Text="{DynamicResource Loc.home.welcome.desc}" />
             <!--
               获取官方 OBS（V2.9.1）：这张卡只在「未连上 OBS」时出现，正好覆盖
               「机器上还没有 OBS / 装到了下载站的仿冒包」这类用户，给两条官方入口。
             -->
             <StackPanel Orientation="Horizontal" Margin="0,9,0,0">
               <TextBlock Style="{StaticResource CaptionText}" VerticalAlignment="Center"
-                         Text="还没装 OBS？" />
-              <Button Content="官网下载页" Style="{StaticResource LinkButton}"
+                         Text="{DynamicResource Loc.home.obsMissing.title}" />
+              <Button Content="{DynamicResource Loc.obs.officialPage}" Style="{StaticResource LinkButton}"
                       Margin="6,0,0,0" Click="OnOpenObsDownload" />
               <TextBlock Style="{StaticResource CaptionText}" VerticalAlignment="Center"
                          Text="·" Margin="5,0,0,0" />
-              <Button Content="GitHub 发布页" Style="{StaticResource LinkButton}"
+              <Button Content="{DynamicResource Loc.obs.githubPage}" Style="{StaticResource LinkButton}"
                       Margin="5,0,0,0" Click="OnOpenObsGitHub" />
               <TextBlock Style="{StaticResource CaptionText}" VerticalAlignment="Center"
-                         Text="· 只从这两处下载，谨防仿冒站" Margin="5,0,0,0" />
+                         Text="{DynamicResource Loc.home.obsMissing.hint}" Margin="5,0,0,0" />
             </StackPanel>
           </StackPanel>
           <Button Grid.Column="1" Style="{StaticResource PrimaryButton}"
@@ -54,7 +54,7 @@
             <StackPanel Orientation="Horizontal">
               <Image Width="14" Height="14" Source="{StaticResource IconConnect}"
                      VerticalAlignment="Center" Margin="0,0,6,0" />
-              <TextBlock Text="去连接 OBS" VerticalAlignment="Center" />
+              <TextBlock Text="{DynamicResource Loc.home.goConsole}" VerticalAlignment="Center" />
             </StackPanel>
           </Button>
         </Grid>
@@ -67,7 +67,7 @@
                    Foreground="{DynamicResource DangerBrush}" />
       </Border>
 
-      <TextBlock Text="问题分类" Style="{StaticResource SectionTitle}" Margin="0,20,0,10" />
+      <TextBlock Text="{DynamicResource Loc.home.categories}" Style="{StaticResource SectionTitle}" Margin="0,20,0,10" />
 
       <!--
         分类卡用 ItemsControl + DataTemplate：卡片结构固定、只有数据不同，
@@ -123,7 +123,7 @@
 
       <!-- 我的收藏：没有收藏时整块隐藏（与原版一致） -->
       <StackPanel x:Name="BookmarkSection" Visibility="Collapsed">
-        <TextBlock Text="我的收藏" Style="{StaticResource SectionTitle}" Margin="0,14,0,10" />
+        <TextBlock Text="{DynamicResource Loc.home.bookmarks}" Style="{StaticResource SectionTitle}" Margin="0,14,0,10" />
         <StackPanel x:Name="BookmarkList" />
       </StackPanel>
 

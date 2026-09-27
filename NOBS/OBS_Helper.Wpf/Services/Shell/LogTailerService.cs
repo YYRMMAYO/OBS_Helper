@@ -210,7 +210,7 @@ public sealed class LogTailerService : IDisposable
 
             if (_throttle.ShouldNotify(rule.Code, DateTime.UtcNow))
             {
-                _tray.Notify($"实时预警：{rule.Title}", rule.Suggestion);
+                _tray.Notify(Strings.T("logtailer.alertTitle", rule.Title), rule.Suggestion);
             }
         }
     }

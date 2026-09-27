@@ -1,3 +1,4 @@
+using OBS_Helper.Wpf.Localization;
 namespace OBS_Helper.Wpf.Services.Shell;
 
 /// <summary>录制守护的一次告警判定结论。</summary>
@@ -67,9 +68,8 @@ public static class RecordWatchdogCore
                 {
                     Alert = true,
                     Kind = WatchdogAlertKind.RecordingLostAfterReconnect,
-                    Title = "录制守护：重连成功，但录制已中断",
-                    Message = "刚才与 OBS 的连接断开期间录制被中断了。" +
-                              "如需继续录制请回到 OBS（或托盘菜单）重新开始；已录制的部分通常仍保留在中断前写入的文件里。"
+                    Title = Strings.T("watchdog.reconnect.title"),
+                    Message = Strings.T("watchdog.reconnect.message")
                 };
         }
 
@@ -80,9 +80,8 @@ public static class RecordWatchdogCore
             {
                 Alert = true,
                 Kind = WatchdogAlertKind.ConnectionLostWhileRecording,
-                Title = "录制守护：与 OBS 的连接已断开",
-                Message = "断开时正在录制——若 OBS 已崩溃或被关闭，本次录制可能没有正常收尾。" +
-                          "本工具正在尝试自动重连，重连结果出来后会再次提醒。",
+                Title = Strings.T("watchdog.disconnect.title"),
+                Message = Strings.T("watchdog.disconnect.message"),
             };
         }
 
@@ -93,10 +92,8 @@ public static class RecordWatchdogCore
             {
                 Alert = true,
                 Kind = WatchdogAlertKind.HeartbeatTimeout,
-                Title = "录制守护：OBS 可能已无响应",
-                Message = $"录制中连续 {heartbeatFailures} 次状态查询失败，OBS 可能已卡死或正卡在「正在停止录制」。" +
-                          "请不要强制关机；先切到 OBS 观察几分钟，必要时用任务管理器结束 obs64.exe" +
-                          "（MKV / Hybrid MP4 录制可通过「文件 → 录像转封装」修复）。"
+                Title = Strings.T("watchdog.hang.title"),
+                Message = Strings.T("watchdog.hang.message", heartbeatFailures)
             };
         }
 

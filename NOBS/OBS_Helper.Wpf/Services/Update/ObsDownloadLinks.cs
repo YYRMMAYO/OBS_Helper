@@ -1,3 +1,4 @@
+using OBS_Helper.Wpf.Localization;
 namespace OBS_Helper.Wpf.Services.Update;
 
 /// <summary>
@@ -40,10 +41,7 @@ public static class ObsDownloadLinks
     public const string GitHubLatestRelease = "https://github.com/obsproject/obs-studio/releases/latest";
 
     /// <summary>放给用户看的安全提示：只认官方两处入口，并给出可自行核对的判据。</summary>
-    public const string SafetyNote =
-        "只从 obsproject.com 官网或 github.com/obsproject 下载：OBS 完全免费开源，下载不需要注册、"
-        + "不需要付费，也没有「Pro / 加速版」。搜索引擎广告位与各类「软件下载站」里混有仿冒包"
-        + "（常见捆绑安装器与银狐类木马），安装前可核对数字签名是否为 " + WindowsSignerName + "。";
+    public static string SafetyNote => Strings.T("downloads.safetyNote", WindowsSignerName);
 
     /// <summary>允许的官方域名：obsproject.com 及其子域（如 cdn-fastly.obsproject.com）。</summary>
     public static bool IsOfficialObsHost(string? host)

@@ -32,12 +32,12 @@ public partial class UpdateDialog : Window
         dlg._currentVersion = current;
 
         dlg.CurrentRun.Text = current is null
-            ? "当前版本 —"
-            : $"当前版本 {current.Major}.{current.Minor}.{current.Build}";
+            ? Strings.T("update.currentUnknown")
+            : Strings.T("update.current", $"{current.Major}.{current.Minor}.{current.Build}");
         dlg.LatestRun.Text = latest is null
-            ? "最新版本 —"
-            : $"最新版本 V{latest.Major}.{latest.Minor}.{latest.Build}";
-        dlg.TitleText.Text = latest is null ? "发现新版本" : $"发现新版本 V{latest.Major}.{latest.Minor}.{latest.Build}";
+            ? Strings.T("update.latestUnknown")
+            : Strings.T("update.latest", $"{latest.Major}.{latest.Minor}.{latest.Build}");
+        dlg.TitleText.Text = latest is null ? Strings.T("update.title") : Strings.T("update.dialogTitle", $"{latest.Major}.{latest.Minor}.{latest.Build}");
         dlg.PasswordText.Text = UpdateService.UpdatePassword;
 
         // 展示当前知识库版本（异步刷新，失败静默）
@@ -68,7 +68,7 @@ public partial class UpdateDialog : Window
             if (!opened)
             {
                 // 浏览器打开失败时别直接关窗：留在弹窗里给用户明确提示 + 可复制链接
-                SetGithubStatus("打开浏览器失败，请复制链接手动访问：" + UpdateService.DownloadUrl);
+                SetGithubStatus(Strings.T("update.openBrowserFailed") + UpdateService.DownloadUrl);
                 return;
             }
             _result = UpdateDialogResult.Download;
@@ -76,7 +76,7 @@ public partial class UpdateDialog : Window
         }
         catch (Exception ex)
         {
-            SetGithubStatus("打开浏览器失败：" + ex.Message);
+            SetGithubStatus(Strings.T("update.openBrowserFailedShort", ex.Message));
         }
     }
 
@@ -95,7 +95,7 @@ public partial class UpdateDialog : Window
             var opened = await AppServices.Host.OpenExternalAsync(UpdateService.ReleasesPageUrl);
             if (!opened)
             {
-                SetGithubStatus("打开浏览器失败，请复制链接手动访问：" + UpdateService.ReleasesPageUrl);
+                SetGithubStatus(Strings.T("update.openBrowserFailed") + UpdateService.ReleasesPageUrl);
                 return;
             }
             _result = UpdateDialogResult.Repo;
@@ -103,7 +103,7 @@ public partial class UpdateDialog : Window
         }
         catch (Exception ex)
         {
-            SetGithubStatus("打开浏览器失败：" + ex.Message);
+            SetGithubStatus(Strings.T("update.openBrowserFailedShort", ex.Message));
         }
     }
 
@@ -126,7 +126,7 @@ public partial class UpdateDialog : Window
             var info = await AppServices.Updates.GetLatestReleaseAsync();
             if (!info.IsOk)
             {
-                SetGithubStatus($"获取最新版本失败：{info.Error}（可改用方式一蓝奏云，或到 GitHub Release 页手动下载。）");
+                SetGithubStatus(Strings.T("update.fetchFailed", info.Error));
                 SetDownloading(false);
                 return;
             }
@@ -136,37 +136,37 @@ public partial class UpdateDialog : Window
             var latestVersion = UpdateService.ParseVersion(info.Tag);
             if (latestVersion is not null && _currentVersion is not null && latestVersion <= _currentVersion)
             {
-                SetGithubStatus($"GitHub 最新版本 {latestVersion} 不高于当前版本 {_currentVersion.Major}.{_currentVersion.Minor}.{_currentVersion.Build}，无需下载。");
+                SetGithubStatus(Strings.T("update.notNewer", latestVersion, $"{_currentVersion.Major}.{_currentVersion.Minor}.{_currentVersion.Build}"));
                 SetDownloading(false);
                 return;
             }
 
             GithubStatusText.Text = latestVersion is null
-                ? $"正在从 GitHub 下载最新版（{info.Tag}）…"
-                : $"正在从 GitHub 下载 V{latestVersion} 安装包…";
+                ? Strings.T("update.downloadingTag", info.Tag)
+                : Strings.T("update.downloadingVersion", latestVersion);
 
             var progress = new Progress<(long Received, long? Total)>(p =>
             {
                 if (p.Total is > 0)
                 {
                     GithubProgressBar.Value = Math.Min(100, p.Received * 100.0 / p.Total.Value);
-                    GithubStatusText.Text = $"正在下载… {FormatMb(p.Received)} / {FormatMb(p.Total.Value)}";
+                    GithubStatusText.Text = Strings.T("update.downloadingProgress", FormatMb(p.Received), FormatMb(p.Total.Value));
                 }
                 else
                 {
-                    GithubStatusText.Text = $"正在下载… {FormatMb(p.Received)}";
+                    GithubStatusText.Text = Strings.T("update.downloadingUnknownTotal", FormatMb(p.Received));
                 }
             });
 
             var path = await AppServices.Updates.DownloadReleaseAssetAsync(info.SetupAssetUrl!, progress);
             if (path is null)
             {
-                SetGithubStatus("下载失败，请稍后重试；也可以改用方式一蓝奏云网盘下载。");
+                SetGithubStatus(Strings.T("update.downloadFailed"));
                 SetDownloading(false);
                 return;
             }
 
-            SetGithubStatus("下载完成，正在启动安装程序…");
+            SetGithubStatus(Strings.T("update.downloadDone"));
             _result = UpdateDialogResult.Download;
 
             // 启动安装包（UAC 提权由安装程序自行申请）
@@ -176,7 +176,7 @@ public partial class UpdateDialog : Window
             }
             catch (Exception)
             {
-                SetGithubStatus($"安装包已下载到：{path}\n启动安装程序失败，请手动双击该文件安装。");
+                SetGithubStatus(Strings.T("update.downloadedManual", path));
                 SetDownloading(false);
                 return;
             }
@@ -186,7 +186,7 @@ public partial class UpdateDialog : Window
         catch (Exception ex)
         {
             // async void 兜底：任何异常都不让整个应用崩掉
-            SetGithubStatus("应用内下载出错：" + ex.Message);
+            SetGithubStatus(Strings.T("update.inAppDownloadError", ex.Message));
             SetDownloading(false);
         }
     }
@@ -209,7 +209,7 @@ public partial class UpdateDialog : Window
             var info = await AppServices.Updates.GetLatestDeltaPackageAsync();
             if (!info.IsOk)
             {
-                SetDeltaStatus($"暂无可用的增量包：{info.Error}（可改用完整安装包。）");
+                SetDeltaStatus(Strings.T("update.deltaUnavailable", info.Error));
                 SetDownloading(false);
                 return;
             }
@@ -217,14 +217,14 @@ public partial class UpdateDialog : Window
             var target = UpdateService.ParseVersion(info.Tag);
             if (target is not null && _currentVersion is not null && target <= _currentVersion)
             {
-                SetDeltaStatus($"GitHub 最新版本 {target} 不高于当前版本，无需更新。");
+                SetDeltaStatus(Strings.T("update.deltaNotNewer", target));
                 SetDownloading(false);
                 return;
             }
 
             SetDeltaStatus(target is null
-                ? "正在从 GitHub 下载增量包…"
-                : $"正在从 GitHub 下载增量包（升级到 V{target}）…");
+                ? Strings.T("update.deltaDownloading")
+                : Strings.T("update.deltaDownloadingVersion", target));
 
             var progress = new Progress<(long Received, long? Total)>(p =>
             {
@@ -233,19 +233,19 @@ public partial class UpdateDialog : Window
                 {
                     DeltaProgressBar.Visibility = Visibility.Visible;
                     DeltaProgressBar.Value = Math.Min(100, p.Received * 100.0 / p.Total.Value);
-                    DeltaStatusText.Text = $"正在下载… {FormatMb(p.Received)} / {FormatMb(p.Total.Value)}";
+                    DeltaStatusText.Text = Strings.T("update.downloadingProgress", FormatMb(p.Received), FormatMb(p.Total.Value));
                 }
                 else
                 {
                     DeltaProgressBar.Visibility = Visibility.Collapsed;
-                    DeltaStatusText.Text = $"正在下载… {FormatMb(p.Received)}";
+                    DeltaStatusText.Text = Strings.T("update.downloadingUnknownTotal", FormatMb(p.Received));
                 }
             });
 
             var (manifest, error) = await AppServices.Delta.PrepareDeltaAsync(info.AssetUrl!, progress);
             if (manifest is null)
             {
-                SetDeltaStatus(error ?? "增量包准备失败，请改用完整安装包。");
+                SetDeltaStatus(error ?? Strings.T("update.deltaPrepFailed"));
                 SetDownloading(false);
                 return;
             }
@@ -253,7 +253,7 @@ public partial class UpdateDialog : Window
             var (launched, launchError) = AppServices.Delta.LaunchBootstrap(manifest);
             if (!launched)
             {
-                SetDeltaStatus(launchError ?? "启动更新进程失败。");
+                SetDeltaStatus(launchError ?? Strings.T("update.deltaLaunchFailed"));
                 IncrementalUpdateService.ClearPending();
                 SetDownloading(false);
                 return;
@@ -267,7 +267,7 @@ public partial class UpdateDialog : Window
         }
         catch (Exception ex)
         {
-            SetDeltaStatus("增量更新出错：" + ex.Message);
+            SetDeltaStatus(Strings.T("update.deltaError", ex.Message));
             SetDownloading(false);
         }
     }
@@ -277,7 +277,7 @@ public partial class UpdateDialog : Window
     private async void OnKbOnlyUpdate(object sender, RoutedEventArgs e)
     {
         KbOnlyButton.IsEnabled = false;
-        KbStatusText.Text = "正在检查知识库…";
+        KbStatusText.Text = Strings.T("update.kbChecking");
 
         try
         {
@@ -285,7 +285,7 @@ public partial class UpdateDialog : Window
             if (updated)
             {
                 AppServices.Problems.Reload();
-                KbStatusText.Text = $"知识库已更新到 v{newVersion}";
+                KbStatusText.Text = Strings.T("update.kbUpdated", newVersion);
                 KbStatusText.SetResourceReference(TextBlock.ForegroundProperty, "OkBrush");
             }
             else if (message is not null)
@@ -295,13 +295,13 @@ public partial class UpdateDialog : Window
             }
             else
             {
-                KbStatusText.Text = $"知识库已是最新（v{newVersion}）";
+                KbStatusText.Text = Strings.T("update.kbUpToDate", newVersion);
                 KbStatusText.SetResourceReference(TextBlock.ForegroundProperty, "OkBrush");
             }
         }
         catch (Exception ex)
         {
-            KbStatusText.Text = "知识库检查失败：" + ex.Message;
+            KbStatusText.Text = Strings.T("update.kbFailed", ex.Message);
             KbStatusText.SetResourceReference(TextBlock.ForegroundProperty, "WarnBrush");
         }
         finally
@@ -317,8 +317,8 @@ public partial class UpdateDialog : Window
         {
             var data = await AppServices.Problems.GetDataAsync();
             KbStatusText.Text = string.IsNullOrEmpty(data.Version)
-                ? "知识库版本未知"
-                : $"当前知识库 v{data.Version}";
+                ? Strings.T("update.kbVersionUnknown")
+                : Strings.T("update.kbCurrent", data.Version);
         }
         catch (Exception)
         {

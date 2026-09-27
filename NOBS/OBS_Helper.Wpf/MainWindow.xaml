@@ -2,7 +2,7 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:ctl="clr-namespace:OBS_Helper.Wpf.Controls"
-        Title="OBS 排障助手"
+        Title="{DynamicResource Loc.app.name}"
         Height="780" Width="1160"
         MinHeight="620" MinWidth="920"
         WindowStartupLocation="CenterScreen"
@@ -41,7 +41,7 @@
                    Source="pack://application:,,,/Assets/appicon.ico"
                    VerticalAlignment="Center" RenderOptions.BitmapScalingMode="HighQuality" />
             <StackPanel Margin="10,0,0,0" VerticalAlignment="Center">
-              <TextBlock Text="OBS 排障助手" FontWeight="Bold"
+              <TextBlock Text="{DynamicResource Loc.app.name}" FontWeight="Bold"
                          FontSize="{DynamicResource FontSizeMd}"
                          Foreground="{DynamicResource TextBrush}" />
               <TextBlock x:Name="VersionText" Text="v1.0.0"
@@ -57,7 +57,7 @@
                 CornerRadius="{DynamicResource CornerRadiusMd}">
           <StackPanel>
             <ctl:ConnectionBadge x:Name="SideBadge" />
-            <TextBlock Text="离线可用 · 数据仅存本机"
+            <TextBlock Text="{DynamicResource Loc.app.brandSubtitle}"
                        Margin="0,7,0,0"
                        FontSize="{DynamicResource FontSizeXs}"
                        Foreground="{DynamicResource MutedBrush}"
@@ -68,18 +68,18 @@
         <!-- 导航项 -->
         <ScrollViewer VerticalScrollBarVisibility="Auto" Style="{StaticResource PageScroll}">
           <StackPanel x:Name="NavPanel" Margin="0,2,0,8">
-            <RadioButton x:Name="NavHome"       Style="{StaticResource NavTabButton}" Content="首页"   Tag="{StaticResource IconGeomHome}"       Checked="OnNavChecked" />
-            <RadioButton x:Name="NavSearch"     Style="{StaticResource NavTabButton}" Content="搜索"   Tag="{StaticResource IconGeomSearch}"     Checked="OnNavChecked" />
-            <RadioButton x:Name="NavAssistant"  Style="{StaticResource NavTabButton}" Content="助手"   Tag="{StaticResource IconGeomAssistant}"  Checked="OnNavChecked" />
-            <RadioButton x:Name="NavDiagnostic" Style="{StaticResource NavTabButton}" Content="诊断"   Tag="{StaticResource IconGeomDiagnostic}" Checked="OnNavChecked" />
-            <RadioButton x:Name="NavSetup"      Style="{StaticResource NavTabButton}" Content="搭建"   Tag="{StaticResource IconGeomSetup}"      Checked="OnNavChecked" />
-            <RadioButton x:Name="NavTemplates" Style="{StaticResource NavTabButton}" Content="模板"   Tag="{StaticResource IconGeomTemplates}" Checked="OnNavChecked" />
-            <RadioButton x:Name="NavPlugins"   Style="{StaticResource NavTabButton}" Content="插件"   Tag="{StaticResource IconGeomPlugins}" Checked="OnNavChecked" />
-            <RadioButton x:Name="NavToolbox"   Style="{StaticResource NavTabButton}" Content="工具箱" Tag="{StaticResource IconGeomSetup}" Checked="OnNavChecked" />
-            <RadioButton x:Name="NavConsole"    Style="{StaticResource NavTabButton}" Content="控制台" Tag="{StaticResource IconGeomConsole}"    Checked="OnNavChecked" />
-            <RadioButton x:Name="NavPerformance" Style="{StaticResource NavTabButton}" Content="监控"   Tag="{StaticResource IconGeomPerformance}" Checked="OnNavChecked" />
-            <RadioButton x:Name="NavGuide"      Style="{StaticResource NavTabButton}" Content="指引"   Tag="{StaticResource IconGeomGuide}"      Checked="OnNavChecked" />
-            <RadioButton x:Name="NavSettings"   Style="{StaticResource NavTabButton}" Content="设置"   Tag="{StaticResource IconGeomSettings}"   Checked="OnNavChecked" />
+            <RadioButton x:Name="NavHome"       Style="{StaticResource NavTabButton}" Content="{DynamicResource Loc.nav.home}"   Tag="{StaticResource IconGeomHome}"       Checked="OnNavChecked" />
+            <RadioButton x:Name="NavSearch"     Style="{StaticResource NavTabButton}" Content="{DynamicResource Loc.nav.search}"   Tag="{StaticResource IconGeomSearch}"     Checked="OnNavChecked" />
+            <RadioButton x:Name="NavAssistant"  Style="{StaticResource NavTabButton}" Content="{DynamicResource Loc.nav.assistant}"   Tag="{StaticResource IconGeomAssistant}"  Checked="OnNavChecked" />
+            <RadioButton x:Name="NavDiagnostic" Style="{StaticResource NavTabButton}" Content="{DynamicResource Loc.nav.diagnostic}"   Tag="{StaticResource IconGeomDiagnostic}" Checked="OnNavChecked" />
+            <RadioButton x:Name="NavSetup"      Style="{StaticResource NavTabButton}" Content="{DynamicResource Loc.nav.setup}"   Tag="{StaticResource IconGeomSetup}"      Checked="OnNavChecked" />
+            <RadioButton x:Name="NavTemplates" Style="{StaticResource NavTabButton}" Content="{DynamicResource Loc.nav.templates}"   Tag="{StaticResource IconGeomTemplates}" Checked="OnNavChecked" />
+            <RadioButton x:Name="NavPlugins"   Style="{StaticResource NavTabButton}" Content="{DynamicResource Loc.nav.plugins}"   Tag="{StaticResource IconGeomPlugins}" Checked="OnNavChecked" />
+            <RadioButton x:Name="NavToolbox"   Style="{StaticResource NavTabButton}" Content="{DynamicResource Loc.nav.toolbox}" Tag="{StaticResource IconGeomSetup}" Checked="OnNavChecked" />
+            <RadioButton x:Name="NavConsole"    Style="{StaticResource NavTabButton}" Content="{DynamicResource Loc.nav.console}" Tag="{StaticResource IconGeomConsole}"    Checked="OnNavChecked" />
+            <RadioButton x:Name="NavPerformance" Style="{StaticResource NavTabButton}" Content="{DynamicResource Loc.nav.performance}"   Tag="{StaticResource IconGeomPerformance}" Checked="OnNavChecked" />
+            <RadioButton x:Name="NavGuide"      Style="{StaticResource NavTabButton}" Content="{DynamicResource Loc.nav.guide}"   Tag="{StaticResource IconGeomGuide}"      Checked="OnNavChecked" />
+            <RadioButton x:Name="NavSettings"   Style="{StaticResource NavTabButton}" Content="{DynamicResource Loc.nav.settings}"   Tag="{StaticResource IconGeomSettings}"   Checked="OnNavChecked" />
           </StackPanel>
         </ScrollViewer>
       </DockPanel>
@@ -116,7 +116,7 @@
           </Grid.ColumnDefinitions>
 
           <Button x:Name="BackButton" Grid.Column="0" Style="{StaticResource IconButton}"
-                  ToolTip="返回（Alt + ←）" Click="OnBackClick"
+                  ToolTip="{DynamicResource Loc.main.back}" Click="OnBackClick"
                   Visibility="Collapsed" Margin="0,0,10,0">
             <!-- 矢量返回箭头：替代 unicode ←，避免字体渲染差异 -->
             <Path Data="M 15,5 L 8,12 L 15,19"
@@ -126,17 +126,17 @@
           </Button>
 
           <StackPanel Grid.Column="1" VerticalAlignment="Center">
-            <TextBlock x:Name="PageTitle" Text="首页"
+            <TextBlock x:Name="PageTitle" Text="{DynamicResource Loc.page.home.title}"
                        FontSize="{DynamicResource FontSizeLg}" FontWeight="SemiBold"
                        Foreground="{DynamicResource TextBrush}" />
-            <TextBlock x:Name="PageSubtitle" Text="按分类查问题，或直接问助手"
+            <TextBlock x:Name="PageSubtitle" Text="{DynamicResource Loc.page.home.subtitle}"
                        FontSize="{DynamicResource FontSizeXs}"
                        Foreground="{DynamicResource MutedBrush}" />
           </StackPanel>
 
           <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
             <ctl:ConnectionBadge x:Name="TopBadge" Margin="0,0,10,0" />
-            <Button Style="{StaticResource SecondaryButton}" Content="设置"
+            <Button Style="{StaticResource SecondaryButton}" Content="{DynamicResource Loc.nav.settings}"
                     Padding="10,6" Click="OnSettingsClick" />
           </StackPanel>
         </Grid>
@@ -147,7 +147,7 @@
 
       <!-- 全局加载态遮罩（覆盖顶栏 + 页面；P0，由 BusyService 控制显隐与文案） -->
       <ContentControl x:Name="BusyOverlayHost" Grid.Row="0" Grid.RowSpan="2"
-                      Style="{StaticResource BusyOverlay}" Visibility="Collapsed" Tag="处理中…" />
+                      Style="{StaticResource BusyOverlay}" Visibility="Collapsed" Tag="{DynamicResource Loc.common.busy}" />
 
       <!-- 全局 Toast 容器（贴底居中；P0，由 ToastService 增删卡片） -->
       <StackPanel x:Name="ToastHost" Grid.Row="1" Style="{StaticResource ToastHost}" />
@@ -181,10 +181,10 @@
               Width="500" Padding="26,22"
               HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="0,0,20,20">
         <StackPanel>
-          <TextBlock Text="欢迎使用 OBS 排障助手" FontWeight="SemiBold"
+          <TextBlock Text="{DynamicResource Loc.onb.welcomeTitle}" FontWeight="SemiBold"
                      FontSize="{DynamicResource FontSizeXl}"
                      Foreground="{DynamicResource TextBrush}" />
-          <TextBlock Text="直播翻车现场急救箱 · 离线可用 · 数据仅存本机"
+          <TextBlock Text="{DynamicResource Loc.app.tagline}"
                      Margin="0,6,0,0" TextWrapping="Wrap"
                      FontSize="{DynamicResource FontSizeSm}"
                      Foreground="{DynamicResource MutedBrush}" />
@@ -202,7 +202,7 @@
 
           <!-- 本步自动跳转到的页面：名字取自主窗口路由表，跟着页面标题走，不会写错 -->
           <StackPanel x:Name="OnbTargetRow" Orientation="Horizontal" Margin="0,12,0,0">
-            <TextBlock Text="本步对应页面" Style="{StaticResource CaptionText}"
+            <TextBlock Text="{DynamicResource Loc.onb.targetLabel}" Style="{StaticResource CaptionText}"
                        VerticalAlignment="Center" />
             <Border Style="{StaticResource Pill}" Margin="7,0,0,0">
               <TextBlock x:Name="OnbTargetText" Text="" FontWeight="SemiBold"
@@ -224,16 +224,16 @@
                      Foreground="{DynamicResource MutedBrush}" />
 
           <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,14,0,0">
-            <Button x:Name="OnbSkipBtn" Content="跳过" Style="{StaticResource GhostButton}"
+            <Button x:Name="OnbSkipBtn" Content="{DynamicResource Loc.onb.skip}" Style="{StaticResource GhostButton}"
                     Padding="12,7" Margin="0,0,8,0" Click="OnbSkipBtn_Click" />
-            <Button x:Name="OnbBackBtn" Content="上一步" Style="{StaticResource SecondaryButton}"
+            <Button x:Name="OnbBackBtn" Content="{DynamicResource Loc.onb.back}" Style="{StaticResource SecondaryButton}"
                     Padding="14,7" Margin="0,0,8,0"
                     Visibility="Collapsed" Click="OnbBackBtn_Click" />
-            <Button x:Name="OnbNextBtn" Content="下一步" Style="{StaticResource PrimaryButton}"
+            <Button x:Name="OnbNextBtn" Content="{DynamicResource Loc.onb.next}" Style="{StaticResource PrimaryButton}"
                     Padding="18,8" Click="OnbNextBtn_Click" />
           </StackPanel>
 
-          <TextBlock Text="引导会带着界面一起跳页；随时可在「设置 → 新手引导」里重新播放。"
+          <TextBlock Text="{DynamicResource Loc.onb.footer}"
                      HorizontalAlignment="Right" Margin="0,9,0,0"
                      FontSize="{DynamicResource FontSizeXs}"
                      Foreground="{DynamicResource MutedBrush}" TextWrapping="Wrap" />

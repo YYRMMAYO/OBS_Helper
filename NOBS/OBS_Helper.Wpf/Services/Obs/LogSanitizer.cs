@@ -1,3 +1,4 @@
+using OBS_Helper.Wpf.Localization;
 using System.Text;
 using System.Text.RegularExpressions;
 
@@ -20,7 +21,7 @@ namespace OBS_Helper.Wpf.Services.Obs;
 /// </summary>
 public static class LogSanitizer
 {
-    private const string Mask = "[已隐藏]";
+    private static string Mask => Strings.T("sanitizer.mask");
     private const RegexOptions Opts = RegexOptions.IgnoreCase | RegexOptions.CultureInvariant;
 
     // rtmp(s)/srt/rist 推流地址：保留协议与主机，抹掉后面的应用名与串流密钥
@@ -110,8 +111,8 @@ public static class LogSanitizer
         line = Mac.Replace(line, Mask);
 
         // 4) 用户名路径
-        line = WinUserPath.Replace(line, m => m.Groups[1].Value + "[用户]");
-        line = UnixUserPath.Replace(line, m => m.Groups[1].Value + "[用户]");
+        line = WinUserPath.Replace(line, m => m.Groups[1].Value + Strings.T("sanitizer.user"));
+        line = UnixUserPath.Replace(line, m => m.Groups[1].Value + Strings.T("sanitizer.user"));
 
         // 5) 公网 IPv4（保留私网与回环，它们对排查网络问题有用且不算隐私）
         line = Ipv4.Replace(line, m => IsPrivateOrLoopbackIpv4(m) ? m.Value : "[IP]");

@@ -22,7 +22,7 @@
     <StackPanel>
       <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
         <TextBlock x:Name="IconText" Text="⚠️" FontSize="18" VerticalAlignment="Center" Margin="0,0,9,0" />
-        <TextBlock x:Name="TitleText" Text="确认操作"
+        <TextBlock x:Name="TitleText" Text="{DynamicResource Loc.confirm.title}"
                    FontSize="{DynamicResource FontSizeMd}" FontWeight="SemiBold"
                    Foreground="{DynamicResource TextBrush}" VerticalAlignment="Center" />
       </StackPanel>
@@ -34,10 +34,10 @@
 
       <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,20,0,0">
         <Button x:Name="CancelButton" Style="{StaticResource SecondaryButton}"
-                Content="取消" MinWidth="82" Margin="0,0,10,0"
+                Content="{DynamicResource Loc.common.cancel}" MinWidth="82" Margin="0,0,10,0"
                 IsCancel="True" Click="OnCancel" />
         <Button x:Name="OkButton" Style="{StaticResource DangerButton}"
-                Content="确认" MinWidth="82"
+                Content="{DynamicResource Loc.common.confirm}" MinWidth="82"
                 IsDefault="True" Click="OnOk" />
       </StackPanel>
     </StackPanel>

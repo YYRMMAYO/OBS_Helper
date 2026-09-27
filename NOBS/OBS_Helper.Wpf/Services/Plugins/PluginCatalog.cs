@@ -1,4 +1,5 @@
 using System.Text.Json;
+using OBS_Helper.Wpf.Localization;
 
 namespace OBS_Helper.Wpf.Services.Plugins;
 
@@ -53,7 +54,7 @@ public sealed class PluginEntry
     public bool IsMaintenanceSlow => string.Equals(Maintain, "slow", StringComparison.OrdinalIgnoreCase);
 
     /// <summary>维护状态短标签（配合界面上的「维护：」前缀使用）。</summary>
-    public string MaintenanceLabel => IsMaintenanceSlow ? "放缓" : "活跃";
+    public string MaintenanceLabel => Strings.T(IsMaintenanceSlow ? "plugin.maintain.slow" : "plugin.maintain.active");
 
     /// <summary>维护状态行的展示文案：「活跃」/「放缓」+ 可选的补充说明。</summary>
     public string MaintenanceText
@@ -148,7 +149,7 @@ public static class PluginCatalogCore
         // 数据里出现但 categories 未声明的分类：聚合为一个兜底组，避免条目消失
         var orphans = catalog.Plugins.Where(p => !known.Contains(p.Category)).ToList();
         if (orphans.Count > 0)
-            result.Add((new PluginCategoryDef { Key = "_other", Label = "其他" }, orphans));
+            result.Add((new PluginCategoryDef { Key = "_other", Label = Strings.T("plugin.categoryOther") }, orphans));
 
         return result;
     }

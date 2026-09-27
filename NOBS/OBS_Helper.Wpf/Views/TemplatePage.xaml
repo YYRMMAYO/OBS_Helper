@@ -5,7 +5,7 @@
     <StackPanel Margin="22,18,22,26">
 
       <TextBlock Style="{StaticResource MutedText}" Margin="0,0,0,16"
-                 Text="选择一套模板，程序会通过 OBS WebSocket 远程创建场景与来源（需先连上 OBS）。未连接时可将模板导出为标准场景集合 JSON，手动放入 OBS 的 basic/scenes/ 目录使用。" />
+                 Text="{DynamicResource Loc.template.intro}" />
 
       <!-- 状态条：矢量状态图标（info / ok / warn / danger 由 Tag 切换），替代 emoji -->
       <Border x:Name="StatusBar" Margin="0,0,0,14" Visibility="Collapsed"
@@ -44,7 +44,7 @@
       </Border>
 
       <TextBlock x:Name="EmptyText" Style="{StaticResource MutedText}"
-                 Text="模板数据加载中…" Visibility="Visible" />
+                 Text="{DynamicResource Loc.template.loading}" Visibility="Visible" />
 
       <!-- 模板列表（由 code-behind 手工组装卡片） -->
       <StackPanel x:Name="TemplateList" Visibility="Collapsed" />

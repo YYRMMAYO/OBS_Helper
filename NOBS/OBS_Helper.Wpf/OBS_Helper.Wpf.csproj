@@ -17,9 +17,9 @@
     <ApplicationIcon>Assets\appicon.ico</ApplicationIcon>
     <ApplicationManifest>app.manifest</ApplicationManifest>
 
-    <Version>2.9.1</Version>
-    <FileVersion>2.9.1.0</FileVersion>
-    <AssemblyVersion>2.9.1.0</AssemblyVersion>
+    <Version>2.9.2</Version>
+    <FileVersion>2.9.2.0</FileVersion>
+    <AssemblyVersion>2.9.2.0</AssemblyVersion>
     <AssemblyTitle>OBS 排障助手</AssemblyTitle>
     <Product>OBS 排障助手</Product>
     <Company>OBS Helper</Company>
@@ -48,6 +48,9 @@
          与 WPF 的 System.Windows.Controls 等类型大量撞名；这里移除，仅保留显式 using（托盘服务里）。 -->
     <Using Remove="System.Drawing" />
     <Using Remove="System.Windows.Forms" />
+    <!-- 文案表（V2.9.2）：界面与业务层都要取文案，做成全局 using 免得每个文件各写一行。
+         被单测工程直接链接的「纯逻辑」文件不在本工程内，它们各自保留显式 using。 -->
+    <Using Include="OBS_Helper.Wpf.Localization" />
   </ItemGroup>
 
   <ItemGroup>

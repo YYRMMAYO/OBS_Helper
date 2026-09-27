@@ -1,4 +1,4 @@
-﻿using System.Windows;
+using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
@@ -26,9 +26,9 @@ public partial class PluginsPage : UserControl, INavigationAware
     /// <summary>官方 / 社区入口，放在分类列表之前（量小且稳定，保留在代码内）。</summary>
     private static readonly (string Label, string Desc, string Url)[] Entries =
     {
-        ("OBS 论坛 · 插件区", "官方插件发布与更新公告", "https://obsproject.com/forum/plugins/"),
-        ("Exeldro 作品集", "Move / Source 系列等 20+ 高产插件", "https://github.com/exeldro"),
-        ("occ-ai 系列", "抠像、字幕、降噪等 AI 插件全家桶", "https://github.com/occ-ai"),
+        (Strings.T("plugin.link.forum.title"), Strings.T("plugin.link.forum.desc"), "https://obsproject.com/forum/plugins/"),
+        (Strings.T("plugin.link.exeldro.title"), Strings.T("plugin.link.exeldro.desc"), "https://github.com/exeldro"),
+        (Strings.T("plugin.link.occai.title"), Strings.T("plugin.link.occai.desc"), "https://github.com/occ-ai"),
     };
 
     /// <summary>
@@ -37,15 +37,17 @@ public partial class PluginsPage : UserControl, INavigationAware
     /// </summary>
     private static readonly (string Usage, string PluginId)[] StreamFxMigrations =
     {
-        ("背景模糊 / 景深虚化", "composite-blur"),
-        ("形状 / 渐变遮罩（圆角摄像头等）", "advanced-masks"),
-        ("3D 变换 / 透视旋转", "3d-effect"),
-        ("描边 / 辉光 / 投影", "stroke-glow-shadow"),
-        ("CRT / VHS 复古特效", "retro-effects"),
+        (Strings.T("plugin.migrate.blur"), "composite-blur"),
+        (Strings.T("plugin.migrate.masks"), "advanced-masks"),
+        (Strings.T("plugin.migrate.transform"), "3d-effect"),
+        (Strings.T("plugin.migrate.stroke"), "stroke-glow-shadow"),
+        (Strings.T("plugin.migrate.retro"), "retro-effects"),
     };
 
     private PluginCatalogData _catalog = new();
     private string _builtVersion = "";
+    /// <summary>静态区块是在哪种语言下搭起来的：换语言后要整块重建（V2.9.2）。</summary>
+    private string _builtLang = "";
     private string _activeCategory = "all";
 
     // ---- 本机体检状态
@@ -68,7 +70,8 @@ public partial class PluginsPage : UserControl, INavigationAware
     public async Task OnNavigatedToAsync(object? parameter)
     {
         var data = AppServices.PluginCatalog.GetData();
-        var versionChanged = !string.Equals(_builtVersion, data.Version, StringComparison.Ordinal);
+        var versionChanged = !string.Equals(_builtVersion, data.Version, StringComparison.Ordinal)
+            || !string.Equals(_builtLang, Strings.Current, StringComparison.Ordinal);
         _catalog = data;
 
         if (versionChanged)
@@ -80,6 +83,7 @@ public partial class PluginsPage : UserControl, INavigationAware
             BuildMigrationPanel();
             BuildCategoryChips();
             _builtVersion = data.Version ?? "";
+            _builtLang = Strings.Current;
             // 目录换版后 chips 已重建为「全部」，分类状态同步复位，避免 UI 与实际过滤不一致
             _activeCategory = "all";
         }
@@ -120,12 +124,12 @@ public partial class PluginsPage : UserControl, INavigationAware
             var slow = _catalog.Plugins.Count(p => p.IsMaintenanceSlow);
             var parts = new List<string>
             {
-                $"目录 v{_catalog.Version}",
-                $"{_catalog.Plugins.Count} 条"
+                Strings.T("plugin.catalog.version", _catalog.Version),
+                Strings.T("plugin.catalog.count", _catalog.Plugins.Count)
             };
-            if (!string.IsNullOrWhiteSpace(_catalog.Updated)) parts.Add($"{_catalog.Updated} 复核");
-            if (slow > 0) parts.Add($"其中 {slow} 条维护放缓（卡片已标注）");
-            if (AppServices.PluginCatalog.DataSource == "external") parts.Add("已热更新");
+            if (!string.IsNullOrWhiteSpace(_catalog.Updated)) parts.Add(Strings.T("plugin.catalog.reviewed", _catalog.Updated));
+            if (slow > 0) parts.Add(Strings.T("plugin.catalog.slow", slow));
+            if (AppServices.PluginCatalog.DataSource == "external") parts.Add(Strings.T("plugin.catalog.hotUpdated"));
 
             CatalogMetaText.Text = string.Join(" · ", parts);
         }
@@ -234,7 +238,7 @@ public partial class PluginsPage : UserControl, INavigationAware
                 Content = linkText,
                 Tag = entry.Id,
                 VerticalAlignment = VerticalAlignment.Center,
-                ToolTip = "在下方广场中定位该替代插件"
+                ToolTip = Strings.T("plugin.health.locateSubstituteTip")
             };
             link.Click += OnLocateFromHealthClick;
 
@@ -257,7 +261,7 @@ public partial class PluginsPage : UserControl, INavigationAware
         {
             Style = (Style)FindResource("SegmentButton"),
             GroupName = "PluginCategory",
-            Content = "全部",
+            Content = Strings.T("plugin.filterAll"),
             Tag = "all",
             IsChecked = true
         };
@@ -340,7 +344,7 @@ public partial class PluginsPage : UserControl, INavigationAware
     private void SetHealthBusy(bool busy)
     {
         HealthRefreshButton.IsEnabled = !busy;
-        HealthRefreshButton.Content = busy ? "扫描中…" : "重新扫描";
+        HealthRefreshButton.Content = busy ? Strings.T("plugin.health.scanning") : Strings.T("plugin.health.rescan");
     }
 
     private void OnRescanClick(object sender, RoutedEventArgs e) => _ = EnsureScanAsync(force: true);
@@ -361,10 +365,10 @@ public partial class PluginsPage : UserControl, INavigationAware
         }
 
         HealthPanel.Visibility = Visibility.Visible;
-        HealthToggleButton.Content = _healthExpanded ? "收起" : "展开";
+        HealthToggleButton.Content = _healthExpanded ? Strings.T("plugin.health.collapse") : Strings.T("plugin.health.expand");
 
         var dirs = scan.ScannedDirs.Count > 0 ? string.Join("；", scan.ScannedDirs) : "";
-        HealthMetaText.Text = $"检测来源：{dirs}（只读扫描，不会修改任何文件；结果仅存本机）";
+        HealthMetaText.Text = Strings.T("plugin.health.source", dirs);
         HealthMetaText.Visibility = scan.ScannedDirs.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
 
         HealthList.Children.Clear();
@@ -372,18 +376,18 @@ public partial class PluginsPage : UserControl, INavigationAware
         if (scan.Plugins.Count == 0)
         {
             HealthHintText.Text = scan.ObsInstallFound
-                ? "未在常见目录发现第三方插件 DLL。"
-                : "未检测到 OBS 安装目录（已尝试全盘常见位置与 Steam 库）；若为自定义路径，请先在「设置 → OBS 配置管理」中手动指定目录后重试。";
+                ? Strings.T("plugin.health.noDlls")
+                : Strings.T("plugin.health.noInstallDir");
             HealthHintText.Visibility = Visibility.Visible;
-            HealthTitleText.Text = "本机已装插件体检（只读）· 未发现插件";
+            HealthTitleText.Text = Strings.T("plugin.health.noneTitle");
             return;
         }
 
-        HealthTitleText.Text = $"本机已装 {scan.Plugins.Count} 个插件 · 其中 {scan.CataloguedCount} 个收录于下方广场";
+        HealthTitleText.Text = Strings.T("plugin.health.countTitle", scan.Plugins.Count, scan.CataloguedCount);
 
         if (!_healthExpanded)
         {
-            HealthHintText.Text = "点击「展开」查看完整清单。";
+            HealthHintText.Text = Strings.T("plugin.health.expandHint");
             HealthHintText.Visibility = Visibility.Visible;
             return;
         }
@@ -446,7 +450,7 @@ public partial class PluginsPage : UserControl, INavigationAware
         {
             var linkText = new TextBlock
             {
-                Text = $"✓ 广场收录：{entry.Name}",
+                Text = Strings.T("plugin.health.catalogued", entry.Name),
                 FontWeight = FontWeights.SemiBold,
                 VerticalAlignment = VerticalAlignment.Center
             };
@@ -458,7 +462,7 @@ public partial class PluginsPage : UserControl, INavigationAware
                 Style = TryFindResource("LinkButton") as Style,
                 Content = linkText,
                 Tag = entry.Id,
-                ToolTip = "在下方广场中定位该插件"
+                ToolTip = Strings.T("plugin.health.locateTip")
             };
             ((Button)status).Click += OnLocateFromHealthClick;
         }
@@ -466,7 +470,7 @@ public partial class PluginsPage : UserControl, INavigationAware
         {
             var unknown = new TextBlock
             {
-                Text = "未收录",
+                Text = Strings.T("plugin.health.uncatalogued"),
                 VerticalAlignment = VerticalAlignment.Center
             };
             unknown.SetResourceReference(TextBlock.FontSizeProperty, "FontSizeXs");
@@ -476,9 +480,9 @@ public partial class PluginsPage : UserControl, INavigationAware
 
         var sourceTag = plugin.SourceLabel switch
         {
-            "user" => "用户插件目录",
-            "global" => "全局插件目录",
-            _ => "安装目录"
+            "user" => Strings.T("plugin.health.source.user"),
+            "global" => Strings.T("plugin.health.source.global"),
+            _ => Strings.T("plugin.health.source.install")
         };
 
         var grid = new Grid { Margin = new Thickness(0, 5, 0, 5) };
@@ -643,15 +647,15 @@ public partial class PluginsPage : UserControl, INavigationAware
         headRow.Children.Add(nameText);
 
         if (!string.IsNullOrEmpty(plugin.Badge))
-            headRow.Children.Add(BuildBadge(plugin.Badge, plugin.Badge == "热门" ? "WarnBrush" : "BrandBrush"));
+            headRow.Children.Add(BuildBadge(plugin.Badge, DataValues.IsHotBadge(plugin.Badge) ? "WarnBrush" : "BrandBrush"));
 
         // 已安装标记（P0-1 联动）
         var installed = FindInstalled(plugin);
         if (installed is not null)
         {
             var installedLabel = string.IsNullOrWhiteSpace(installed.FileVersion)
-                ? "✓ 已安装"
-                : $"✓ 已安装 v{installed.FileVersion}";
+                ? Strings.T("plugin.installed")
+                : Strings.T("plugin.installedVersion", installed.FileVersion);
             headRow.Children.Add(BuildBadge(installedLabel, "OkBrush"));
         }
 
@@ -691,7 +695,7 @@ public partial class PluginsPage : UserControl, INavigationAware
         if (plugin.HasAiCost)
         {
             var costs = new[] { plugin.AiCostCpu, plugin.AiCostMem }.Where(s => !string.IsNullOrWhiteSpace(s));
-            var costLine = "开销参考：" + string.Join(" · ", costs);
+            var costLine = Strings.T("plugin.costs", string.Join(" · ", costs));
             if (!string.IsNullOrEmpty(_aiBudgetHint)) costLine += $"\n{_aiBudgetHint}";
 
             var costText = new TextBlock
@@ -712,12 +716,12 @@ public partial class PluginsPage : UserControl, INavigationAware
         {
             var maintainText = new TextBlock
             {
-                Text = $"维护：{plugin.MaintenanceText}",
+                Text = Strings.T("plugin.maintain.label", plugin.MaintenanceText),
                 Margin = new Thickness(0, 6, 0, 0),
                 TextWrapping = TextWrapping.Wrap,
                 ToolTip = plugin.IsMaintenanceSlow
-                    ? "该项目近 12 个月内没有提交或发行；仍可正常使用，但遇到 OBS 大版本更新时请留意兼容性。"
-                    : "该项目近 12 个月内有提交或发行。"
+                    ? Strings.T("plugin.maintain.slowTip")
+                    : Strings.T("plugin.maintain.activeTip")
             };
             maintainText.SetResourceReference(TextBlock.FontSizeProperty, "FontSizeXs");
             maintainText.SetResourceReference(TextBlock.ForegroundProperty,
@@ -738,10 +742,10 @@ public partial class PluginsPage : UserControl, INavigationAware
             var downloadBtn = new Button
             {
                 Style = (Style)TryFindResource("SecondaryButton"),
-                Content = "下载",
+                Content = Strings.T("plugin.download"),
                 Padding = new Thickness(10, 4, 10, 5),
                 Tag = downloadUrl,
-                ToolTip = "打开 GitHub Releases 最新版下载页"
+                ToolTip = Strings.T("plugin.downloadTip")
             };
             downloadBtn.Click += OnDownloadClick;
             actions.Children.Add(downloadBtn);
@@ -763,7 +767,7 @@ public partial class PluginsPage : UserControl, INavigationAware
             Style = (Style)TryFindResource("LinkButton"),
             Padding = new Thickness(8, 2, 8, 3),
             Tag = plugin.Id,
-            ToolTip = "关注后，应用启动时会静默检查该插件的最新版本（有新版仅在角落轻提示，不弹窗）"
+            ToolTip = Strings.T("plugin.watchTip")
         };
         RefreshWatchVisual(watchBtn, plugin.Id);
         watchBtn.Click += OnWatchToggleClick;
@@ -777,7 +781,7 @@ public partial class PluginsPage : UserControl, INavigationAware
             Content = body,
             Tag = plugin.Url,
             Margin = new Thickness(0, 0, 0, 10),
-            ToolTip = "在浏览器中打开项目主页"
+            ToolTip = Strings.T("plugin.homeTip")
         };
         button.Click += OnOpenLinkClick;
 
@@ -836,7 +840,7 @@ public partial class PluginsPage : UserControl, INavigationAware
                 return;
             }
 
-            badge.Text = $"最新 {ShortTag(info.Tag)}";
+            badge.Text = Strings.T("plugin.latest", ShortTag(info.Tag));
             badge.Visibility = Visibility.Visible;
         }
         catch (Exception)
@@ -859,7 +863,7 @@ public partial class PluginsPage : UserControl, INavigationAware
     private void RefreshWatchVisual(Button watchBtn, string pluginId)
     {
         var watched = AppServices.PluginWatch.IsWatched(pluginId);
-        watchBtn.Content = watched ? "已关注" : "+ 关注";
+        watchBtn.Content = watched ? Strings.T("plugin.watched") : Strings.T("plugin.watch");
     }
 
     private void OnWatchToggleClick(object sender, RoutedEventArgs e)
@@ -870,7 +874,7 @@ public partial class PluginsPage : UserControl, INavigationAware
         var watched = !AppServices.PluginWatch.IsWatched(id);
         AppServices.PluginWatch.SetWatched(id, watched);
         RefreshWatchVisual((Button)sender, id);
-        AppServices.Toast.Show(watched ? "已关注，启动时将静默检查该插件的新版本" : "已取消关注", "ok");
+        AppServices.Toast.Show(watched ? Strings.T("plugin.watchedToast") : Strings.T("plugin.unwatchedToast"), "ok");
     }
 
     // ---------------------------------------------------------- 性能预算（P1-2）
@@ -890,9 +894,9 @@ public partial class PluginsPage : UserControl, INavigationAware
 
             var freeMb = s.MemTotalMb - s.MemUsedMb;
             if (s.MemTotalMb > 0 && freeMb < 500)
-                return $"当前空闲内存约 {freeMb:0}MB（低于 500MB），启用 AI 插件可能加剧掉帧";
+                return Strings.T("plugin.aiMemoryHint", freeMb);
             if (s.CpuPercent >= 80)
-                return $"当前 CPU 占用 {s.CpuPercent:0}%，AI 插件实时推理可能进一步推高负载";
+                return Strings.T("plugin.aiCpuHint", s.CpuPercent);
             return null;
         }
         catch (Exception)
@@ -925,11 +929,11 @@ public partial class PluginsPage : UserControl, INavigationAware
         try
         {
             var ok = await AppServices.Host.OpenExternalAsync(url);
-            if (!ok) AppServices.Toast.Show("无法打开链接，请检查系统默认浏览器设置", "warn");
+            if (!ok) AppServices.Toast.Show(Strings.T("common.openLinkFailed"), "warn");
         }
         catch (Exception)
         {
-            AppServices.Toast.Show("无法打开链接，请检查系统默认浏览器设置", "warn");
+            AppServices.Toast.Show(Strings.T("common.openLinkFailed"), "warn");
         }
     }
 

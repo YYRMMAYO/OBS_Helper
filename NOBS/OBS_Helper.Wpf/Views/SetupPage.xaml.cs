@@ -17,31 +17,31 @@ namespace OBS_Helper.Wpf.Views;
 public partial class SetupPage : UserControl, INavigationAware
 {
     /// <summary>搭建流程六步。Href 沿用原版写法：无斜杠是路由名，带斜杠是「路由/参数」。</summary>
-    private static readonly (string No, string Title, string Desc, string Href)[] Flow =
+    private static (string No, string Title, string Desc, string Href)[] Flow => new[]
     {
-        ("1", "准备与权限", "更新 OBS、以管理员运行（Win）或授予屏幕录制/麦克风权限（macOS）。", "diagnostic"),
-        ("2", "场景与来源", "新建场景，添加捕获源、摄像头、音频，排好层级。", "problem/st-scene"),
-        ("3", "音频校对", "麦克风/桌面声音电平正常，加降噪，统一 48kHz。", "problem/au-mic"),
-        ("4", "推流设置", "选平台、粘贴密钥，硬件编码 + CBR + 关键帧 2s。", "problem/st-general"),
-        ("5", "开播自检", "看统计面板掉帧，先录一段自测再开播。", "diagnostic"),
-        ("6", "多平台 / 竖屏", "用插件做多路推流或竖屏 9:16 画布。", "problem/st-multi"),
+        ("1", Strings.T("setup.step1.title"), Strings.T("setup.step1.desc"), "diagnostic"),
+        ("2", Strings.T("setup.step2.title"), Strings.T("setup.step2.desc"), "problem/st-scene"),
+        ("3", Strings.T("setup.step3.title"), Strings.T("setup.step3.desc"), "problem/au-mic"),
+        ("4", Strings.T("setup.step4.title"), Strings.T("setup.step4.desc"), "problem/st-general"),
+        ("5", Strings.T("setup.step5.title"), Strings.T("setup.step5.desc"), "diagnostic"),
+        ("6", Strings.T("setup.step6.title"), Strings.T("setup.step6.desc"), "problem/st-multi"),
     };
 
     /// <summary>
     /// 平台筛选项。Kw 是匹配问题标题 / id 的关键词，"all" 表示不过滤。
     /// Color 沿用原版数据：原版 CSS 里 .chip 并没有用到这个色值，此处同样只作数据保留。
     /// </summary>
-    private static readonly (string Key, string Label, string Icon, string Color, string Kw)[] Platforms =
+    private static (string Key, string Label, string Icon, string Color, string Kw)[] Platforms => new[]
     {
-        ("all", "全部", "📋", "#8e44ad", ""),
-        ("bilibili", "B站", "📺", "#fb7299", "B站"),
-        ("douyin", "抖音", "🎵", "#fe2c55", "抖音"),
-        ("kuaishou", "快手", "⚡", "#ff4906", "快手"),
+        ("all", Strings.T("setup.platform.all"), "📋", "#8e44ad", ""),
+        ("bilibili", Strings.T("setup.platform.bilibili"), "📺", "#fb7299", Strings.T("setup.platformKw.bilibili")),
+        ("douyin", Strings.T("setup.platform.douyin"), "🎵", "#fe2c55", Strings.T("setup.platformKw.douyin")),
+        ("kuaishou", Strings.T("setup.platform.kuaishou"), "⚡", "#ff4906", Strings.T("setup.platformKw.kuaishou")),
         ("youtube", "YouTube", "▶️", "#ff0000", "YouTube"),
         ("twitch", "Twitch", "🟣", "#9146ff", "Twitch"),
-        ("videoaccount", "视频号", "💬", "#07c160", "视频号"),
-        ("xhs", "小红书", "📕", "#ff2442", "小红书"),
-        ("vertical", "竖屏", "📱", "#1abc9c", "竖屏"),
+        ("videoaccount", Strings.T("setup.platform.videoaccount"), "💬", "#07c160", Strings.T("setup.platformKw.videoaccount")),
+        ("xhs", Strings.T("setup.platform.xhs"), "📕", "#ff2442", Strings.T("setup.platformKw.xhs")),
+        ("vertical", Strings.T("setup.platform.vertical"), "📱", "#1abc9c", Strings.T("setup.platformKw.vertical")),
         ("mac", "macOS", "🍎", "#555555", "macOS"),
     };
 
@@ -51,6 +51,9 @@ public partial class SetupPage : UserControl, INavigationAware
     /// <summary>页面实例被导航缓存复用，静态区块只搭一次。</summary>
     private bool _chromeBuilt;
 
+    /// <summary>静态区块是在哪种语言下搭起来的：换语言后要整块重建（V2.9.2）。</summary>
+    private string _chromeLang = "";
+
     public SetupPage()
     {
         InitializeComponent();
@@ -58,9 +61,11 @@ public partial class SetupPage : UserControl, INavigationAware
 
     public async Task OnNavigatedToAsync(object? parameter)
     {
-        if (!_chromeBuilt)
+        var language = Strings.Current;
+        if (!_chromeBuilt || !string.Equals(_chromeLang, language, StringComparison.Ordinal))
         {
             _chromeBuilt = true;
+            _chromeLang = language;
             BuildFlow();
             BuildWizards();
             BuildPlatformChips();
@@ -77,6 +82,7 @@ public partial class SetupPage : UserControl, INavigationAware
 
     private void BuildFlow()
     {
+        FlowPanel.Children.Clear();
         foreach (var step in Flow) FlowPanel.Children.Add(BuildFlowCard(step));
     }
 
@@ -165,10 +171,12 @@ public partial class SetupPage : UserControl, INavigationAware
     /// <summary>两条进阶向导入口：竖屏双画布 / 多平台同时推流，点开分步向导窗口。</summary>
     private void BuildWizards()
     {
+        WizardPanel.Children.Clear();
+
         AddWizardCard(SetupWizards.Vertical,
-            "Aitum Vertical 双画布 · 横竖同播 · 约 10 分钟");
+            Strings.T("setup.wizard.vertical.meta"));
         AddWizardCard(SetupWizards.MultiStream,
-            "多平台并发推流 · 独立码率 · 带宽预算 70%");
+            Strings.T("setup.wizard.multistream.meta"));
     }
 
     private void AddWizardCard(WizardDefinition def, string meta)
@@ -182,7 +190,7 @@ public partial class SetupPage : UserControl, INavigationAware
 
         var title = new TextBlock
         {
-            Text = def.Title + " 向导",
+            Text = Strings.T("setup.wizard.suffix", def.Title),
             FontWeight = FontWeights.SemiBold,
             TextWrapping = TextWrapping.Wrap
         };
@@ -238,6 +246,8 @@ public partial class SetupPage : UserControl, INavigationAware
 
     private void BuildPlatformChips()
     {
+        PlatformPanel.Children.Clear();
+
         foreach (var platform in Platforms)
         {
             var chip = new RadioButton

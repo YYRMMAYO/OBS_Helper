@@ -39,7 +39,7 @@ public sealed class FreeDiagnosticEngine
         if (!_host.IsAvailable)
         {
             result.Success = false;
-            result.Error = "当前环境没有桌面宿主，无法发起免费 AI 请求。请在桌面客户端中打开，或在「AI 设置」切回本地引擎。";
+            result.Error = Strings.T("ai.free.noHost");
             return result;
         }
 
@@ -51,7 +51,7 @@ public sealed class FreeDiagnosticEngine
             if (string.IsNullOrEmpty(apiKey))
             {
                 result.Success = false;
-                result.Error = "内置免费 AI 密钥未打包进当前安装包，智谱通道不可用；可在「AI 设置」把免费通道切到 Pollinations（国外免 Key），或切换到云端大模型接入自己的 API。";
+                result.Error = Strings.T("ai.free.noKey");
                 return result;
             }
         }
@@ -81,7 +81,7 @@ public sealed class FreeDiagnosticEngine
         catch (Exception ex)
         {
             result.Success = false;
-            result.Error = "免费 AI 请求失败：" + ex.Message;
+            result.Error = Strings.T("ai.free.requestFailed", ex.Message);
             return result;
         }
 
@@ -93,7 +93,7 @@ public sealed class FreeDiagnosticEngine
         catch (JsonException ex)
         {
             result.Success = false;
-            result.Error = "免费 AI 返回了无法解析的内容：" + ex.Message;
+            result.Error = Strings.T("ai.free.parseFailed", ex.Message);
             return result;
         }
 
@@ -101,9 +101,9 @@ public sealed class FreeDiagnosticEngine
         {
             var errMsg = resp["error"]?["message"]?.GetValue<string>()
                          ?? resp["error"]?.ToString()
-                         ?? "免费端点返回未知错误";
+                         ?? Strings.T("ai.free.unknownError");
             result.Success = false;
-            result.Error = "免费 AI 错误：" + errMsg;
+            result.Error = Strings.T("ai.free.errorPrefix", errMsg);
             return result;
         }
 
@@ -111,11 +111,11 @@ public sealed class FreeDiagnosticEngine
         if (msg is null)
         {
             result.Success = false;
-            result.Error = "免费 AI 返回格式异常（缺少 choices[0].message）。";
+            result.Error = Strings.T("ai.free.badFormat");
             return result;
         }
 
-        result.Summary = msg["content"]?.GetValue<string>() ?? "（免费 AI 未返回文本结论）";
+        result.Summary = msg["content"]?.GetValue<string>() ?? Strings.T("ai.free.noText");
         result.Items = new List<DiagnosticItem>();
         result.Success = true;
         return result;

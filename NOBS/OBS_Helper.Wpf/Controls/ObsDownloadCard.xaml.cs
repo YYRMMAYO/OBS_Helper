@@ -25,10 +25,10 @@ public partial class ObsDownloadCard : UserControl
     }
 
     private async void OnOpenOfficialDownload(object sender, RoutedEventArgs e)
-        => await OpenAsync(ObsDownloadLinks.OfficialDownload, "已打开官网下载页（obsproject.com）。").ConfigureAwait(true);
+        => await OpenAsync(ObsDownloadLinks.OfficialDownload, Strings.T("obs.status.officialOpened")).ConfigureAwait(true);
 
     private async void OnOpenGitHubReleases(object sender, RoutedEventArgs e)
-        => await OpenAsync(ObsDownloadLinks.GitHubLatestRelease, "已打开 GitHub 官方发布页。").ConfigureAwait(true);
+        => await OpenAsync(ObsDownloadLinks.GitHubLatestRelease, Strings.T("obs.status.githubOpened")).ConfigureAwait(true);
 
     /// <summary>
     /// 解析并打开「当前稳定版 Windows 安装包」直链。解析失败不报错，退化为官方发布页，
@@ -37,7 +37,7 @@ public partial class ObsDownloadCard : UserControl
     private async void OnDownloadLatestInstaller(object sender, RoutedEventArgs e)
     {
         DirectButton.IsEnabled = false;
-        ShowStatus("正在解析当前稳定版的官方安装包地址…");
+        ShowStatus(Strings.T("obs.status.resolving"));
 
         try
         {
@@ -46,26 +46,25 @@ public partial class ObsDownloadCard : UserControl
 
             if (!ok)
             {
-                ShowStatus("打不开浏览器，请手动访问 " + link.Url);
-                AppServices.Toast.Show("打开下载链接失败，可改用「官网下载页」按钮", "error");
+                ShowStatus(Strings.T("common.openBrowserFailed") + link.Url);
+                AppServices.Toast.Show(Strings.T("obs.toast.directFailed"), "error");
                 return;
             }
 
             if (link.IsDirect)
             {
                 var ver = string.IsNullOrEmpty(link.Version) ? "" : $" {link.Version}";
-                ShowStatus($"已交给浏览器下载：OBS Studio{ver} Windows x64 官方安装包。安装前可核对数字签名是否为 "
-                    + ObsDownloadLinks.WindowsSignerName + "。");
+                ShowStatus(Strings.T("obs.status.directStarted", ver, ObsDownloadLinks.WindowsSignerName));
             }
             else
             {
-                ShowStatus("未能解析出安装包直链（网络或资产命名变化），已打开官方发布页：展开 Assets，选 OBS-Studio-*-Windows-x64-Installer.exe。");
+                ShowStatus(Strings.T("obs.status.directFallback"));
             }
         }
         catch (Exception ex)
         {
-            ShowStatus("打开下载链接异常：" + ex.Message);
-            AppServices.Toast.Show("打开下载链接失败：" + ex.Message, "error");
+            ShowStatus(Strings.T("obs.status.downloadError", ex.Message));
+            AppServices.Toast.Show(Strings.T("obs.toast.linkFailed", ex.Message), "error");
         }
         finally
         {
@@ -84,11 +83,11 @@ public partial class ObsDownloadCard : UserControl
                 return;
             }
 
-            ShowStatus("打不开浏览器，请手动访问 " + url);
+            ShowStatus(Strings.T("common.openBrowserFailed") + url);
         }
         catch (Exception ex)
         {
-            ShowStatus("打开链接异常：" + ex.Message);
+            ShowStatus(Strings.T("obs.status.linkError", ex.Message));
         }
     }
 

@@ -43,8 +43,8 @@ public sealed class LocalDiagnosticEngine
                     ProblemId = f.ProblemId ?? "",
                     Title = f.Title,
                     Severity = DiagnosticSeverityMapper.Map(f.Severity),
-                    Source = "日志分析",
-                    Reason = f.Occurrences > 1 ? $"日志中命中 {f.Occurrences} 次" : "日志中命中",
+                    Source = Strings.T("log.source.logAnalysis"),
+                    Reason = f.Occurrences > 1 ? Strings.T("log.reason.occurrences", f.Occurrences) : Strings.T("log.reason.hit"),
                     Evidence = f.Evidence,
                     SuspectModule = f.SuspectModule ?? ""
                 };
@@ -70,8 +70,8 @@ public sealed class LocalDiagnosticEngine
                     ProblemId = m.Problem.Id,
                     Title = m.Problem.Title,
                     Severity = DiagnosticSeverityMapper.Map(m.Problem.Severity),
-                    Source = "知识库",
-                    Reason = string.IsNullOrEmpty(m.Reason) ? "关键词匹配" : $"关键词匹配：{m.Reason}"
+                    Source = Strings.T("log.source.knowledgeBase"),
+                    Reason = string.IsNullOrEmpty(m.Reason) ? Strings.T("log.reason.keyword") : Strings.T("log.reason.keywordWith", m.Reason)
                 };
                 AttachSteps(item, m.Problem);
                 items.Add(item);
@@ -99,17 +99,17 @@ public sealed class LocalDiagnosticEngine
     private static void AppendLiveWarnings(List<DiagnosticItem> items, ObsConnectionService c)
     {
         if (c.Stats.RenderSkipRatio > 0.01)
-            items.Add(WarnItem("lag-skip", "实时渲染滞后", "实时渲染丢帧率偏高，GPU 渲染跟不上，画面可能卡顿。",
-                "来自 OBS 实时统计：renderSkipRatio 超过 1%。"));
+            items.Add(WarnItem("lag-skip", Strings.T("log.live.renderTitle"), Strings.T("log.live.renderReason"),
+                Strings.T("log.live.renderEvidence")));
         if (c.Stats.OutputSkipRatio > 0.01)
-            items.Add(WarnItem("enc-overload", "编码压力偏大", "输出丢帧率偏高，编码器可能跟不上，建议下调分辨率/帧率或改用硬件编码。",
-                "来自 OBS 实时统计：outputSkipRatio 超过 1%。"));
+            items.Add(WarnItem("enc-overload", Strings.T("log.live.encodeTitle"), Strings.T("log.live.encodeReason"),
+                Strings.T("log.live.encodeEvidence")));
         if (c.StreamStatus.Active && c.StreamStatus.DroppedRatio > 0.01)
-            items.Add(WarnItem("lag-network", "推流丢帧", "当前推流存在丢帧，上行带宽可能不足。",
-                "来自 OBS 实时统计：streamDroppedRatio 超过 1%。"));
+            items.Add(WarnItem("lag-network", Strings.T("log.live.dropTitle"), Strings.T("log.live.dropReason"),
+                Strings.T("log.live.dropEvidence")));
         if (c.StreamStatus.Active && c.StreamStatus.Congestion > 0.3)
-            items.Add(WarnItem("lag-network", "推流拥塞", "推流拥塞度较高，上行链路吃紧，考虑降低码率。",
-                "来自 OBS 实时统计：streamCongestion 超过 0.3。"));
+            items.Add(WarnItem("lag-network", Strings.T("log.live.congestionTitle"), Strings.T("log.live.congestionReason"),
+                Strings.T("log.live.congestionEvidence")));
     }
 
     private static DiagnosticItem WarnItem(string id, string title, string reason, string evidence)
@@ -118,7 +118,7 @@ public sealed class LocalDiagnosticEngine
             ProblemId = id,
             Title = title,
             Severity = DiagnosticSeverity.Warning,
-            Source = "实时状态",
+            Source = Strings.T("log.source.liveState"),
             Reason = reason,
             Evidence = evidence
         };
@@ -128,33 +128,33 @@ public sealed class LocalDiagnosticEngine
         var sb = new StringBuilder();
         if (items.Count == 0)
         {
-            sb.Append("未从当前的日志或连接状态中发现明显异常。");
+            sb.Append(Strings.T("log.summary.empty"));
             if (!string.IsNullOrWhiteSpace(query))
-                sb.Append("针对你描述的现象，已为你匹配下方知识库条目，可点开查看分步方案。");
+                sb.Append(Strings.T("log.summary.emptyWithQuery"));
             else
-                sb.Append("你可以：① 在「日志分析」里打开一份 OBS 日志做深度扫描；② 直接在对话框描述你遇到的现象（如「推流一直重连」）。");
+                sb.Append(Strings.T("log.summary.emptyNoQuery"));
             return sb.ToString();
         }
 
         var critical = items.Count(i => i.Severity == DiagnosticSeverity.Critical);
         var error = items.Count(i => i.Severity == DiagnosticSeverity.Error);
-        sb.Append($"本地离线诊断完成，共发现 {items.Count} 项");
-        if (critical > 0) sb.Append($"（其中严重 {critical} 项");
-        if (error > 0) sb.Append($"、错误 {error} 项");
-        if (critical > 0 || error > 0) sb.Append('）');
-        sb.Append("：\n");
+        sb.Append(Strings.T("log.summary.header", items.Count));
+        if (critical > 0) sb.Append(Strings.T("log.summary.critical", critical));
+        if (error > 0) sb.Append(Strings.T("log.summary.error", error));
+        if (critical > 0 || error > 0) sb.Append(Strings.T("log.summary.close"));
+        sb.Append(Strings.T("log.summary.colon"));
 
         foreach (var it in items.Take(6))
         {
-            sb.Append($"· [{it.SeverityText}] {it.Title}");
-            if (!string.IsNullOrEmpty(it.ProblemId)) sb.Append($"（知识库：{it.ProblemId}）");
+            sb.Append(Strings.T("log.summary.item", it.SeverityText, it.Title));
+            if (!string.IsNullOrEmpty(it.ProblemId)) sb.Append(Strings.T("log.summary.itemFromKbTail", it.ProblemId));
             sb.Append('\n');
         }
-        if (items.Count > 6) sb.Append("…（更多见下方列表）\n");
+        if (items.Count > 6) sb.Append(Strings.T("common.moreItems") + "\n");
 
         if (ctx.Connection.IsConnected)
-            sb.Append("\n提示：当前已连接 OBS，可在「控制台」直接查看/调整相关设置。");
-        sb.Append("\n如需更细致的多轮分析，可在「AI 设置」中切换到免费 AI 或云端大模型。");
+            sb.Append(Strings.T("log.summary.connectedHint"));
+        sb.Append(Strings.T("log.summary.moreHint"));
         return sb.ToString();
     }
 }

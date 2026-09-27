@@ -26,26 +26,30 @@ public partial class ConnectionBadge : UserControl
 
     private void OnStateChanged() => Dispatcher.BeginInvoke(new Action(Refresh));
 
-    private void Refresh()
+    /// <summary>
+    /// 按当前连接状态刷新文案与状态点。
+    /// public：语言切换后主窗口要主动刷一次（徽章属于窗口 chrome，不在页面里）。
+    /// </summary>
+    public void Refresh()
     {
         var obs = AppServices.Obs;
         var (text, brushKey) = obs.State switch
         {
-            ObsConnectionState.Connected => ("已连接", "OkBrush"),
-            ObsConnectionState.Connecting => ("连接中…", "WarnBrush"),
-            ObsConnectionState.Authenticating => ("验证中…", "WarnBrush"),
+            ObsConnectionState.Connected => (Strings.T("badge.connected"), "OkBrush"),
+            ObsConnectionState.Connecting => (Strings.T("badge.connecting"), "WarnBrush"),
+            ObsConnectionState.Authenticating => (Strings.T("badge.authenticating"), "WarnBrush"),
             ObsConnectionState.Reconnecting => (obs.ReconnectInSeconds > 0
-                ? $"{obs.ReconnectInSeconds}s 后重连"
-                : "重连中…", "WarnBrush"),
-            ObsConnectionState.Failed => ("连接失败", "DangerBrush"),
-            _ => ("未连接", "MutedBrush")
+                ? Strings.T("badge.reconnectIn", obs.ReconnectInSeconds)
+                : Strings.T("badge.reconnecting"), "WarnBrush"),
+            ObsConnectionState.Failed => (Strings.T("badge.failed"), "DangerBrush"),
+            _ => (Strings.T("badge.disconnected"), "MutedBrush")
         };
 
         Label.Text = text;
         Dot.Fill = TryFindResource(brushKey) as Brush ?? Brushes.Gray;
         Root.ToolTip = obs.State == ObsConnectionState.Failed && !string.IsNullOrEmpty(obs.LastError)
             ? obs.LastError
-            : "点击进入 OBS 控制台";
+            : Strings.T("badge.tipDisconnected");
     }
 
     private void OnClick(object sender, MouseButtonEventArgs e)

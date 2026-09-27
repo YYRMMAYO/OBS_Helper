@@ -1,3 +1,5 @@
+using OBS_Helper.Wpf.Localization;
+
 namespace OBS_Helper.Wpf.Errors;
 
 /// <summary>
@@ -59,40 +61,26 @@ public static class ErrorCodes
     public const string ResetFailed = "OBS805";
     public const string TemplateApplyFailed = "OBS806";
 
-    /// <summary>返回某报错码的用户可读说明（含解决建议）。</summary>
-    public static string Describe(string code) => code switch
+    /// <summary>
+    /// 返回某报错码的用户可读说明（含解决建议）。
+    /// 文案取自文案表（键 <c>err.&lt;码&gt;</c>），跟随语言切换；未知码回退到兜底说明。
+    /// </summary>
+    public static string Describe(string code)
     {
-        Unknown => "发生未知错误，可尝试重启应用。",
-        StartupFailed => "应用启动失败，请确认已安装 .NET 桌面运行时，或改用随附的自包含安装包。",
-        ResourceMissing => "内置资源缺失，程序文件可能不完整，请重新安装。",
-        RuntimeMissing => "未找到可用的 .NET 运行时，请安装后重试。",
-        DataLoadFailed => "问题数据加载失败，请重启应用；若持续出现请重新安装。",
-        DataParseFailed => "问题数据解析错误，数据文件可能已损坏，请重新安装或更新应用。",
-        PageNotFound => "未找到对应页面，请返回首页重新进入。",
-        NavigationFailed => "页面切换失败，请返回首页重试。",
-        LocalStorageUnavailable => "本地收藏 / 进度存储不可用，收藏与步骤勾选将无法保存（不影响浏览）。",
-        SecretStoreUnavailable => "加密存储不可用，密码与 API Key 将无法保存，仅本次运行有效。",
-        AssistantIndexFailed => "离线问答索引建立失败，可改用「搜索」或「分类」查找。",
-        ObsConnectFailed => "连接 OBS 失败，请确认 OBS 已启动并在「工具 → obs-websocket 设置」中开启了服务器。",
-        ObsAuthFailed => "OBS 鉴权失败，请核对 obs-websocket 密码是否正确。",
-        ObsRequestFailed => "向 OBS 发送的请求执行失败，请查看返回的具体说明。",
-        ObsHandshakeTimeout => "已连上 OBS 端口但未完成握手，请确认 obs-websocket 版本为 5.x（OBS 28 及以上内置）。",
-        AiCloudNotConfigured => "尚未配置云端 AI：请在「设置」中填写 https 接口地址、模型名并保存 API Key。",
-        AiCloudRequestFailed => "云端 AI 请求失败，已自动回退到本地规则引擎。",
-        AiResponseInvalid => "云端 AI 返回内容无法解析，已按本地规则给出结论。",
-        DiagnosticExportFailed => "诊断报告导出失败，请确认目标目录可写后重试。",
-        ObsConfigNotFound => "未找到 OBS 配置目录，请确认已安装并至少启动过一次 OBS；便携版可在本页手动指定目录。",
-        ObsRunning => "OBS 正在运行，该操作需要先完全退出 OBS（含托盘图标）再重试。",
-        BackupFailed => "备份 / 导出失败，请确认磁盘空间充足且目标目录可写。",
-        ImportRejected => "导入包校验未通过：可能不是本程序导出的备份，或文件已损坏 / 被篡改。",
-        ResetFailed => "重置未能完成，已尝试回滚；原配置的副本保留在备份目录中，可手动还原。",
-        TemplateApplyFailed => "模板落地失败，可能是 OBS 版本不支持某类来源；可改用「导出为场景集合文件」再手动导入。",
-        _ => "未定义的错误码。"
-    };
+        if (string.IsNullOrWhiteSpace(code)) return Strings.T("err." + Unknown);
+
+        var key = "err." + code;
+        var text = Strings.T(key);
+
+        // Strings.T 查不到时会原样返回键名（"err.OBS999"）——那就是没定义过的码
+        return string.Equals(text, key, StringComparison.Ordinal)
+            ? Strings.T("err.undefined")
+            : text;
+    }
 
     /// <summary>把错误码与说明拼成一行提示，便于直接显示在状态栏。</summary>
     public static string Format(string code, string? extra = null)
         => string.IsNullOrWhiteSpace(extra)
             ? $"[{code}] {Describe(code)}"
-            : $"[{code}] {Describe(code)}（{extra}）";
+            : Strings.T("err.formatWithExtra", code, Describe(code), extra);
 }

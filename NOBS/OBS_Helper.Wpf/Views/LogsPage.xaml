@@ -6,34 +6,34 @@
     <StackPanel Margin="22,18,22,26">
 
       <TextBlock Style="{StaticResource MutedText}"
-                 Text="自动定位本机 OBS 日志，逐行脱敏后扫描已知故障特征。分析结果可被「AI 诊断」直接引用。" />
+                 Text="{DynamicResource Loc.logs.intro}" />
 
       <!-- 没有宿主能力时（例如未来的非桌面壳）只能手动选文件，保留这条降级提示 -->
       <Border x:Name="NoHostPanel" Style="{StaticResource Card}" Margin="0,14,0,0"
               Visibility="Collapsed">
         <StackPanel>
-          <TextBlock Style="{StaticResource SectionTitle}" Text="未在桌面客户端中运行" />
+          <TextBlock Style="{StaticResource SectionTitle}" Text="{DynamicResource Loc.logs.noHost}" />
           <TextBlock Style="{StaticResource MutedText}"
-                     Text="无法自动读取本机日志。你可以直接选择一个 OBS 日志文件（.txt / .log）进行分析。" />
+                     Text="{DynamicResource Loc.logs.noHostDesc}" />
         </StackPanel>
       </Border>
 
       <!-- ============================================ 选择日志来源 -->
       <Border Style="{StaticResource Card}" Margin="0,14,0,0">
         <StackPanel>
-          <TextBlock Style="{StaticResource SectionTitle}" Text="① 选择日志来源" />
+          <TextBlock Style="{StaticResource SectionTitle}" Text="{DynamicResource Loc.logs.source}" />
 
           <TextBlock x:Name="LogDirText" Style="{StaticResource CaptionText}"
                      Margin="0,0,0,10" />
 
           <WrapPanel>
-            <Button x:Name="RefreshButton" Content="刷新列表"
+            <Button x:Name="RefreshButton" Content="{DynamicResource Loc.logs.refresh}"
                     Style="{StaticResource SecondaryButton}"
                     Margin="0,0,8,8" Click="OnRefreshList" />
-            <Button x:Name="PickButton" Content="选择日志文件"
+            <Button x:Name="PickButton" Content="{DynamicResource Loc.logs.pick}"
                     Style="{StaticResource SecondaryButton}"
                     Margin="0,0,8,8" Click="OnPickFile" />
-            <Button x:Name="OpenDirButton" Content="打开日志目录"
+            <Button x:Name="OpenDirButton" Content="{DynamicResource Loc.logs.openDir}"
                     Style="{StaticResource SecondaryButton}"
                     Margin="0,0,8,8" Click="OnOpenDir" />
           </WrapPanel>
@@ -67,10 +67,10 @@
           <TextBlock x:Name="ReportMetaText" Style="{StaticResource MutedText}" />
 
           <WrapPanel Margin="0,12,0,0">
-            <Button x:Name="CopyButton" Content="复制脱敏日志"
+            <Button x:Name="CopyButton" Content="{DynamicResource Loc.logs.copy}"
                     Style="{StaticResource SecondaryButton}"
                     Margin="0,0,8,8" Click="OnCopySanitized" />
-            <Button Content="用 AI 诊断这份日志 →"
+            <Button Content="{DynamicResource Loc.logs.diagnoseWithAi}"
                     Style="{StaticResource PrimaryButton}"
                     Margin="0,0,8,8" Click="OnOpenDiagnostic" />
             <TextBlock x:Name="CopyHintText" Style="{StaticResource CaptionText}"
@@ -79,7 +79,7 @@
 
           <TextBlock x:Name="NoFindingText" Style="{StaticResource MutedText}"
                      Margin="0,4,0,0" Visibility="Collapsed"
-                     Text="未从这份日志中发现已知故障特征。可在「诊断」里描述具体现象进一步排查。" />
+                     Text="{DynamicResource Loc.logs.noFindings}" />
 
           <StackPanel x:Name="FindingList" Margin="0,10,0,0" />
         </StackPanel>

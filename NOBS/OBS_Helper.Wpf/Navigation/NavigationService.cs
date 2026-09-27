@@ -1,4 +1,5 @@
 using System.Windows.Controls;
+using OBS_Helper.Wpf.Localization;
 
 namespace OBS_Helper.Wpf.Navigation;
 
@@ -71,7 +72,7 @@ public sealed class NavigationService
     {
         if (!_factories.TryGetValue(route, out var factory))
         {
-            App.ReportError(Errors.ErrorCodes.PageNotFound, new InvalidOperationException($"未注册的路由：{route}"));
+            App.ReportError(Errors.ErrorCodes.PageNotFound, new InvalidOperationException(Strings.T("err.detail.unregisteredRoute", route)));
             return;
         }
 

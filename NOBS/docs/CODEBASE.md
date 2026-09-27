@@ -216,8 +216,19 @@ NOBS/
 | 文件 | 职责 |
 |---|---|
 | `OBS_Helper.Wpf.csproj` | 项目文件（net10.0-windows，无 PackageReference，纯自包含）。 |
-| `OBS_Helper_Setup.iss` | Inno Setup 安装脚本。 |
+| `OBS_Helper_Setup.iss` | Inno Setup 安装脚本：`[Languages]` 中文（默认，`LanguageDetectionMethod=none` + 显式弹选择页）+ English，向导文字 / 快捷方式 / 卸载项走 `[CustomMessages]`，选定语言写 `{app}\language.ini` 供应用首启读取；文件按 UTF-8 带 BOM 保存。 |
 | `OBS_Helper.slnx` | 解决方案（单项目）。 |
+
+### 2.9 国际化（V2.9.2）
+
+| 文件 | 职责 |
+|---|---|
+| `Localization/Strings.cs` | 文案表入口（纯 BCL、零 WPF）：当前语言、`T(key)` / `T(key, args)`、键集、语言标识归一化、缺键回退次序。 |
+| `Localization/StringTableZhHans.cs` | 简体中文文案（默认语言，约 1670 条键，按模块分段）。 |
+| `Localization/StringTableEnUs.cs` | English 文案（键集必须与中文表完全一致，有单测钉死）。 |
+| `Localization/DataValues.cs` | 数据驱动展示值的**跨语言**判定（severity / level / badge：中文「常见」与英文 `Common` 都认）。 |
+| `Services/LocalizationService.cs` | 语言服务：读 / 写偏好（`prefs.json` 的 `obshelper.language`）、解析首启语言（用户选择 > 安装向导 `language.ini` > 中文）、把整表写进 `Application.Resources`、广播 `Changed`。 |
+| `Views/SettingsPage`（语言段） | 「设置 → 语言」切换条：选项由 `Strings.Supported` 生成，切换后主窗口把当前页面原地重放一次刷新。 |
 
 ## 3. 脚本 / 工具（scripts/）
 
@@ -225,7 +236,7 @@ NOBS/
 |---|---|
 | `scripts/add_problems.py` | 向 `problems.json` 追加问题条目（可复用改数据）。 |
 | `scripts/add_templates.py` | 向 `scene_templates.json` 追加模板。 |
-| `scripts/check_resources.py` | 扫描 `Themes/*.xaml` 资源一致性校验。 |
+| `scripts/check_resources.py` | XAML 资源引用体检：`Themes/*.xaml` 的主题键 **+ `Localization/StringTable*.cs` 的文案键**（映射成 `Loc.<键>`），校验每个 `{Static\|Dynamic}Resource}` 引用都有定义；另含 `problems.json` 分类语义色白名单校验。 |
 | `scripts/gen_appicon.py` | 生成应用图标。 |
 | `scripts/embed_free_ai_key.ps1` | 构建期注入免费 AI 密钥。 |
 | `build.ps1` | 出包脚本：publish R2R → Inno Setup → 便携 zip，产物进 `PAKE/windows/`（gitignore）。 |
@@ -239,6 +250,9 @@ NOBS/
 | `docs/API免费实现方案.md` | 免费 AI 通道的实现方案设计稿。 |
 | `docs/PLUGIN_AUDIT_2026-09.md` | **插件广场目录 v1.4 全量复核报告**（V2.9）：逐条实测数据、收录口径、剔除 / 新增 / 维护放缓清单。 |
 | `docs/reviews/REVIEW_2026-08-08*.md` | 各版本发布审查报告（v1.7.0 / v1.7.1 / v1.8.0 / v1.8.1）。 |
+| `docs/reviews/REVIEW_2026-09-27-v2.9.2.md` | **V2.9.2 发布审查报告（国际化）**：三轮审校的发现与修复、刻意保留中文的边界、全量验证结果。 |
+| `docs/I18N_EN_CONTENT_PLAN.md` | **V2.9.3 计划：随包离线内容（知识库 / 模板 / 插件 / 指引）的英译**——字段约定（哪些是逻辑键不可译）、热更新通道改造、验收口径与风险点。 |
+| `RELEASE_NOTES_v2.9.2.md` | 本版发布说明（国际化）。 |
 
 ## 5. 快速定位索引
 

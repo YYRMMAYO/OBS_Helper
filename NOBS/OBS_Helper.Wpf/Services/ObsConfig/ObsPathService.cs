@@ -124,7 +124,7 @@ public sealed class ObsPathService
                     info.IsRunning = true;
                     info.ProcessName = name;
                     info.Pid = procs[0].Id;
-                    info.Evidence = $"检测到进程 {name}（PID {procs[0].Id}）。";
+                    info.Evidence = Strings.T("obspath.evidence.process", name, procs[0].Id);
                     break;
                 }
             }
@@ -132,7 +132,7 @@ public sealed class ObsPathService
         catch (Exception ex)
         {
             // 进程枚举失败不应阻断：交给信号②兜底
-            info.Evidence = $"进程枚举异常（已忽略）：{ex.Message}";
+            info.Evidence = Strings.T("obspath.evidence.enumFailed", ex.Message);
         }
 
         // 信号②：global.ini 独占锁（即便改了进程名也能抓到）
@@ -145,17 +145,17 @@ public sealed class ObsPathService
                 try
                 {
                     using var fs = new FileStream(gi, FileMode.Open, FileAccess.Read, FileShare.None);
-                    if (!info.IsRunning) info.Evidence = "global.ini 可被独占打开，OBS 未在运行。";
+                    if (!info.IsRunning) info.Evidence = Strings.T("obspath.evidence.iniFree");
                 }
                 catch (IOException)
                 {
                     info.IsRunning = true;
-                    info.Evidence = "global.ini 被 OBS 独占占用，判定 OBS 正在运行。";
+                    info.Evidence = Strings.T("obspath.evidence.iniLocked");
                 }
                 catch (UnauthorizedAccessException)
                 {
                     info.IsRunning = true;
-                    info.Evidence = "global.ini 无法以只读方式打开（被占用），判定 OBS 正在运行。";
+                    info.Evidence = Strings.T("obspath.evidence.iniReadOnlyLocked");
                 }
             }
         }

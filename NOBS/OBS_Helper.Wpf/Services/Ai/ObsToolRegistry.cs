@@ -34,17 +34,18 @@ public sealed class DiagnosticTool
 public sealed class ObsToolRegistry
 {
     private readonly ProblemService _problems;
-    private readonly IReadOnlyList<DiagnosticTool> _tools;
 
-    public ObsToolRegistry(ProblemService problems)
-    {
-        _problems = problems;
-        _tools = BuildTools();
-    }
+    public ObsToolRegistry(ProblemService problems) => _problems = problems;
 
-    public IReadOnlyList<DiagnosticTool> Tools => _tools;
+    /// <summary>
+    /// 工具清单（含名称 / 说明 / 参数 schema）。
+    ///
+    /// 每次访问现建而不是构造时缓存（V2.9.2）：说明文案取自文案表，缓存会在切换语言后
+    /// 继续把旧语言的描述发给模型。只 4 个工具、构造极轻，不值得为此做缓存。
+    /// </summary>
+    public IReadOnlyList<DiagnosticTool> Tools => BuildTools();
 
-    public DiagnosticTool? Find(string name) => _tools.FirstOrDefault(t => t.Name == name);
+    public DiagnosticTool? Find(string name) => Tools.FirstOrDefault(t => t.Name == name);
 
     private List<DiagnosticTool> BuildTools()
     {
@@ -53,26 +54,26 @@ public sealed class ObsToolRegistry
             new DiagnosticTool
             {
                 Name = "get_connection_snapshot",
-                Description = "获取当前 OBS 的实时连接状态、场景列表、音频输入、录制/推流状态与性能统计（已结构化，不含隐私）。",
+                Description = Strings.T("ai.tool.connectionSnapshot.desc"),
                 ParametersJson = "{\"type\":\"object\",\"properties\":{}}",
                 InvokeAsync = (ctx, _) => Task.FromResult(SnapshotJson(ctx.Connection))
             },
             new DiagnosticTool
             {
                 Name = "get_log_findings",
-                Description = "获取最近一次 OBS 日志分析的发现清单（含严重程度、证据与建议），用于核对已知条件。",
+                Description = Strings.T("ai.tool.logFindings.desc"),
                 ParametersJson = "{\"type\":\"object\",\"properties\":{}}",
                 InvokeAsync = (ctx, _) => Task.FromResult(FindingsJson(ctx.Report))
             },
             new DiagnosticTool
             {
                 Name = "get_problem_detail",
-                Description = "根据问题 id 获取离线知识库中的完整排障方案（症状、成因、分步步骤、参考链接）。",
-                ParametersJson = "{\"type\":\"object\",\"properties\":{\"problemId\":{\"type\":\"string\",\"description\":\"问题条目 id，如 enc-overload、sf-auth\"}},\"required\":[\"problemId\"]}",
+                Description = Strings.T("ai.tool.problemDetail.desc"),
+                ParametersJson = "{\"type\":\"object\",\"properties\":{\"problemId\":{\"type\":\"string\",\"description\":" + JsonValue.Create(Strings.T("ai.tool.problemDetail.param"))!.ToJsonString() + "}},\"required\":[\"problemId\"]}",
                 InvokeAsync = async (ctx, args) =>
                 {
                     var id = ArgsString(args, "problemId");
-                    if (string.IsNullOrWhiteSpace(id)) return "{\"found\":false,\"reason\":\"缺少 problemId\"}";
+                    if (string.IsNullOrWhiteSpace(id)) return "{\"found\":false,\"reason\":" + JsonValue.Create(Strings.T("ai.tool.missingProblemId"))!.ToJsonString() + "}";
                     var p = await _problems.GetByIdAsync(id);
                     return p is null ? "{\"found\":false}" : ProblemToNode(p).ToJsonString();
                 }
@@ -80,8 +81,8 @@ public sealed class ObsToolRegistry
             new DiagnosticTool
             {
                 Name = "search_problems",
-                Description = "在离线知识库中按关键词搜索排障条目，适用于日志/状态里没有直接给出 id 的情况。",
-                ParametersJson = "{\"type\":\"object\",\"properties\":{\"query\":{\"type\":\"string\",\"description\":\"中文或英文关键词\"}},\"required\":[\"query\"]}",
+                Description = Strings.T("ai.tool.searchProblems.desc"),
+                ParametersJson = "{\"type\":\"object\",\"properties\":{\"query\":{\"type\":\"string\",\"description\":" + JsonValue.Create(Strings.T("ai.tool.searchProblems.param"))!.ToJsonString() + "}},\"required\":[\"query\"]}",
                 InvokeAsync = async (ctx, args) =>
                 {
                     var q = ArgsString(args, "query");

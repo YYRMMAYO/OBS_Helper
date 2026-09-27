@@ -17,16 +17,20 @@ public class AssistantService
 
     public AssistantService(ProblemService problemService) => _problemService = problemService;
 
-    public List<string> Suggestions { get; } = new()
+    /// <summary>
+    /// 助手页的示例问句（V2.9.2）。做成属性而不是静态字段：文案取自文案表，
+    /// 语言切换后要能立刻换一套，而不是把首次访问时的语言冻在这里。
+    /// </summary>
+    public IReadOnlyList<string> Suggestions => new[]
     {
-        "直播黑屏怎么办",
-        "推流失败连接超时",
-        "音画不同步怎么调",
-        "麦克风没声音",
-        "编码过载掉帧",
-        "怎么搭建B站直播",
-        "录制文件打不开",
-        "OBS更新后崩溃"
+        Strings.T("assistant.suggestion.1"),
+        Strings.T("assistant.suggestion.2"),
+        Strings.T("assistant.suggestion.3"),
+        Strings.T("assistant.suggestion.4"),
+        Strings.T("assistant.suggestion.5"),
+        Strings.T("assistant.suggestion.6"),
+        Strings.T("assistant.suggestion.7"),
+        Strings.T("assistant.suggestion.8"),
     };
 
     public async Task<List<AssistantMatch>> AskAsync(string query)

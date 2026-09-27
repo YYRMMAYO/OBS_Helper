@@ -15,34 +15,16 @@ namespace OBS_Helper.Wpf.Views;
 public partial class ToolboxPage : UserControl
 {
     /// <summary>场景化参数处方（静态内置数据）。</summary>
-    private static readonly (string Name, string Text)[] Presets =
+    /// <summary>
+    /// 场景化参数处方（V2.9.2）。做成属性而不是静态字段：文案取自文案表，
+    /// 语言切换后要能换一套，而不是把首次访问时的语言冻结下来。
+    /// </summary>
+    private static (string Name, string Text)[] Presets => new[]
     {
-        ("录网课 / 视频会议",
-         "画布：1920x1080（30fps 足够）\n" +
-         "编码器：核显 QSV 或独显 NVENC/AMF（人像画面 CPU 占用低）\n" +
-         "录像格式：MKV 或 Hybrid MP4（防崩溃），码率 4000~8000kbps\n" +
-         "音频：麦克风 + 桌面音频双轨；麦克风加 RNNoise 降噪\n" +
-         "来源：窗口捕获会议软件「共享内容」窗口，或显示器捕获兜底\n" +
-         "提示：录前跑一遍隐私清单，试录 10 秒验证画面与声音"),
-        ("录游戏",
-         "画布：1920x1080 · 60fps（低配降到 720p60）\n" +
-         "编码器：NVENC/AMF 硬件编码（P5 预设平衡画质与性能）\n" +
-         "录像格式：MKV，码率 15000~20000kbps（1080p60 高动态）\n" +
-         "关键帧间隔：2 秒\n" +
-         "捕获方式：优先「游戏捕获」；反作弊游戏黑屏改「显示器捕获」\n" +
-         "提示：游戏锁帧到刷新率以下，给 OBS 合成留 GPU 余量"),
-        ("竖屏短视频（抖音 / TikTok）",
-         "画布：1080x1920 · 30fps（横屏素材旋转或居中排版）\n" +
-         "编码器：硬件编码优先，码率 8000~12000kbps\n" +
-         "录像格式：MKV 录制 → 平台上传前转封装 MP4\n" +
-         "布局：主体内容居中，字幕放安全区（避开平台 UI 遮挡区）\n" +
-         "提示：画面边缘最容易带出隐私内容，裁剪后回看一遍再发布"),
-        ("直播带货 / 人像直播",
-         "画布：1920x1080 · 30fps（人像场景 30fps 即可，画质更从容）\n" +
-         "编码器：NVENC/AMF，码率 4500~6000kbps（按上行带宽定）\n" +
-         "推流：平台自定义 RTMP + 串流密钥；关键帧 2 秒\n" +
-         "音频：压缩器侧链让 BGM 在说话时自动让位；限制器防爆音\n" +
-         "提示：开播前用工具箱带宽计算器核对上行是否够用"),
+        (Strings.T("toolbox.prescription.1.title"), Strings.T("toolbox.prescription.1.body")),
+        (Strings.T("toolbox.prescription.2.title"), Strings.T("toolbox.prescription.2.body")),
+        (Strings.T("toolbox.prescription.3.title"), Strings.T("toolbox.prescription.3.body")),
+        (Strings.T("toolbox.prescription.4.title"), Strings.T("toolbox.prescription.4.body")),
     };
 
     private string _releaseUrl = "https://github.com/obsproject/obs-studio/releases";
@@ -64,8 +46,8 @@ public partial class ToolboxPage : UserControl
         var ffmpeg = await System.Threading.Tasks.Task.Run(RecordingToolsService.FindFfmpeg)
             .ConfigureAwait(true);
         FfmpegText.Text = ffmpeg is null
-            ? "未检测到 ffmpeg：转封装将给出替代方案指引（OBS 自带「文件 → 录像转封装」无需 ffmpeg）。"
-            : $"已检测到 ffmpeg：{ffmpeg}";
+            ? Strings.T("toolbox.remux.noFfmpeg")
+            : Strings.T("toolbox.remux.ffmpegFound", ffmpeg);
     }
 
     // ------------------------------------------------------------ 录像工具
@@ -77,17 +59,17 @@ public partial class ToolboxPage : UserControl
             var result = await AppServices.RecordingTools.TryGetRecordingDirAsync().ConfigureAwait(true);
             if (result.Dir is null)
             {
-                RecordingDirText.Text = "未能解析出录像目录。";
+                RecordingDirText.Text = Strings.T("toolbox.recordingDir.none");
                 return;
             }
 
-            RecordingDirText.Text = $"当前保存位置（{result.Source}）：{result.Dir}";
+            RecordingDirText.Text = Strings.T("toolbox.recordingDir.current", result.Source, result.Dir);
             var err = RecordingToolsService.OpenInExplorer(result.Dir);
             if (err is not null) AppServices.Toast.Show(err, "error");
         }
         catch (Exception ex)
         {
-            AppServices.Toast.Show($"打开录像目录失败：{ex.Message}", "error");
+            AppServices.Toast.Show(Strings.T("toolbox.openRecordingDirFailed", ex.Message), "error");
         }
     }
 
@@ -97,19 +79,19 @@ public partial class ToolboxPage : UserControl
         {
             var dlg = new Microsoft.Win32.OpenFileDialog
             {
-                Title = "选择要转封装的录像文件",
-                Filter = "录像文件 (*.mkv;*.mp4;*.flv;*.mov;*.ts)|*.mkv;*.mp4;*.flv;*.mov;*.ts|所有文件 (*.*)|*.*"
+                Title = Strings.T("toolbox.remux.pickTitle"),
+                Filter = Strings.T("toolbox.remux.pickFilter")
             };
             if (dlg.ShowDialog() != true) return;
 
             RemuxResultText.Visibility = Visibility.Visible;
-            RemuxResultText.Text = $"正在转封装：{System.IO.Path.GetFileName(dlg.FileName)} …";
-            AppServices.Busy.Show("正在无损转封装…");
+            RemuxResultText.Text = Strings.T("toolbox.remux.working", System.IO.Path.GetFileName(dlg.FileName));
+            AppServices.Busy.Show(Strings.T("toolbox.remux.busy"));
             try
             {
                 var (ok, message) = await RecordingToolsService.RemuxToMp4Async(dlg.FileName).ConfigureAwait(true);
-                RemuxResultText.Text = (ok ? "[完成] " : "[失败] ") + message;
-                AppServices.Toast.Show(ok ? "转封装完成" : "转封装失败", ok ? "ok" : "error");
+                RemuxResultText.Text = (ok ? Strings.T("toolbox.remux.donePrefix") : Strings.T("toolbox.remux.failedPrefix")) + message;
+                AppServices.Toast.Show(ok ? Strings.T("toolbox.remux.done") : Strings.T("toolbox.remux.failed"), ok ? "ok" : "error");
             }
             finally
             {
@@ -118,7 +100,7 @@ public partial class ToolboxPage : UserControl
         }
         catch (Exception ex)
         {
-            AppServices.Toast.Show($"转封装异常：{ex.Message}", "error");
+            AppServices.Toast.Show(Strings.T("toolbox.remux.exception", ex.Message), "error");
         }
     }
 
@@ -137,11 +119,11 @@ public partial class ToolboxPage : UserControl
         {
             if (string.IsNullOrEmpty(PresetText.Text)) return;
             Clipboard.SetText($"{Presets[Math.Max(PresetCombo.SelectedIndex, 0)].Name}\n{PresetText.Text}");
-            AppServices.Toast.Show("处方已复制到剪贴板", "ok");
+            AppServices.Toast.Show(Strings.T("toolbox.prescription.copied"), "ok");
         }
         catch (Exception ex)
         {
-            AppServices.Toast.Show($"复制失败：{ex.Message}", "error");
+            AppServices.Toast.Show(Strings.T("toolbox.copyFailed", ex.Message), "error");
         }
     }
 
@@ -159,15 +141,15 @@ public partial class ToolboxPage : UserControl
         }
         catch (Exception ex)
         {
-            AppServices.Toast.Show($"无法打开{label}：{ex.Message}", "error");
+            AppServices.Toast.Show(Strings.T("toolbox.openMsSettingsFailed", label, ex.Message), "error");
         }
     }
 
-    private void OnOpenFocusAssist(object sender, RoutedEventArgs e) => OpenMsSettings("ms-settings:quietmoments", "专注助手设置");
+    private void OnOpenFocusAssist(object sender, RoutedEventArgs e) => OpenMsSettings("ms-settings:quietmoments", Strings.T("toolbox.privacy.focus"));
 
-    private void OnOpenNotifications(object sender, RoutedEventArgs e) => OpenMsSettings("ms-settings:notifications", "通知设置");
+    private void OnOpenNotifications(object sender, RoutedEventArgs e) => OpenMsSettings("ms-settings:notifications", Strings.T("toolbox.privacy.notifications"));
 
-    private void OnOpenPersonalization(object sender, RoutedEventArgs e) => OpenMsSettings("ms-settings:personalization", "个性化设置");
+    private void OnOpenPersonalization(object sender, RoutedEventArgs e) => OpenMsSettings("ms-settings:personalization", Strings.T("toolbox.privacy.personalization"));
 
     // ------------------------------------------------------------ 冲突扫描
 
@@ -184,12 +166,12 @@ public partial class ToolboxPage : UserControl
             ConflictList.ItemsSource = hits;
             ConflictEmptyText.Visibility = hits.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
             ConflictSummaryText.Text = hits.Count == 0
-                ? "扫描完成，未发现已知冲突。"
-                : $"发现 {hits.Count} 项：高危 {hits.Count(h => h.Risk == "高")}、中危 {hits.Count(h => h.Risk == "中")}、提示 {hits.Count(h => h.Risk == "提示")}";
+                ? Strings.T("toolbox.conflicts.scanDone")
+                : Strings.T("toolbox.conflicts.found", hits.Count, hits.Count(h => h.RiskLevel == ConflictScannerCore.RiskHigh), hits.Count(h => h.RiskLevel == ConflictScannerCore.RiskMedium), hits.Count(h => h.RiskLevel == ConflictScannerCore.RiskInfo));
         }
         catch (Exception ex)
         {
-            AppServices.Toast.Show($"扫描失败：{ex.Message}", "error");
+            AppServices.Toast.Show(Strings.T("toolbox.conflicts.failed", ex.Message), "error");
         }
     }
 
@@ -224,14 +206,14 @@ public partial class ToolboxPage : UserControl
             var streams = BandwidthAdvisorCore.ClampToInt(streamsRaw, BandwidthAdvisorCore.MaxStreams);
             var bitrate = BandwidthAdvisorCore.ClampToInt(bitrateRaw, BandwidthAdvisorCore.MaxSingleBitrateKbps);
             MultiStreamText.Text = BandwidthAdvisorCore.DescribeMultiStream(uploadRaw, streams, bitrate)
-                + ClampedNote(streamsRaw, BandwidthAdvisorCore.MaxStreams, "路")
+                + ClampedNote(streamsRaw, BandwidthAdvisorCore.MaxStreams, Strings.T("toolbox.unit.streams"))
                 + ClampedNote(bitrateRaw, BandwidthAdvisorCore.MaxSingleBitrateKbps, "kbps");
         }
     }
 
     /// <summary>UI 层第二道防线：核心层钳制是静默的，这里把「已按上限计算」明确告诉用户。</summary>
     private static string ClampedNote(double raw, double max, string unit)
-        => !double.IsNaN(raw) && raw > max ? $"\n注意：输入超过上限 {max:0} {unit}，已按上限计算。" : "";
+        => !double.IsNaN(raw) && raw > max ? Strings.T("toolbox.clampedNote", max, unit) : "";
 
     private static double TryParseDouble(string? raw)
         => double.TryParse(raw?.Trim(), System.Globalization.NumberStyles.Float,
@@ -243,11 +225,11 @@ public partial class ToolboxPage : UserControl
     {
         try
         {
-            ReleaseText.Text = "正在查询…";
+            ReleaseText.Text = Strings.T("toolbox.release.querying");
             var info = await AppServices.ObsRelease.GetLatestAsync().ConfigureAwait(true);
             if (info is null)
             {
-                ReleaseText.Text = "查询失败且无本地缓存。请检查网络后重试，或直接前往发布页查看。";
+                ReleaseText.Text = Strings.T("toolbox.release.failedNoCache");
                 return;
             }
 
@@ -255,18 +237,15 @@ public partial class ToolboxPage : UserControl
             var sourceTag = info.Source switch
             {
                 "live" => "",
-                "cache" => "（来自缓存）",
-                _ => "（离线快照，可能不是最新）"
+                "cache" => Strings.T("toolbox.release.sourceCache"),
+                _ => Strings.T("toolbox.release.sourceSnapshot")
             };
             ReleaseText.Text =
-                $"最新版本：OBS Studio {info.Tag}　发布日期：{info.PublishedText}{sourceTag}\n" +
-                $"{info.Summary}\n" +
-                "升级建议：稳定版用户一般值得跟进补丁版；跨大版本升级前先备份场景集合" +
-                "（知识库「升级 / 试 Beta 前备份」条目有完整步骤）。";
+                Strings.T("toolbox.release.result", info.Tag, info.PublishedText, sourceTag, info.Summary);
         }
         catch (Exception ex)
         {
-            ReleaseText.Text = $"查询异常：{ex.Message}";
+            ReleaseText.Text = Strings.T("toolbox.release.exception", ex.Message);
         }
     }
 
@@ -282,7 +261,7 @@ public partial class ToolboxPage : UserControl
         }
         catch (Exception ex)
         {
-            AppServices.Toast.Show($"打开链接失败：{ex.Message}", "error");
+            AppServices.Toast.Show(Strings.T("common.openLinkError", ex.Message), "error");
         }
     }
 
@@ -292,7 +271,7 @@ public partial class ToolboxPage : UserControl
     {
         try
         {
-            ColorSummaryText.Text = "正在读取 OBS 配置…";
+            ColorSummaryText.Text = Strings.T("toolbox.check.readingObsConfig");
             var result = await AppServices.ColorCheck.RunAsync().ConfigureAwait(true);
             if (!result.Ok)
             {
@@ -301,13 +280,13 @@ public partial class ToolboxPage : UserControl
             }
 
             ColorSummaryText.Text = result.Items.Count(i => i.Status == "warn") == 0
-                ? "检查完成，未发现色彩配置风险。"
-                : $"检查完成，发现 {result.Items.Count(i => i.Status == "warn")} 项风险。";
+                ? Strings.T("toolbox.colorCheck.ok")
+                : Strings.T("toolbox.colorCheck.warn", result.Items.Count(i => i.Status == "warn"));
             ColorCheckList.ItemsSource = result.Items;
         }
         catch (Exception ex)
         {
-            AppServices.Toast.Show($"色彩体检失败：{ex.Message}", "error");
+            AppServices.Toast.Show(Strings.T("toolbox.colorCheck.failed", ex.Message), "error");
         }
     }
 
@@ -317,24 +296,24 @@ public partial class ToolboxPage : UserControl
     {
         try
         {
-            SampleRateSummaryText.Text = "正在枚举系统音频设备…";
+            SampleRateSummaryText.Text = Strings.T("toolbox.check.enumeratingAudio");
             var result = await AppServices.SampleRateCheck.RunAsync().ConfigureAwait(true);
 
             SampleRateSummaryText.Text = result.Items.Count(i => i.Status == "warn") == 0
-                ? "检查完成，采样率链路一致。"
-                : $"检查完成，发现 {result.Items.Count(i => i.Status == "warn")} 项建议处理。";
+                ? Strings.T("toolbox.sampleRate.ok")
+                : Strings.T("toolbox.sampleRate.warn", result.Items.Count(i => i.Status == "warn"));
             SampleRateText.Visibility = Visibility.Visible;
             SampleRateText.Text = string.Join("\n\n", result.Items.Select(
                 i => (i.Status switch
                 {
-                    "ok" => "[通过] ",
-                    "warn" => "[建议] ",
-                    _ => "[提示] "
+                    "ok" => Strings.T("toolbox.item.ok"),
+                    "warn" => Strings.T("toolbox.item.warn"),
+                    _ => Strings.T("toolbox.item.info")
                 }) + i.Title + "\n" + i.Detail));
         }
         catch (Exception ex)
         {
-            AppServices.Toast.Show($"采样率体检失败：{ex.Message}", "error");
+            AppServices.Toast.Show(Strings.T("toolbox.sampleRate.failed", ex.Message), "error");
         }
     }
 
@@ -344,19 +323,19 @@ public partial class ToolboxPage : UserControl
     {
         try
         {
-            GraphicsEnvSummaryText.Text = "正在探测系统图形环境（注册表 / WMI / 电源计划）…";
+            GraphicsEnvSummaryText.Text = Strings.T("toolbox.check.probingGraphics");
             GraphicsEnvEmptyText.Visibility = Visibility.Collapsed;
             var items = await OBS_Helper.Wpf.Services.SystemCheck.GraphicsEnvCheckService.RunAsync().ConfigureAwait(true);
 
             GraphicsEnvSummaryText.Text = items.Count(i => i.Status == "warn") == 0
-                ? "检查完成，未发现黑屏相关风险项。"
-                : $"检查完成，发现 {items.Count(i => i.Status == "warn")} 项建议处理。";
+                ? Strings.T("toolbox.graphics.ok")
+                : Strings.T("toolbox.graphics.warn", items.Count(i => i.Status == "warn"));
             GraphicsEnvList.ItemsSource = items;
         }
         catch (Exception ex)
         {
             GraphicsEnvEmptyText.Visibility = Visibility.Visible;
-            AppServices.Toast.Show($"黑屏体检失败：{ex.Message}", "error");
+            AppServices.Toast.Show(Strings.T("toolbox.graphics.failed", ex.Message), "error");
         }
     }
 
@@ -366,7 +345,7 @@ public partial class ToolboxPage : UserControl
     {
         try
         {
-            AudioHealthSummaryText.Text = "正在检查隐私权限 / 音频服务 / 设备对照…";
+            AudioHealthSummaryText.Text = Strings.T("toolbox.check.audioHealth");
             var connected = AppServices.Obs.IsConnected;
             var obsInputs = connected
                 ? AppServices.Obs.AudioInputs.Select(i => i.Name).ToList()
@@ -379,14 +358,14 @@ public partial class ToolboxPage : UserControl
             AudioHealthSummaryText.Text =
                 (items.Count(i => i.Status == "error"), items.Count(i => i.Status == "warn")) switch
                 {
-                    (0, 0) => "检查完成，音频链路健康。",
-                    var (err, warn) => $"检查完成：{err} 个问题、{warn} 项建议。"
+                    (0, 0) => Strings.T("toolbox.audioHealth.ok"),
+                    var (err, warn) => Strings.T("toolbox.audioHealth.warn", err, warn)
                 };
             AudioHealthList.ItemsSource = items;
         }
         catch (Exception ex)
         {
-            AppServices.Toast.Show($"音频体检失败：{ex.Message}", "error");
+            AppServices.Toast.Show(Strings.T("toolbox.audioHealth.failed", ex.Message), "error");
         }
     }
 
@@ -396,19 +375,19 @@ public partial class ToolboxPage : UserControl
     {
         try
         {
-            VcamSummaryText.Text = "正在探测驱动注册与插件文件…";
+            VcamSummaryText.Text = Strings.T("toolbox.check.vcam");
             VcamEmptyText.Visibility = Visibility.Collapsed;
             var items = await OBS_Helper.Wpf.Services.Tools.VirtualCamCheckService.RunAsync().ConfigureAwait(true);
 
             VcamSummaryText.Text = items.Count(i => i.Status is "warn" or "error") == 0
-                ? "检查完成，虚拟摄像头环境正常。"
-                : "检查完成，发现问题项，按下方指引处理。";
+                ? Strings.T("toolbox.vcam.ok")
+                : Strings.T("toolbox.vcam.issue");
             VcamCheckList.ItemsSource = items;
         }
         catch (Exception ex)
         {
             VcamEmptyText.Visibility = Visibility.Visible;
-            AppServices.Toast.Show($"虚拟摄像头体检失败：{ex.Message}", "error");
+            AppServices.Toast.Show(Strings.T("toolbox.vcam.failed", ex.Message), "error");
         }
     }
 
@@ -423,7 +402,7 @@ public partial class ToolboxPage : UserControl
                 bitrateRaw, DiskBenchmarkInput.MaxBitrateKbps);
             if (bitrate <= 0)
             {
-                AppServices.Toast.Show("请先填写有效的计划录像码率（kbps）。", "error");
+                AppServices.Toast.Show(Strings.T("toolbox.disk.needBitrate"), "error");
                 return;
             }
 
@@ -432,14 +411,14 @@ public partial class ToolboxPage : UserControl
                 ? dirResult.Dir
                 : Environment.GetFolderPath(Environment.SpecialFolder.MyVideos);
 
-            DiskBenchmarkText.Text = $"正在向 {dir} 写入测试数据（256MB）…{ClampedNote(bitrateRaw, DiskBenchmarkInput.MaxBitrateKbps, "kbps")}";
-            AppServices.Busy.Show("磁盘写入测速中…");
+            DiskBenchmarkText.Text = Strings.T("toolbox.disk.running", dir, ClampedNote(bitrateRaw, DiskBenchmarkInput.MaxBitrateKbps, "kbps"));
+            AppServices.Busy.Show(Strings.T("toolbox.disk.busy"));
             try
             {
                 var writeMbps = await Task.Run(() => MeasureSequentialWrite(dir)).ConfigureAwait(true);
                 var verdict = DiskBenchmarkCore.Verdict(writeMbps, bitrate);
                 DiskBenchmarkText.Text = verdict.Advice;
-                AppServices.Toast.Show(verdict.Pass ? "磁盘写入余量充足" : "磁盘写入存在风险", verdict.Pass ? "ok" : "error");
+                AppServices.Toast.Show(verdict.Pass ? Strings.T("toolbox.disk.ok") : Strings.T("toolbox.disk.risk"), verdict.Pass ? "ok" : "error");
             }
             finally
             {
@@ -448,8 +427,8 @@ public partial class ToolboxPage : UserControl
         }
         catch (Exception ex)
         {
-            DiskBenchmarkText.Text = $"测速异常：{ex.Message}";
-            AppServices.Toast.Show($"磁盘测速失败：{ex.Message}", "error");
+            DiskBenchmarkText.Text = Strings.T("toolbox.disk.exception", ex.Message);
+            AppServices.Toast.Show(Strings.T("toolbox.disk.failed", ex.Message), "error");
         }
     }
 
@@ -511,7 +490,7 @@ public partial class ToolboxPage : UserControl
         }
         catch (Exception ex)
         {
-            AppServices.Toast.Show($"编码顾问失败：{ex.Message}", "error");
+            AppServices.Toast.Show(Strings.T("toolbox.encoder.failed", ex.Message), "error");
         }
     }
 
@@ -551,7 +530,7 @@ public partial class ToolboxPage : UserControl
         try
         {
             IngestList.ItemsSource = null;
-            IngestHintText.Text = "正在并发探测候选节点…";
+            IngestHintText.Text = Strings.T("toolbox.ingest.probing");
 
             var targets = new List<IngestTarget>(IngestPingService.DefaultTargets);
             var custom = CustomHostInput.Text.Trim();
@@ -560,7 +539,7 @@ public partial class ToolboxPage : UserControl
                 var parts = custom.Split(':');
                 var host = parts[0].Trim();
                 var port = parts.Length > 1 && int.TryParse(parts[1], out var p) ? p : 1935;
-                targets.Insert(0, new IngestTarget("自定义地址", host, port));
+                targets.Insert(0, new IngestTarget(Strings.T("toolbox.ingest.customLabel"), host, port));
             }
 
             var results = await IngestPingService.MeasureAllAsync(targets.Where(t => t.Host.Length > 0))
@@ -568,16 +547,15 @@ public partial class ToolboxPage : UserControl
 
             IngestList.ItemsSource = results;
             IngestHintText.Text =
-                $"探测完成：{results.Count(r => r.Ok)} 个可达。" +
-                (results.Count > 0 && results[0].Ok
-                    ? $"当前最优：{results[0].Target.Label}（{results[0].RttText}）。"
-                    : "") +
-                "\nping 低只是必要条件：入围节点请各实推 10 分钟，比较状态栏丢帧后再定；RTT 不代表平台侧质量。";
+                Strings.T("toolbox.ingest.result", results.Count(r => r.Ok),
+                    (results.Count > 0 && results[0].Ok
+                        ? Strings.T("toolbox.ingest.best", results[0].Target.Label, results[0].RttText)
+                        : "") + Strings.T("toolbox.ingest.note"));
         }
         catch (Exception ex)
         {
-            IngestHintText.Text = "探测失败，请检查网络后重试。";
-            AppServices.Toast.Show($"节点探测失败：{ex.Message}", "error");
+            IngestHintText.Text = Strings.T("toolbox.ingest.failed");
+            AppServices.Toast.Show(Strings.T("toolbox.ingest.failedToast", ex.Message), "error");
         }
     }
 
@@ -595,7 +573,7 @@ public partial class ToolboxPage : UserControl
         }
         catch (Exception ex)
         {
-            AppServices.Toast.Show($"打开目录失败：{ex.Message}", "error");
+            AppServices.Toast.Show(Strings.T("toolbox.openDirFailed", ex.Message), "error");
         }
     }
 }

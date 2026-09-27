@@ -6,7 +6,7 @@
     <StackPanel Margin="22,18,22,26">
 
       <TextBlock Style="{StaticResource MutedText}"
-                 Text="描述你遇到的现象或关键词，本地的搜索助手会自动匹配最可能的解决方案（离线可用，无需联网）。" />
+                 Text="{DynamicResource Loc.assistant.intro}" />
 
       <!-- 提问行：边打边匹配，「提问」按钮只是再触发一次，行为与 Blazor 版一致 -->
       <Grid Margin="0,14,0,0">
@@ -17,12 +17,12 @@
 
         <TextBox x:Name="QueryBox" Grid.Column="0"
                  Style="{StaticResource AppTextBox}"
-                 Tag="例如：直播黑屏、音画不同步、推流失败…"
+                 Tag="{DynamicResource Loc.assistant.placeholder}"
                  TextChanged="OnQueryChanged" />
 
         <Button Grid.Column="1" Margin="10,0,0,0"
                 Style="{StaticResource PrimaryButton}"
-                Content="提问" Click="OnAskClick" />
+                Content="{DynamicResource Loc.assistant.ask}" Click="OnAskClick" />
       </Grid>
 
       <!-- 常见问法快捷入口，内容来自 AssistantService.Suggestions -->
@@ -31,7 +31,7 @@
       <TextBlock x:Name="EmptyText" Margin="0,14,0,0"
                  Style="{StaticResource MutedText}"
                  Visibility="Collapsed"
-                 Text="没找到匹配，试试更具体的描述，或用上方分类浏览。" />
+                 Text="{DynamicResource Loc.assistant.empty}" />
 
       <StackPanel x:Name="MatchList" Margin="0,14,0,0" />
 

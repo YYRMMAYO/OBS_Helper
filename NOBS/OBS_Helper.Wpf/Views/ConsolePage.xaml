@@ -12,19 +12,19 @@
           <ColumnDefinition Width="Auto" />
         </Grid.ColumnDefinitions>
         <TextBlock Grid.Column="0" Style="{StaticResource MutedText}"
-                   Text="连接本机 OBS 后，可在这里查看状态、切换场景、管理音量与录制/推流。所有写操作都需你手动点击确认。" />
+                   Text="{DynamicResource Loc.console.intro}" />
         <ctl:ConnectionBadge Grid.Column="1" VerticalAlignment="Top" Margin="12,0,0,0" />
       </Grid>
 
       <!-- ================================================== 未连接：连接表单 -->
       <Border x:Name="ConnectPanel" Style="{StaticResource Card}" Margin="0,14,0,0">
         <StackPanel>
-          <TextBlock Style="{StaticResource H3Text}" Text="连接 OBS" />
+          <TextBlock Style="{StaticResource H3Text}" Text="{DynamicResource Loc.console.connect.title}" />
           <TextBlock Style="{StaticResource MutedText}" Margin="0,6,0,14"
-                     Text="在 OBS 中打开「工具 → obs-websocket 设置」，确认已启用 WebSocket 服务器，并使用相同的端口与密码。" />
+                     Text="{DynamicResource Loc.console.connect.desc}" />
 
           <StackPanel Margin="0,0,0,10">
-            <TextBlock Text="主机" FontWeight="SemiBold"
+            <TextBlock Text="{DynamicResource Loc.console.host}" FontWeight="SemiBold"
                        FontSize="{DynamicResource FontSizeSm}"
                        Foreground="{DynamicResource TextBrush}" Margin="0,0,0,4" />
             <TextBox x:Name="HostInput" Style="{StaticResource AppTextBox}"
@@ -32,7 +32,7 @@
           </StackPanel>
 
           <StackPanel Margin="0,0,0,10">
-            <TextBlock Text="端口" FontWeight="SemiBold"
+            <TextBlock Text="{DynamicResource Loc.console.port}" FontWeight="SemiBold"
                        FontSize="{DynamicResource FontSizeSm}"
                        Foreground="{DynamicResource TextBrush}" Margin="0,0,0,4" />
             <TextBox x:Name="PortInput" Style="{StaticResource AppTextBox}"
@@ -41,23 +41,23 @@
           </StackPanel>
 
           <StackPanel Margin="0,0,0,10">
-            <TextBlock Text="密码" FontWeight="SemiBold"
+            <TextBlock Text="{DynamicResource Loc.console.password}" FontWeight="SemiBold"
                        FontSize="{DynamicResource FontSizeSm}"
                        Foreground="{DynamicResource TextBrush}" Margin="0,0,0,4" />
             <PasswordBox x:Name="PasswordInput" Style="{StaticResource AppPasswordBox}" />
             <TextBlock x:Name="PasswordHintText" Style="{StaticResource CaptionText}" Margin="0,4,0,0"
-                       Text="obs-websocket 密码（可留空）" />
+                       Text="{DynamicResource Loc.console.passwordPlaceholder}" />
           </StackPanel>
 
           <CheckBox x:Name="RememberCheck" Style="{StaticResource AppCheckBox}" Margin="0,6,0,0"
-                    Content="记住密码（由桌面壳加密保存）" />
+                    Content="{DynamicResource Loc.console.rememberPassword}" />
           <CheckBox x:Name="AutoConnectCheck" Style="{StaticResource AppCheckBox}" Margin="0,10,0,0"
-                    Content="启动时自动连接" />
+                    Content="{DynamicResource Loc.console.autoConnect}" />
           <CheckBox x:Name="AutoReconnectCheck" Style="{StaticResource AppCheckBox}" Margin="0,10,0,0"
-                    Content="断线后自动重连" />
+                    Content="{DynamicResource Loc.console.autoReconnect}" />
 
           <Button x:Name="ConnectButton" Style="{StaticResource PrimaryButton}"
-                  Content="连接" HorizontalAlignment="Left" Margin="0,16,0,0"
+                  Content="{DynamicResource Loc.console.connect}" HorizontalAlignment="Left" Margin="0,16,0,0"
                   Click="OnConnectClick" />
 
           <TextBlock x:Name="ConnectErrorText" Margin="0,12,0,0"
@@ -72,9 +72,9 @@
 
         <StackPanel Orientation="Horizontal" Margin="0,12,0,0">
           <Button x:Name="RefreshButton" Style="{StaticResource GhostButton}"
-                  Content="刷新" Click="OnRefreshClick" />
+                  Content="{DynamicResource Loc.console.refresh}" Click="OnRefreshClick" />
           <Button x:Name="DisconnectButton" Style="{StaticResource GhostButton}"
-                  Content="断开" Margin="6,0,0,0" Click="OnDisconnectClick" />
+                  Content="{DynamicResource Loc.console.disconnect}" Margin="6,0,0,0" Click="OnDisconnectClick" />
         </StackPanel>
 
         <!-- 请求失败提示：OBS 拒绝执行时必须让用户看见原因，不能静默 -->
@@ -86,7 +86,7 @@
                      Foreground="{DynamicResource DangerBrush}" />
         </Border>
 
-        <TextBlock Style="{StaticResource SectionTitle}" Text="实时性能" Margin="0,18,0,10" />
+        <TextBlock Style="{StaticResource SectionTitle}" Text="{DynamicResource Loc.console.perf}" Margin="0,18,0,10" />
         <UniformGrid Columns="3">
           <Border Background="{DynamicResource Surface2Brush}" BorderBrush="{DynamicResource LineBrush}"
                   BorderThickness="1" CornerRadius="{DynamicResource CornerRadiusSm}"
@@ -117,7 +117,7 @@
               <TextBlock x:Name="RenderSkipText" Text="0%" HorizontalAlignment="Center"
                          FontSize="{DynamicResource FontSizeLg}" FontWeight="Bold"
                          Foreground="{DynamicResource BrandBrush}" />
-              <TextBlock Text="渲染丢帧" Style="{StaticResource CaptionText}"
+              <TextBlock Text="{DynamicResource Loc.metric.renderSkip}" Style="{StaticResource CaptionText}"
                          HorizontalAlignment="Center" Margin="0,2,0,0" />
             </StackPanel>
           </Border>
@@ -128,7 +128,7 @@
               <TextBlock x:Name="OutputSkipText" Text="0%" HorizontalAlignment="Center"
                          FontSize="{DynamicResource FontSizeLg}" FontWeight="Bold"
                          Foreground="{DynamicResource BrandBrush}" />
-              <TextBlock Text="编码丢帧" Style="{StaticResource CaptionText}"
+              <TextBlock Text="{DynamicResource Loc.metric.encodeSkip}" Style="{StaticResource CaptionText}"
                          HorizontalAlignment="Center" Margin="0,2,0,0" />
             </StackPanel>
           </Border>
@@ -139,36 +139,36 @@
               <TextBlock x:Name="DiskText" Text="0.0G" HorizontalAlignment="Center"
                          FontSize="{DynamicResource FontSizeLg}" FontWeight="Bold"
                          Foreground="{DynamicResource BrandBrush}" />
-              <TextBlock Text="剩余磁盘" Style="{StaticResource CaptionText}"
+              <TextBlock Text="{DynamicResource Loc.console.diskFree}" Style="{StaticResource CaptionText}"
                          HorizontalAlignment="Center" Margin="0,2,0,0" />
             </StackPanel>
           </Border>
         </UniformGrid>
 
-        <TextBlock Style="{StaticResource SectionTitle}" Text="场景" Margin="0,18,0,10" />
+        <TextBlock Style="{StaticResource SectionTitle}" Text="{DynamicResource Loc.console.scenes}" Margin="0,18,0,10" />
         <StackPanel x:Name="ScenesPanel" />
         <TextBlock x:Name="ScenesEmptyText" Style="{StaticResource MutedText}"
-                   Text="未读取到场景列表。" Visibility="Collapsed" />
+                   Text="{DynamicResource Loc.console.scenesEmpty}" Visibility="Collapsed" />
 
-        <TextBlock Style="{StaticResource SectionTitle}" Text="当前场景元素" Margin="0,18,0,10" />
+        <TextBlock Style="{StaticResource SectionTitle}" Text="{DynamicResource Loc.console.sceneItems}" Margin="0,18,0,10" />
         <StackPanel x:Name="SceneItemsPanel" />
         <TextBlock x:Name="SceneItemsEmptyText" Style="{StaticResource MutedText}"
-                   Text="当前场景没有可显隐的元素。" Visibility="Collapsed" />
+                   Text="{DynamicResource Loc.console.sceneItemsEmpty}" Visibility="Collapsed" />
 
-        <TextBlock Style="{StaticResource SectionTitle}" Text="音频输入" Margin="0,18,0,10" />
+        <TextBlock Style="{StaticResource SectionTitle}" Text="{DynamicResource Loc.console.audio}" Margin="0,18,0,10" />
         <StackPanel x:Name="AudioPanel" />
         <TextBlock x:Name="AudioEmptyText" Style="{StaticResource MutedText}"
-                   Text="未检测到音频输入源。" Visibility="Collapsed" />
+                   Text="{DynamicResource Loc.console.audioEmpty}" Visibility="Collapsed" />
 
-        <TextBlock Style="{StaticResource SectionTitle}" Text="输出" Margin="0,18,0,10" />
+        <TextBlock Style="{StaticResource SectionTitle}" Text="{DynamicResource Loc.console.output}" Margin="0,18,0,10" />
         <Button x:Name="RecordButton" Style="{StaticResource SecondaryButton}"
                 HorizontalContentAlignment="Left" Margin="0,0,0,8" Click="OnRecordClick">
           <StackPanel Orientation="Horizontal">
             <Image Width="16" Height="16" Source="{StaticResource IconRecord}"
                    VerticalAlignment="Center" Margin="0,0,8,0" />
-            <TextBlock x:Name="RecordButtonText" Text="录制：未开始" VerticalAlignment="Center" />
+            <TextBlock x:Name="RecordButtonText" Text="{DynamicResource Loc.console.record.idle}" VerticalAlignment="Center" />
             <ContentControl x:Name="RecordStatusPill" Style="{StaticResource StatusPill}" Tag="info"
-                            Content="未开始" Margin="10,0,0,0" />
+                            Content="{DynamicResource Loc.console.state.idle}" Margin="10,0,0,0" />
           </StackPanel>
         </Button>
         <Button x:Name="StreamButton" Style="{StaticResource SecondaryButton}"
@@ -176,9 +176,9 @@
           <StackPanel Orientation="Horizontal">
             <Image Width="16" Height="16" Source="{StaticResource IconStream}"
                    VerticalAlignment="Center" Margin="0,0,8,0" />
-            <TextBlock x:Name="StreamButtonText" Text="推流：未开始" VerticalAlignment="Center" />
+            <TextBlock x:Name="StreamButtonText" Text="{DynamicResource Loc.console.stream.idle}" VerticalAlignment="Center" />
             <ContentControl x:Name="StreamStatusPill" Style="{StaticResource StatusPill}" Tag="info"
-                            Content="未开始" Margin="10,0,0,0" />
+                            Content="{DynamicResource Loc.console.state.idle}" Margin="10,0,0,0" />
           </StackPanel>
         </Button>
         <Button x:Name="VirtualCamButton" Style="{StaticResource SecondaryButton}"
@@ -186,47 +186,47 @@
           <StackPanel Orientation="Horizontal">
             <Image Width="16" Height="16" Source="{StaticResource IconConnect}"
                    VerticalAlignment="Center" Margin="0,0,8,0" />
-            <TextBlock x:Name="VirtualCamButtonText" Text="虚拟摄像头：关闭" VerticalAlignment="Center" />
+            <TextBlock x:Name="VirtualCamButtonText" Text="{DynamicResource Loc.console.vcam.idle}" VerticalAlignment="Center" />
             <ContentControl x:Name="VirtualCamStatusPill" Style="{StaticResource StatusPill}" Tag="info"
-                            Content="关闭" Margin="10,0,0,0" />
+                            Content="{DynamicResource Loc.console.vcam.off}" Margin="10,0,0,0" />
           </StackPanel>
         </Button>
 
         <Border Style="{StaticResource HLine}" Margin="0,16,0,12" />
         <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
-          <TextBlock Text="定时停止" FontWeight="SemiBold" VerticalAlignment="Center"
+          <TextBlock Text="{DynamicResource Loc.console.timer}" FontWeight="SemiBold" VerticalAlignment="Center"
                      FontSize="{DynamicResource FontSizeSm}"
                      Foreground="{DynamicResource TextBrush}" Margin="0,0,10,0" />
           <ComboBox x:Name="TimerTargetBox" Style="{StaticResource AppComboBox}" Width="90"
                     VerticalAlignment="Center">
-            <ComboBoxItem Content="录制" />
-            <ComboBoxItem Content="推流" />
+            <ComboBoxItem Content="{DynamicResource Loc.console.timer.record}" />
+            <ComboBoxItem Content="{DynamicResource Loc.console.timer.stream}" />
           </ComboBox>
           <ComboBox x:Name="TimerDurationBox" Style="{StaticResource AppComboBox}" Width="110"
                     Margin="8,0,0,0" VerticalAlignment="Center">
-            <ComboBoxItem Content="15 分钟" Tag="900" />
-            <ComboBoxItem Content="30 分钟" Tag="1800" />
-            <ComboBoxItem Content="45 分钟" Tag="2700" />
-            <ComboBoxItem Content="60 分钟" Tag="3600" />
-            <ComboBoxItem Content="90 分钟" Tag="5400" />
+            <ComboBoxItem Content="{DynamicResource Loc.console.timer.min15}" Tag="900" />
+            <ComboBoxItem Content="{DynamicResource Loc.console.timer.min30}" Tag="1800" />
+            <ComboBoxItem Content="{DynamicResource Loc.console.timer.min45}" Tag="2700" />
+            <ComboBoxItem Content="{DynamicResource Loc.console.timer.min60}" Tag="3600" />
+            <ComboBoxItem Content="{DynamicResource Loc.console.timer.min90}" Tag="5400" />
           </ComboBox>
-          <Button x:Name="TimerStartButton" Content="开始定时" Style="{StaticResource SecondaryButton}"
+          <Button x:Name="TimerStartButton" Content="{DynamicResource Loc.console.timer.start}" Style="{StaticResource SecondaryButton}"
                   Margin="8,0,0,0" VerticalAlignment="Center" Click="OnTimerStartClick" />
-          <Button x:Name="TimerCancelButton" Content="取消" Style="{StaticResource GhostButton}"
+          <Button x:Name="TimerCancelButton" Content="{DynamicResource Loc.common.cancel}" Style="{StaticResource GhostButton}"
                   Margin="8,0,0,0" VerticalAlignment="Center" Click="OnTimerCancelClick" />
           <TextBlock x:Name="TimerCountdownText" VerticalAlignment="Center" Margin="12,0,0,0"
                      FontSize="{DynamicResource FontSizeSm}"
                      Foreground="{DynamicResource BrandBrush}" FontWeight="Bold" />
         </StackPanel>
         <TextBlock Style="{StaticResource CaptionText}" Margin="2,0,0,0"
-                   Text="到点自动停止并弹出系统通知；若中途手动停止录制 / 推流，定时器会自动取消。" />
+                   Text="{DynamicResource Loc.console.timer.hint}" />
 
         <StackPanel Orientation="Horizontal" Margin="0,14,0,0">
-          <Button x:Name="MiniWindowButton" Content="迷你小窗（录制 / 推流）"
+          <Button x:Name="MiniWindowButton" Content="{DynamicResource Loc.console.miniWindow}"
                   Style="{StaticResource GhostButton}" HorizontalAlignment="Left"
-                  ToolTip="呼出置顶小窗：一键开始 / 停止录制、推流、虚拟摄像头（也可从托盘菜单或 Ctrl+Alt+M 呼出）"
+                  ToolTip="{DynamicResource Loc.console.miniWindowTip}"
                   Click="OnMiniWindowClick" />
-          <Button x:Name="OpenRecordDirButton" Content="打开录制目录" Style="{StaticResource GhostButton}"
+          <Button x:Name="OpenRecordDirButton" Content="{DynamicResource Loc.console.openRecordDir}" Style="{StaticResource GhostButton}"
                   HorizontalAlignment="Left" Margin="10,0,0,0" Click="OnOpenRecordDirClick" />
         </StackPanel>
         <TextBlock x:Name="RecordDirHintText" Style="{StaticResource CaptionText}" Margin="2,6,0,0"

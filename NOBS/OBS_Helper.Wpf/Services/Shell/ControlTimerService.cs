@@ -104,11 +104,11 @@ public sealed class ControlTimerService : IDisposable
         var active = _current.Target == TimerTarget.Record ? _obs.RecordStatus.Active : _obs.StreamStatus.Active;
         if (!active && !_fired && DateTime.UtcNow - _startUtc >= GracePeriod)
         {
-            var label = _current.Target == TimerTarget.Record ? "录制" : "推流";
+            var label = _current.Target == TimerTarget.Record ? Strings.T("console.timer.record") : Strings.T("console.timer.stream");
             var was = _current;
             _current = null;
             _timer.Stop();
-            _tray.Notify("定时器已取消", $"{label}已手动停止，定时自动停止已取消。");
+            _tray.Notify(Strings.T("console.timer.cancelledTitle"), Strings.T("console.timer.cancelledMessage", label));
             StateChanged?.Invoke();
             return;
         }
@@ -128,14 +128,14 @@ public sealed class ControlTimerService : IDisposable
         if (target == TimerTarget.Record)
         {
             _ = FireAndForgetAsync(_obs.StopRecordAsync);
-            _tray.Notify("定时停止录制", $"已按定时设置（{t.TotalSeconds / 60} 分钟）自动停止录制。");
-            AppServices.Toast.Show("定时停止生效：录制已停止", "ok");
+            _tray.Notify(Strings.T("console.timer.recordStoppedTitle"), Strings.T("console.timer.recordStoppedMessage", t.TotalSeconds / 60));
+            AppServices.Toast.Show(Strings.T("console.timer.recordStoppedToast"), "ok");
         }
         else
         {
             _ = FireAndForgetAsync(_obs.StopStreamAsync);
-            _tray.Notify("定时停止推流", $"已按定时设置（{t.TotalSeconds / 60} 分钟）自动停止推流。");
-            AppServices.Toast.Show("定时停止生效：推流已停止", "ok");
+            _tray.Notify(Strings.T("console.timer.streamStoppedTitle"), Strings.T("console.timer.streamStoppedMessage", t.TotalSeconds / 60));
+            AppServices.Toast.Show(Strings.T("console.timer.streamStoppedToast"), "ok");
         }
         StateChanged?.Invoke();
     }

@@ -1,3 +1,4 @@
+using OBS_Helper.Wpf.Localization;
 namespace OBS_Helper.Wpf.Services.Audio;
 
 /// <summary>一个音频端点（播放 / 录音设备）的采样率信息。</summary>
@@ -39,8 +40,8 @@ public static class SampleRateCheckCore
             items.Add(new SampleRateCheckItem
             {
                 Status = "ok",
-                Title = "OBS 采样率",
-                Detail = "48kHz，与平台和绝大多数采集 / 播放设备的期望值一致。"
+                Title = Strings.T("samplerate.obs.title"),
+                Detail = Strings.T("samplerate.obs.ok")
             });
         }
         else
@@ -48,10 +49,8 @@ public static class SampleRateCheckCore
             items.Add(new SampleRateCheckItem
             {
                 Status = "warn",
-                Title = "OBS 采样率不是 48kHz",
-                Detail = $"当前 {obsRate}Hz：与多数设备的 48kHz 不一致，运行时会做实时重采样，" +
-                         "是音质发闷、爆音与音画漂移的典型根因。" +
-                         "\n建议：设置 → 音频 → 采样率改为 48kHz。",
+                Title = Strings.T("samplerate.obs.warnTitle"),
+                Detail = Strings.T("samplerate.obs.warnDetail", obsRate),
                 ProblemId = "au-sample-mismatch"
             });
         }
@@ -62,9 +61,8 @@ public static class SampleRateCheckCore
             items.Add(new SampleRateCheckItem
             {
                 Status = "info",
-                Title = "系统音频设备",
-                Detail = "未能枚举到系统音频设备的共享模式采样率（权限或注册表读取受限）；可手动核对：" +
-                         "声音设置 → 设备属性 → 高级，把默认格式统一为「24 位或 16 位，48000 Hz」。"
+                Title = Strings.T("samplerate.devices.title"),
+                Detail = Strings.T("samplerate.devices.unknown")
             });
             return items;
         }
@@ -75,8 +73,8 @@ public static class SampleRateCheckCore
             items.Add(new SampleRateCheckItem
             {
                 Status = "ok",
-                Title = "系统音频设备",
-                Detail = $"已枚举 {devices.Count} 个活动设备，共享模式采样率全部为 {TargetRate / 1000}kHz。"
+                Title = Strings.T("samplerate.devices.title"),
+                Detail = Strings.T("samplerate.devices.ok", devices.Count, TargetRate / 1000)
             });
             return items;
         }
@@ -85,10 +83,8 @@ public static class SampleRateCheckCore
         items.Add(new SampleRateCheckItem
         {
             Status = "warn",
-            Title = $"有 {mismatched.Count} 个设备的共享模式不是 48kHz",
-            Detail = $"{names}。" +
-                     "\n建议：Windows 声音设置 → 对应设备 → 属性 → 高级，把默认格式改为「48000 Hz」；" +
-                     "麦克风同理。改完后重启 OBS 生效。",
+            Title = Strings.T("samplerate.devices.warnTitle", mismatched.Count),
+            Detail = Strings.T("samplerate.devices.warnDetail", names),
             ProblemId = "au-sample-mismatch"
         });
 

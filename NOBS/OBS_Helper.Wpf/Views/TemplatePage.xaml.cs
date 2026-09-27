@@ -52,7 +52,7 @@ public partial class TemplatePage : UserControl, INavigationAware
         catch (Exception ex)
         {
             _templates = Array.Empty<SceneTemplate>();
-            _loadError = $"模板数据加载失败：{ex.Message}";
+            _loadError = Strings.T("template.loadError", ex.Message);
             App.ReportError(ErrorCodes.DataLoadFailed, ex);
         }
     }
@@ -65,7 +65,7 @@ public partial class TemplatePage : UserControl, INavigationAware
 
         if (_templates.Count == 0)
         {
-            EmptyText.Text = _loadError ?? "没有可用的模板数据，请重新安装程序。";
+            EmptyText.Text = _loadError ?? Strings.T("template.empty");
             EmptyText.Visibility = Visibility.Visible;
             TemplateList.Visibility = Visibility.Collapsed;
             return;
@@ -134,7 +134,7 @@ public partial class TemplatePage : UserControl, INavigationAware
         var canvas = t.Canvas;
         var canvasText = new TextBlock
         {
-            Text = $"画布 {canvas.BaseWidth}×{canvas.BaseHeight} → 输出 {canvas.OutputWidth}×{canvas.OutputHeight} · {canvas.FpsNumerator} FPS",
+            Text = Strings.T("template.canvas", canvas.BaseWidth, canvas.BaseHeight, canvas.OutputWidth, canvas.OutputHeight, canvas.FpsNumerator),
             Margin = new Thickness(0, 0, 0, 6)
         };
         canvasText.SetResourceReference(TextBlock.FontSizeProperty, "FontSizeXs");
@@ -143,12 +143,12 @@ public partial class TemplatePage : UserControl, INavigationAware
 
         // --- 场景 / 来源 / 待补
         var counts = new WrapPanel { Margin = new Thickness(0, 0, 0, 6) };
-        counts.Children.Add(BuildPill($"场景 ×{t.Scenes.Count}", ""));
+        counts.Children.Add(BuildPill(Strings.T("template.sceneCount", t.Scenes.Count), ""));
         var totalSources = t.Scenes.Sum(s => s.Sources.Count);
         var placeholders = t.Scenes.Sum(s => s.Sources.Count(x => x.Placeholder is not null));
-        counts.Children.Add(BuildPill($"来源 ×{totalSources}", ""));
+        counts.Children.Add(BuildPill(Strings.T("template.sourceCount", totalSources), ""));
         if (placeholders > 0)
-            counts.Children.Add(BuildPill($"待补 ×{placeholders}", "WarnBrush"));
+            counts.Children.Add(BuildPill(Strings.T("template.placeholderCount", placeholders), "WarnBrush"));
         stack.Children.Add(counts);
 
         // --- 推荐插件依赖标注（P2-2）：对照本机体检结果显示「已安装 / 未安装」
@@ -158,10 +158,10 @@ public partial class TemplatePage : UserControl, INavigationAware
         var hotkeys = t.Scenes.Where(s => !string.IsNullOrWhiteSpace(s.Hotkey)).Select(s => $"{s.Hotkey} {s.Name}").ToList();
         var transitionInfo = $"{t.Transition} {t.TransitionDurationMs}ms";
         if (hotkeys.Count > 0)
-            transitionInfo += $" · 快捷键 {string.Join(" / ", hotkeys)}";
+            transitionInfo += Strings.T("template.hotkeys", string.Join(" / ", hotkeys));
         var sceneSettings = new TextBlock
         {
-            Text = $"场景切换：{transitionInfo}",
+            Text = Strings.T("template.transition", transitionInfo),
             Margin = new Thickness(0, 0, 0, 6)
         };
         sceneSettings.SetResourceReference(TextBlock.FontSizeProperty, "FontSizeXs");
@@ -174,7 +174,7 @@ public partial class TemplatePage : UserControl, INavigationAware
         {
             var portraitWarn = new TextBlock
             {
-                Text = "竖屏模板：落地后请确认 OBS 视频设置已改为竖屏分辨率，否则画面将会拉伸变形。",
+                Text = Strings.T("template.portraitNote"),
                 TextWrapping = TextWrapping.Wrap,
                 Margin = new Thickness(0, 0, 0, 8)
             };
@@ -201,7 +201,7 @@ public partial class TemplatePage : UserControl, INavigationAware
         var buttons = new StackPanel { Orientation = Orientation.Horizontal };
         var applyBtn = new Button
         {
-            Content = "落地到 OBS",
+            Content = Strings.T("template.apply"),
             Style = (Style)FindResource("PrimaryButton"),
             Tag = t.Id,
             Margin = new Thickness(0, 0, 10, 0)
@@ -211,7 +211,7 @@ public partial class TemplatePage : UserControl, INavigationAware
 
         var exportBtn = new Button
         {
-            Content = "导出场景集合 JSON",
+            Content = Strings.T("template.export"),
             Style = (Style)FindResource("SecondaryButton"),
             Tag = t.Id
         };
@@ -296,7 +296,7 @@ public partial class TemplatePage : UserControl, INavigationAware
         var row = new WrapPanel { Margin = new Thickness(0, 0, 0, 6) };
         var label = new TextBlock
         {
-            Text = "推荐插件：",
+            Text = Strings.T("template.recommendedPlugins"),
             VerticalAlignment = VerticalAlignment.Center,
             Margin = new Thickness(0, 0, 2, 8)
         };
@@ -312,7 +312,7 @@ public partial class TemplatePage : UserControl, INavigationAware
 
             var text = new TextBlock
             {
-                Text = installed ? $"{name} ✓已安装" : $"{name} 未安装 →",
+                Text = installed ? Strings.T("template.pluginInstalled", name) : Strings.T("template.pluginMissing", name),
                 FontWeight = FontWeights.SemiBold,
                 VerticalAlignment = VerticalAlignment.Center
             };
@@ -325,8 +325,8 @@ public partial class TemplatePage : UserControl, INavigationAware
                 Margin = new Thickness(0, 0, 8, 8),
                 Child = text,
                 ToolTip = installed
-                    ? $"用途：{req.Reason}"
-                    : $"用途：{req.Reason}。点击前往插件广场查看与下载"
+                    ? Strings.T("template.pluginPurpose", req.Reason)
+                    : Strings.T("template.pluginPurposeClick", req.Reason)
             };
 
             if (!installed && entry is not null)
@@ -368,23 +368,23 @@ public partial class TemplatePage : UserControl, INavigationAware
 
         if (!AppServices.Obs.IsConnected)
         {
-            ShowStatus("warn", "尚未连接 OBS。请先去「OBS 控制台」连上 obs-websocket 后再试，或改用「导出场景集合 JSON」离线使用。");
+            ShowStatus("warn", Strings.T("template.notConnected"));
             return;
         }
 
-        var confirmMsg = $"将在 OBS 中新建一个干净的配置集合并切换过去，为你创建 {t.Scenes.Count} 个场景、{t.Scenes.Sum(s => s.Sources.Count)} 个来源。设备 / 文件 / URL 类来源需您后续手动补齐。";
+        var confirmMsg = Strings.T("template.confirmMessage", t.Scenes.Count, t.Scenes.Sum(s => s.Sources.Count));
 
         // P2-2：落地前对照本机体检结果提示缺失的推荐插件（不阻断）
         var missing = GetMissingRequirements(t);
         if (missing.Count > 0)
         {
-            confirmMsg += $"\n\n注意：未检测到推荐插件 {string.Join("、", missing.Select(m => m.Name))}（{string.Join("；", missing.Select(m => m.Reason))}）。模板仍可落地，相关能力可稍后补装。";
+            confirmMsg += Strings.T("template.missingPlugins", string.Join(", ", missing.Select(m => m.Name)), string.Join("; ", missing.Select(m => m.Reason)));
         }
 
         if (!ConfirmDialog.Show(
-                $"落地模板「{t.Title}」",
-                confirmMsg + "\n\n确认继续？",
-                "落地", "取消"))
+                Strings.T("template.applyTitle", t.Title),
+                confirmMsg + Strings.T("template.confirmContinue"),
+                Strings.T("template.applyButton"), Strings.T("common.cancel")))
         {
             return;
         }
@@ -395,21 +395,21 @@ public partial class TemplatePage : UserControl, INavigationAware
             var result = await AppServices.Templates.ApplyAsync(id, applyCanvas: true, ct: CancellationToken.None, p: null!);
             if (result.Ok)
             {
-                var msg = $"模板「{t.Title}」已落地！共创建 {result.Created} 个来源";
-                if (result.Skipped > 0) msg += $"（{result.Skipped} 个已跳过）";
+                var msg = Strings.T("template.applyDone", t.Title, result.Created);
+                if (result.Skipped > 0) msg += Strings.T("template.applySkipped", result.Skipped);
                 if (result.Placeholders.Count > 0)
-                    msg += $"\n\n还需手动补齐：\n  · " + string.Join("\n  · ", result.Placeholders);
+                    msg += Strings.T("template.manualPlaceholders", string.Join("\n  · ", result.Placeholders));
                 ShowStatus("ok", msg);
             }
             else
             {
-                ShowStatus("danger", $"模板落地失败：{result.Error ?? "未知错误"}");
+                ShowStatus("danger", Strings.T("template.applyFailed", result.Error ?? Strings.T("common.unknown")));
                 App.ReportError(ErrorCodes.TemplateApplyFailed);
             }
         }
         catch (Exception ex)
         {
-            ShowStatus("danger", $"模板落地时发生异常：{ex.Message}");
+            ShowStatus("danger", Strings.T("template.applyException", ex.Message));
             App.ReportError(ErrorCodes.TemplateApplyFailed, ex);
         }
         finally
@@ -429,10 +429,10 @@ public partial class TemplatePage : UserControl, INavigationAware
         // 用 WPF 内置的文件夹选择器
         var dialog = new Microsoft.Win32.SaveFileDialog
         {
-            Title = $"导出模板「{t.Title}」",
+            Title = Strings.T("template.exportTitle", t.Title),
             FileName = SceneTemplateService.Slugify(t.Id),
             DefaultExt = ".json",
-            Filter = "OBS 场景集合 (*.json)|*.json"
+            Filter = Strings.T("template.exportFilter")
         };
 
         if (dialog.ShowDialog() != true) return;
@@ -443,11 +443,11 @@ public partial class TemplatePage : UserControl, INavigationAware
             var dir = Path.GetDirectoryName(dialog.FileName)!;
             var baseName = Path.GetFileNameWithoutExtension(dialog.FileName);
             await AppServices.Templates.ExportToObsAsync(id, dir, CancellationToken.None);
-            ShowStatus("ok", $"已导出到 {dir}（文件名以 obshelper_{SceneTemplateService.Slugify(t.Id)} 开头，请放入 OBS 的 basic/scenes/ 目录）。");
+            ShowStatus("ok", Strings.T("template.exported", dir, SceneTemplateService.Slugify(t.Id)));
         }
         catch (Exception ex)
         {
-            ShowStatus("danger", $"导出失败：{ex.Message}");
+            ShowStatus("danger", Strings.T("template.exportFailed", ex.Message));
             App.ReportError(ErrorCodes.TemplateApplyFailed, ex);
         }
         finally

@@ -84,7 +84,7 @@ public sealed class ObsWebSocketClient : IAsyncDisposable
         if (completed != identified)
         {
             if (ct.IsCancellationRequested) throw new OperationCanceledException(ct);
-            throw new TimeoutException("OBS 握手超时：已建立 TCP 连接但未收到 Identified 响应。");
+            throw new TimeoutException(Strings.T("obs.ws.handshakeTimeout"));
         }
         await identified; // 传播握手失败异常（如密码错误）
     }
@@ -92,7 +92,7 @@ public sealed class ObsWebSocketClient : IAsyncDisposable
     /// <summary>发送一条请求并等待响应。</summary>
     public async Task<ObsRequestResult> RequestAsync(string requestType, object? requestData = null, CancellationToken ct = default)
     {
-        if (!IsOpen) return ObsRequestResult.Fail(0, "未连接到 OBS。");
+        if (!IsOpen) return ObsRequestResult.Fail(0, Strings.T("obs.ws.notConnected"));
 
         var requestId = Guid.NewGuid().ToString("N");
         var tcs = new TaskCompletionSource<ObsRequestResult>(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -116,7 +116,7 @@ public sealed class ObsWebSocketClient : IAsyncDisposable
         catch (Exception ex)
         {
             _pending.TryRemove(requestId, out _);
-            return ObsRequestResult.Fail(0, "发送请求失败：" + ex.Message);
+            return ObsRequestResult.Fail(0, Strings.T("obs.ws.sendFailed", ex.Message));
         }
 
         return await AwaitResponseAsync(tcs, requestId, requestType, ct);
@@ -134,7 +134,7 @@ public sealed class ObsWebSocketClient : IAsyncDisposable
         CancellationToken ct = default)
     {
         if (requests.Count == 0) return Array.Empty<ObsRequestResult>();
-        if (!IsOpen) return requests.Select(_ => ObsRequestResult.Fail(0, "未连接到 OBS。")).ToArray();
+        if (!IsOpen) return requests.Select(_ => ObsRequestResult.Fail(0, Strings.T("obs.ws.notConnected"))).ToArray();
 
         var batchId = Guid.NewGuid().ToString("N");
         var items = requests.Select(r => new
@@ -174,12 +174,12 @@ public sealed class ObsWebSocketClient : IAsyncDisposable
         catch (Exception ex)
         {
             _pending.TryRemove(batchId, out _);
-            return requests.Select(_ => ObsRequestResult.Fail(0, "发送批量请求失败：" + ex.Message)).ToArray();
+            return requests.Select(_ => ObsRequestResult.Fail(0, Strings.T("obs.ws.batchSendFailed", ex.Message))).ToArray();
         }
 
         var batch = await AwaitResponseAsync(tcs, batchId, "CallBatch", ct);
         if (!batch.Ok)
-            return requests.Select(_ => ObsRequestResult.Fail(batch.Code, batch.Comment ?? "批量请求失败。")).ToArray();
+            return requests.Select(_ => ObsRequestResult.Fail(batch.Code, batch.Comment ?? Strings.T("obs.ws.batchFailed"))).ToArray();
 
         var results = new ObsRequestResult[requests.Count];
         if (batch.Data is { } d && d.TryGetProperty("results", out var arr) && arr.ValueKind == JsonValueKind.Array)
@@ -193,7 +193,7 @@ public sealed class ObsWebSocketClient : IAsyncDisposable
         }
 
         for (var i = 0; i < results.Length; i++)
-            results[i] ??= ObsRequestResult.Fail(0, "批量响应中缺少该子请求的结果。");
+            results[i] ??= ObsRequestResult.Fail(0, Strings.T("obs.ws.batchMissingResult"));
 
         return results;
     }
@@ -211,7 +211,7 @@ public sealed class ObsWebSocketClient : IAsyncDisposable
             // 调用方主动取消要如实抛 OperationCanceledException（重置/导入等上层按「已取消」处理），
             // 不能吞成「请求超时」——超时文案会误导用户以为是网络问题。
             if (ct.IsCancellationRequested) throw new OperationCanceledException(ct);
-            return ObsRequestResult.Fail(0, $"请求 {requestType} 超时（>{RequestTimeout.TotalSeconds:0}s）。");
+            return ObsRequestResult.Fail(0, Strings.T("obs.ws.requestTimeout", requestType, RequestTimeout.TotalSeconds));
         }
         return await tcs.Task;
     }
@@ -254,7 +254,7 @@ public sealed class ObsWebSocketClient : IAsyncDisposable
     {
         var buffer = ArrayPool<byte>.Shared.Rent(16 * 1024);
         var message = new MemoryStream();
-        string closeReason = "连接已断开。";
+        string closeReason = Strings.T("obs.ws.closed");
 
         try
         {
@@ -267,7 +267,7 @@ public sealed class ObsWebSocketClient : IAsyncDisposable
                     result = await socket.ReceiveAsync(new ArraySegment<byte>(buffer), ct);
                     if (result.MessageType == WebSocketMessageType.Close)
                     {
-                        closeReason = $"OBS 关闭了连接（{result.CloseStatus}）：{result.CloseStatusDescription}";
+                        closeReason = Strings.T("obs.ws.closedByObs", result.CloseStatus, result.CloseStatusDescription);
                         goto finished;
                     }
                     message.Write(buffer, 0, result.Count);
@@ -287,11 +287,11 @@ public sealed class ObsWebSocketClient : IAsyncDisposable
         }
         catch (OperationCanceledException)
         {
-            closeReason = "连接已主动关闭。";
+            closeReason = Strings.T("obs.ws.closedLocally");
         }
         catch (Exception ex)
         {
-            closeReason = "连接异常：" + ex.Message;
+            closeReason = Strings.T("obs.ws.error", ex.Message);
             _identifyTcs?.TrySetException(new InvalidOperationException(closeReason));
         }
 
@@ -366,7 +366,7 @@ public sealed class ObsWebSocketClient : IAsyncDisposable
             if (string.IsNullOrEmpty(password))
             {
                 _identifyTcs?.TrySetException(new UnauthorizedAccessException(
-                    "OBS 已开启 WebSocket 密码验证，但未提供密码。请在「设置 → 连接」中填写 OBS「工具 → obs-websocket 设置」里显示的密码。"));
+                    Strings.T("obs.ws.needPassword")));
                 return;
             }
             authResponse = ObsAuth.BuildAuthResponse(password, salt, challenge);
@@ -393,7 +393,7 @@ public sealed class ObsWebSocketClient : IAsyncDisposable
     {
         var socket = _socket;
         if (socket is null || socket.State != WebSocketState.Open)
-            throw new InvalidOperationException("WebSocket 未处于打开状态。");
+            throw new InvalidOperationException(Strings.T("obs.ws.notOpen"));
 
         var bytes = JsonSerializer.SerializeToUtf8Bytes(payload, JsonOpts);
         await _sendLock.WaitAsync(ct);

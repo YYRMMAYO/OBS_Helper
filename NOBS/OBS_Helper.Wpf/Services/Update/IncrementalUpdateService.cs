@@ -1,3 +1,4 @@
+using OBS_Helper.Wpf.Localization;
 using System.Diagnostics;
 using System.IO;
 using System.IO.Compression;
@@ -99,7 +100,7 @@ public sealed class IncrementalUpdateService
             }
             catch (Exception ex)
             {
-                return (null, "增量包下载失败：" + ex.Message);
+                return (null, Strings.T("delta.downloadFailed", ex.Message));
             }
 
             // 2) 清空旧暂存并安全解压（逐条目校验路径，防 zip-slip）
@@ -110,7 +111,7 @@ public sealed class IncrementalUpdateService
             }
             catch (Exception ex)
             {
-                return (null, "增量包解压失败：" + ex.Message);
+                return (null, Strings.T("delta.extractFailed", ex.Message));
             }
             finally
             {
@@ -121,7 +122,7 @@ public sealed class IncrementalUpdateService
             if (!File.Exists(ManifestPath))
             {
                 ClearPending();
-                return (null, "增量包缺少 update_manifest.json，请改用完整安装包。");
+                return (null, Strings.T("delta.noManifest"));
             }
 
             UpdateManifest? manifest;
@@ -138,7 +139,7 @@ public sealed class IncrementalUpdateService
             if (manifest is null || manifest.Format != 1 || string.IsNullOrWhiteSpace(manifest.TargetVersion))
             {
                 ClearPending();
-                return (null, "增量包清单无效，请改用完整安装包。");
+                return (null, Strings.T("delta.invalidManifest"));
             }
 
             // 4) 兼容性：当前版本必须 ≥ 基准版本，否则说明跳版本，增量包不适用
@@ -147,7 +148,7 @@ public sealed class IncrementalUpdateService
             if (current is not null && baseV is not null && current < baseV)
             {
                 ClearPending();
-                return (null, $"增量包基准版本 V{baseV} 高于当前版本，请改用完整安装包。");
+                return (null, Strings.T("delta.baseNewer", baseV));
             }
 
             // 5) 逐文件 SHA-256 校验
@@ -159,7 +160,7 @@ public sealed class IncrementalUpdateService
                 if (!File.Exists(src))
                 {
                     ClearPending();
-                    return (null, $"增量包缺少文件 {entry.Path}，请改用完整安装包。");
+                    return (null, Strings.T("delta.missingFile", entry.Path));
                 }
                 try
                 {
@@ -167,13 +168,13 @@ public sealed class IncrementalUpdateService
                         || !string.Equals(FileHasher.Sha256(src), entry.Sha256, StringComparison.OrdinalIgnoreCase))
                     {
                         ClearPending();
-                        return (null, $"增量包文件校验失败：{entry.Path}，请改用完整安装包。");
+                        return (null, Strings.T("delta.hashMismatch", entry.Path));
                     }
                 }
                 catch (Exception ex)
                 {
                     ClearPending();
-                    return (null, $"增量包文件读取失败：{entry.Path}（{ex.Message}）。");
+                    return (null, Strings.T("delta.fileUnreadable", entry.Path, ex.Message));
                 }
             }
 
@@ -183,7 +184,7 @@ public sealed class IncrementalUpdateService
         catch (Exception ex)
         {
             ClearPending();
-            return (null, "增量更新准备失败：" + ex.Message);
+            return (null, Strings.T("delta.prepFailed", ex.Message));
         }
     }
 
@@ -196,7 +197,7 @@ public sealed class IncrementalUpdateService
         var ownExe = Process.GetCurrentProcess().MainModule?.FileName;
         if (string.IsNullOrEmpty(ownExe) || !File.Exists(ownExe))
         {
-            return (false, "无法定位应用自身路径。");
+            return (false, Strings.T("delta.noSelfPath"));
         }
 
         var args = string.Join(' ',
@@ -227,7 +228,7 @@ public sealed class IncrementalUpdateService
         catch (Exception ex)
         {
             // 常见原因：用户拒绝 UAC、目录权限异常
-            return (false, "启动更新进程失败：" + ex.Message + "（可改用完整安装包）。");
+            return (false, Strings.T("delta.launchFailed", ex.Message));
         }
     }
 

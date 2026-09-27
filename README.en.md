@@ -10,7 +10,7 @@
 [![Platform](https://img.shields.io/badge/Platform-Windows_10%2F11-0078D6.svg)]()
 [![.NET](https://img.shields.io/badge/.NET-10-512BD4.svg)]()
 [![Stack](https://img.shields.io/badge/Stack-WPF_%2F_C%23-239120.svg)]()
-[![Release](https://img.shields.io/badge/Release-2.9.1-38bdf8.svg)](https://github.com/YYRMMAYO/OBS_Helper/releases)
+[![Release](https://img.shields.io/badge/Release-2.9.2-38bdf8.svg)](https://github.com/YYRMMAYO/OBS_Helper/releases)
 [![OBS](https://img.shields.io/badge/OBS-32.2.2-302E31.svg)](https://github.com/obsproject/obs-studio/releases)
 [![Offline](https://img.shields.io/badge/offline--first-2ea44f.svg)]()
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
@@ -25,16 +25,16 @@
 >
 > **Since V2.2 there's a built-in plugin directory**: 57 curated plugins with direct GitHub Releases downloads, a read-only scan of locally installed plugins (with multi-drive OBS install detection), and log-analysis links that jump straight to the suspect plugin. **Since V2.1, updates are incremental and knowledge bases update independently**: only changed files are downloaded, and both the issue database and the plugin catalog can be upgraded without waiting for a new release.
 >
-> **V2.9.1 fixes the knowledge-base raw channel** (both GitHub-raw URLs were missing the repository's leading `NOBS/` segment, so they had always returned 404 and every check silently fell back to the Release asset — a commit now really does reach every install, and non-2xx responses are logged), turns the **first-run tutorial into a guided tour that navigates the UI** for you, and adds **official OBS download entries** (obsproject.com / the official GitHub releases, plus a direct link to the current stable Windows installer resolved via the GitHub API — official hosts only, so fake "download sites" don't get a chance). See [RELEASE_NOTES_v2.9.1.md](NOBS/RELEASE_NOTES_v2.9.1.md) (Chinese).
+> **V2.9.2 adds Chinese / English switching at runtime** (Simplified Chinese is the default): the interface, tray menu and notifications, error messages, log-analysis rules and conclusions, every health-check verdict, diagnostic reports and exported content all ship in both languages, with **1670 string keys**. Switching reuses the same mechanism as themes — the string table is written into `Application.Resources` and XAML refers to it through `{DynamicResource Loc.*}` — so it takes effect **instantly, with no restart**; strings built in code are refreshed by re-running the current page's existing navigation lifecycle. The **installer now asks which language you want** (Simplified Chinese is preselected and system detection is off) and passes the choice to the app through `language.ini` as its first-run default; in-app choices always win, so reinstalling or upgrading never overrides them. Bundled offline content (issue database, scene templates, plugin catalog, troubleshooting guide) is **still Chinese-only** in this release — the plan for translating it is written up in [NOBS/docs/I18N_EN_CONTENT_PLAN.md](NOBS/docs/I18N_EN_CONTENT_PLAN.md). See [RELEASE_NOTES_v2.9.2.md](NOBS/RELEASE_NOTES_v2.9.2.md) (Chinese).
 >
-> **V2.9 adds a first-run tutorial**, re-audits the whole plugin catalog (every entry re-verified against its repository: not archived, recently maintained, Windows build available — abandoned entries dropped, maintenance status shown on each card), and aligns the app with **OBS Studio 32.2.2**: log parsing, config keys, the obs-websocket handshake and the local plugin scan (including the new `%ProgramData%\obs-studio\plugins\<name>\bin\64bit` layout introduced in OBS 32.x) were all verified against a real 32.2.2 installation.
-
+> **V2.9.1 fixes the knowledge-base raw channel** (both GitHub-raw URLs were missing the repository's leading `NOBS/` segment, so they had always returned 404 and every check silently fell back to the Release asset — a commit now really does reach every install, and non-2xx responses are logged), turns the **first-run tutorial into a guided tour that navigates the UI** for you, and adds **official OBS download entries** (obsproject.com / the official GitHub releases, plus a direct link to the current stable Windows installer resolved via the GitHub API — official hosts only, so fake "download sites" don't get a chance). See [RELEASE_NOTES_v2.9.1.md](NOBS/RELEASE_NOTES_v2.9.1.md) (Chinese).
 ---
 
 ## Highlights
 
 | | |
 |---|---|
+| **Chinese / English, switched instantly** | The interface, tray, notifications, error messages, log rules and health-check verdicts all ship in both languages — **Simplified Chinese by default** — and switching under *Settings → Language* takes effect immediately, with no restart. The installer asks first and uses that answer as the first-run default. Bundled offline content (issue database, templates, plugin catalog, guide) is still Chinese in this release; see [I18N_EN_CONTENT_PLAN](NOBS/docs/I18N_EN_CONTENT_PLAN.md) |
 | **212 fixes, fully offline** | A built-in knowledge base of **212 curated issues** (knowledge base v2.2, organised into 10 categories on the home screen) — symptoms, root causes, step-by-step fixes, tips and related questions. Steps are checkable and your progress is remembered. The **knowledge base updates independently** from the app. |
 | **First-run tutorial (V2.9, guided since V2.9.1)** | A four-step tour on first launch — connect to OBS → where to look when something breaks → one-click health check → go live & decorate. Since V2.9.1 each step **switches the app to the page it is describing** (card tucked into the bottom-right corner, overlay kept light so the page stays readable) and offers extra jump buttons for the other pages it mentions. Replay it any time from *Settings → Onboarding* without restarting. |
 | **Official OBS download entries (V2.9.1)** | For people who can't get hold of genuine OBS: the build page, the toolbox, the home welcome card, the first tutorial step and the troubleshooting guide all link to the **official site** (obsproject.com, Chinese page) and the **official GitHub releases**, plus a "download the current stable Windows installer" button whose direct link is resolved from the GitHub API. Every URL is forced to https and restricted to official hosts (`obsproject.com`, `cdn-fastly.obsproject.com`, `github.com/obsproject/obs-studio`) — a tampered API response makes the app fall back to the release page instead of opening a third-party site. |
@@ -47,7 +47,7 @@
 | **Deep log analysis** | Offline parsing of OBS logs with **39 rules + 3 quantitative ratios**, tuned against **real OBS 32.2.2 logs** — and logs are **sanitized** before anything leaves your machine. Dropped-frame / crash clues can be linked to a suspect plugin and jumped straight to its card. |
 | **One-click scene templates** | 6 built-in stream presets (gaming, vertical shopping, duo talk, teaching, radio standby, go-live trio) that deploy scenes, sources and transitions into OBS in a single click. Templates annotate recommended plugins and flag missing ones against the local scan. |
 | **Privacy-first** | Preferences are plain JSON with no credentials; passwords & API keys get **double encryption** (AES-256-GCM + DPAPI). Nothing is sent anywhere unless you explicitly trigger a diagnostic. |
-| **Zero third-party dependencies** | Native WPF on .NET 10, no NuGet packages, no WebView2 — the `obs-websocket` protocol is implemented by hand. One self-contained folder, instant startup. |
+| **Zero third-party dependencies** | Native WPF on .NET 10, no NuGet packages, no WebView2 — the `obs-websocket` protocol is implemented by hand, and the bilingual string tables are plain BCL dictionaries. One self-contained folder, instant startup. |
 
 ## Features
 
@@ -87,6 +87,7 @@
 - **OBS config management** — config directory detection, backup / export (ZIP, sanitized by default), import (overwrite or merge, with automatic backup), light reset and full factory reset
 - **Streaming setup** — a 6-step walkthrough from zero to live, plus streaming presets for 10 major platforms
 - **Appearance** — light / dark / follow system, 4 font sizes, high-contrast and reduced-motion options
+- **Language** — Simplified Chinese / English, switched instantly (Chinese by default, no restart); the installer choice sets the first-run default
 
 ## Smart Diagnostics
 
@@ -111,7 +112,7 @@ The app only goes online when you **explicitly** enable the free-AI or cloud dia
 
 ## Installation & Updates
 
-- **GitHub Releases** — download the installer or portable ZIP from the [Releases page](https://github.com/YYRMMAYO/OBS_Helper/releases). The portable build needs no installation and carries its own .NET runtime.
+- **GitHub Releases** — download the installer or portable ZIP from the [Releases page](https://github.com/YYRMMAYO/OBS_Helper/releases). The portable build needs no installation and carries its own .NET runtime. The **installer first asks for a language** (Simplified Chinese / English, Chinese preselected) and uses it as the app's first-run default.
 - **Blue Lanzou (CN mirror)** — Chinese users can download from 蓝奏云 with extract code `YYKWY` (see the app's update dialog).
 - **In-app updater (recommended)** — after "Check for updates" finds a newer version you can choose:
   - **Incremental update (all features)**: downloads only the changed files since the last release (usually a few MB), verifies them, auto-elevates & swaps files, then restarts
@@ -119,8 +120,9 @@ The app only goes online when you **explicitly** enable the free-AI or cloud dia
   - **Full installer**: Lanzou or in-app download of the complete package
 
 > Windows 10 / 11. No WebView2, no .NET runtime install, no administrator rights required.
-> Users on 2.9.0 can use the in-app incremental update to reach 2.9.1 (only 4 files change); older versions
-> (2.1.x – 2.8.x) don't match the delta's base version, so install with the setup or portable package instead.
+> Users on 2.9.1 can use the in-app incremental update to reach 2.9.2; on 2.9.0 and older
+> (2.1.x – 2.9.0) the delta base version does not match, so install with the setup or portable package instead.
+> **Language and upgrades:** the installer choice only sets the first-run default — once you change the language in the app, reinstalling or upgrading never overrides it.
 > No OBS yet? The in-app *Setup* page, the *Toolbox* and the home welcome card all link to **official** download sources (obsproject.com and the official GitHub releases).
 
 ## Building from Source
@@ -152,10 +154,10 @@ python scripts\verify_delta.py --old PAKE\windows\OBS_Helper_Portable_2.0.0.zip 
 
 Artifacts land in `NOBS\PAKE\windows\`:
 
-- `OBS_Helper_Setup_2.9.1.exe` — installer
-- `OBS_Helper_Portable_2.9.1.zip` — unzip-and-run portable build
-- `OBS_Helper_Update_2.9.1.zip` — incremental update package (contains `update_manifest.json`, used by the in-app updater)
-- `OBS_Helper_Portable_2.9.1.exe` — single-file build (with `-SingleFile`)
+- `OBS_Helper_Setup_2.9.2.exe` — installer (the wizard includes the language page, Chinese by default)
+- `OBS_Helper_Portable_2.9.2.zip` — unzip-and-run portable build
+- `OBS_Helper_Update_2.9.2.zip` — incremental update package (contains `update_manifest.json`, used by the in-app updater)
+- `OBS_Helper_Portable_2.9.2.exe` — single-file build (with `-SingleFile`)
 - `OBS_Helper_Plugins_1.4.json` — plugin directory v1.4 (independent hot-update asset, published with the release)
 - `OBS_Helper_Knowledge_2.2.json` — issue database v2.2 (independent hot-update asset, published with the release)
 - `manifests/manifest_<ver>.json` — per-version file manifest (SHA-256, delta diff base; not published as a release asset)
@@ -169,6 +171,7 @@ NOBS/
     MainWindow.xaml(.cs)   Left nav + top bar + page host + first-run tutorial overlay, route registration
     AppServices.cs         Composition root: lazy singletons, manual wiring
     Navigation/            Minimal router (route name -> page factory, cache + back stack)
+    Localization/          Bilingual string tables (zh-Hans / en-US, pure BCL, no WPF) + cross-language value checks
     Views/                 18 pages / windows
     Controls/              Shared controls & value converters
     Themes/                Palette.xaml + Controls.xaml style library
@@ -182,12 +185,17 @@ NOBS/
       Ai/                  local / free / cloud diagnostic engines & orchestration (incl. free-tier rate limiter)
       Shell/               tray, global hotkeys, auto scene switcher, timers, system monitor, record watchdog, live log tail, tutorial & OBS log-file finder (pure logic)
       Markdown/            troubleshooting guide markdown parser
+      LocalizationService.cs  Language service: preference storage, Application.Resources, change broadcast
     Assets/                problems.json / plugins.json (embedded seeds, overridable by external files at runtime), troubleshooting.md, scene_templates.json, icons
+  OBS_Helper.Wpf/OBS_Helper_Setup.iss  Inno Setup script (language page, Chinese default, UTF-8 with BOM)
   build.ps1                Windows build & packaging script (installer / portable / delta / manifest)
   scripts/verify_delta.py  delta-package release verifier (simulated upgrade + full SHA-256 diff)
 ```
 
-Theming works by writing the palette into `Application.Resources`; all XAML references it via `DynamicResource`, so theme switches take effect across the whole window instantly.
+Theming and language switching work the same way: the current palette / current string table is written into
+`Application.Resources` and all XAML refers to it through `DynamicResource` (theme keys directly, string keys as
+`Loc.<key>`), so both take effect across the whole window instantly without rebuilding a window or restarting.
+Strings built in code are refreshed by re-running the current page's existing navigation lifecycle.
 
 ### Repository layout
 

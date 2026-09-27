@@ -117,8 +117,7 @@ public sealed class ObsConnectionService : IAsyncDisposable
     private string DescribeConnectError(Exception ex)
     {
         var cfg = _settings.Current;
-        return $"无法连接 {cfg.Host}:{cfg.Port} —— {ex.Message}\n" +
-               "请确认：① OBS 已启动；② 菜单「工具 → obs-websocket 设置」中已勾选「开启 WebSocket 服务器」；③ 端口与此处一致。";
+        return Strings.T("obs.connect.failed", cfg.Host, cfg.Port, ex.Message);
     }
 
     public async Task DisconnectAsync()
@@ -148,7 +147,7 @@ public sealed class ObsConnectionService : IAsyncDisposable
         _attempt++;
         if (!_policy.ShouldRetry(_attempt))
         {
-            SetState(ObsConnectionState.Failed, $"已连续重连 {_attempt - 1} 次仍未成功，已停止自动重连。请检查 OBS 后手动重连。");
+            SetState(ObsConnectionState.Failed, Strings.T("obs.connect.reconnectGaveUp", _attempt - 1));
             return;
         }
 
@@ -500,7 +499,7 @@ public sealed class ObsConnectionService : IAsyncDisposable
                 break;
 
             case "ExitStarted":
-                LastError = "OBS 正在退出，连接即将断开。";
+                LastError = Strings.T("obs.connect.shuttingDown");
                 break;
         }
         Notify();

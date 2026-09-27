@@ -42,11 +42,11 @@ public sealed class PreflightCheckService
                 var proc = _paths.DetectProcess();
                 report.Items.Add(new PreflightItem
                 {
-                    Title = "OBS 进程",
+                    Title = Strings.T("preflight.service.obsProcessTitle"),
                     Status = PreflightStatus.Info,
                     Detail = proc.IsRunning
-                        ? $"OBS 正在运行（{proc.Evidence}）改动设置后需重启 OBS 生效。"
-                        : "OBS 未在运行；本检查读取的是磁盘上的配置。"
+                        ? Strings.T("preflight.service.obsRunning", proc.Evidence)
+                        : Strings.T("preflight.service.obsNotRunning")
                 });
             }
             catch (Exception) { }
@@ -60,9 +60,9 @@ public sealed class PreflightCheckService
         {
             report.Items.Add(new PreflightItem
             {
-                Title = "录前自检",
+                Title = Strings.T("preflight.service.title"),
                 Status = PreflightStatus.Fail,
-                Detail = $"自检过程出现异常：{ex.Message}。请稍后重试。"
+                Detail = Strings.T("preflight.service.exception", ex.Message)
             });
         }
 

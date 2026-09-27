@@ -5,11 +5,11 @@
           Background="{DynamicResource Surface3Brush}"
           Cursor="Hand"
           MouseLeftButtonUp="OnClick"
-          ToolTip="点击进入 OBS 控制台">
+          ToolTip="{DynamicResource Loc.badge.tipDisconnected}">
     <StackPanel Orientation="Horizontal">
       <Ellipse x:Name="Dot" Width="8" Height="8" VerticalAlignment="Center"
                Fill="{DynamicResource MutedBrush}" />
-      <TextBlock x:Name="Label" Margin="6,0,0,0" Text="未连接"
+      <TextBlock x:Name="Label" Margin="6,0,0,0" Text="{DynamicResource Loc.badge.disconnected}"
                  VerticalAlignment="Center"
                  FontSize="{DynamicResource FontSizeXs}"
                  Foreground="{DynamicResource TextBrush}" />

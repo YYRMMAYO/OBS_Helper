@@ -42,7 +42,7 @@ public partial class ProblemPage : UserControl, INavigationAware
             var problem = await AppServices.Problems.GetByIdAsync(id);
             if (problem is null)
             {
-                SetHeader("问题详情", null);
+                SetHeader(Strings.T("page.problem.title"), null);
                 NotFoundText.Visibility = Visibility.Visible;
                 return;
             }
@@ -180,7 +180,7 @@ public partial class ProblemPage : UserControl, INavigationAware
         if (problem.Steps.Count == 0)
         {
             StepProgress.Visibility = Visibility.Collapsed;
-            var empty = new TextBlock { Text = "这条问题暂无分步方案。", Style = (Style)FindResource("MutedText") };
+            var empty = new TextBlock { Text = Strings.T("problem.noSteps"), Style = (Style)FindResource("MutedText") };
             StepList.Children.Add(empty);
             return;
         }
@@ -275,7 +275,7 @@ public partial class ProblemPage : UserControl, INavigationAware
     /// <summary>难度药丸。基础用信息蓝、进阶用警示橙，与原版 .lvl-basic / .lvl-adv 对应。</summary>
     private Border BuildLevelPill(string level)
     {
-        var advanced = level == "进阶";
+        var advanced = DataValues.IsAdvancedLevel(level);
         var pill = new Border
         {
             CornerRadius = new CornerRadius(999),
@@ -318,7 +318,7 @@ public partial class ProblemPage : UserControl, INavigationAware
                 {
                     Text = link.Title + " ⚠",
                     Style = (Style)FindResource("MutedText"),
-                    ToolTip = "链接地址不合法，已屏蔽",
+                    ToolTip = Strings.T("problem.linkBlocked"),
                     Margin = new Thickness(0, 0, 0, 6)
                 });
             }
@@ -379,7 +379,7 @@ public partial class ProblemPage : UserControl, INavigationAware
         if (_problem is null || total == 0) return;
 
         StepProgress.Value = AppServices.Bookmarks.Progress(_problem.Id, total) * 100;
-        ProgressText.Text = $"已完成 {_doneSteps.Count}/{total}";
+        ProgressText.Text = Strings.T("problem.progress", _doneSteps.Count, total);
     }
 
     private void OnToggleBookmark(object sender, RoutedEventArgs e)
@@ -392,9 +392,9 @@ public partial class ProblemPage : UserControl, INavigationAware
 
     private void RefreshBookmarkButton()
     {
-        BookmarkButton.Content = _bookmarked ? "★ 已收藏" : "☆ 收藏";
+        BookmarkButton.Content = _bookmarked ? Strings.T("problem.bookmark.on") : Strings.T("problem.bookmark.off");
         BookmarkButton.Style = (Style)FindResource(_bookmarked ? "PrimaryButton" : "SecondaryButton");
-        BookmarkButton.ToolTip = _bookmarked ? "取消收藏" : "加入收藏，可在首页快速找到";
+        BookmarkButton.ToolTip = _bookmarked ? Strings.T("problem.bookmark.remove") : Strings.T("problem.bookmark.addTip");
     }
 
     private void OnCopyAll(object sender, RoutedEventArgs e)
@@ -404,12 +404,12 @@ public partial class ProblemPage : UserControl, INavigationAware
         try
         {
             Clipboard.SetText(ProblemService.BuildText(_problem, _categoryTitle));
-            ShowHint("已复制全文到剪贴板。");
+            ShowHint(Strings.T("problem.copiedAll"));
         }
         catch (Exception ex)
         {
             // 剪贴板被别的进程占用时会抛 COM 异常，这属于可重试的小故障，就地提示即可
-            ShowHint("复制失败，请稍后再试：" + ex.Message);
+            ShowHint(Strings.T("common.copyFailed") + ex.Message);
         }
     }
 
@@ -420,7 +420,7 @@ public partial class ProblemPage : UserControl, INavigationAware
         try
         {
             var opened = await AppServices.Host.OpenExternalAsync(url);
-            if (!opened) ShowHint("打不开这个链接，可手动复制到浏览器：" + url);
+            if (!opened) ShowHint(Strings.T("problem.linkOpenFailed") + url);
         }
         catch (Exception ex)
         {

@@ -24,6 +24,8 @@ public static class AppServices
     private static readonly Lazy<ProblemService> _problems = new(() => new ProblemService());
     private static readonly Lazy<BookmarkService> _bookmarks = new(() => new BookmarkService(Store));
     private static readonly Lazy<AppearanceService> _appearance = new(() => new AppearanceService(Store));
+    // 语言服务（V2.9.2）：把当前语言的文案写进 Application.Resources，XAML 用 Loc.* 引用
+    private static readonly Lazy<LocalizationService> _localization = new(() => new LocalizationService(Store));
     private static readonly Lazy<AssistantService> _assistant = new(() => new AssistantService(Problems));
 
     private static readonly Lazy<ObsSettingsService> _obsSettings = new(() => new ObsSettingsService(Store, Host));
@@ -83,6 +85,8 @@ public static class AppServices
     public static ProblemService Problems => _problems.Value;
     public static BookmarkService Bookmarks => _bookmarks.Value;
     public static AppearanceService Appearance => _appearance.Value;
+    /// <summary>语言服务（V2.9.2）：默认中文，可在设置页即时切换为英文。</summary>
+    public static LocalizationService Localization => _localization.Value;
     public static AssistantService Assistant => _assistant.Value;
 
     public static ObsSettingsService ObsSettings => _obsSettings.Value;
@@ -144,6 +148,8 @@ public static class AppServices
     public static async Task InitializeAsync()
     {
         Appearance.Initialize();
+        // 语言必须在任何窗口创建前定下来（App.OnStartup 已调一次，这里保证幂等）
+        Localization.Initialize();
         // P3-1 启动加速：两份设置加载互相独立，串行 await 改为并行，冷启动可省一次 IO 往返
         await Task.WhenAll(
             ObsSettings.LoadAsync(),

@@ -1,3 +1,4 @@
+using OBS_Helper.Wpf.Localization;
 using System.Globalization;
 using System.Text.RegularExpressions;
 
@@ -35,10 +36,10 @@ public sealed class LogFinding
 
     public string SeverityText => Severity switch
     {
-        LogSeverity.Critical => "严重",
-        LogSeverity.Error => "错误",
-        LogSeverity.Warning => "警告",
-        _ => "提示"
+        LogSeverity.Critical => Localization.Strings.T("severity.critical"),
+        LogSeverity.Error => Localization.Strings.T("severity.error"),
+        LogSeverity.Warning => Localization.Strings.T("severity.warning"),
+        _ => Localization.Strings.T("severity.info")
     };
 }
 
@@ -99,9 +100,17 @@ internal sealed class LogRule
     public required string Code { get; init; }
     public required Regex Pattern { get; init; }
     public required LogSeverity Severity { get; init; }
-    public required string Title { get; init; }
-    public required string Suggestion { get; init; }
+    /// <summary>标题文案键（语言无关；V2.9.2）。</summary>
+    public required string TitleKey { get; init; }
+    /// <summary>处置建议文案键（语言无关；V2.9.2）。</summary>
+    public required string SuggestionKey { get; init; }
     public string? ProblemId { get; init; }
+
+    /// <summary>标题（按当前语言取文案）。</summary>
+    public string Title => Localization.Strings.T(TitleKey);
+
+    /// <summary>处置建议（按当前语言取文案）。</summary>
+    public string Suggestion => Localization.Strings.T(SuggestionKey);
 }
 
 /// <summary>
@@ -188,84 +197,84 @@ public sealed class ObsLogAnalyzer
         new() {
             Code = "LOG-ENC-OVERLOAD", Severity = LogSeverity.Error, ProblemId = "enc-overload",
             Pattern = new Regex(@"encoding overloaded|Encoder overload|skipped frames due to encoding lag", Opts),
-            Title = "编码过载（Encoding overloaded）",
-            Suggestion = "降低输出分辨率或帧率、把 x264 预设调到 veryfast/ultrafast，或改用显卡硬件编码（NVENC / QSV / AMF）。"
+            TitleKey = "log.rule.LOG-ENC-OVERLOAD.title",
+            SuggestionKey = "log.rule.LOG-ENC-OVERLOAD.suggestion"
         },
         new() {
             Code = "LOG-ENC-NVENC", Severity = LogSeverity.Error, ProblemId = "en-nvenc",
             Pattern = new Regex(@"Failed to open NVENC codec|NVENC Error|nvEncOpenEncodeSessionEx failed|No capable devices found", Opts),
-            Title = "NVENC 硬件编码器初始化失败",
-            Suggestion = "更新 NVIDIA 驱动到最新版；确认显卡支持 NVENC；关闭其他占用编码会话的软件（如录屏工具、云游戏客户端）。"
+            TitleKey = "log.rule.LOG-ENC-NVENC.title",
+            SuggestionKey = "log.rule.LOG-ENC-NVENC.suggestion"
         },
         new() {
             Code = "LOG-ENC-AMF-QSV", Severity = LogSeverity.Error, ProblemId = "enc-nvenc",
             Pattern = new Regex(@"Failed to create.*(AMF|QSV)|AMF Error|qsv encoder.*fail|Failed to initialize encoder", Opts),
-            Title = "AMD / Intel 硬件编码器初始化失败",
-            Suggestion = "更新显卡驱动；核显编码需在 BIOS 中启用核显；必要时先切回 x264 软件编码确认可用。"
+            TitleKey = "log.rule.LOG-ENC-AMF-QSV.title",
+            SuggestionKey = "log.rule.LOG-ENC-AMF-QSV.suggestion"
         },
         new() {
             Code = "LOG-ENC-AV1", Severity = LogSeverity.Warning, ProblemId = "enc-av1",
             Pattern = new Regex(@"AV1.*(not supported|unsupported|failed)", Opts),
-            Title = "AV1 编码不受支持",
-            Suggestion = "AV1 需要 RTX 40 系 / Arc / RX 7000 及以上显卡，且平台侧也要支持；请改用 H.264。"
+            TitleKey = "log.rule.LOG-ENC-AV1.title",
+            SuggestionKey = "log.rule.LOG-ENC-AV1.suggestion"
         },
 
         // —— 渲染 / 显卡 ——
         new() {
             Code = "LOG-GPU-INIT", Severity = LogSeverity.Critical, ProblemId = "cr-driver",
             Pattern = new Regex(@"Failed to initialize video|device_create.*[Ff]ailed|Failed to create D3D11 device|Your GPU may not be supported", Opts),
-            Title = "视频子系统初始化失败（显卡/驱动）",
-            Suggestion = "彻底重装显卡驱动（建议用 DDU 清理后安装）；笔记本请确认 OBS 跑在正确的显卡上；尝试在 设置→高级 切换渲染器。"
+            TitleKey = "log.rule.LOG-GPU-INIT.title",
+            SuggestionKey = "log.rule.LOG-GPU-INIT.suggestion"
         },
         new() {
             Code = "LOG-RENDER-LAG", Severity = LogSeverity.Warning, ProblemId = "lag-skip",
             Pattern = new Regex(@"lagged frames due to rendering lag", Opts),
-            Title = "渲染滞后（GPU 压力过大）",
-            Suggestion = "降低画布/输出分辨率与帧率；关闭游戏内的帧率上限外挂与其他 GPU 占用程序；减少浏览器源数量。"
+            TitleKey = "log.rule.LOG-RENDER-LAG.title",
+            SuggestionKey = "log.rule.LOG-RENDER-LAG.suggestion"
         },
         new() {
             Code = "LOG-CAPTURE-FAIL", Severity = LogSeverity.Error, ProblemId = "bs-game",
             Pattern = new Regex(@"\[game-capture[^\]]*\].*(failed|error)|Failed to open process|hook.*failed|could not create hook", Opts),
-            Title = "游戏捕获挂钩失败",
-            Suggestion = "以管理员身份运行 OBS；游戏改成「无边框窗口」模式；或改用「显示器捕获」兜底。"
+            TitleKey = "log.rule.LOG-CAPTURE-FAIL.title",
+            SuggestionKey = "log.rule.LOG-CAPTURE-FAIL.suggestion"
         },
         new() {
             Code = "LOG-DSHOW", Severity = LogSeverity.Error, ProblemId = "bs-capturecard",
             Pattern = new Regex(@"\[dshow[^\]]*\].*(failed|could not|error)|Device '.*' failed to start|Failed to start capture", Opts),
-            Title = "摄像头 / 采集卡启动失败",
-            Suggestion = "确认设备没被其他软件占用；更换 USB 口（避免走 Hub）；在设备属性里把分辨率/帧率/格式改成设备原生支持的组合。"
+            TitleKey = "log.rule.LOG-DSHOW.title",
+            SuggestionKey = "log.rule.LOG-DSHOW.suggestion"
         },
         new() {
             Code = "LOG-CAPTURE-CARD", Severity = LogSeverity.Error, ProblemId = "bs-capturecard",
             Pattern = new Regex(@"decklink[^.\n]{0,60}(?:fail|error|invalid|timeout)|failed to open (?:the )?capture card", Opts),
-            Title = "采集卡（DeckLink 等）初始化失败",
-            Suggestion = "按顺序排查：重插换 USB / PCIe 供电 → 关闭采集卡自带软件的独占 → 重装最新驱动 → 升级 OBS；跨版本失效时先回退上一稳定版 OBS。详见知识库条目。"
+            TitleKey = "log.rule.LOG-CAPTURE-CARD.title",
+            SuggestionKey = "log.rule.LOG-CAPTURE-CARD.suggestion"
         },
 
         // —— 推流 / 网络 ——
         new() {
             Code = "LOG-STREAM-CONNECT", Severity = LogSeverity.Error, ProblemId = "sf-timeout",
             Pattern = new Regex(@"Failed to connect to server|Connection timed out|WSAETIMEDOUT|Could not connect to|socket error", Opts),
-            Title = "推流服务器连接失败",
-            Suggestion = "检查推流地址与网络；关闭 VPN / 加速器；换用 RTMPS 端口或就近的推流节点；确认防火墙放行 OBS。"
+            TitleKey = "log.rule.LOG-STREAM-CONNECT.title",
+            SuggestionKey = "log.rule.LOG-STREAM-CONNECT.suggestion"
         },
         new() {
             Code = "LOG-STREAM-AUTH", Severity = LogSeverity.Error, ProblemId = "sf-auth",
             Pattern = new Regex(@"Authentication failed|invalid stream key|NetStream\.Publish\.BadName|access denied|403", Opts),
-            Title = "推流鉴权失败（串流密钥问题）",
-            Suggestion = "重新到直播平台后台复制串流密钥；注意密钥有有效期，开播前重新获取一次最稳妥。"
+            TitleKey = "log.rule.LOG-STREAM-AUTH.title",
+            SuggestionKey = "log.rule.LOG-STREAM-AUTH.suggestion"
         },
         new() {
             Code = "LOG-STREAM-DROP", Severity = LogSeverity.Warning, ProblemId = "lag-network",
             Pattern = new Regex(@"dropped frames due to insufficient bandwidth|Output '.*' stopping.*reconnect|Reconnecting in \d+ second", Opts),
-            Title = "上行带宽不足导致丢帧 / 自动重连",
-            Suggestion = "把码率降到实测上行的 60~70%；有线网络优先于 WiFi；开启「动态码率」让 OBS 自动降码。"
+            TitleKey = "log.rule.LOG-STREAM-DROP.title",
+            SuggestionKey = "log.rule.LOG-STREAM-DROP.suggestion"
         },
         new() {
             Code = "LOG-STREAM-DISCONNECT", Severity = LogSeverity.Error, ProblemId = "sf-drops",
             Pattern = new Regex(@"Disconnected from|The server has disconnected|connection closed by peer|RTMP.*disconnect", Opts),
-            Title = "推流中途断开",
-            Suggestion = "多为网络抖动或平台侧限制；降低码率、检查路由器 QoS、避免同时大流量上传。"
+            TitleKey = "log.rule.LOG-STREAM-DISCONNECT.title",
+            SuggestionKey = "log.rule.LOG-STREAM-DISCONNECT.suggestion"
         },
 
         // —— 音频 ——
@@ -279,106 +288,106 @@ public sealed class ObsLogAnalyzer
             Pattern = new Regex(
                 @"adding \d+ milliseconds of audio buffering, total audio buffering is now [1-9]\d{2,} milliseconds|Max audio buffering reached",
                 Opts),
-            Title = "音频缓冲不断增长（音画不同步风险）",
-            Suggestion = "把所有音频设备的采样率统一为 48 kHz；减少 USB 声卡/蓝牙设备；必要时给对应源设置同步偏移。"
+            TitleKey = "log.rule.LOG-AUDIO-BUFFER.title",
+            SuggestionKey = "log.rule.LOG-AUDIO-BUFFER.suggestion"
         },
         new() {
             Code = "LOG-AUDIO-DEVICE", Severity = LogSeverity.Error, ProblemId = "au-mic",
             Pattern = new Regex(@"WASAPI:.*(failed|error)|Failed to start audio|coreaudio.*failed|Device .* not found", Opts),
-            Title = "音频设备启动失败",
-            Suggestion = "在系统声音设置里确认设备已启用且未被独占；重新在 OBS 里选择一次设备；插拔后需重新指定。"
+            TitleKey = "log.rule.LOG-AUDIO-DEVICE.title",
+            SuggestionKey = "log.rule.LOG-AUDIO-DEVICE.suggestion"
         },
         new() {
             Code = "LOG-AUDIO-SYNC", Severity = LogSeverity.Warning, ProblemId = "av-drift",
             Pattern = new Regex(@"out of sync|resetting audio|audio timestamp", Opts),
-            Title = "音频时间戳异常 / 逐渐漂移",
-            Suggestion = "统一采样率为 48 kHz；关闭声卡驱动的「增强」选项；蓝牙耳机改用有线设备。"
+            TitleKey = "log.rule.LOG-AUDIO-SYNC.title",
+            SuggestionKey = "log.rule.LOG-AUDIO-SYNC.suggestion"
         },
 
         // —— 录制 ——
         new() {
             Code = "LOG-REC-WRITE", Severity = LogSeverity.Error, ProblemId = "rc-nofile",
             Pattern = new Regex(@"Unable to write to|Error opening file|No space left on device|failed to open output file|Could not open file", Opts),
-            Title = "录制文件写入失败",
-            Suggestion = "检查录制目录是否存在、是否有写权限、磁盘是否已满；录制路径避免中文与特殊字符；建议先录 MKV 再转封装。"
+            TitleKey = "log.rule.LOG-REC-WRITE.title",
+            SuggestionKey = "log.rule.LOG-REC-WRITE.suggestion"
         },
         new() {
             Code = "LOG-HYBRID-MP4", Severity = LogSeverity.Info, ProblemId = "rc-hybrid-mp4",
             Pattern = new Regex(@"hybrid[_ -]?mp4|hybrid[_ -]?mov", Opts),
-            Title = "使用 Hybrid MP4/MOV 输出（32.x 新默认格式）",
-            Suggestion = "Hybrid MP4 是 32.0 起的默认录像格式（防崩溃）。若剪辑软件 / 播放器打不开：用 文件 → 录像转封装 转 MP4，或改回 MKV 录制。详见知识库条目。"
+            TitleKey = "log.rule.LOG-HYBRID-MP4.title",
+            SuggestionKey = "log.rule.LOG-HYBRID-MP4.suggestion"
         },
         new() {
             Code = "LOG-VIRTUALCAM", Severity = LogSeverity.Error, ProblemId = "st-virtualcam",
             Pattern = new Regex(@"virtual[_ -]?cam(?:era)?.{0,40}(?:fail(?:ed)?|error)|failed to start virtual camera", Opts),
-            Title = "虚拟摄像头启动失败",
-            Suggestion = "确认 OBS 菜单里的「启动虚拟摄像头」已开启且未被其他程序占用；Windows 更新后失效属常见回归，重装最新版 OBS 或重选设备即可恢复。详见知识库条目。"
+            TitleKey = "log.rule.LOG-VIRTUALCAM.title",
+            SuggestionKey = "log.rule.LOG-VIRTUALCAM.suggestion"
         },
 
         // —— 插件 / 崩溃 ——
         new() {
             Code = "LOG-PLUGIN", Severity = LogSeverity.Warning, ProblemId = "cr-plugin",
             Pattern = new Regex(@"os_dlopen\(.*\)\s*failed|os_dlopen.*(?:failed|could not|无法|拒绝|找不到)|Module '.*' not loaded|Failed to load '.*' plugin|LoadLibrary failed", Opts),
-            Title = "插件加载失败",
-            Suggestion = "先把 OBS 升级到 32.2.2 或更高（32.2 首发的 Windows 插件加载变更曾导致带依赖的插件首启失败，补丁版已修复），再逐个更新或重装报错插件。可用「安全模式」启动确认，并在「插件」页的本机体检面板核对已装插件版本。"
+            TitleKey = "log.rule.LOG-PLUGIN.title",
+            SuggestionKey = "log.rule.LOG-PLUGIN.suggestion"
         },
         new() {
             Code = "LOG-PLUGIN-STREAMFX", Severity = LogSeverity.Info, ProblemId = "cr-streamfx",
             Pattern = new Regex(@"streamfx", Opts),
-            Title = "日志中出现 StreamFX（已停止维护的插件）",
-            Suggestion = "StreamFX 已实质停更，在 OBS 30+ 上兼容性持续恶化，是老教程用户的高频故障源；建议迁移到单一职责轻量插件（模糊用 Composite Blur、遮罩用 Advanced Masks 等），详见知识库条目。"
+            TitleKey = "log.rule.LOG-PLUGIN-STREAMFX.title",
+            SuggestionKey = "log.rule.LOG-PLUGIN-STREAMFX.suggestion"
         },
         new() {
             Code = "LOG-PLUGIN-MULTI-RTMP", Severity = LogSeverity.Info, ProblemId = "st-multi-rtmp",
             Pattern = new Regex(@"obs-multi-rtmp|multi[_ -]?rtmp", Opts),
-            Title = "使用了 obs-multi-rtmp 多路推流插件",
-            Suggestion = "该插件在新版 OBS 上有带宽骤降 / 编码过载 / 杀软误报的零星报告；多路推流不稳时优先评估 Aitum Multistream（维护活跃），详见知识库条目。"
+            TitleKey = "log.rule.LOG-PLUGIN-MULTI-RTMP.title",
+            SuggestionKey = "log.rule.LOG-PLUGIN-MULTI-RTMP.suggestion"
         },
         new() {
             Code = "LOG-VCREDIST", Severity = LogSeverity.Critical, ProblemId = "cr-vcredist",
             Pattern = new Regex(@"VCRUNTIME|MSVCP\d+\.dll|api-ms-win-crt|The specified module could not be found", Opts),
-            Title = "缺少 Visual C++ 运行库",
-            Suggestion = "安装最新的「Microsoft Visual C++ 2015-2022 Redistributable (x64)」后重启 OBS。"
+            TitleKey = "log.rule.LOG-VCREDIST.title",
+            SuggestionKey = "log.rule.LOG-VCREDIST.suggestion"
         },
         new() {
             Code = "LOG-CRASH", Severity = LogSeverity.Critical, ProblemId = "cr-safe-mode",
             Pattern = new Regex(@"Unhandled exception|EXCEPTION_ACCESS_VIOLATION|c0000005|Crash Report|signal 11|SIGSEGV", Opts),
-            Title = "检测到崩溃记录",
-            Suggestion = "用安全模式（不加载第三方插件与脚本）启动排查；同时更新显卡驱动与 OBS 到最新版。"
+            TitleKey = "log.rule.LOG-CRASH.title",
+            SuggestionKey = "log.rule.LOG-CRASH.suggestion"
         },
         new() {
             Code = "LOG-ADMIN", Severity = LogSeverity.Info, ProblemId = "bs-display",
             Pattern = new Regex(@"Running as administrator:\s*false", Opts),
-            Title = "OBS 未以管理员身份运行",
-            Suggestion = "捕获以管理员权限运行的游戏 / 全屏独占程序时会黑屏，建议右键「以管理员身份运行」。"
+            TitleKey = "log.rule.LOG-ADMIN.title",
+            SuggestionKey = "log.rule.LOG-ADMIN.suggestion"
         },
         new() {
             Code = "LOG-SAFEMODE", Severity = LogSeverity.Info,
             Pattern = new Regex(@"Safe Mode enabled|--safe-mode", Opts),
-            Title = "本次以安全模式启动",
-            Suggestion = "安全模式下第三方插件、脚本与 WebSocket 均不加载，排障完成后请正常启动。"
+            TitleKey = "log.rule.LOG-SAFEMODE.title",
+            SuggestionKey = "log.rule.LOG-SAFEMODE.suggestion"
         },
 
         // —— 双显卡 / 集成显卡 ——
         new() {
             Code = "LOG-GPU-HYBRID", Severity = LogSeverity.Warning, ProblemId = "bs-display",
             Pattern = new Regex(@"Intel\(R\)\s+(?:UHD|HD Graphics|Iris)|AMD Radeon\(TM\) Graphics\b", Opts),
-            Title = "疑似正在使用集成显卡渲染",
-            Suggestion = "笔记本双显卡请把 OBS 指定到独立显卡：Windows「设置 → 系统 → 显示 → 图形」里为 OBS 选择「高性能」，或在 NVIDIA 控制面板里单独指定。"
+            TitleKey = "log.rule.LOG-GPU-HYBRID.title",
+            SuggestionKey = "log.rule.LOG-GPU-HYBRID.suggestion"
         },
 
         // —— 音频采样率 ——
         new() {
             Code = "LOG-AUDIO-SAMPLERATE", Severity = LogSeverity.Warning, ProblemId = "av-desync",
             Pattern = new Regex(@"sample rate(?:s)?[^.\n]{0,40}(?:don't match|doesn't match|mismatch|differ)", Opts),
-            Title = "音频采样率不匹配",
-            Suggestion = "把所有音频设备（麦克风 / 扬声器 / 声卡）的采样率统一为 48 kHz，并在 Windows 声音设置里保持一致，可避免爆音与音画漂移。"
+            TitleKey = "log.rule.LOG-AUDIO-SAMPLERATE.title",
+            SuggestionKey = "log.rule.LOG-AUDIO-SAMPLERATE.suggestion"
         },
         new() {
             Code = "LOG-AUDIO-RESAMPLE", Severity = LogSeverity.Warning, ProblemId = "au-sample-mismatch",
             Pattern = new Regex(@"\bresampl(?:ing|ed|er)\b|Failed to initialize audio resampler", Opts),
-            Title = "音频正在实时重采样",
-            Suggestion = "日志出现重采样记录说明设备与 OBS 的采样率不一致（如 44.1kHz vs 48kHz），是音质发闷与音画漂移的常见根因；把系统和 OBS 统一为 48kHz。详见知识库条目。"
+            TitleKey = "log.rule.LOG-AUDIO-RESAMPLE.title",
+            SuggestionKey = "log.rule.LOG-AUDIO-RESAMPLE.suggestion"
         },
 
         // —— 色彩 / 画质（V2.7）——
@@ -388,8 +397,8 @@ public sealed class ObsLogAnalyzer
             // 32.x 合并成一行 "YUV mode:          Rec. 709/Partial"（色彩空间/范围）。
             // 只认老格式的话，新版日志里这条规则永远不会命中，色彩范围体检在日志侧等于失效。
             Pattern = new Regex(@"(?:color|colour)[_ ]?range:?\s*full\b|yuv\s+mode:\s*[^\n]*?/\s*full\b", Opts),
-            Title = "色彩范围设置为 Full（画面发灰的常见原因）",
-            Suggestion = "Full 范围在多数直播平台按 Limited 解读，观众端会发灰、对比度下降；本地播放正常不代表观众端正常。除非全链路确认为 Full，建议改回 Limited。详见知识库条目。"
+            TitleKey = "log.rule.LOG-COLOR-RANGE.title",
+            SuggestionKey = "log.rule.LOG-COLOR-RANGE.suggestion"
         },
 
         new() {
@@ -397,32 +406,32 @@ public sealed class ObsLogAnalyzer
             // 实测真实日志：同一插件存在两份副本时 OBS 会告警
             // "Dock id 'obs-helper-dock' already used!  Duplicate library?"
             Pattern = new Regex(@"Duplicate library|Dock id '[^']+' already used", Opts),
-            Title = "插件重复安装（同一模块被注册两次）",
-            Suggestion = "OBS 报「already used / Duplicate library」，说明同一个插件在本机存在两份副本：常见于更新插件时旧文件没被覆盖，或同时装在 OBS 安装目录与全局插件目录（%ProgramData%\\obs-studio\\plugins）。只保留一份后完全退出并重启 OBS；「插件」页的本机体检可列出已装插件与版本，便于逐项对照。"
+            TitleKey = "log.rule.LOG-PLUGIN-DUPLICATE.title",
+            SuggestionKey = "log.rule.LOG-PLUGIN-DUPLICATE.suggestion"
         },
 
         // —— 推流网络补充（V2.7）——
         new() {
             Code = "LOG-BITRATE-DROP", Severity = LogSeverity.Warning, ProblemId = "lag-dynamic-bitrate",
             Pattern = new Regex(@"dynamic bitrate|bitrate[^.\n]{0,30}(?:reduced|lowered|dropp?ing)", Opts),
-            Title = "推流码率被动态下调（上行波动）",
-            Suggestion = "动态码率在保护直播不中断，但频繁触发说明上行不稳：降低基础码率到实测上行的 60~70%、换有线网络，或用工具箱的节点探测换个推流入口。详见知识库条目。"
+            TitleKey = "log.rule.LOG-BITRATE-DROP.title",
+            SuggestionKey = "log.rule.LOG-BITRATE-DROP.suggestion"
         },
 
         // —— 推流密钥泄漏风险 ——
         new() {
             Code = "LOG-STREAMKEY-LEAK", Severity = LogSeverity.Warning, ProblemId = "sf-auth",
             Pattern = new Regex(@"stream[_-]?key\s*[:=]", Opts),
-            Title = "日志中出现串流密钥",
-            Suggestion = "日志里可能包含推流密钥，切勿直接公开分享原始日志；本工具对复制 / 发送到云端的内容已自动脱敏。"
+            TitleKey = "log.rule.LOG-STREAMKEY-LEAK.title",
+            SuggestionKey = "log.rule.LOG-STREAMKEY-LEAK.suggestion"
         },
 
         // —— 崩溃肇事模块 ——
         new() {
             Code = "LOG-CRASH-MODULE", Severity = LogSeverity.Critical, ProblemId = "cr-plugin",
             Pattern = new Regex(@"(?:faulting module|fault module|crashed module|module that caused)[^:\n]*:\s*([^\s]+)|Exception Module Name:\s*([^\s]+)", Opts),
-            Title = "崩溃报告：定位到肇事模块",
-            Suggestion = "从崩溃报告中提取到了引发崩溃的模块，通常是某个插件或驱动；禁用对应插件 / 更新驱动后再试。"
+            TitleKey = "log.rule.LOG-CRASH-MODULE.title",
+            SuggestionKey = "log.rule.LOG-CRASH-MODULE.suggestion"
         }
     };
 
@@ -660,14 +669,14 @@ public sealed class ObsLogAnalyzer
     {
         var s = report.Summary;
 
-        AddRatio(found, "LOG-STAT-RENDER", s.RenderLagRatio, "渲染滞后帧占比",
-            "lag-skip", "GPU 渲染跟不上：降低画布分辨率/帧率，关闭其他吃显卡的程序，减少浏览器源与滤镜。");
+        AddRatio(found, "LOG-STAT-RENDER", s.RenderLagRatio, Localization.Strings.T("log.rule.LOG-STAT-RENDER.label"),
+            "lag-skip", Localization.Strings.T("log.rule.LOG-STAT-RENDER.fix"));
 
-        AddRatio(found, "LOG-STAT-ENCODE", s.EncodingLagRatio, "编码滞后跳帧占比",
-            "enc-overload", "编码器跟不上：把 x264 预设调快一档，或改用显卡硬件编码；也可下调输出分辨率。");
+        AddRatio(found, "LOG-STAT-ENCODE", s.EncodingLagRatio, Localization.Strings.T("log.rule.LOG-STAT-ENCODE.label"),
+            "enc-overload", Localization.Strings.T("log.rule.LOG-STAT-ENCODE.fix"));
 
-        AddRatio(found, "LOG-STAT-NETWORK", s.NetworkDropRatio, "网络丢帧占比",
-            "lag-network", "上行带宽不足：把码率降到实测上行的 60~70%，优先有线网络，必要时开启动态码率。");
+        AddRatio(found, "LOG-STAT-NETWORK", s.NetworkDropRatio, Localization.Strings.T("log.rule.LOG-STAT-NETWORK.label"),
+            "lag-network", Localization.Strings.T("log.rule.LOG-STAT-NETWORK.fix"));
     }
 
     private static void AddRatio(
@@ -690,7 +699,7 @@ public sealed class ObsLogAnalyzer
             Title = $"{label} {ratio * 100:0.##}%",
             Suggestion = suggestion,
             ProblemId = problemId,
-            Evidence = $"OBS 统计：{label} = {ratio * 100:0.##}%（1% 以上就会被观众明显感知）",
+            Evidence = Localization.Strings.T("log.stat.evidence", label, (ratio * 100).ToString("0.##", CultureInfo.InvariantCulture)),
             FirstLine = 0
         };
     }
@@ -703,12 +712,12 @@ public sealed class ObsLogAnalyzer
     /// <summary>丢帧三分类 → 对应知识库条目。</summary>
     private static readonly (string Code, string Label, string ProblemId, string Fix)[] DropKinds =
     {
-        ("LOG-STAT-RENDER",  "渲染滞后", "lag-skip",
-         "GPU 渲染跟不上：降画布分辨率/帧率、关掉吃显卡的程序、减少浏览器源与滤镜。"),
-        ("LOG-STAT-ENCODE",  "编码滞后", "enc-overload",
-         "编码器跟不上：x264 预设调快或改用硬件编码，必要时下调输出分辨率。"),
-        ("LOG-STAT-NETWORK", "网络丢帧", "lag-network",
-         "上行带宽不足：码率降到实测上行 60~70%，优先有线网络，可开动态码率。"),
+        ("LOG-STAT-RENDER",  Localization.Strings.T("log.drop.kind.render"), "lag-skip",
+            Localization.Strings.T("log.drop.kind.render.fix")),
+        ("LOG-STAT-ENCODE",  Localization.Strings.T("log.drop.kind.encode"), "enc-overload",
+            Localization.Strings.T("log.drop.kind.encode.fix")),
+        ("LOG-STAT-NETWORK", Localization.Strings.T("log.drop.kind.network"), "lag-network",
+            Localization.Strings.T("log.drop.kind.network.fix")),
     };
 
     private static double RatioOf(ObsLogSummary s, string code) => code switch
@@ -739,17 +748,17 @@ public sealed class ObsLogAnalyzer
         if (meaningful.Count == 0) return;
 
         var dominant = meaningful.OrderByDescending(x => x.Ratio).First().Kind;
-        var evidence = string.Join("；", meaningful.Select(x => $"{x.Kind.Label} {x.Ratio * 100:0.##}%"));
+        var evidence = string.Join(Localization.Strings.T("log.drop.evidenceJoin"), meaningful.Select(x => $"{x.Kind.Label} " + (x.Ratio * 100).ToString("0.##", CultureInfo.InvariantCulture) + "%"));
         var maxRatio = meaningful.Max(x => x.Ratio);
 
         found["LOG-DROP-DOMINANT"] = new LogFinding
         {
             Code = "LOG-DROP-DOMINANT",
             Severity = DropSeverity(maxRatio),
-            Title = $"掉帧主因判定：{dominant.Label}占比最高",
-            Suggestion = dominant.Fix + " 三类丢帧的病因互不相同，请先处理主因再复测，不要同时改一堆设置。",
+            Title = Localization.Strings.T("log.drop.title", dominant.Label),
+            Suggestion = dominant.Fix + Localization.Strings.T("log.drop.suffix"),
             ProblemId = dominant.ProblemId,
-            Evidence = $"OBS 统计：{evidence}",
+            Evidence = Localization.Strings.T("log.drop.evidence", evidence),
             FirstLine = 0
         };
     }
@@ -785,39 +794,40 @@ public sealed class ObsLogAnalyzer
         {
             var hw = GpuVendorHint(s);
             steps.Add(hw is null
-                ? "第 1 步：改用显卡硬件编码（设置 → 输出 → 编码器选 NVENC / QSV / AMF 之一），把编码负载从 CPU 挪走。"
-                : $"第 1 步：检测到 {hw.Value.Vendor} 显卡，改用 {hw.Value.EncoderName} 硬件编码（设置 → 输出 → 编码器），把编码负载从 CPU 挪走。");
-            steps.Add("第 2 步：若必须用 x264，把预设调到 veryfast / superfast（设置 → 输出 → 预设）。");
+                ? Localization.Strings.T("log.triage.step1.hw")
+                : Localization.Strings.T("log.triage.step1.hwVendor", hw.Value.Vendor, hw.Value.EncoderName));
+            steps.Add(Localization.Strings.T("log.triage.step2.x264"));
         }
         else if (enc.Contains("nvenc") || enc.Contains("jim"))
         {
-            steps.Add("第 1 步：NVENC 预设从 P7 降到 P5 或 P4（设置 → 输出 → 预设），吞吐提升明显、画质损失小。");
-            steps.Add("第 2 步：把游戏帧率锁到略低于显示器刷新率（如 144Hz 锁 138），给 OBS 合成与编码留出 GPU 余量。");
+            steps.Add(Localization.Strings.T("log.triage.step1.nvenc"));
+            steps.Add(Localization.Strings.T("log.triage.step2.nvenc"));
         }
         else if (enc.Contains("qsv") || enc.Contains("amf"))
         {
-            steps.Add("第 1 步：确认显卡驱动为最新版，硬件编码器的性能修复通常随驱动发布。");
-            steps.Add("第 2 步：若游戏已占满 GPU，同样需要锁帧或降档输出分辨率。");
+            steps.Add(Localization.Strings.T("log.triage.step1.driver"));
+            steps.Add(Localization.Strings.T("log.triage.step2.gpuBusy"));
         }
 
         if (double.TryParse(s.Fps, NumberStyles.Float, CultureInfo.InvariantCulture, out var fps) && fps >= 50)
-            steps.Add($"第 {steps.Count + 1} 步：当前帧率 {s.Fps}，降到 30 可直接减半编码工作量（观众端几乎无感）。");
+            steps.Add(Localization.Strings.T("log.triage.stepN.fps", steps.Count + 1, s.Fps));
 
         if (TryParseHeight(s.OutputResolution, out var h) && h >= 1000)
-            steps.Add($"第 {steps.Count + 1} 步：当前输出分辨率 {s.OutputResolution}，降到 1280x720 是最立竿见影的一步。");
+            steps.Add(Localization.Strings.T("log.triage.stepN.res", steps.Count + 1, s.OutputResolution));
 
-        steps.Add($"第 {steps.Count + 1} 步：清理重复捕获与不用的浏览器源；浏览器源长时间直播要定期刷新防内存膨胀。");
+        steps.Add(Localization.Strings.T("log.triage.stepN.cleanup", steps.Count + 1));
 
         found["LOG-TRIAGE-ENCODE"] = new LogFinding
         {
             Code = "LOG-TRIAGE-ENCODE",
             Severity = LogSeverity.Info,
-            Title = "编码过载分诊：按当前设置生成的处理顺序",
+            Title = Localization.Strings.T("log.triage.title"),
             Suggestion = string.Join("\n", steps),
             ProblemId = "enc-overload",
-            Evidence = $"当前设置：编码器 {(string.IsNullOrEmpty(s.VideoEncoder) ? "未知" : s.VideoEncoder)}" +
-                       $" · 帧率 {(string.IsNullOrEmpty(s.Fps) ? "未知" : s.Fps)}" +
-                       $" · 输出分辨率 {(string.IsNullOrEmpty(s.OutputResolution) ? "未知" : s.OutputResolution)}",
+            Evidence = Localization.Strings.T("log.triage.evidence",
+                string.IsNullOrEmpty(s.VideoEncoder) ? Localization.Strings.T("common.unknown") : s.VideoEncoder,
+                string.IsNullOrEmpty(s.Fps) ? Localization.Strings.T("common.unknown") : s.Fps,
+                string.IsNullOrEmpty(s.OutputResolution) ? Localization.Strings.T("common.unknown") : s.OutputResolution),
             FirstLine = 0
         };
     }
@@ -867,10 +877,10 @@ public sealed class ObsLogAnalyzer
             {
                 Code = "LOG-GPU-DUAL",
                 Severity = LogSeverity.Warning,
-                Title = "双显卡错位：OBS 正在使用集成显卡渲染",
-                Suggestion = "Windows「设置 → 系统 → 显示 → 显卡」里为 OBS 选择「高性能 GPU」，或在 NVIDIA / AMD 控制面板中单独指定；改完后完全退出并重启 OBS。详见知识库「笔记本双显卡」条目。",
+                Title = Localization.Strings.T("log.gpu.dual.title"),
+                Suggestion = Localization.Strings.T("log.gpu.dual.suggestion"),
                 ProblemId = "bs-dualgpu",
-                Evidence = $"日志适配器：{adapterText}（OBS 选用：{s.Gpu}）",
+                Evidence = Localization.Strings.T("log.gpu.evidence", adapterText, s.Gpu),
                 FirstLine = 0
             };
         }
@@ -880,10 +890,10 @@ public sealed class ObsLogAnalyzer
             {
                 Code = "LOG-GPU-DUAL-OK",
                 Severity = LogSeverity.Info,
-                Title = "双显卡环境确认：OBS 已使用独立显卡渲染",
-                Suggestion = "本机为双显卡环境，OBS 当前跑在独显上，无需处理；若游戏捕获黑屏，再检查游戏所在 GPU 与捕获方式。",
+                Title = Localization.Strings.T("log.gpu.dualOk.title"),
+                Suggestion = Localization.Strings.T("log.gpu.dualOk.suggestion"),
                 ProblemId = "bs-dualgpu",
-                Evidence = $"日志适配器：{adapterText}（OBS 选用：{s.Gpu}）",
+                Evidence = Localization.Strings.T("log.gpu.evidence", adapterText, s.Gpu),
                 FirstLine = 0
             };
         }
@@ -935,10 +945,10 @@ public sealed class ObsLogAnalyzer
         {
             Code = "LOG-PLUGIN-OBSVER",
             Severity = LogSeverity.Info,
-            Title = $"插件加载失败且 OBS 版本（{report.Summary.ObsVersion}）低于修复补丁版 32.2.2",
-            Suggestion = "先把 OBS 升级到 32.2.2 或更高（设置 → 一般 → 检查更新，或官网重装）：32.2 首发的 Windows 插件加载变更导致的首启失败已在该补丁版修复，升级后再重装报错的插件即可。",
+            Title = Localization.Strings.T("log.pluginObsVer.title", report.Summary.ObsVersion),
+            Suggestion = Localization.Strings.T("log.pluginObsVer.suggestion"),
             ProblemId = "cr-plugin-load",
-            Evidence = $"OBS 版本 {report.Summary.ObsVersion} < 32.2.2，且日志存在插件加载失败记录",
+            Evidence = Localization.Strings.T("log.pluginObsVer.evidence", report.Summary.ObsVersion),
             FirstLine = 0
         };
     }

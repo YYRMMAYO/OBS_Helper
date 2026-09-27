@@ -1,3 +1,4 @@
+using OBS_Helper.Wpf.Localization;
 using System.Globalization;
 using System.IO;
 
@@ -23,10 +24,10 @@ public sealed class PreflightItem
 
     public string StatusText => Status switch
     {
-        PreflightStatus.Ok => "通过",
-        PreflightStatus.Warn => "建议",
-        PreflightStatus.Fail => "未通过",
-        _ => "提示"
+        PreflightStatus.Ok => Strings.T("preflight.status.ok"),
+        PreflightStatus.Warn => Strings.T("preflight.status.warn"),
+        PreflightStatus.Fail => Strings.T("preflight.status.fail"),
+        _ => Strings.T("preflight.status.info")
     };
 }
 
@@ -95,9 +96,9 @@ public static class PreflightCheckCore
         {
             report.Items.Add(new PreflightItem
             {
-                Title = "OBS 配置目录",
+                Title = Strings.T("preflight.noConfig.title"),
                 Status = PreflightStatus.Fail,
-                Detail = "未找到 OBS 配置目录。若为自定义安装，请先在「设置 → OBS 配置管理」手动指定目录后重试。"
+                Detail = Strings.T("preflight.noConfig.detail")
             });
             return;
         }
@@ -111,9 +112,9 @@ public static class PreflightCheckCore
         {
             report.Items.Add(new PreflightItem
             {
-                Title = "当前 Profile",
+                Title = Strings.T("preflight.noProfile.title"),
                 Status = PreflightStatus.Warn,
-                Detail = "global.ini 中没有 Profile 记录（OBS 可能从未保存过设置），无法读取输出配置；先在 OBS 里随便改一项设置并关闭，即可生成。"
+                Detail = Strings.T("preflight.noProfile.detail")
             });
             return;
         }
@@ -123,9 +124,9 @@ public static class PreflightCheckCore
         {
             report.Items.Add(new PreflightItem
             {
-                Title = $"Profile「{profileDir}」的 basic.ini",
+                Title = Strings.T("preflight.noBasicIni.title", profileDir),
                 Status = PreflightStatus.Warn,
-                Detail = "找不到或读不了该 Profile 的 basic.ini，以下输出相关检查跳过。"
+                Detail = Strings.T("preflight.noBasicIni.detail")
             });
             return;
         }
@@ -152,20 +153,20 @@ public static class PreflightCheckCore
         {
             report.Items.Add(new PreflightItem
             {
-                Title = "录制格式（防崩溃）",
+                Title = Strings.T("preflight.recFormat.title"),
                 Status = PreflightStatus.Ok,
                 Detail = string.IsNullOrEmpty(format)
-                    ? "使用默认 MKV（崩溃 / 断电时已写入部分可保留）。"
-                    : $"当前 {format}，崩溃或断电时已写入部分可保留。"
+                    ? Strings.T("preflight.recFormat.okDefault")
+                    : Strings.T("preflight.recFormat.okCurrent", format)
             });
             return;
         }
 
         report.Items.Add(new PreflightItem
         {
-            Title = "录制格式（防崩溃）",
+            Title = Strings.T("preflight.recFormat.title"),
             Status = PreflightStatus.Warn,
-            Detail = $"当前为 {format}：直接录 MP4 等格式一旦崩溃整个文件报废。建议改为 MKV 录制，录完再用「文件 → 录像转封装」转 MP4。",
+            Detail = Strings.T("preflight.recFormat.warn", format),
             ProblemId = "rc-mkv"
         });
     }
@@ -178,9 +179,9 @@ public static class PreflightCheckCore
         {
             report.Items.Add(new PreflightItem
             {
-                Title = "录制保存路径",
+                Title = Strings.T("preflight.recPath.title"),
                 Status = PreflightStatus.Info,
-                Detail = "未在配置中找到自定义录制路径，将使用系统「视频」文件夹。"
+                Detail = Strings.T("preflight.recPath.default")
             });
             return;
         }
@@ -192,9 +193,9 @@ public static class PreflightCheckCore
             {
                 report.Items.Add(new PreflightItem
                 {
-                    Title = "录制保存路径",
+                    Title = Strings.T("preflight.recPath.title"),
                     Status = PreflightStatus.Fail,
-                    Detail = $"配置的路径不存在：{path}。开播后录制会直接失败，请在 设置 → 输出 → 录像 中重新选择。",
+                    Detail = Strings.T("preflight.recPath.missing", path),
                     ProblemId = "rc-nofile"
                 });
                 return;
@@ -205,29 +206,29 @@ public static class PreflightCheckCore
             {
                 report.Items.Add(new PreflightItem
                 {
-                    Title = "录制盘剩余空间",
+                    Title = Strings.T("preflight.recPath.lowSpaceTitle"),
                     Status = PreflightStatus.Warn,
-                    Detail = $"录制路径所在盘仅剩约 {free / 1024.0 / 1024 / 1024:0.#}GB（不足 10GB），长录制可能中途写满导致文件损坏，建议清理或换盘。",
+                    Detail = Strings.T("preflight.recPath.lowSpace", free / 1024.0 / 1024 / 1024),
                     ProblemId = "rc-disk-space"
                 });
                 return;
             }
 
-            var freeText = free is > 0 ? $"，剩余约 {free / 1024.0 / 1024 / 1024:0}GB" : "";
+            var freeText = free is > 0 ? Strings.T("preflight.recPath.freeSuffix", free / 1024.0 / 1024 / 1024) : "";
             report.Items.Add(new PreflightItem
             {
-                Title = "录制保存路径",
+                Title = Strings.T("preflight.recPath.title"),
                 Status = PreflightStatus.Ok,
-                Detail = $"路径有效：{path}{freeText}。"
+                Detail = Strings.T("preflight.recPath.ok", path, freeText)
             });
         }
         catch (Exception ex)
         {
             report.Items.Add(new PreflightItem
             {
-                Title = "录制保存路径",
+                Title = Strings.T("preflight.recPath.title"),
                 Status = PreflightStatus.Info,
-                Detail = $"路径状态无法确认（{ex.Message}），请自行核对 设置 → 输出 → 录像 的保存位置。"
+                Detail = Strings.T("preflight.recPath.unknown", ex.Message)
             });
         }
     }
@@ -248,9 +249,9 @@ public static class PreflightCheckCore
         {
             report.Items.Add(new PreflightItem
             {
-                Title = "编码器",
+                Title = Strings.T("preflight.encoder.noneTitle"),
                 Status = PreflightStatus.Info,
-                Detail = "配置中未找到编码器记录，无法判断。"
+                Detail = Strings.T("preflight.encoder.none")
             });
             return;
         }
@@ -260,9 +261,9 @@ public static class PreflightCheckCore
         {
             report.Items.Add(new PreflightItem
             {
-                Title = "编码器（硬件优先）",
+                Title = Strings.T("preflight.encoder.title"),
                 Status = PreflightStatus.Warn,
-                Detail = $"检测到仍在使用软件编码（{software}）：CPU 负载高、易编码过载掉帧。有独显建议切 NVENC / AMF，核显可用 QSV（设置 → 输出 → 编码器）。",
+                Detail = Strings.T("preflight.encoder.software", software),
                 ProblemId = "enc-overload"
             });
             return;
@@ -270,9 +271,9 @@ public static class PreflightCheckCore
 
         report.Items.Add(new PreflightItem
         {
-            Title = "编码器（硬件优先）",
+            Title = Strings.T("preflight.encoder.title"),
             Status = PreflightStatus.Ok,
-            Detail = $"使用硬件编码（{string.Join(" / ", encoders)}），CPU 压力小。"
+            Detail = Strings.T("preflight.encoder.hardware", string.Join(" / ", encoders))
         });
     }
 
@@ -288,9 +289,9 @@ public static class PreflightCheckCore
         {
             report.Items.Add(new PreflightItem
             {
-                Title = "音频采样率",
+                Title = Strings.T("preflight.sampleRate.title"),
                 Status = PreflightStatus.Info,
-                Detail = "配置中未记录采样率（默认 48kHz）。"
+                Detail = Strings.T("preflight.sampleRate.none")
             });
             return;
         }
@@ -299,18 +300,18 @@ public static class PreflightCheckCore
         {
             report.Items.Add(new PreflightItem
             {
-                Title = "音频采样率",
+                Title = Strings.T("preflight.sampleRate.title"),
                 Status = PreflightStatus.Ok,
-                Detail = "48kHz，与绝大多数设备一致。"
+                Detail = Strings.T("preflight.sampleRate.ok")
             });
             return;
         }
 
         report.Items.Add(new PreflightItem
         {
-            Title = "音频采样率",
+            Title = Strings.T("preflight.sampleRate.title"),
             Status = PreflightStatus.Warn,
-            Detail = $"当前 {rate}Hz：与其他设备混用 44.1k/48k 是爆音与音画漂移的典型根因，建议统一为 48kHz（设置 → 音频 → 采样率）。",
+            Detail = Strings.T("preflight.sampleRate.warn", rate),
             ProblemId = "av-sample"
         });
     }
@@ -332,18 +333,18 @@ public static class PreflightCheckCore
         {
             report.Items.Add(new PreflightItem
             {
-                Title = "麦克风 / 辅助音源",
+                Title = Strings.T("preflight.mic.title"),
                 Status = PreflightStatus.Ok,
-                Detail = $"已在音频设置中启用 {enabled} 个输入设备。"
+                Detail = Strings.T("preflight.mic.ok", enabled)
             });
             return;
         }
 
         report.Items.Add(new PreflightItem
         {
-            Title = "麦克风 / 辅助音源",
+            Title = Strings.T("preflight.mic.title"),
             Status = PreflightStatus.Info,
-            Detail = "当前未启用任何麦克风 / 辅助输入设备（如为纯录屏场景可忽略）；需要人声时在 设置 → 音频 → 麦克风 选择设备。",
+            Detail = Strings.T("preflight.mic.none"),
             ProblemId = "au-mic"
         });
     }
@@ -365,9 +366,9 @@ public static class PreflightCheckCore
         {
             report.Items.Add(new PreflightItem
             {
-                Title = "关键帧间隔",
+                Title = Strings.T("preflight.keyint.title"),
                 Status = PreflightStatus.Info,
-                Detail = "未找到自定义记录（推流默认 2 秒）。若直播中观众反馈「中途进入画面模糊」，到编码器高级设置里确认该项。"
+                Detail = Strings.T("preflight.keyint.unknown")
             });
             return;
         }
@@ -377,9 +378,9 @@ public static class PreflightCheckCore
         {
             report.Items.Add(new PreflightItem
             {
-                Title = "关键帧间隔",
+                Title = Strings.T("preflight.keyint.title"),
                 Status = PreflightStatus.Info,
-                Detail = $"读到非数值记录「{entry.Value}」，建议在设置 → 输出里核对一遍。"
+                Detail = Strings.T("preflight.keyint.notNumber", entry.Value)
             });
             return;
         }
@@ -388,9 +389,9 @@ public static class PreflightCheckCore
         {
             report.Items.Add(new PreflightItem
             {
-                Title = "关键帧间隔",
+                Title = Strings.T("preflight.keyint.title"),
                 Status = PreflightStatus.Ok,
-                Detail = $"{sec} 秒，符合平台共识值（2 秒上下）。"
+                Detail = Strings.T("preflight.keyint.ok", sec)
             });
             return;
         }
@@ -399,10 +400,9 @@ public static class PreflightCheckCore
         {
             report.Items.Add(new PreflightItem
             {
-                Title = "关键帧间隔设为 0（自动）",
+                Title = Strings.T("preflight.keyint.autoTitle"),
                 Status = PreflightStatus.Warn,
-                Detail = "0 表示交给编码器决定，实际可能几分钟才一个关键帧：观众中途进入会长时间模糊，平台录制 / 拖动进度条也会异常。" +
-                         "\n建议：设置 → 输出 → 关键帧间隔固定为 2 秒。",
+                Detail = Strings.T("preflight.keyint.autoDetail"),
                 ProblemId = "lag-keyint"
             });
             return;
@@ -410,10 +410,9 @@ public static class PreflightCheckCore
 
         report.Items.Add(new PreflightItem
         {
-            Title = "关键帧间隔偏大",
+            Title = Strings.T("preflight.keyint.largeTitle"),
             Status = PreflightStatus.Warn,
-            Detail = $"当前 {sec} 秒：间隔越长，观众中途进入的模糊恢复越慢。" +
-                     "\n建议：设置 → 输出 → 关键帧间隔改为 2 秒。",
+            Detail = Strings.T("preflight.keyint.largeDetail", sec),
             ProblemId = "lag-keyint"
         });
     }

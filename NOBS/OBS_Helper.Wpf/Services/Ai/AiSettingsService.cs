@@ -1,3 +1,4 @@
+using OBS_Helper.Wpf.Localization;
 using System.Text.Json.Serialization;
 using OBS_Helper.Wpf.Services.Host;
 
@@ -194,9 +195,9 @@ public sealed class AiSettingsService
         if (!string.IsNullOrEmpty(trimmed))
         {
             if (!Uri.TryCreate(trimmed, UriKind.Absolute, out var u) || u.Scheme != Uri.UriSchemeHttps)
-                throw new ArgumentException("云端接口地址必须是 https:// 开头的完整 URL。");
+                throw new ArgumentException(Strings.T("ai.settings.badUrl"));
             if (HostBridge.IsPrivateHost(u.Host))
-                throw new ArgumentException("出于安全考虑，云端接口不能指向本机或内网地址。");
+                throw new ArgumentException(Strings.T("ai.settings.privateHost"));
         }
 
         Settings.CloudUrl = trimmed;

@@ -65,7 +65,14 @@ PrivilegesRequired=admin
 ; 顺序即默认值：第一条是简体中文（默认语言），第二条是英文。
 ; 两条都指向 .isl 消息文件，安装向导自身的文字也随之切换。
 ; 选定结果经 [INI] 写入 {app}\language.ini，应用首启时读取（见 Services/LocalizationService）。
-Name: "chinesesimplified"; MessagesFile: "compiler:Languages\ChineseSimplified.isl"
+;
+; 【中文语言文件随仓库固定】Inno Setup 官方发行包**不含**简体中文（属社区翻译），
+; 各渠道装出来的 Inno 是否带这个文件并不一致 —— CI 用 choco 装的 Inno 就没有，
+; 本机 6.5 的安装却自带，于是同一份脚本在两边表现不同（CI 报
+; Couldn't open include file "…\Languages\ChineseSimplified.isl"）。
+; 这里把 installer\ChineseSimplified.isl 一并入库并显式引用，让本地与 CI 编译输入完全一致、
+; 翻译版本也被钉住（该文件为 MIT 许可，文件头保留了原作者归属与来源）。
+Name: "chinesesimplified"; MessagesFile: "installer\ChineseSimplified.isl"
 Name: "english"; MessagesFile: "compiler:Default.isl"
 
 [CustomMessages]

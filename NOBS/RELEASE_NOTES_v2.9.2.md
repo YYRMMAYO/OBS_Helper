@@ -37,6 +37,12 @@
   （`[CustomMessages]` + `{cm:...}`），英文用户装完看到的是一整套英文入口。
 - 安装目录名与 AppId **刻意不随语言变化**：Inno 会记住安装目录并在升级时复用，
   若随语言改变，英文用户重装会落到第二个目录、应用内的增量更新也会找不到目标文件。
+- **中文语言文件随仓库固定**：Inno Setup 官方发行包**不含**简体中文（属于社区翻译），
+  而各渠道装出来的 Inno 带不带它并不一致 —— CI 用 `choco install innosetup` 装的那份就没有，
+  本机 6.5 的安装却自带，于是同一份脚本在本地能编、在 CI 直接报
+  `Couldn't open include file "…\Languages\ChineseSimplified.isl"`。
+  现在把 `OBS_Helper.Wpf/installer/ChineseSimplified.isl` 一并入库并显式引用（该文件为 MIT 许可，
+  文件头保留原作者归属与来源），本地与 CI 的编译输入因此完全一致、翻译版本也被钉住。
 - 脚本文件按 UTF-8 **带 BOM** 保存（Inno 6 见到 BOM 必定按 UTF-8 解析；实测无 BOM 时它也会自动识别，
   带 BOM 只是把这一点固定下来，换编辑器或换旧版 ISCC 都不会退化成按 ANSI 读）。
 

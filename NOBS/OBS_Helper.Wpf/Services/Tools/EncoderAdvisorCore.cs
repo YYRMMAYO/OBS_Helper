@@ -140,8 +140,20 @@ public static class EncoderAdvisorCore
         };
     }
 
+    /// <summary>
+    /// 显卡名后缀：NVIDIA 的模板句里已经带了显卡名（<c>检测到 {0}（…）</c>），所以不再重复拼；
+    /// 别的厂商的模板句是 <c>检测到 AMD 显卡{0}：</c> 这种，需要把具体型号补进去。
+    ///
+    /// 这里**按厂商判定**，不去截本地化文案的前两个字符 ——
+    /// 那种写法只在中文模板下碰巧成立（英文模板取到的是 <c>"{0"</c>），
+    /// 而且随文案改动静默失效（V2.9.4 审查发现）。
+    /// </summary>
     private static string FormatGpu(string gpu)
-        => gpu.Length > 0 && !gpu.StartsWith(Strings.T("encoder.headline.nvidia").Substring(0, 2), StringComparison.Ordinal) ? $"（{gpu}）" : "";
+    {
+        if (gpu.Length == 0) return "";
+        var vendor = DetectVendor(gpu);
+        return vendor == "NVIDIA" ? "" : $"（{gpu}）";
+    }
 
     private static string NvencStreamPreset(string gpu)
     {

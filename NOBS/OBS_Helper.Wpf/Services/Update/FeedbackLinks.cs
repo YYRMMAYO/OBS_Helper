@@ -26,8 +26,23 @@ public static class FeedbackLinks
     /// <summary>问题反馈页（GitHub Issues）：需要附日志 / 贴截图时更适合。</summary>
     public const string GitHubIssues = "https://github.com/YYRMMAYO/OBS_Helper/issues";
 
+    /// <summary>作者 GitHub 主页（V2.9.4：反馈页与关于段展示开发者身份，走同一个常量）。</summary>
+    public const string AuthorProfile = "https://github.com/YYRMMAYO";
+
+    /// <summary>项目仓库主页（V2.9.4）。</summary>
+    public const string RepositoryUrl = "https://github.com/YYRMMAYO/OBS_Helper";
+
     /// <summary>
-    /// 反馈入口是否可以放给用户点：必须 https，且落在 <see cref="FormHost"/> 或 GitHub 仓库下。
+    /// 反馈 / 作者 / 仓库入口是否可以放给用户点：必须 https，且落在以下三者之一：
+    /// <list type="bullet">
+    ///   <item>表单域名 <see cref="FormHost"/>；</item>
+    ///   <item><b>本仓库</b>路径 <c>/YYRMMAYO/OBS_Helper…</c>；</item>
+    ///   <item><b>作者账户主页</b> <c>github.com/YYRMMAYO</c> 本身（V2.9.4）。</item>
+    /// </list>
+    ///
+    /// 作者主页这条是**精确前缀**判定（<c>/YYRMMAYO</c> 或 <c>/YYRMMAYO/…</c>），
+    /// 因而 <c>github.com/YYRMMAYOEvil</c> 这类同前缀仿冒账户仍被拒绝 ——
+    /// 少一个斜杠的宽松写法（<c>StartsWith("/YYRMMAYO")</c>）会把仿冒账户一起放进来。
     /// </summary>
     public static bool IsTrustedFeedbackUrl(string? url)
     {
@@ -35,8 +50,12 @@ public static class FeedbackLinks
         if (uri.Scheme != Uri.UriSchemeHttps) return false;
 
         if (uri.Host.Equals(FormHost, StringComparison.OrdinalIgnoreCase)) return true;
-        return uri.Host.Equals("github.com", StringComparison.OrdinalIgnoreCase)
-            && uri.AbsolutePath.StartsWith("/YYRMMAYO/OBS_Helper", StringComparison.OrdinalIgnoreCase);
+        if (!uri.Host.Equals("github.com", StringComparison.OrdinalIgnoreCase)) return false;
+
+        var path = uri.AbsolutePath;
+        return path.StartsWith("/YYRMMAYO/OBS_Helper", StringComparison.OrdinalIgnoreCase)
+            || path.Equals("/YYRMMAYO", StringComparison.OrdinalIgnoreCase)
+            || path.StartsWith("/YYRMMAYO/", StringComparison.OrdinalIgnoreCase);
     }
 
     /// <summary>表单地址的自检（启动自检与单测共用同一判据）。</summary>

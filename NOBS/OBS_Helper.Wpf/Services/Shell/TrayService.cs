@@ -4,6 +4,7 @@ using System.Windows.Forms;
 using OBS_Helper.Wpf.Models.Shell;
 using OBS_Helper.Wpf.Services.Host;
 using OBS_Helper.Wpf.Services.Obs;
+using OBS_Helper.Wpf.Services.ObsConfig;
 
 namespace OBS_Helper.Wpf.Services.Shell;
 
@@ -61,6 +62,9 @@ public sealed class TrayService : IDisposable
 
     /// <summary>托盘菜单「小窗控制」时触发（由 MainWindow 切到 UI 线程呼出小窗）。</summary>
     public event Action? MiniWindowRequested;
+
+    /// <summary>托盘菜单「打开录像目录」时触发（V2.9.4；由 MainWindow 走只读解析后打开资源管理器）。</summary>
+    public event Action? OpenRecordingFolderRequested;
 
     public TrayService(ObsConnectionService obs, LocalStore store)
     {
@@ -170,7 +174,14 @@ public sealed class TrayService : IDisposable
             }
 
             var tip = Strings.T("tray.tooltip");
-            if (rec) tip += Strings.T("tray.tooltipRecording");
+            // 录制中把已录时长带进 ToolTip（V2.9.4）：全屏游戏里托盘图标是唯一能瞄一眼的地方
+            if (rec)
+            {
+                var elapsed = _obs.RecordElapsed;
+                tip += Strings.T("tray.tooltipRecording");
+                if (elapsed > TimeSpan.Zero)
+                    tip += " " + SimpleRecordingCore.FormatDuration(elapsed);
+            }
             if (stream) tip += Strings.T("tray.tooltipStreaming");
             if (vcam) tip += Strings.T("tray.tooltipVirtualCam");
             _icon.Text = tip.Length > 63 ? tip[..63] : tip;   // NotifyIcon.Text 上限 63 字符
@@ -298,6 +309,9 @@ public sealed class TrayService : IDisposable
         var miniItem = new ToolStripMenuItem(Strings.T("tray.miniWindow"));
         miniItem.Click += (_, _) => MiniWindowRequested?.Invoke();
 
+        var openDirItem = new ToolStripMenuItem(Strings.T("tray.openRecordDir"));
+        openDirItem.Click += (_, _) => OpenRecordingFolderRequested?.Invoke();
+
         var exit = new ToolStripMenuItem(Strings.T("tray.exit"));
         exit.Click += (_, _) => ExitRequested?.Invoke();
 
@@ -308,6 +322,7 @@ public sealed class TrayService : IDisposable
         menu.Items.Add(_virtualCamItem);
         menu.Items.Add(new ToolStripSeparator());
         menu.Items.Add(miniItem);
+        menu.Items.Add(openDirItem);
         menu.Items.Add(new ToolStripSeparator());
         menu.Items.Add(exit);
         return menu;

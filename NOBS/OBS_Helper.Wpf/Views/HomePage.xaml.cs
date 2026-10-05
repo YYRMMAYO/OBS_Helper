@@ -41,8 +41,7 @@ public partial class HomePage : UserControl, INavigationAware
     }
 
     public async Task OnNavigatedToAsync(object? parameter)
-    {
-        try
+    {        try
         {
             var categories = await AppServices.Problems.GetCategoriesAsync();
             var counts = await AppServices.Problems.GetCategoryCountsAsync();
@@ -63,11 +62,24 @@ public partial class HomePage : UserControl, INavigationAware
 
             RefreshBookmarks();
             RefreshWelcome();
+
+            // 简单录像卡（V2.9.4）：每次回到首页重读一次现状（配置可能在别处被改过）
+            await SimpleRecord.RefreshAsync();
         }
         catch (Exception ex)
         {
             App.ReportError(Errors.ErrorCodes.DataLoadFailed, ex);
         }
+    }
+
+    /// <summary>
+    /// 离开首页时退订简单录像卡的服务事件（V2.9.4）：页面实例被导航缓存复用，
+    /// 不退订就等于「只要进过一次首页，服务每秒钟的进度通知都会打到一张看不见的卡上」。
+    /// </summary>
+    public Task OnNavigatedFromAsync()
+    {
+        SimpleRecord.Detach();
+        return Task.CompletedTask;
     }
 
     /// <summary>新手引导卡：未连 OBS 时展示，连接后隐藏（StateChanged 可能来自 WebSocket 线程，需切回 UI 线程）。</summary>
@@ -150,6 +162,10 @@ public partial class HomePage : UserControl, INavigationAware
 
     private void OnAssistantClick(object sender, RoutedEventArgs e)
         => AppServices.Navigation.Navigate(Routes.Assistant);
+
+    /// <summary>首页的「反馈」快捷入口（V2.9.4）：直达帮助与反馈页。</summary>
+    private void OnFeedbackClick(object sender, RoutedEventArgs e)
+        => AppServices.Navigation.Navigate(Routes.Feedback);
 
     private void OnCategoryClick(object sender, RoutedEventArgs e)
     {

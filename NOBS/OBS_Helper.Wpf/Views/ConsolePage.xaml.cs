@@ -7,6 +7,7 @@ using OBS_Helper.Wpf.Controls;
 using OBS_Helper.Wpf.Models.Obs;
 using OBS_Helper.Wpf.Navigation;
 using OBS_Helper.Wpf.Services.Obs;
+using OBS_Helper.Wpf.Services.ObsConfig;
 using OBS_Helper.Wpf.Services.Shell;
 
 namespace OBS_Helper.Wpf.Views;
@@ -75,6 +76,9 @@ public partial class ConsolePage : UserControl, INavigationAware
     {
         AppServices.Obs.StateChanged += OnObsStateChanged;
         AppServices.Timer.StateChanged += OnTimerStateChanged;
+        // 录制中的每秒刷新（时长 / 剩余）由简单录像服务广播 —— 它只在录制时起计时器；
+        // 不订它的话，从首页开录后切到本页，这里的时长会停在最后一次 OBS 状态事件那一刻。
+        AppServices.SimpleRecord.StateChanged += OnSimpleRecordStateChanged;
         Render();
     }
 
@@ -83,6 +87,7 @@ public partial class ConsolePage : UserControl, INavigationAware
         // 页面缓存复用，不退订就会越订越多；定时器不停就会在别的页面继续打请求
         AppServices.Obs.StateChanged -= OnObsStateChanged;
         AppServices.Timer.StateChanged -= OnTimerStateChanged;
+        AppServices.SimpleRecord.StateChanged -= OnSimpleRecordStateChanged;
         _statsTimer.Stop();
         _volumeDebounce.Stop();
     }
@@ -127,6 +132,10 @@ public partial class ConsolePage : UserControl, INavigationAware
 
     /// <summary>定时器每秒刷新倒计时（定时器本身跑在 UI 线程）。</summary>
     private void OnTimerStateChanged() => RenderTimer();
+
+    /// <summary>简单录像服务每秒广播一次（仅在录制时）：只重画录制信息行，不动整页。</summary>
+    private void OnSimpleRecordStateChanged()
+        => Dispatcher.BeginInvoke(new Action(RenderRecordingProgress));
 
     private async void OnStatsTick(object? sender, EventArgs e)
     {
@@ -402,6 +411,42 @@ public partial class ConsolePage : UserControl, INavigationAware
         VirtualCamStatusPill.Tag = vcamActive ? "ok" : "info";
         VirtualCamStatusPill.Content = vcamLabel;
         ApplyActiveLook(VirtualCamButton, vcamActive);
+
+        RenderRecordingProgress();
+    }
+
+    /// <summary>
+    /// 录制中的时长与容量（V2.9.4）。数据来自简单录像服务 —— 它按预设码率估算剩余可录时长，
+    /// 不在这里另算一份（两处各算一套迟早会给出不一样的结论）。
+    /// </summary>
+    private void RenderRecordingProgress()
+    {
+        var progress = AppServices.SimpleRecord.Progress;
+        if (progress is null)
+        {
+            RecordProgressPanel.Visibility = Visibility.Collapsed;
+            return;
+        }
+
+        RecordProgressPanel.Visibility = Visibility.Visible;
+
+        var unknown = Strings.T("simple.record.unknown");
+        RecordElapsedText.Text = Strings.T("simple.record.elapsed")
+            + SimpleRecordingCore.FormatDuration(progress.Elapsed);
+
+        RecordRemainingText.Text = Strings.T("simple.record.remaining")
+            + (progress.FreeGb > 0
+                ? Strings.T("simple.record.remainingValue",
+                    progress.RemainingMinutes.ToString("0"), progress.FreeGb.ToString("0.#"))
+                : unknown);
+        RecordRemainingText.SetResourceReference(TextBlock.ForegroundProperty,
+            progress.LowSpace ? "WarnBrush" : "MutedBrush");
+
+        var file = AppServices.Obs.LastRecordFile;
+        RecordFileText.Text = Strings.T("simple.record.fileSize")
+            + (string.IsNullOrWhiteSpace(file)
+                ? unknown
+                : Strings.T("simple.record.fileSizeValue", file, progress.UsedMb.ToString("0.#")));
     }
 
     /// <summary>选中态的统一观感。用 SetResourceReference 而非直接赋画刷，换肤时才会跟着变。</summary>

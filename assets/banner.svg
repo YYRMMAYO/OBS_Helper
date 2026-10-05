@@ -1,44 +1,94 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="320" viewBox="0 0 1200 320" role="img" aria-label="OBS Helper — offline-first troubleshooting copilot for OBS Studio">
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="320" viewBox="0 0 1280 320"
+     role="img" aria-label="OBS 排障助手 OBS Helper — 本地优先的 OBS 直播 / 录制排障助手">
+  <title>OBS 排障助手 · OBS Helper</title>
+  <desc>仓库封面：左侧为应用图标，右侧为名称、一句话定位与三条能力标签。</desc>
+
   <defs>
     <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
       <stop offset="0%" stop-color="#0b1220"/>
       <stop offset="55%" stop-color="#14203a"/>
       <stop offset="100%" stop-color="#1e2f52"/>
     </linearGradient>
+
     <linearGradient id="accent" x1="0%" y1="0%" x2="100%" y2="0%">
       <stop offset="0%" stop-color="#38bdf8"/>
       <stop offset="100%" stop-color="#818cf8"/>
     </linearGradient>
+
+    <linearGradient id="screen" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#38bdf8"/>
+      <stop offset="100%" stop-color="#818cf8"/>
+    </linearGradient>
+
+    <linearGradient id="check" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#34d399"/>
+      <stop offset="100%" stop-color="#10b981"/>
+    </linearGradient>
+
     <radialGradient id="glow1" cx="50%" cy="50%" r="50%">
-      <stop offset="0%" stop-color="#38bdf8" stop-opacity="0.28"/>
+      <stop offset="0%" stop-color="#38bdf8" stop-opacity="0.26"/>
       <stop offset="100%" stop-color="#38bdf8" stop-opacity="0"/>
     </radialGradient>
     <radialGradient id="glow2" cx="50%" cy="50%" r="50%">
-      <stop offset="0%" stop-color="#818cf8" stop-opacity="0.22"/>
+      <stop offset="0%" stop-color="#818cf8" stop-opacity="0.20"/>
       <stop offset="100%" stop-color="#818cf8" stop-opacity="0"/>
     </radialGradient>
+
+    <!--
+      应用图标（与 assets/icon.svg 同源，按 176×176 内联一份）。
+      刻意内联而不是 <image href>：SVG 被 GitHub 的 camo 代理渲染时，
+      外部引用会被拦成裂图，内联才是「怎么放都不会坏」的写法。
+    -->
+    <g id="appmark">
+      <rect x="0" y="0" width="176" height="176" rx="42" fill="url(#bg)"/>
+      <circle cx="88" cy="78" r="74" fill="url(#glow1)"/>
+
+      <rect x="29" y="42" width="118" height="72" rx="11"
+            fill="#0b1220" fill-opacity="0.55" stroke="url(#screen)" stroke-width="5"/>
+      <rect x="40" y="53" width="96" height="50" rx="6" fill="#38bdf8" fill-opacity="0.10"/>
+      <path d="M48 79 L63 79 L70 66 L78 91 L86 74 L93 79 L129 79"
+            fill="none" stroke="url(#screen)" stroke-width="4.2"
+            stroke-linecap="round" stroke-linejoin="round"/>
+
+      <path d="M81 114 L95 114 L97 128 L79 128 Z" fill="url(#screen)" fill-opacity="0.85"/>
+      <rect x="66" y="128" width="44" height="7" rx="3.5" fill="url(#screen)" fill-opacity="0.85"/>
+
+      <circle cx="157" cy="37" r="11" fill="#ef4444" fill-opacity="0.20"/>
+      <circle cx="157" cy="37" r="7.2" fill="#ef4444"/>
+
+      <circle cx="136" cy="136" r="21" fill="#0b1220"/>
+      <circle cx="136" cy="136" r="18" fill="url(#check)"/>
+      <path d="M129 137 L134 142 L144 130" fill="none" stroke="#0b1220"
+            stroke-width="4.6" stroke-linecap="round" stroke-linejoin="round"/>
+    </g>
   </defs>
 
-  <rect width="1200" height="320" fill="url(#bg)"/>
-  <circle cx="1050" cy="40" r="180" fill="url(#glow1)"/>
-  <circle cx="120" cy="310" r="160" fill="url(#glow2)"/>
+  <rect width="1280" height="320" fill="url(#bg)"/>
+  <circle cx="1120" cy="30" r="200" fill="url(#glow1)"/>
+  <circle cx="150" cy="330" r="170" fill="url(#glow2)"/>
 
-  <!-- logo mark -->
-  <rect x="72" y="104" width="64" height="64" rx="16" fill="url(#accent)"/>
-  <path d="M96 122 L96 150 L122 136 Z" fill="#0b1220"/>
+  <!-- 左侧图标 -->
+  <use href="#appmark" x="64" y="72" width="176" height="176"/>
 
-  <text x="160" y="165" font-family="Segoe UI, Arial, 'Microsoft YaHei', sans-serif" font-size="68" font-weight="700" fill="#f8fafc">OBS Helper</text>
-  <text x="163" y="216" font-family="Segoe UI, Arial, 'Microsoft YaHei', sans-serif" font-size="24" fill="#94a3b8">Troubleshooting copilot for OBS Studio · offline-first · privacy-first</text>
+  <!-- 右侧文字 -->
+  <text x="296" y="156" font-family="Segoe UI, Arial, 'Microsoft YaHei', sans-serif"
+        font-size="62" font-weight="700" fill="#f8fafc">OBS 排障助手</text>
+  <text x="300" y="200" font-family="Segoe UI, Arial, 'Microsoft YaHei', sans-serif"
+        font-size="25" font-weight="600" fill="#7dd3fc">OBS Helper · Troubleshooting copilot for OBS Studio</text>
+  <text x="300" y="236" font-family="Segoe UI, Arial, 'Microsoft YaHei', sans-serif"
+        font-size="20" fill="#94a3b8">本地优先 · 只读体检 · 一键部署录制环境与简单录像</text>
 
-  <!-- feature chips -->
-  <g font-family="Segoe UI, Arial, sans-serif" font-size="17" font-weight="600">
-    <rect x="880" y="120" width="248" height="38" rx="19" fill="none" stroke="#38bdf8" stroke-opacity="0.55"/>
-    <text x="1004" y="145" text-anchor="middle" fill="#7dd3fc">Offline-First</text>
-    <rect x="880" y="170" width="248" height="38" rx="19" fill="none" stroke="#818cf8" stroke-opacity="0.55"/>
-    <text x="1004" y="195" text-anchor="middle" fill="#a5b4fc">Native WPF · .NET 10</text>
-    <rect x="880" y="220" width="248" height="38" rx="19" fill="none" stroke="#94a3b8" stroke-opacity="0.5"/>
-    <text x="1004" y="245" text-anchor="middle" fill="#cbd5e1">Windows 10 / 11</text>
+  <!-- 能力标签 -->
+  <g font-family="Segoe UI, Arial, 'Microsoft YaHei', sans-serif" font-size="16" font-weight="600">
+    <rect x="1000" y="106" width="220" height="36" rx="18" fill="none" stroke="#38bdf8" stroke-opacity="0.55"/>
+    <text x="1110" y="130" text-anchor="middle" fill="#7dd3fc">Offline-First</text>
+
+    <rect x="1000" y="152" width="220" height="36" rx="18" fill="none" stroke="#818cf8" stroke-opacity="0.55"/>
+    <text x="1110" y="176" text-anchor="middle" fill="#a5b4fc">Native WPF · .NET 10</text>
+
+    <rect x="1000" y="198" width="220" height="36" rx="18" fill="none" stroke="#94a3b8" stroke-opacity="0.5"/>
+    <text x="1110" y="222" text-anchor="middle" fill="#cbd5e1">Windows 10 / 11</text>
   </g>
 
-  <rect y="314" width="1200" height="6" fill="url(#accent)"/>
+  <rect y="314" width="1280" height="6" fill="url(#accent)"/>
 </svg>

@@ -156,6 +156,7 @@ public sealed class ObsOutputStatus
     public bool Active { get; set; }
     public bool Paused { get; set; }
     public bool Reconnecting { get; set; }
+    /// <summary>OBS 自报的时长（<c>HH:MM:SS.mmm</c>）。录制暂停期间 OBS 不再累加，因此比本地计时更准。</summary>
     public string Timecode { get; set; } = "00:00:00.000";
     public long Bytes { get; set; }
     /// <summary>推流拥塞度 0~1，越高说明上行越吃紧（仅推流有效）。</summary>

@@ -16,4 +16,13 @@ public sealed class ShellSettings
 
     /// <summary>实时日志尾随预警：直播中命中掉帧 / 过载等特征时托盘提醒（V2.8）。</summary>
     [JsonPropertyName("realtimeLogAlert")] public bool RealtimeLogAlertEnabled { get; set; } = true;
+
+    /// <summary>
+    /// 简单录像（V2.9.4）：文件通道落地后允许本工具自动拉起 OBS 并开始录制。
+    /// 关掉时只改配置并提示用户自己启动 OBS —— 有些用户不希望工具去启动别的程序。
+    /// </summary>
+    [JsonPropertyName("simpleRecordAutoLaunch")] public bool SimpleRecordAutoLaunch { get; set; } = true;
+
+    /// <summary>简单录像（V2.9.4）上次使用的预设键（quick / meeting / game）。</summary>
+    [JsonPropertyName("simpleRecordPreset")] public string SimpleRecordPreset { get; set; } = "quick";
 }

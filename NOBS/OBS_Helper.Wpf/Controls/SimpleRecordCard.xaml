@@ -1,0 +1,99 @@
+<UserControl x:Class="OBS_Helper.Wpf.Controls.SimpleRecordCard"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+  <!--
+    简单录像（V2.9.4）。
+
+    这里只做「让用户一次点击就能开录」的交互组织：选预设 → 看一句「现在能不能录」 →
+    点开始（服务层负责自检、备份、落地、按需拉起 OBS、开录）。
+    所有写入都发生在服务层，且先备份、可回滚；本控件不做任何配置写入。
+  -->
+  <Border Style="{StaticResource Card}" Padding="14">
+    <StackPanel>
+
+      <TextBlock Text="{DynamicResource Loc.simple.home.title}" FontWeight="SemiBold"
+                 FontSize="{DynamicResource FontSizeMd}"
+                 Foreground="{DynamicResource TextBrush}" />
+      <TextBlock Text="{DynamicResource Loc.simple.home.desc}" Style="{StaticResource MutedText}"
+                 Margin="0,6,0,0" TextWrapping="Wrap" />
+
+      <!-- 预设三选 -->
+      <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
+        <TextBlock Text="{DynamicResource Loc.simple.preset.label}" Style="{StaticResource CaptionText}"
+                   VerticalAlignment="Center" Margin="0,0,8,0" />
+        <StackPanel x:Name="PresetPanel" Orientation="Horizontal" />
+      </StackPanel>
+
+      <TextBlock x:Name="PresetDescText" Style="{StaticResource CaptionText}"
+                 Margin="0,6,0,0" TextWrapping="Wrap" />
+
+      <!-- 「现在能不能录」的一句话结论 -->
+      <Border Style="{StaticResource SoftPanel}" Margin="0,10,0,0" Padding="10,8,10,8">
+        <StackPanel>
+          <TextBlock x:Name="CheckText" Style="{StaticResource BodyText}" TextWrapping="Wrap" />
+          <TextBlock x:Name="HintText" Style="{StaticResource CaptionText}" Margin="0,4,0,0"
+                     TextWrapping="Wrap" Visibility="Collapsed" />
+        </StackPanel>
+      </Border>
+
+      <!--
+        上次会话遗留的待回滚记录（V2.9.4）：文件通道落地后要重启 OBS 才生效，
+        用户很可能在那之前就关了程序 —— 不提示的话，「可回滚」这句承诺就落空了。
+      -->
+      <Border x:Name="PendingPanel" Style="{StaticResource SoftPanel}" Margin="0,10,0,0"
+              Padding="10,8,10,8" Visibility="Collapsed">
+        <StackPanel>
+          <TextBlock x:Name="PendingText" Style="{StaticResource BodyText}" TextWrapping="Wrap" />
+          <WrapPanel Margin="0,8,0,0">
+            <Button x:Name="PendingRestoreButton" Content="{DynamicResource Loc.simple.pending.restore}"
+                    Style="{StaticResource SecondaryButton}" Margin="0,0,8,0" Click="OnRestorePendingClick" />
+            <Button x:Name="PendingDiscardButton" Content="{DynamicResource Loc.simple.pending.discard}"
+                    Style="{StaticResource GhostButton}" Click="OnDiscardPendingClick" />
+          </WrapPanel>
+        </StackPanel>
+      </Border>
+
+      <!-- 主操作 -->
+      <WrapPanel Margin="0,10,0,0">
+        <Button x:Name="StartButton" Content="{DynamicResource Loc.simple.start}"
+                Style="{StaticResource PrimaryButton}" Margin="0,0,8,8" Click="OnStartClick" />
+        <Button x:Name="StopButton" Content="{DynamicResource Loc.simple.stop}"
+                Style="{StaticResource DangerButton}" Margin="0,0,8,8"
+                Visibility="Collapsed" Click="OnStopClick" />
+        <Button x:Name="RescanButton" Content="{DynamicResource Loc.simple.rescan}"
+                Style="{StaticResource GhostButton}" Margin="0,0,8,8" Click="OnRescanClick" />
+        <Button x:Name="OpenDirButton" Content="{DynamicResource Loc.simple.openDir}"
+                Style="{StaticResource GhostButton}" Margin="0,0,8,8" Click="OnOpenDirClick" />
+        <Button x:Name="RemuxButton" Content="{DynamicResource Loc.simple.remux}"
+                Style="{StaticResource GhostButton}" Margin="0,0,8,8"
+                Visibility="Collapsed" Click="OnRemuxClick" />
+        <Button x:Name="RollbackButton" Content="{DynamicResource Loc.env.rollback}"
+                Style="{StaticResource GhostButton}" Margin="0,0,8,8"
+                Visibility="Collapsed" Click="OnRollbackClick" />
+        <Button x:Name="AdvancedButton" Content="{DynamicResource Loc.simple.advanced}"
+                Style="{StaticResource LinkButton}" Margin="0,0,8,8" Click="OnAdvancedClick" />
+      </WrapPanel>
+
+      <TextBlock x:Name="StatusText" Style="{StaticResource CaptionText}" TextWrapping="Wrap"
+                 Visibility="Collapsed" />
+
+      <!-- 录制中信息：时长 / 剩余可录 / 当前文件 -->
+      <StackPanel x:Name="InfoPanel" Margin="0,8,0,0" Visibility="Collapsed">
+        <TextBlock x:Name="ElapsedText" Style="{StaticResource BodyText}" />
+        <TextBlock x:Name="RemainingText" Style="{StaticResource CaptionText}" Margin="0,3,0,0" />
+        <TextBlock x:Name="FileSizeText" Style="{StaticResource CaptionText}" Margin="0,3,0,0"
+                   TextWrapping="Wrap" />
+      </StackPanel>
+
+      <!-- 停止后的文件信息 -->
+      <StackPanel x:Name="ResultPanel" Margin="0,8,0,0" />
+
+      <!-- 折叠区：逐项「当前 → 建议」 -->
+      <Expander x:Name="DetailsExpander" Margin="0,10,0,0"
+                Header="{DynamicResource Loc.simple.summary}">
+        <StackPanel x:Name="ItemsPanel" Margin="0,8,0,0" />
+      </Expander>
+
+    </StackPanel>
+  </Border>
+</UserControl>

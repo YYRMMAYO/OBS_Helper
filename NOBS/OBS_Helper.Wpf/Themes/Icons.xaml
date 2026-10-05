@@ -107,6 +107,12 @@
     M5,5 a2,2 0 0 1 2,-2 h2 v14 h-2 a2,2 0 0 1 -2,-2 z M19,5 a2,2 0 0 0 -2,-2 h-2 v14 h2 a2,2 0 0 0 2,-2 z
   </StreamGeometry>
 
+  <!-- 反馈：对话气泡 + 感叹号（V2.9.4）。与「助手」的纯气泡刻意区分开：
+       多一个感叹号，语义从「提问」变成「报告问题」。 -->
+  <StreamGeometry x:Key="IconGeomFeedback" PresentationOptions:Freeze="True">
+    M5,4 h14 a2,2 0 0 1 2,2 v9 a2,2 0 0 1 -2,2 h-8 l-4.5,3.5 v-3.5 h-1.5 a2,2 0 0 1 -2,-2 v-9 a2,2 0 0 1 2,-2 z M12,7.3 V12.6 M12,14.9 v0.2
+  </StreamGeometry>
+
   <!-- 设置：滑杆 -->
   <StreamGeometry x:Key="IconGeomSettings" PresentationOptions:Freeze="True">
     M4,7 H20 M9,7 m-2,0 a2,2 0 1 0 4,0 a2,2 0 1 0 -4,0 M4,12 H20 M14,12 m-2,0 a2,2 0 1 0 4,0 a2,2 0 1 0 -4,0 M4,17 H20 M7,17 m-2,0 a2,2 0 1 0 4,0 a2,2 0 1 0 -4,0

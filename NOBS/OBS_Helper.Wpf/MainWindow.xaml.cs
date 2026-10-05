@@ -9,6 +9,7 @@ using System.Windows.Media.Animation;
 using OBS_Helper.Wpf.Controls;
 using OBS_Helper.Wpf.Navigation;
 using OBS_Helper.Wpf.Services;
+using OBS_Helper.Wpf.Services.ObsConfig;
 using OBS_Helper.Wpf.Services.Shell;
 using OBS_Helper.Wpf.Services.Update;
 using OBS_Helper.Wpf.Views;
@@ -53,6 +54,7 @@ public partial class MainWindow : Window
             [Routes.Console] = (NavConsole, "page.console.title", "page.console.subtitle"),
             [Routes.Performance] = (NavPerformance, "page.performance.title", "page.performance.subtitle"),
             [Routes.Guide] = (NavGuide, "page.guide.title", "page.guide.subtitle"),
+            [Routes.Feedback] = (NavFeedback, "page.feedback.title", "page.feedback.subtitle"),
             [Routes.Settings] = (NavSettings, "page.settings.title", "page.settings.subtitle"),
             [Routes.Category] = (null, "page.category.title", ""),
             [Routes.Problem] = (null, "page.problem.title", ""),
@@ -92,6 +94,7 @@ public partial class MainWindow : Window
         _nav.Register(Routes.Console, () => new ConsolePage());
         _nav.Register(Routes.Performance, () => new PerformancePage());
         _nav.Register(Routes.Guide, () => new GuidePage());
+        _nav.Register(Routes.Feedback, () => new FeedbackPage());
         _nav.Register(Routes.Settings, () => new SettingsPage());
         _nav.Register(Routes.Category, () => new CategoryPage());
         _nav.Register(Routes.Problem, () => new ProblemPage());
@@ -114,6 +117,7 @@ public partial class MainWindow : Window
         AppServices.Tray.ShowRequested += OnTrayShowRequested;
         AppServices.Tray.ExitRequested += OnTrayExitRequested;
         AppServices.Tray.MiniWindowRequested += OnMiniWindowRequested;
+        AppServices.Tray.OpenRecordingFolderRequested += OnOpenRecordingFolderRequested;
         AppServices.Hotkeys.ToggleWindowRequested += OnToggleWindowRequested;
         AppServices.Hotkeys.ToggleMiniWindowRequested += OnMiniWindowRequested;
 
@@ -548,7 +552,7 @@ public partial class MainWindow : Window
     }
 
     /// <summary>
-    /// 自动化自检：遍历全部 17 个路由（含带参数的分类页 / 问题详情页），
+    /// 自动化自检：遍历全部 18 个路由（含带参数的分类页 / 问题详情页），
     /// 捕获 XAML 解析、构造函数、OnNavigatedToAsync 各阶段异常，汇总写入 <c>selftest_result.txt</c>。
     /// 这是「编译通过但运行时才炸」类错误（尤其 <c>{Static|Dynamic}Resource</c> 拼错）最有效的拦截手段。
     ///
@@ -581,6 +585,7 @@ public partial class MainWindow : Window
             (Routes.Console, null),
             (Routes.Performance, null),
             (Routes.Guide, null),
+            (Routes.Feedback, null),
             (Routes.Settings, null),
             (Routes.Category, firstCategory),
             (Routes.Problem, firstProblem),
@@ -814,6 +819,27 @@ public partial class MainWindow : Window
     /// <summary>托盘菜单「小窗控制」/ 全局热键「小窗」：呼出或隐藏迷你小窗。</summary>
     private void OnMiniWindowRequested()
         => Dispatcher.BeginInvoke(new Action(() => AppServices.Mini.Toggle()));
+
+    /// <summary>
+    /// 托盘菜单「打开录像目录」（V2.9.4）：托盘线程只负责发事件，解析与打开都在 UI 线程做
+    /// （目录解析会读 OBS 配置，返回结果要弹 Toast，都属于 UI 侧的事）。
+    /// </summary>
+    private void OnOpenRecordingFolderRequested()
+        => Dispatcher.BeginInvoke(new Action(() => _ = OpenRecordingFolderAsync()));
+
+    private async Task OpenRecordingFolderAsync()
+    {
+        try
+        {
+            var dir = await AppServices.RecordingTools.TryGetRecordingDirAsync().ConfigureAwait(true);
+            var error = RecordingToolsService.OpenInExplorer(dir.Dir ?? "");
+            if (error is not null) AppServices.Toast.Show(error, "error");
+        }
+        catch (Exception ex)
+        {
+            AppServices.Toast.Show(Strings.T("recording.dir.openFailed", ex.Message), "error");
+        }
+    }
 
     /// <summary>托盘菜单「退出」。</summary>
     private void OnTrayExitRequested()

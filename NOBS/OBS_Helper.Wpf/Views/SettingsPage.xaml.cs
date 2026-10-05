@@ -8,6 +8,7 @@ using OBS_Helper.Wpf.Models.Shell;
 using OBS_Helper.Wpf.Navigation;
 using OBS_Helper.Wpf.Services;
 using OBS_Helper.Wpf.Services.Ai;
+using OBS_Helper.Wpf.Services.ObsConfig;
 using OBS_Helper.Wpf.Services.Shell;
 
 namespace OBS_Helper.Wpf.Views;
@@ -214,6 +215,9 @@ public partial class SettingsPage : UserControl, INavigationAware
             MiniHotkeyKey.Text = h.MiniWindow.Key;
 
             AutoSwitchEnabled.IsChecked = AppServices.AutoSwitcher.Settings.Enabled;
+
+            // 简单录像（V2.9.4）：预设下拉 + 是否允许文件通道时自动拉起 OBS
+            SyncSimpleRecord();
         }
         finally
         {
@@ -240,6 +244,47 @@ public partial class SettingsPage : UserControl, INavigationAware
         // V2.8 守护开关即时生效
         if (AppServices.RecordWatchdog.Enabled != watchdogBefore) AppServices.RecordWatchdog.ApplyEnabled();
         if (AppServices.LogTailer.Enabled != tailerBefore) AppServices.LogTailer.ApplyEnabled();
+    }
+
+    // ------------------------------------------------------------ 简单录像（V2.9.4）
+
+    /// <summary>把简单录像的两个设置同步到控件（下拉项按当前语言重建）。</summary>
+    private void SyncSimpleRecord()
+    {
+        var svc = AppServices.SimpleRecord;
+
+        SimplePresetBox.Items.Clear();
+        foreach (var preset in SimpleRecordingCore.Presets)
+        {
+            SimplePresetBox.Items.Add(new ComboBoxItem
+            {
+                Content = Strings.T("simple.preset." + preset.Key),
+                Tag = preset.Id
+            });
+        }
+
+        var index = SimpleRecordingCore.Presets
+            .Select((p, i) => (p, i))
+            .FirstOrDefault(x => x.p.Id == svc.Preset).i;
+        SimplePresetBox.SelectedIndex = index;
+
+        SimpleAutoLaunchSwitch.IsChecked = AppServices.Tray.Settings.SimpleRecordAutoLaunch;
+    }
+
+    private void OnSimplePresetChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (_syncing) return;
+        if (SimplePresetBox.SelectedItem is not ComboBoxItem item || item.Tag is not SimplePresetId id) return;
+
+        // 服务自己负责持久化（与首页卡片共用同一个偏好键，两处不会各存一份）
+        AppServices.SimpleRecord.Preset = id;
+    }
+
+    private void OnSimpleAutoLaunchToggled(object sender, RoutedEventArgs e)
+    {
+        if (_syncing) return;
+        AppServices.Tray.Settings.SimpleRecordAutoLaunch = SimpleAutoLaunchSwitch.IsChecked == true;
+        AppServices.Tray.SaveSettings();
     }
 
     /// <summary>热键任一修饰键 / 主键 / 启用勾选变化：只刷新预览文本，注册在「保存」时统一做。</summary>

@@ -72,6 +72,9 @@ public static class AppServices
     // 录制守护 / 实时日志尾随预警（V2.8）
     private static readonly Lazy<RecordWatchdogService> _watchdog = new(() => new RecordWatchdogService(Obs, Tray));
     private static readonly Lazy<LogTailerService> _logTailer = new(() => new LogTailerService(Tray));
+    // 简单录像（V2.9.4）：自检 → 落地 → 拉起 OBS → 开录 → 录中信息 → 停止收尾
+    private static readonly Lazy<SimpleRecordingService> _simpleRecord =
+        new(() => new SimpleRecordingService(ObsPaths, RecordingEnv, RecordingTools, Obs, Tray, Store));
 
     private static readonly Lazy<AiSettingsService> _aiSettings = new(() => new AiSettingsService(Store, Host));
     private static readonly Lazy<ObsToolRegistry> _tools = new(() => new ObsToolRegistry(Problems));
@@ -138,6 +141,8 @@ public static class AppServices
     // 录制守护 / 实时日志尾随预警（V2.8）
     public static RecordWatchdogService RecordWatchdog => _watchdog.Value;
     public static LogTailerService LogTailer => _logTailer.Value;
+    /// <summary>简单录像（V2.9.4）：首页卡片、控制台录制行与托盘菜单共用同一个实例。</summary>
+    public static SimpleRecordingService SimpleRecord => _simpleRecord.Value;
     public static DiagnosticOrchestrator Orchestrator => _orchestrator.Value;
 
     /// <summary>导航服务由 MainWindow 在构造时注入，供各页面互相跳转。</summary>
@@ -206,6 +211,10 @@ public static class AppServices
         try { SystemMonitor.Dispose(); } catch (Exception ex) { FileLogger.Warn("Shutdown", $"SystemMonitor.Dispose 失败: {ex.Message}"); }
         try { RecordWatchdog.Dispose(); } catch (Exception ex) { FileLogger.Warn("Shutdown", $"RecordWatchdog.Dispose 失败: {ex.Message}"); }
         try { LogTailer.Dispose(); } catch (Exception ex) { FileLogger.Warn("Shutdown", $"LogTailer.Dispose 失败: {ex.Message}"); }
+        if (_simpleRecord.IsValueCreated)
+        {
+            try { SimpleRecord.Dispose(); } catch (Exception ex) { FileLogger.Warn("Shutdown", $"SimpleRecord.Dispose 失败: {ex.Message}"); }
+        }
         try { Timer.Dispose(); } catch (Exception ex) { FileLogger.Warn("Shutdown", $"Timer.Dispose 失败: {ex.Message}"); }
         try { Tray.Stop(); } catch (Exception ex) { FileLogger.Warn("Shutdown", $"Tray.Stop 失败: {ex.Message}"); }
     }

@@ -140,6 +140,7 @@ SceneTemplateService 场景模板：在线落地（建专属配置集合 → 逐
 | 系统监控 | `SystemMonitorService` | 每秒采样 CPU/内存/磁盘；`PerformancePage` 订阅展示；预警阈值见 Tray |
 | 场景自动切换 | `SceneAutoSwitcher` | 正则匹配窗口标题，**ReDoS 超时保护**（匹配超时中止） |
 | 定时停止 | `ControlTimerService` | 录制/推流定时停止 |
+| 简单录像 | `SimpleRecordingService`（V2.9.4） | 「自检 → 落地 → （拉起 OBS）→ 开录 → 录中信息 → 停止收尾」一次点击；预设与就绪判定在纯逻辑 `SimpleRecordingCore`，exe 路径推导在 `ObsLaunchCore`；**拉起 OBS 前必确认**，确认回调未注入时按「不允许」处理 |
 | 新手引导 | `OnboardingGuide`（纯逻辑）+ `MainWindow` 覆盖层 | 步骤清单与游标状态机可单测；**每步自动把界面切到对应页面**（V2.9.1「跳转式引导」），卡片贴右下角 + 轻遮罩（页面要看得见），卡片另给站内跳转按钮与官方下载外链；「已完成」只记一个偏好键；「减少动画」时不播动效 |
 | 官方下载入口 | `ObsDownloadCard` 控件 + `ObsDownloadLinks` 常量 | 只允许 `obsproject.com` / 官方 GitHub 仓库；Windows 安装包直链由 GitHub API 解析（`ObsInstallerAsset`），解析不到退化到官方发布页 |
 | OBS 日志定位 | `ObsLogFileFinder` | 认 `.txt` / `.log` 两种扩展名（OBS 会话日志是 `.txt`），按修改时间取最新 |

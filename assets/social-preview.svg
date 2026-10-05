@@ -1,0 +1,89 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="640" viewBox="0 0 1280 640"
+     role="img" aria-label="OBS 排障助手 OBS Helper — 本地优先的 OBS 直播 / 录制排障助手">
+  <title>OBS 排障助手 · OBS Helper（社交预览）</title>
+  <desc>GitHub 仓库社交预览图：1280x640，深色底 + 居中封面 + 底部署名。</desc>
+
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0b1220"/>
+      <stop offset="55%" stop-color="#14203a"/>
+      <stop offset="100%" stop-color="#1e2f52"/>
+    </linearGradient>
+
+    <linearGradient id="accent" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#38bdf8"/>
+      <stop offset="100%" stop-color="#818cf8"/>
+    </linearGradient>
+
+    <linearGradient id="screen" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#38bdf8"/>
+      <stop offset="100%" stop-color="#818cf8"/>
+    </linearGradient>
+
+    <linearGradient id="check" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#34d399"/>
+      <stop offset="100%" stop-color="#10b981"/>
+    </linearGradient>
+
+    <radialGradient id="glow1" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#38bdf8" stop-opacity="0.26"/>
+      <stop offset="100%" stop-color="#38bdf8" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="glow2" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#818cf8" stop-opacity="0.20"/>
+      <stop offset="100%" stop-color="#818cf8" stop-opacity="0"/>
+    </radialGradient>
+
+    <!-- 应用图标（与 assets/icon.svg 同源，内联以便被 camo 代理渲染时不裂图） -->
+    <g id="appmark">
+      <rect x="0" y="0" width="196" height="196" rx="47" fill="url(#bg)"/>
+      <circle cx="98" cy="86" r="82" fill="url(#glow1)"/>
+
+      <rect x="32" y="46" width="132" height="80" rx="12"
+            fill="#0b1220" fill-opacity="0.55" stroke="url(#screen)" stroke-width="5.4"/>
+      <rect x="44" y="58" width="108" height="56" rx="7" fill="#38bdf8" fill-opacity="0.10"/>
+      <path d="M53 88 L70 88 L77 73 L86 101 L95 82 L103 88 L144 88"
+            fill="none" stroke="url(#screen)" stroke-width="4.6"
+            stroke-linecap="round" stroke-linejoin="round"/>
+
+      <path d="M90 126 L106 126 L108 142 L88 142 Z" fill="url(#screen)" fill-opacity="0.85"/>
+      <rect x="74" y="142" width="48" height="8" rx="4" fill="url(#screen)" fill-opacity="0.85"/>
+
+      <circle cx="176" cy="41" r="12" fill="#ef4444" fill-opacity="0.20"/>
+      <circle cx="176" cy="41" r="8" fill="#ef4444"/>
+
+      <circle cx="151" cy="151" r="23" fill="#0b1220"/>
+      <circle cx="151" cy="151" r="20" fill="url(#check)"/>
+      <path d="M143 152 L149 158 L160 144" fill="none" stroke="#0b1220"
+            stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+    </g>
+  </defs>
+
+  <rect width="1280" height="640" fill="url(#bg)"/>
+  <circle cx="1150" cy="60" r="290" fill="url(#glow1)"/>
+  <circle cx="130" cy="600" r="260" fill="url(#glow2)"/>
+
+  <!-- 图标 + 名称：整体居中 -->
+  <use href="#appmark" x="150" y="222" width="196" height="196"/>
+
+  <text x="392" y="308" font-family="Segoe UI, Arial, 'Microsoft YaHei', sans-serif"
+        font-size="72" font-weight="700" fill="#f8fafc">OBS 排障助手</text>
+  <text x="396" y="356" font-family="Segoe UI, Arial, 'Microsoft YaHei', sans-serif"
+        font-size="28" font-weight="600" fill="#7dd3fc">OBS Helper · Troubleshooting copilot for OBS Studio</text>
+  <text x="396" y="396" font-family="Segoe UI, Arial, 'Microsoft YaHei', sans-serif"
+        font-size="22" fill="#94a3b8">本地优先 · 只读体检 · 一键部署录制环境与简单录像</text>
+
+  <!-- 底部信息条 -->
+  <g font-family="Segoe UI, Arial, 'Microsoft YaHei', sans-serif" font-size="19" font-weight="600">
+    <rect x="140" y="486" width="1000" height="52" rx="26" fill="#0b1220" fill-opacity="0.45"
+          stroke="#38bdf8" stroke-opacity="0.28"/>
+    <text x="640" y="519" text-anchor="middle" fill="#cbd5e1">
+      Windows 10 / 11 · Native WPF · 零第三方依赖 · MIT License
+    </text>
+  </g>
+
+  <text x="640" y="586" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif"
+        font-size="18" fill="#64748b">github.com/YYRMMAYO/OBS_Helper</text>
+
+  <rect y="634" width="1280" height="6" fill="url(#accent)"/>
+</svg>

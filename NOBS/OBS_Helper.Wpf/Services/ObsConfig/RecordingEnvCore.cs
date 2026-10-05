@@ -5,6 +5,26 @@ namespace OBS_Helper.Wpf.Services.ObsConfig;
 /// <summary>一条「推荐设置」要写进去的目标：参数分类 + 参数名 + 目标值。</summary>
 public sealed record RecordingEnvTarget(string Category, string Parameter, string Value);
 
+/// <summary>回滚条目：把旧值原样写回去。</summary>
+public sealed record RecordingRollbackEntry(string Category, string Parameter, string OldValue);
+
+/// <summary>
+/// 上一会话遗留的「待回滚记录」（V2.9.4）：文件通道落地后要重启 OBS 才生效，
+/// 用户很可能在那之前就关掉了本程序 —— 这条记录让重启后依然能恢复到改动前的值。
+/// </summary>
+public sealed record PendingRollbackRecord(
+    /// <summary>产生这条记录时用的预设键（quick / meeting / game）。</summary>
+    string PresetKey,
+    /// <summary>落地方式标签（<see cref="SimpleRecordingCore.ChannelWebSocket"/> / <see cref="SimpleRecordingCore.ChannelFile"/>）。</summary>
+    string Channel,
+    /// <summary>落地时间（本地时间，展示用）。</summary>
+    string AppliedAt,
+    IReadOnlyList<RecordingRollbackEntry> Entries)
+{
+    /// <summary>记录里是否有可回滚的内容。</summary>
+    public bool IsEmpty => Entries.Count == 0;
+}
+
 /// <summary>
 /// 一键部署录制环境的**推荐项**（纯逻辑）。每一项都给出「当前值 → 推荐值」，
 /// 由调用方决定要不要勾选、怎么落地（obs-websocket 或 basic.ini）。
@@ -49,6 +69,10 @@ public sealed record RecordingEnvSnapshot
     public string FpsCommon { get; init; } = "";
     /// <summary>音频采样率。</summary>
     public string SampleRate { get; init; } = "";
+    /// <summary>录像音频轨数（简单模式 RecTracks；V2.9.4 的简单录像会显式写 1）。</summary>
+    public string RecTracks { get; init; } = "";
+    /// <summary>是否已开启「自动分段」（简单模式 RecSplitFile，V2.9.4 游戏档会开）。</summary>
+    public string RecSplitFile { get; init; } = "";
 }
 
 /// <summary>
@@ -82,8 +106,14 @@ public static class RecordingEnvCore
     /// <summary>推荐音频采样率。</summary>
     public const int SampleRate = 48000;
 
-    /// <summary>构建推荐项清单。<paramref name="recPath"/> 为已经解析好的录像目录。</summary>
-    public static List<RecordingEnvItem> Build(RecordingEnvSnapshot s, string recPath)
+    /// <summary>
+    /// 「录制向」的公共推荐项：录像格式 / 录像质量 / 画布分辨率 / 帧率。
+    ///
+    /// 抽出来（V2.9.4）是因为「简单录像」的预设也要用同一批目标 ——
+    /// 两处各写一份 INI 键名，早晚会出现「部署卡写 RecFormat2、简单录像写 RecFormat」这种漂移。
+    /// <paramref name="fps"/> 允许预设按档位覆盖（30 / 60）。
+    /// </summary>
+    public static List<RecordingEnvItem> StaticTargets(RecordingEnvSnapshot s, int fps = Fps)
     {
         var advanced = string.Equals(s.OutputMode, "Advanced", StringComparison.OrdinalIgnoreCase);
 
@@ -113,17 +143,6 @@ public static class RecordingEnvCore
             },
             new()
             {
-                Key = "path",
-                Current = s.RecPath,
-                Recommended = recPath,
-                Targets = new[]
-                {
-                    new RecordingEnvTarget("SimpleOutput", "FilePath", recPath),
-                    new RecordingEnvTarget("AdvOut", "RecFilePath", recPath),
-                },
-            },
-            new()
-            {
                 Key = "canvas",
                 Current = Join4(s.BaseCx, s.BaseCy, s.OutCx, s.OutCy),
                 Recommended = $"{Width}x{Height}",
@@ -139,23 +158,48 @@ public static class RecordingEnvCore
             {
                 Key = "fps",
                 Current = s.FpsCommon,
-                Recommended = Fps.ToString(),
+                Recommended = fps.ToString(),
                 Targets = new[]
                 {
-                    new RecordingEnvTarget("Video", "FPSCommon", Fps.ToString()),
-                    new RecordingEnvTarget("Video", "FPSNum", Fps.ToString()),
+                    new RecordingEnvTarget("Video", "FPSCommon", fps.ToString()),
+                    new RecordingEnvTarget("Video", "FPSNum", fps.ToString()),
                     new RecordingEnvTarget("Video", "FPSDen", "1"),
                 },
             },
-            new()
-            {
-                Key = "sampleRate",
-                Current = s.SampleRate,
-                Recommended = SampleRate.ToString(),
-                WebSocketOnly = true,
-                Targets = new[] { new RecordingEnvTarget("Audio", "SampleRate", SampleRate.ToString()) },
-            },
         };
+    }
+
+    /// <summary>
+    /// 构建推荐项清单。<paramref name="recPath"/> 为已经解析好的录像目录。
+    /// 键顺序固定为 <c>format, quality, path, canvas, fps, sampleRate</c>（有单测钉住）。
+    /// </summary>
+    public static List<RecordingEnvItem> Build(RecordingEnvSnapshot s, string recPath)
+    {
+        var items = StaticTargets(s);
+
+        // path 插在 quality 之后、canvas 之前，保持历史键顺序不变
+        items.Insert(2, new RecordingEnvItem
+        {
+            Key = "path",
+            Current = s.RecPath,
+            Recommended = recPath,
+            Targets = new[]
+            {
+                new RecordingEnvTarget("SimpleOutput", "FilePath", recPath),
+                new RecordingEnvTarget("AdvOut", "RecFilePath", recPath),
+            },
+        });
+
+        items.Add(new RecordingEnvItem
+        {
+            Key = "sampleRate",
+            Current = s.SampleRate,
+            Recommended = SampleRate.ToString(),
+            WebSocketOnly = true,
+            Targets = new[] { new RecordingEnvTarget("Audio", "SampleRate", SampleRate.ToString()) },
+        });
+
+        return items;
     }
 
     /// <summary>把画布四个值拼成 <c>基础x输出</c> 的展示串（缺值用 <c>?</c> 占位）。</summary>

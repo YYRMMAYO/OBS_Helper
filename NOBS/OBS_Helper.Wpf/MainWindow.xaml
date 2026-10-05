@@ -79,6 +79,7 @@
             <RadioButton x:Name="NavConsole"    Style="{StaticResource NavTabButton}" Content="{DynamicResource Loc.nav.console}" Tag="{StaticResource IconGeomConsole}"    Checked="OnNavChecked" />
             <RadioButton x:Name="NavPerformance" Style="{StaticResource NavTabButton}" Content="{DynamicResource Loc.nav.performance}"   Tag="{StaticResource IconGeomPerformance}" Checked="OnNavChecked" />
             <RadioButton x:Name="NavGuide"      Style="{StaticResource NavTabButton}" Content="{DynamicResource Loc.nav.guide}"   Tag="{StaticResource IconGeomGuide}"      Checked="OnNavChecked" />
+            <RadioButton x:Name="NavFeedback"   Style="{StaticResource NavTabButton}" Content="{DynamicResource Loc.nav.feedback}" Tag="{StaticResource IconGeomFeedback}" Checked="OnNavChecked" />
             <RadioButton x:Name="NavSettings"   Style="{StaticResource NavTabButton}" Content="{DynamicResource Loc.nav.settings}"   Tag="{StaticResource IconGeomSettings}"   Checked="OnNavChecked" />
           </StackPanel>
         </ScrollViewer>

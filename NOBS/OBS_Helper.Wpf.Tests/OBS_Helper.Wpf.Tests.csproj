@@ -62,6 +62,9 @@
     <Compile Include="..\OBS_Helper.Wpf\Services\OsSupport.cs" Link="Linked\OsSupport.cs" />
     <Compile Include="..\OBS_Helper.Wpf\Services\Update\FeedbackLinks.cs" Link="Linked\Update\FeedbackLinks.cs" />
     <Compile Include="..\OBS_Helper.Wpf\Services\ObsConfig\RecordingEnvCore.cs" Link="Linked\ObsConfig\RecordingEnvCore.cs" />
+    <!-- V2.9.4 简单录像：预设 / 就绪判定 / 进度估算 + 拉起 OBS 的路径解析，都是纯逻辑 -->
+    <Compile Include="..\OBS_Helper.Wpf\Services\ObsConfig\SimpleRecordingCore.cs" Link="Linked\ObsConfig\SimpleRecordingCore.cs" />
+    <Compile Include="..\OBS_Helper.Wpf\Services\ObsConfig\ObsLaunchCore.cs" Link="Linked\ObsConfig\ObsLaunchCore.cs" />
     <Compile Include="..\OBS_Helper.Wpf\Localization\ContentAssets.cs" Link="Linked\ContentAssets.cs" />
     <Compile Include="..\OBS_Helper.Wpf\Services\Tools\VirtualCamCheckCore.cs" Link="Linked\Tools\VirtualCamCheckCore.cs" />
   </ItemGroup>

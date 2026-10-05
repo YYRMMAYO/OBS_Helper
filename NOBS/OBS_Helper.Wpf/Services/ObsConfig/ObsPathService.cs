@@ -108,6 +108,50 @@ public sealed class ObsPathService
     /// <summary>检测 OBS 是否在运行（双信号）。</summary>
     public bool IsObsRunning() => DetectProcess().IsRunning;
 
+    /// <summary>
+    /// 找出 OBS 主程序的可执行文件路径（V2.9.4「简单录像」用：OBS 没跑时把它拉起来）。
+    ///
+    /// 只认两条有据可查的来源：① 卸载项的 <c>DisplayIcon</c>；② 已探测到的安装根。
+    /// <b>找不到就返回 null，绝不猜路径</b> —— 猜错的代价是一句用户看不懂的系统错误弹窗。
+    /// 便携版 / 绿色解压版位于任意目录时识别能力有限，此时由界面引导用户自己启动 OBS。
+    /// </summary>
+    public string? FindObsExecutable()
+    {
+        var candidates = new List<ObsInstallCandidate>();
+
+        // ① 注册表卸载项的 DisplayIcon（形如 "C:\...\bin\64bit\obs64.exe",0）
+        foreach (var key in UninstallKeys)
+        {
+            try
+            {
+                var icon = Registry.GetValue(key, "DisplayIcon", null) as string;
+                var exe = ObsLaunchCore.ExeFromDisplayIcon(icon);
+                if (!string.IsNullOrEmpty(exe))
+                    candidates.Add(new ObsInstallCandidate(exe!, ObsLaunchCore.SourceRegistry, true));
+            }
+            catch (Exception)
+            {
+                // 单个键读不到不影响其它来源
+            }
+        }
+
+        // ② 安装根（进程 MainModule → 注册表 InstallLocation → 常见路径）
+        try
+        {
+            var installDir = DetectInstallDir();
+            var exe = ObsLaunchCore.ExeFromInstallDir(installDir);
+            if (!string.IsNullOrEmpty(exe))
+                candidates.Add(new ObsInstallCandidate(exe!, ObsLaunchCore.SourceInstallDir, false));
+        }
+        catch (Exception)
+        {
+        }
+
+        return ObsLaunchCore.ResolveCandidates(candidates, File.Exists)
+            .Select(c => c.ExePath)
+            .FirstOrDefault();
+    }
+
     /// <summary>双信号检测：① 进程名 obs*/obs64/obs32；② <c>global.ini</c> 排他锁（OBS 运行时会持写句柄）。</summary>
     public ObsProcessInfo DetectProcess()
     {

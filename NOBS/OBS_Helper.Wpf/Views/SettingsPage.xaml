@@ -428,6 +428,28 @@
         </StackPanel>
       </Border>
 
+      <!-- ==================================================== 简单录像（V2.9.4） -->
+      <Border Style="{StaticResource Card}" Margin="0,0,0,16">
+        <StackPanel>
+          <TextBlock Text="{DynamicResource Loc.settings.record.title}" Style="{StaticResource SectionTitle}" />
+
+          <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
+            <TextBlock Text="{DynamicResource Loc.settings.record.preset}" VerticalAlignment="Center"
+                       Foreground="{DynamicResource TextBrush}" FontSize="{DynamicResource FontSizeSm}" />
+            <ComboBox x:Name="SimplePresetBox" Style="{StaticResource AppComboBox}" Width="180"
+                      Margin="10,0,0,0" VerticalAlignment="Center" SelectionChanged="OnSimplePresetChanged" />
+          </StackPanel>
+          <TextBlock Style="{StaticResource CaptionText}" Margin="2,6,0,0" TextWrapping="Wrap"
+                     Text="{DynamicResource Loc.settings.record.presetDesc}" />
+
+          <CheckBox x:Name="SimpleAutoLaunchSwitch" Style="{StaticResource AppSwitch}"
+                    Content="{DynamicResource Loc.settings.record.autoLaunch}" Margin="0,14,0,0"
+                    Checked="OnSimpleAutoLaunchToggled" Unchecked="OnSimpleAutoLaunchToggled" />
+          <TextBlock Style="{StaticResource CaptionText}" Margin="52,5,0,0" TextWrapping="Wrap"
+                     Text="{DynamicResource Loc.settings.record.autoLaunchDesc}" />
+        </StackPanel>
+      </Border>
+
       <!-- ==================================================== 场景自动切换 -->
       <Border Style="{StaticResource Card}" Margin="0,0,0,16">
         <StackPanel>

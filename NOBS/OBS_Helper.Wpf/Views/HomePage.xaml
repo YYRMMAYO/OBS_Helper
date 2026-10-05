@@ -1,9 +1,10 @@
 <UserControl x:Class="OBS_Helper.Wpf.Views.HomePage"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:ctl="clr-namespace:OBS_Helper.Wpf.Controls">
 
   <!--
-    首页 = 快捷入口 + 分类九宫格 + 我的收藏。
+    首页 = 快捷入口 + 简单录像 + 分类九宫格 + 我的收藏。
     页面大标题由 MainWindow 顶栏负责，这里不再重复，只保留原版 hero 里的两个入口按钮。
   -->
   <ScrollViewer Style="{StaticResource PageScroll}">
@@ -14,8 +15,20 @@
         <Button Style="{StaticResource PrimaryButton}" Content="{DynamicResource Loc.home.action.search}"
                 Margin="0,0,10,0" Click="OnSearchClick" />
         <Button Style="{StaticResource SecondaryButton}" Content="{DynamicResource Loc.home.action.ask}"
-                Click="OnAssistantClick" />
+                Margin="0,0,10,0" Click="OnAssistantClick" />
+        <!--
+          「反馈」放在首页快捷入口（V2.9.4）：V2.9.3 只在工具箱 / 搭建页底部有反馈卡，
+          要反馈的用户得先猜到它在哪一页 —— 那等于没有入口。
+        -->
+        <Button Style="{StaticResource GhostButton}" Content="{DynamicResource Loc.nav.feedback}"
+                Click="OnFeedbackClick" />
       </StackPanel>
+
+      <!--
+        简单录像（V2.9.4）：放在首页而不是只留在「搭建」页 ——
+        「我就想录个像」是最常见的进入意图，不该先让人翻三个页面找入口。
+      -->
+      <ctl:SimpleRecordCard x:Name="SimpleRecord" Margin="0,14,0,0" />
 
       <!-- 新手引导：未连 OBS 时显示，连接后由代码隐藏（P1） -->
       <Border x:Name="WelcomeCard" Style="{StaticResource Card}" Margin="0,14,0,0"

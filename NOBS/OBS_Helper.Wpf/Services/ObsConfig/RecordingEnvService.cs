@@ -21,8 +21,9 @@ public sealed record RecordingEnvPlan(
 /// <summary>单个推荐项的落地结果。</summary>
 public sealed record RecordingEnvStepResult(string Key, bool Ok, string? Error);
 
-/// <summary>回滚条目：把旧值原样写回去。</summary>
-public sealed record RecordingRollbackEntry(string Category, string Parameter, string OldValue);
+// 回滚条目（RecordingRollbackEntry）与「上次会话待回滚记录」都是纯数据模型，
+// 放在 RecordingEnvCore.cs 里 —— 那个文件零 WPF 依赖、被单测工程直接链接，
+// 模型放那里才能被纯逻辑与测试一起用（V2.9.4）。
 
 /// <summary>一次一键部署的结果。</summary>
 public sealed record RecordingEnvResult(
@@ -104,8 +105,14 @@ public sealed class RecordingEnvService
 
         var items = RecordingEnvCore.Build(snapshot, targetPath);
 
-        // 通道判定：连上 OBS 走 WebSocket；没连但 OBS 也没跑，才允许改文件；
+        // 通道判定顺序（V2.9.4 起第一条是硬阻断）：
+        // 正在录制 / 推流 → 一律不改（改了会打断用户正在进行的工作）；
+        // 连上 OBS 走 WebSocket；没连但 OBS 也没跑，才允许改文件；
         // OBS 在跑却没连上（没开 WebSocket / 密码不对）时两者都不能用 —— 直接说清楚。
+        if (_obs.RecordStatus.Active || _obs.StreamStatus.Active)
+            return new RecordingEnvPlan(false, Strings.T("env.blocked.recordingOrStreaming"),
+                basicIniPath, loc.ConfigDir, items);
+
         if (WebSocketAvailable)
             return new RecordingEnvPlan(true, null, basicIniPath, loc.ConfigDir, items);
 
@@ -119,6 +126,49 @@ public sealed class RecordingEnvService
     }
 
     /// <summary>
+    /// 只读读一次当前录制环境快照（V2.9.4）。与 <see cref="BuildPlanAsync"/> 读的是同一套键，
+    /// 只是不带「推荐值」，供「简单录像」的就绪判定与展示使用。任何失败都降级为空快照。
+    /// </summary>
+    public async Task<RecordingEnvSnapshot> ReadSnapshotAsync()
+    {
+        try
+        {
+            var loc = await _paths.LocateAsync().ConfigureAwait(false);
+            if (!loc.Exists) return new RecordingEnvSnapshot();
+
+            var basicIni = ResolveBasicIniPath(loc.ConfigDir);
+            if (basicIni is null) return new RecordingEnvSnapshot();
+
+            return ReadSnapshot(TryRead(basicIni) ?? "");
+        }
+        catch (Exception ex)
+        {
+            FileLogger.Warn("RecordingEnv", "读取录制环境快照失败：" + ex.Message);
+            return new RecordingEnvSnapshot();
+        }
+    }
+
+    /// <summary>
+    /// 解析当前配置集下 basic.ini 的<b>实际路径</b>（不存在返回 null）。
+    /// 与 <see cref="ResolveBasicIniPathAsync"/> 同一套链路，抽出来给只读调用方复用。
+    /// </summary>
+    private static string? ResolveBasicIniPath(string configDir)
+    {
+        try
+        {
+            var ini = PreflightCheckCore.ParseIni(TryRead(Path.Combine(configDir, "global.ini")) ?? "");
+            if (!ini.TryGetValue("basic.profiledir", out var profileDir) || string.IsNullOrWhiteSpace(profileDir))
+                return null;
+            var path = Path.Combine(configDir, "basic", "profiles", profileDir!, "basic.ini");
+            return File.Exists(path) ? path : null;
+        }
+        catch (Exception)
+        {
+            return null;
+        }
+    }
+
+    /// <summary>
     /// 应用勾选的推荐项。<paramref name="selectedKeys"/> 为空表示「全部勾选」。
     /// 无论走哪条通道，都会先做一次整体备份；备份失败即中止，绝不在没有退路的情况下改用户配置。
     /// </summary>
@@ -128,6 +178,11 @@ public sealed class RecordingEnvService
     {
         if (plan.BlockedReason is not null)
             return Fail(plan.BlockedReason);
+
+        // 执行点复查（V2.9.4）：计划可能是几分钟前建的（卡片进页面时读一次），
+        // 这期间用户完全可能按了录制热键。只在「建计划时」守卫等于没有守卫。
+        if (_obs.RecordStatus.Active || _obs.StreamStatus.Active)
+            return Fail(Strings.T("env.blocked.recordingOrStreaming"));
 
         var chosen = plan.Items
             .Where(i => selectedKeys.Count == 0 || selectedKeys.Contains(i.Key))
@@ -232,7 +287,7 @@ public sealed class RecordingEnvService
         catch (Exception ex)
         {
             return new RecordingEnvResult(false, backupPath, Array.Empty<RecordingEnvStepResult>(),
-                rollback, Strings.T("env.writeFailed"), ex.Message);
+                rollback, Strings.T("env.writeFailed", ex.Message), null);
         }
 
         // 写盘后重新读回逐项校验：写没写进去不能靠「我以为写对了」。
@@ -267,6 +322,10 @@ public sealed class RecordingEnvService
         CancellationToken ct = default)
     {
         if (entries.Count == 0) return Fail(Strings.T("env.rollback.nothing"));
+
+        // 执行点复查（V2.9.4）：回滚也是写用户配置，同样不能在录制 / 推流中做
+        if (_obs.RecordStatus.Active || _obs.StreamStatus.Active)
+            return Fail(Strings.T("env.blocked.recordingOrStreaming"));
 
         var loc = await _paths.LocateAsync().ConfigureAwait(false);
         var ws = WebSocketAvailable;
@@ -313,7 +372,7 @@ public sealed class RecordingEnvService
         catch (Exception ex)
         {
             return new RecordingEnvResult(false, null, Array.Empty<RecordingEnvStepResult>(),
-                Array.Empty<RecordingRollbackEntry>(), Strings.T("env.writeFailed"), ex.Message);
+                Array.Empty<RecordingRollbackEntry>(), Strings.T("env.writeFailed", ex.Message), null);
         }
 
         return new RecordingEnvResult(true, null, Array.Empty<RecordingEnvStepResult>(),
@@ -347,24 +406,13 @@ public sealed class RecordingEnvService
             OutCy = RecordingEnvCore.ReadIni(iniText, "Video", "OutputCY"),
             FpsCommon = RecordingEnvCore.ReadIni(iniText, "Video", "FPSCommon"),
             SampleRate = RecordingEnvCore.ReadIni(iniText, "Audio", "SampleRate"),
+            RecTracks = RecordingEnvCore.ReadIni(iniText, "SimpleOutput", "RecTracks"),
+            RecSplitFile = RecordingEnvCore.ReadIni(iniText, "SimpleOutput", "RecSplitFile"),
         };
     }
 
-    private async Task<string?> ResolveBasicIniPathAsync(string configDir)
-    {
-        try
-        {
-            var ini = PreflightCheckCore.ParseIni(TryRead(Path.Combine(configDir, "global.ini")) ?? "");
-            if (!ini.TryGetValue("basic.profiledir", out var profileDir) || string.IsNullOrWhiteSpace(profileDir))
-                return null;
-            var path = Path.Combine(configDir, "basic", "profiles", profileDir!, "basic.ini");
-            return File.Exists(path) ? path : null;
-        }
-        catch (Exception)
-        {
-            return null;
-        }
-    }
+    private Task<string?> ResolveBasicIniPathAsync(string configDir)
+        => Task.FromResult(ResolveBasicIniPath(configDir));
 
     private static RecordingEnvResult Fail(string message)
         => new(false, null, Array.Empty<RecordingEnvStepResult>(), Array.Empty<RecordingRollbackEntry>(), message, null);

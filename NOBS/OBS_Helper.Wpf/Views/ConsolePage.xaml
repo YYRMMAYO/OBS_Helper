@@ -231,6 +231,18 @@
         </StackPanel>
         <TextBlock x:Name="RecordDirHintText" Style="{StaticResource CaptionText}" Margin="2,6,0,0"
                    Visibility="Collapsed" />
+
+        <!--
+          录制中信息（V2.9.4）：原先这里只有「进行中 / 已暂停」两个词，
+          而「录了多久、还够录多久」恰恰是录制时最想知道的两件事。
+          数据来自 SimpleRecordingService（时长优先用 OBS 自报的 timecode，暂停不累加）。
+        -->
+        <StackPanel x:Name="RecordProgressPanel" Margin="2,8,0,0" Visibility="Collapsed">
+          <TextBlock x:Name="RecordElapsedText" Style="{StaticResource BodyText}" />
+          <TextBlock x:Name="RecordRemainingText" Style="{StaticResource CaptionText}" Margin="0,3,0,0" />
+          <TextBlock x:Name="RecordFileText" Style="{StaticResource CaptionText}" Margin="0,3,0,0"
+                     TextWrapping="Wrap" />
+        </StackPanel>
       </StackPanel>
 
     </StackPanel>

@@ -1,0 +1,62 @@
+<UserControl x:Class="OBS_Helper.Wpf.Views.FeedbackPage"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:ctl="clr-namespace:OBS_Helper.Wpf.Controls">
+  <!--
+    帮助与反馈（V2.9.4）。
+
+    为什么单独开一页：V2.9.3 的反馈卡只出现在「工具箱」与「搭建」页的底部 ——
+    要反馈的用户得先猜到它在哪一页，这等于没有入口。这里把它变成左侧导航的一级项，
+    并补上「一键复制报错材料」，让用户不用自己拼版本号与日志结论。
+  -->
+  <ScrollViewer Style="{StaticResource PageScroll}">
+    <StackPanel Margin="22,18,22,26" MaxWidth="880" HorizontalAlignment="Left">
+
+      <!-- 反馈主入口：表单 / GitHub Issue / 离线二维码 -->
+      <ctl:FeedbackCard />
+
+      <!-- 一键准备好报错材料 -->
+      <Border Style="{StaticResource Card}" Padding="14" Margin="0,14,0,0">
+        <StackPanel>
+          <TextBlock Text="{DynamicResource Loc.feedback.report.title}" FontWeight="SemiBold"
+                     FontSize="{DynamicResource FontSizeMd}"
+                     Foreground="{DynamicResource TextBrush}" />
+          <TextBlock Text="{DynamicResource Loc.feedback.report.desc}" Style="{StaticResource MutedText}"
+                     Margin="0,6,0,0" TextWrapping="Wrap" />
+
+          <TextBlock x:Name="VersionTextBlock" Style="{StaticResource CaptionText}" Margin="0,8,0,0" />
+
+          <WrapPanel Margin="0,10,0,0">
+            <Button Content="{DynamicResource Loc.feedback.report.copy}" Style="{StaticResource SecondaryButton}"
+                    Margin="0,0,8,8" Click="OnCopyReport" />
+            <Button x:Name="OpenLogsButton" Content="{DynamicResource Loc.feedback.report.openLogs}"
+                    Style="{StaticResource GhostButton}" Margin="0,0,8,8" Click="OnOpenLogs" />
+          </WrapPanel>
+
+          <TextBlock x:Name="StatusText" Style="{StaticResource CaptionText}" TextWrapping="Wrap"
+                     Visibility="Collapsed" />
+        </StackPanel>
+      </Border>
+
+      <!-- 作者与项目 -->
+      <Border Style="{StaticResource Card}" Padding="14" Margin="0,14,0,0">
+        <StackPanel>
+          <TextBlock Text="{DynamicResource Loc.feedback.about.title}" FontWeight="SemiBold"
+                     FontSize="{DynamicResource FontSizeMd}"
+                     Foreground="{DynamicResource TextBrush}" />
+          <TextBlock x:Name="AuthorText" Style="{StaticResource BodyText}" Margin="0,6,0,0"
+                     TextWrapping="Wrap" />
+          <TextBlock Text="{DynamicResource Loc.feedback.about.repoHint}" Style="{StaticResource CaptionText}"
+                     Margin="0,6,0,0" TextWrapping="Wrap" />
+          <WrapPanel Margin="0,10,0,0">
+            <Button Content="{DynamicResource Loc.feedback.about.github}" Style="{StaticResource GhostButton}"
+                    Margin="0,0,8,8" Click="OnOpenAuthor" />
+            <Button Content="{DynamicResource Loc.feedback.about.repo}" Style="{StaticResource GhostButton}"
+                    Margin="0,0,8,8" Click="OnOpenRepo" />
+          </WrapPanel>
+        </StackPanel>
+      </Border>
+
+    </StackPanel>
+  </ScrollViewer>
+</UserControl>

@@ -86,6 +86,10 @@ NOBS/
 | `Services/ObsConfig/ObsResetService.cs` | 253 | 配置重置（连接态校验、场景清空）。 |
 | `Services/ObsConfig/SceneTemplateService.cs` | 824 | 场景模板：在线落地（obs-websocket 建集合/场景/来源）与离线导出（JSON）。 |
 | `Services/ObsConfig/RecordingToolsService.cs` | 220 | 录像工具（V2.6）：录像目录解析与直达、ffmpeg 探测、MKV/Hybrid MP4 → MP4 无损转封装。 |
+| `Services/ObsConfig/SimpleRecordingCore.cs` | - | **简单录像纯逻辑**（V2.9.4）：三档预设、预设 → 推荐项、就绪判定、剩余可录估算、跨会话待回滚记录的存储键与文案口径。 |
+| `Services/ObsConfig/ObsLaunchCore.cs` | - | **拉起 OBS 的纯逻辑**（V2.9.4）：`DisplayIcon` 解析（含引号 / `,0` 后缀 / 目录名带逗号）、安装根推导四档、去重与存在性过滤。探测留在 `ObsPathService`，这里只做字符串与路径推导。 |
+| `Services/ObsConfig/RecordingEnvService.cs` | - | 一键部署录制环境（V2.9.3）：双通道落地 + 备份 / 回滚 / 读回校验；V2.9.4 增加「录制 / 推流中」硬阻断（建计划与执行点各判一次）与只读快照。 |
+| `Services/Shell/SimpleRecordingService.cs` | - | **简单录像服务**（V2.9.4）：状态机与落地编排、拉起 OBS 并等就绪、录制中进度、停止收尾、跨会话回滚记录的落盘与恢复。 |
 | `Services/ObsConfig/FileTx.cs` | 129 | 文件事务：提交 / 回滚目录级操作。 |
 
 #### 2.3.4 日志分析
@@ -154,6 +158,7 @@ NOBS/
 | `Controls/ConfirmDialog.xaml(.cs)` | 通用确认对话框。 |
 | `Controls/UpdateDialog.xaml(.cs)` | 更新提示对话框（四选一：蓝奏云/应用内/GitHub/稍后）。 |
 | `Controls/ObsDownloadCard.xaml(.cs)` | **官方 OBS 下载卡**（V2.9.1）：官网下载页 / 官方 GitHub 发布页 / 当前稳定版 Windows 安装包直链；搭建页与工具箱共用同一枚控件。 |
+| `Controls/SimpleRecordCard.xaml(.cs)` | **简单录像卡**（V2.9.4，挂在首页）：预设三选 → 「现在能不能录」一行结论 → 一键开始 / 停止 → 录制中时长与剩余可录 → 停止后打开目录 / 转 MP4；并提示并恢复「上次会话未回滚的改动」。 |
 
 ### 2.5 Views（页面）
 
@@ -176,6 +181,7 @@ NOBS/
 | `Views/ToolboxPage.xaml(.cs)` | 330 | 工具箱（V2.6）：录像工具 / 参数处方 / 隐私清单 / 冲突扫描 / 带宽计算 / 版本情报 / 快捷键速查。 |
 | `Views/SetupWizardWindow.xaml(.cs)` | 250 | 分步向导窗口（竖屏双画布 / 多平台推流，V2.2）。 |
 | `Views/GuidePage.xaml(.cs)` | 95 | 使用指引（随包资源）。 |
+| `Views/FeedbackPage.xaml(.cs)` | - | **帮助与反馈页**（V2.9.4，一级导航）：反馈卡（表单 / Issue / 离线二维码）+ **一键复制报错材料**（版本 / 系统 / OBS 连接与场景 / 录前自检结论，不含路径与日志原文）+ 作者与仓库入口。 |
 | `Views/MiniControlWindow.xaml(.cs)` | 106 | 迷你小窗（精简控制）。 |
 
 ### 2.6 Plugins（插件生态服务，V2.2）

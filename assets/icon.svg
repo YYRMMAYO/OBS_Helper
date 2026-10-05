@@ -1,0 +1,59 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256"
+     role="img" aria-label="OBS Helper — 本地优先的 OBS 排障助手">
+  <title>OBS Helper</title>
+  <desc>深色圆角底 + 显示器 + 录制指示点 + 体检对勾：本地优先的 OBS 排障助手。用于仓库封面与 README。</desc>
+
+  <defs>
+    <!-- 底色与 assets/banner.svg 同一族深蓝，保证同系列视觉一致 -->
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0b1220"/>
+      <stop offset="55%" stop-color="#14203a"/>
+      <stop offset="100%" stop-color="#1e2f52"/>
+    </linearGradient>
+
+    <!-- 主描边：青 → 靛，取自横幅的 accent -->
+    <linearGradient id="screen" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#38bdf8"/>
+      <stop offset="100%" stop-color="#818cf8"/>
+    </linearGradient>
+
+    <linearGradient id="check" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#34d399"/>
+      <stop offset="100%" stop-color="#10b981"/>
+    </linearGradient>
+
+    <!-- 屏幕内的氛围光：给纯深色底一点层次，不留死板的大平面 -->
+    <radialGradient id="glow" cx="50%" cy="44%" r="60%">
+      <stop offset="0%" stop-color="#38bdf8" stop-opacity="0.28"/>
+      <stop offset="100%" stop-color="#38bdf8" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <!-- 圆角底板 -->
+  <rect x="8" y="8" width="240" height="240" rx="58" fill="url(#bg)"/>
+  <circle cx="128" cy="114" r="102" fill="url(#glow)"/>
+
+  <!-- 显示器：外框 + 屏幕 -->
+  <rect x="40" y="58" width="176" height="108" rx="16"
+        fill="#0b1220" fill-opacity="0.55" stroke="url(#screen)" stroke-width="7"/>
+  <rect x="56" y="74" width="144" height="76" rx="9" fill="#38bdf8" fill-opacity="0.10"/>
+
+  <!-- 屏幕内的健康波形：一屏一跳的实时体检，比播放三角更贴近本工具的职责 -->
+  <path d="M68 112 L90 112 L100 94 L112 130 L124 106 L134 112 L188 112"
+        fill="none" stroke="url(#screen)" stroke-width="6"
+        stroke-linecap="round" stroke-linejoin="round"/>
+
+  <!-- 支架 -->
+  <path d="M118 166 L138 166 L141 186 L115 186 Z" fill="url(#screen)" fill-opacity="0.85"/>
+  <rect x="96" y="186" width="64" height="10" rx="5" fill="url(#screen)" fill-opacity="0.85"/>
+
+  <!-- 录制指示点：右上角、贴在边框拐角外侧（只压住一点点，避免吃掉显示器轮廓） -->
+  <circle cx="228" cy="54" r="16" fill="#ef4444" fill-opacity="0.20"/>
+  <circle cx="228" cy="54" r="10.5" fill="#ef4444"/>
+
+  <!-- 体检对勾：右下角独立圆徽章（与显示器刻意分开，缩到 32px 也不粘成一团） -->
+  <circle cx="198" cy="198" r="30" fill="#0b1220"/>
+  <circle cx="198" cy="198" r="26" fill="url(#check)"/>
+  <path d="M187.5 199 L195 206.5 L209.5 189.5" fill="none" stroke="#0b1220"
+        stroke-width="6.5" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

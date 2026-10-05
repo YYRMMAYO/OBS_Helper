@@ -199,4 +199,109 @@ public class RecordingEnvCoreTests
     [InlineData("[Video]\nBaseCX=1280\n", "Video", "XX", "")]
     public void ReadIni_ReturnsEmptyWhenAbsent(string ini, string section, string key, string expected)
         => Assert.Equal(expected, RecordingEnvCore.ReadIni(ini, section, key));
+
+    // ------------------------------------------------------------ V2.9.4：StaticTargets（简单录像的基准项）
+
+    /// <summary>
+    /// V2.9.4 起 <c>Build</c> 的 format/quality/canvas/fps 四项由 <c>StaticTargets</c> 提供
+    /// （简单录像的落地项也复用它）。键集合与顺序必须一致，否则「录制环境」页与「简单录像」
+    /// 会推荐出两套不一样的东西，用户按哪边都觉得自己被改了配置。
+    /// </summary>
+    [Fact]
+    public void StaticTargets_ReturnsTheFourBaseKeysInTheFixedOrder()
+    {
+        var statics = RecordingEnvCore.StaticTargets(Simple());
+
+        Assert.Equal(new[] { "format", "quality", "canvas", "fps" }, statics.Select(i => i.Key));
+        Assert.Equal(4, statics.Select(i => i.Key).Distinct(StringComparer.Ordinal).Count());
+
+        // 与 Build 的同名项是同一批：Build 只是把 path 插到 quality 之后、把 sampleRate 追到末尾
+        var built = RecordingEnvCore.Build(Simple(), @"D:\Rec")
+            .Where(i => i.Key != "path" && i.Key != "sampleRate")
+            .ToList();
+        Assert.Equal(built.Select(i => i.Key).ToList(), statics.Select(i => i.Key).ToList());
+    }
+
+    /// <summary>基准项只声明「录什么」；推流 / 编码参数与文件通道专属项都不该混进来。</summary>
+    [Fact]
+    public void StaticTargets_OnlyCoversRecordingParameters()
+    {
+        var parameters = RecordingEnvCore.StaticTargets(Simple())
+            .SelectMany(i => i.Targets)
+            .Select(t => t.Parameter)
+            .ToHashSet();
+
+        Assert.DoesNotContain("Mode", parameters);
+        Assert.DoesNotContain("StreamEncoder", parameters);
+        Assert.DoesNotContain("VBitrate", parameters);
+        Assert.DoesNotContain("FilePath", parameters);      // 录像目录由调用方按 recPath 追加
+        Assert.DoesNotContain("SampleRate", parameters);    // 采样率由调用方按通道追加
+        Assert.DoesNotContain("RecTracks", parameters);
+    }
+
+    /// <summary>帧率必须用调用方传进来的值：写死 60 会让会议档的 30fps 不生效。</summary>
+    [Fact]
+    public void StaticTargets_UsesTheRequestedFps()
+    {
+        var fps = RecordingEnvCore.StaticTargets(Simple(), 30).Single(i => i.Key == "fps");
+
+        Assert.Equal("30", fps.Recommended);
+        Assert.Contains(new RecordingEnvTarget("Video", "FPSCommon", "30"), fps.Targets);
+        Assert.Contains(new RecordingEnvTarget("Video", "FPSNum", "30"), fps.Targets);
+        Assert.Contains(new RecordingEnvTarget("Video", "FPSDen", "1"), fps.Targets);
+        Assert.DoesNotContain(fps.Targets, t => t.Value == RecordingEnvCore.Fps.ToString());
+    }
+
+    /// <summary>不传 fps 时回落到「一键部署」的推荐帧率，两条路不能各说各话。</summary>
+    [Fact]
+    public void StaticTargets_DefaultsToTheRecordingEnvFps()
+    {
+        var fps = RecordingEnvCore.StaticTargets(Simple()).Single(i => i.Key == "fps");
+        Assert.Equal(RecordingEnvCore.Fps.ToString(), fps.Recommended);
+    }
+
+    /// <summary>画布 / 格式 / 质量与 <c>Build</c> 完全同源：不许在 StaticTargets 里另写一份常量。</summary>
+    [Fact]
+    public void StaticTargets_MatchesBuildOnTheSharedKeys()
+    {
+        var snapshot = Simple();
+        var built = RecordingEnvCore.Build(snapshot, @"D:\Rec");
+        var statics = RecordingEnvCore.StaticTargets(snapshot);
+
+        foreach (var item in statics)
+        {
+            var same = built.Single(i => i.Key == item.Key);
+            Assert.Equal(same.Current, item.Current);
+            Assert.Equal(same.Recommended, item.Recommended);
+            Assert.Equal(
+                same.Targets.Select(t => t.Category + "|" + t.Parameter + "|" + t.Value)
+                            .OrderBy(s => s, StringComparer.Ordinal),
+                item.Targets.Select(t => t.Category + "|" + t.Parameter + "|" + t.Value)
+                            .OrderBy(s => s, StringComparer.Ordinal));
+        }
+    }
+
+    /// <summary>
+    /// 高级输出模式下「简单模式的录像质量档」不适用：当前值清空（界面据此显示成待处理），
+    /// 但推荐值与目标键仍在 —— 「不适用」的语义由调用方按 <c>OutputMode</c> 判断。
+    /// </summary>
+    [Fact]
+    public void StaticTargets_BlanksQualityCurrentInAdvancedMode()
+    {
+        var simple = RecordingEnvCore.StaticTargets(Simple()).Single(i => i.Key == "quality");
+        Assert.Equal("Stream", simple.Current);
+        Assert.Equal(RecordingEnvCore.HighQuality, simple.Recommended);
+        Assert.False(simple.AlreadyOk);
+
+        var advancedSnapshot = Simple() with { OutputMode = "Advanced" };
+        var advanced = RecordingEnvCore.StaticTargets(advancedSnapshot).Single(i => i.Key == "quality");
+        Assert.Equal("", advanced.Current);
+        Assert.Equal(RecordingEnvCore.HighQuality, advanced.Recommended);
+        Assert.False(advanced.AlreadyOk);
+
+        // 其它项不受输出模式影响
+        Assert.Equal(
+            RecordingEnvCore.StaticTargets(Simple()).Single(i => i.Key == "format").Current,
+            RecordingEnvCore.StaticTargets(advancedSnapshot).Single(i => i.Key == "format").Current);
+    }
 }

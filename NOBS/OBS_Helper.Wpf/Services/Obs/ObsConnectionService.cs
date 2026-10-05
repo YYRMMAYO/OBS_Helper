@@ -55,6 +55,48 @@ public sealed class ObsConnectionService : IAsyncDisposable
     public ObsOutputStatus VirtualCamStatus { get; private set; } = new();
     public ObsStats Stats { get; private set; } = new();
 
+    /// <summary>本次录制开始的本地时刻（V2.9.4）；未在录制时为 null。</summary>
+    public DateTime? RecordStartedUtc { get; private set; }
+
+    /// <summary>
+    /// OBS 最近一次「切到哪个文件」的录像文件路径（V2.9.4）。
+    /// 来自 <c>RecordFileChanged</c> / <c>RecordStateChanged.outputPath</c>；
+    /// 配合 <see cref="RecordFileUtc"/> 可判断它是不是本轮录制的产物。
+    /// </summary>
+    public string LastRecordFile { get; private set; } = "";
+
+    /// <summary><see cref="LastRecordFile"/> 的写入时刻；为空表示还没拿到过。</summary>
+    public DateTime? RecordFileUtc { get; private set; }
+
+    /// <summary>
+    /// 已录时长（V2.9.4）：优先用 OBS 自报的 timecode（暂停不累加），
+    /// 拿不到时退回「本地开始时刻到现在的墙钟」。
+    /// </summary>
+    public TimeSpan RecordElapsed
+    {
+        get
+        {
+            var fromTimecode = ParseTimecode(RecordStatus.Timecode);
+            if (fromTimecode > TimeSpan.Zero) return fromTimecode;
+            if (RecordStartedUtc is { } start)
+            {
+                var delta = DateTime.UtcNow - start;
+                return delta > TimeSpan.Zero ? delta : TimeSpan.Zero;
+            }
+            return TimeSpan.Zero;
+        }
+    }
+
+    /// <summary>把 OBS 的 <c>HH:MM:SS.mmm</c> 时长解析成 <see cref="TimeSpan"/>；解析不出返回 Zero。</summary>
+    public static TimeSpan ParseTimecode(string? timecode)
+    {
+        if (string.IsNullOrWhiteSpace(timecode)) return TimeSpan.Zero;
+        return TimeSpan.TryParse(timecode.Trim(), System.Globalization.CultureInfo.InvariantCulture,
+            out var parsed) && parsed > TimeSpan.Zero
+            ? parsed
+            : TimeSpan.Zero;
+    }
+
     public bool IsConnected => State == ObsConnectionState.Connected;
 
     /// <summary>任意状态或数据变化时触发，供页面 StateHasChanged。</summary>
@@ -340,13 +382,20 @@ public sealed class ObsConnectionService : IAsyncDisposable
         var rec = results[0];
         if (rec.Ok && rec.Data is { } rd)
         {
+            var wasActive = RecordStatus.Active;
+            var nowActive = Bool(rd, "outputActive");
+
             RecordStatus = new ObsOutputStatus
             {
-                Active = Bool(rd, "outputActive"),
+                Active = nowActive,
                 Paused = Bool(rd, "outputPaused"),
                 Timecode = Str(rd, "outputTimecode"),
                 Bytes = Lng(rd, "outputBytes")
             };
+
+            // 本地开始时刻只作为「拿不到 timecode」时的兜底；状态码翻转时才更新，
+            // 否则每次刷新都会把起点推后，时长永远停在零附近。
+            TrackRecordTransition(wasActive, nowActive);
         }
 
         var st = results[1];
@@ -467,6 +516,10 @@ public sealed class ObsConnectionService : IAsyncDisposable
                 OnRecordStateChanged(e);
                 break;
 
+            case "RecordFileChanged":
+                OnRecordFileChanged(e);
+                break;
+
             case "StreamStateChanged":
                 OnStreamStateChanged(e);
                 break;
@@ -515,8 +568,60 @@ public sealed class ObsConnectionService : IAsyncDisposable
 
     private void OnRecordStateChanged(ObsEventMessage e)
     {
+        var wasActive = RecordStatus.Active;
         RecordStatus.Active = Bool(e.Data, "outputActive");
         RecordStatus.Paused = Str(e.Data, "outputState") == "OBS_WEBSOCKET_OUTPUT_PAUSED";
+
+        // 停止事件里带的路径就是刚落盘的成品文件：优先于上次的 RecordFileChanged
+        var path = Str(e.Data, "outputPath");
+        if (path.Length > 0) SetRecordFile(path);
+
+        TrackRecordTransition(wasActive, RecordStatus.Active);
+
+        // 开始 / 停止都补一次状态查询：把 timecode 与 outputBytes 拉准（事件里不带这两个值）
+        _ = FireAndForget(RefreshRecordStatusAsync);
+    }
+
+    /// <summary>OBS 切换到新的录像文件（自动分段 / 长录制会连续触发）。</summary>
+    private void OnRecordFileChanged(ObsEventMessage e) => SetRecordFile(Str(e.Data, "newOutputPath"));
+
+    private void SetRecordFile(string path)
+    {
+        if (string.IsNullOrWhiteSpace(path)) return;
+        LastRecordFile = path;
+        RecordFileUtc = DateTime.UtcNow;
+    }
+
+    /// <summary>维护「本次录制」的起止时刻，供界面显示已录时长。</summary>
+    private void TrackRecordTransition(bool wasActive, bool nowActive)
+    {
+        if (nowActive && !wasActive)
+        {
+            RecordStartedUtc = DateTime.UtcNow;
+            // 新一轮录制开始：清掉上一次的文件名。不清的话界面会拿旧文件估算
+            // 「已写大小 / 剩余可录」，用户换了录像盘也照样按上一块盘算，低空间告警不会触发。
+            LastRecordFile = "";
+            RecordFileUtc = null;
+        }
+        else if (!nowActive && wasActive)
+        {
+            RecordStartedUtc = null;
+        }
+    }
+
+    /// <summary>单独查一次录制状态（事件驱动后的补齐，失败静默）。</summary>
+    private async Task RefreshRecordStatusAsync()
+    {
+        var r = await _client.RequestAsync("GetRecordStatus");
+        if (!r.Ok || r.Data is not { } d) return;
+
+        var wasActive = RecordStatus.Active;
+        var nowActive = Bool(d, "outputActive");
+        RecordStatus.Active = nowActive;
+        RecordStatus.Paused = Bool(d, "outputPaused");
+        RecordStatus.Timecode = Str(d, "outputTimecode");
+        RecordStatus.Bytes = Lng(d, "outputBytes");
+        TrackRecordTransition(wasActive, nowActive);
     }
 
     private void OnStreamStateChanged(ObsEventMessage e)

@@ -1,0 +1,92 @@
+name: BUG 反馈
+description: 报告一个可复现的问题（请先阅读 README 与常见问题，确认不是已知问题）
+title: "[BUG] "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        感谢反馈！为了让问题能被快速定位，请尽量把下面几项填完整。
+        提交前请先给日志脱敏——**不要粘贴 OBS 流密钥、推流地址、账号密码等敏感信息**。
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: 问题现象
+      description: 发生了什么？出现了什么报错或异常表现？请尽量描述得具体。
+      placeholder: 例如：点击「一键部署录制环境」后界面卡住，约 30 秒后弹出错误提示……
+    validations:
+      required: true
+  - type: textarea
+    id: steps-to-reproduce
+    attributes:
+      label: 复现步骤
+      description: 请按顺序写明「点哪里 → 看到什么」，越具体越容易复现。
+      placeholder: |
+        1. 打开应用，进入「……」
+        2. 点击「……」
+        3. 出现「……」
+    validations:
+      required: true
+  - type: textarea
+    id: expected-behavior
+    attributes:
+      label: 期望行为
+      description: 你认为正常情况下应该是什么结果？
+      placeholder: 例如：应当正常写入配置并提示成功，而不是报错。
+    validations:
+      required: false
+  - type: input
+    id: app-version
+    attributes:
+      label: 应用版本
+      description: 在「设置 → 关于」里可以查看。
+      placeholder: 例如 2.9.3
+    validations:
+      required: false
+  - type: input
+    id: obs-version
+    attributes:
+      label: OBS 版本
+      description: OBS Studio 的版本号，可在 OBS 的「帮助 → 关于」里查看。
+      placeholder: 例如 32.2.2
+    validations:
+      required: false
+  - type: input
+    id: windows-version
+    attributes:
+      label: Windows 版本
+      description: 例如 Windows 11 24H2 / Windows 10 22H2 / Windows 7 SP1。
+      placeholder: 例如 Windows 11 专业版 24H2（内部版本 26100）
+    validations:
+      required: false
+  - type: dropdown
+    id: websocket-connected
+    attributes:
+      label: 是否已连接 obs-websocket
+      description: 应用是否成功连接上了 OBS 的 obs-websocket？这会影响能取到哪些信息。
+      options:
+        - 已连接
+        - 未连接
+        - 不确定
+    validations:
+      required: false
+  - type: textarea
+    id: logs
+    attributes:
+      label: 相关日志片段
+      description: |
+        粘贴与问题相关的日志片段。**请先脱敏**：删除推流密钥、推流地址、账号密码、
+        真实姓名与目录中的用户名等信息。长日志可用 ``` 包裹成代码块。
+      placeholder: |
+        ```
+        （此处粘贴脱敏后的日志片段，务必确认不含流密钥）
+        ```
+    validations:
+      required: false
+  - type: textarea
+    id: additional-context
+    attributes:
+      label: 其它补充
+      description: 截图、相关插件、是否稳定复现、是否只在该版本出现等，都可以写在这里。
+    validations:
+      required: false

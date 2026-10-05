@@ -37,4 +37,7 @@ public static class Routes
 
     /// <summary>工具箱：录像工具 / 参数处方 / 隐私清单 / 冲突扫描 / 带宽计算 / 版本情报（一级导航，V2.6）。</summary>
     public const string Toolbox = "toolbox";
+
+    /// <summary>帮助与反馈：反馈表单 / GitHub Issue / 一键复制报错材料（一级导航，V2.9.4）。</summary>
+    public const string Feedback = "feedback";
 }

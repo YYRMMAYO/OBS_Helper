@@ -150,7 +150,7 @@ public static class LogSanitizer
     private static bool IsAllowedToken(string token)
     {
         // 纯数字（时间戳、字节数）不是密钥
-        if (token.All(char.IsAsciiDigit)) return true;
+        if (token.All(Services.Compat.Compat.IsAsciiDigit)) return true;
 
         // 版本号 / 已知标识符
         foreach (var allowed in TokenAllowList)
@@ -160,7 +160,7 @@ public static class LogSanitizer
 
         // 全是字母且含有明显的英文单词分隔（下划线/连字符占比高）→ 多半是标识符而非密钥
         var separators = token.Count(ch => ch is '_' or '-');
-        if (separators >= 2 && !token.Any(char.IsAsciiDigit)) return true;
+        if (separators >= 2 && !token.Any(Services.Compat.Compat.IsAsciiDigit)) return true;
 
         return false;
     }

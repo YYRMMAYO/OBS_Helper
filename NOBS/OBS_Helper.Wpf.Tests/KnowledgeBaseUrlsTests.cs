@@ -23,10 +23,41 @@ public class KnowledgeBaseUrlsTests
         Assert.Equal("NOBS/OBS_Helper.Wpf/Assets/plugins.json", KnowledgeBaseUrls.RepoRelativePluginsPath);
     }
 
+    /// <summary>V2.9.3：英文并列资产的仓库相对路径与地址同样要钉死。</summary>
+    [Fact]
+    public void EnglishRepoRelativePaths_PointAtAssetFiles()
+    {
+        Assert.Equal("NOBS/OBS_Helper.Wpf/Assets/problems.en-US.json",
+            KnowledgeBaseUrls.RepoRelativeProblemsEnPath);
+        Assert.Equal("NOBS/OBS_Helper.Wpf/Assets/plugins.en-US.json",
+            KnowledgeBaseUrls.RepoRelativePluginsEnPath);
+    }
+
+    /// <summary>
+    /// V2.9.3：<see cref="KnowledgeBaseUrls.RawFor"/> 必须与 <c>ContentAssets</c> 的命名约定
+    /// 完全一致 —— 两处各写一套后缀是这类「静默 404」最容易复发的地方。
+    /// </summary>
+    [Fact]
+    public void RawFor_FollowsContentAssetNaming()
+    {
+        Assert.Equal(KnowledgeBaseUrls.RawProblems,
+            KnowledgeBaseUrls.RawFor(OBS_Helper.Wpf.Localization.ContentAssets.Problems, "zh-Hans"));
+        Assert.Equal(KnowledgeBaseUrls.RawProblemsEn,
+            KnowledgeBaseUrls.RawFor(OBS_Helper.Wpf.Localization.ContentAssets.Problems, "en-US"));
+        Assert.Equal(KnowledgeBaseUrls.RawPlugins,
+            KnowledgeBaseUrls.RawFor(OBS_Helper.Wpf.Localization.ContentAssets.Plugins, "zh-Hans"));
+        Assert.Equal(KnowledgeBaseUrls.RawPluginsEn,
+            KnowledgeBaseUrls.RawFor(OBS_Helper.Wpf.Localization.ContentAssets.Plugins, "en"));
+    }
+
     [Fact]
     public void RawUrls_AreWellFormed()
     {
-        foreach (var url in new[] { KnowledgeBaseUrls.RawProblems, KnowledgeBaseUrls.RawPlugins })
+        foreach (var url in new[]
+                 {
+                     KnowledgeBaseUrls.RawProblems, KnowledgeBaseUrls.RawPlugins,
+                     KnowledgeBaseUrls.RawProblemsEn, KnowledgeBaseUrls.RawPluginsEn
+                 })
         {
             Assert.StartsWith("https://raw.githubusercontent.com/", url);
             Assert.Contains("/" + KnowledgeBaseUrls.Branch + "/", url);
@@ -39,6 +70,8 @@ public class KnowledgeBaseUrlsTests
 
         Assert.EndsWith(KnowledgeBaseUrls.RepoRelativeProblemsPath, KnowledgeBaseUrls.RawProblems);
         Assert.EndsWith(KnowledgeBaseUrls.RepoRelativePluginsPath, KnowledgeBaseUrls.RawPlugins);
+        Assert.EndsWith(KnowledgeBaseUrls.RepoRelativeProblemsEnPath, KnowledgeBaseUrls.RawProblemsEn);
+        Assert.EndsWith(KnowledgeBaseUrls.RepoRelativePluginsEnPath, KnowledgeBaseUrls.RawPluginsEn);
     }
 
     [Fact]
@@ -52,11 +85,16 @@ public class KnowledgeBaseUrlsTests
             KnowledgeBaseUrls.RawProblems);
         Assert.Equal(KnowledgeBaseUrls.RawBase + KnowledgeBaseUrls.RepoRelativePluginsPath,
             KnowledgeBaseUrls.RawPlugins);
+        Assert.Equal(KnowledgeBaseUrls.RawBase + KnowledgeBaseUrls.RepoRelativeProblemsEnPath,
+            KnowledgeBaseUrls.RawProblemsEn);
+        Assert.Equal(KnowledgeBaseUrls.RawBase + KnowledgeBaseUrls.RepoRelativePluginsEnPath,
+            KnowledgeBaseUrls.RawPluginsEn);
     }
 
     /// <summary>
     /// 关键回归测试：URL 里的仓库相对路径必须能在本机源码树里找到对应文件。
     /// 少了 <c>NOBS/</c> 前缀的那一版（V2.9 及以前）会在这里直接失败。
+    /// V2.9.3 起中英四份资产一起查 —— 英文资产刚入库时同样容易被漏在热更新地址之外。
     /// </summary>
     [Fact]
     public void RawUrls_MatchFilesInSourceTree()
@@ -72,7 +110,9 @@ public class KnowledgeBaseUrlsTests
         foreach (var relativePath in new[]
                  {
                      KnowledgeBaseUrls.RepoRelativeProblemsPath,
-                     KnowledgeBaseUrls.RepoRelativePluginsPath
+                     KnowledgeBaseUrls.RepoRelativePluginsPath,
+                     KnowledgeBaseUrls.RepoRelativeProblemsEnPath,
+                     KnowledgeBaseUrls.RepoRelativePluginsEnPath
                  })
         {
             var onDisk = Path.Combine(checkoutsRoot, relativePath.Replace('/', Path.DirectorySeparatorChar));

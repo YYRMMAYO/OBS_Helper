@@ -185,7 +185,7 @@ public partial class ToolboxPage : UserControl
 
     /// <summary>UI 层第一道防线：只放行数字与小数点（粘贴的非法字符同样拦截）。</summary>
     private void OnNumericPreviewTextInput(object sender, TextCompositionEventArgs e)
-        => e.Handled = !e.Text.All(c => char.IsAsciiDigit(c) || c == '.');
+        => e.Handled = !e.Text.All(c => Services.Compat.Compat.IsAsciiDigit(c) || c == '.');
 
     private void OnBandwidthInputChanged(object sender, TextChangedEventArgs e)
     {

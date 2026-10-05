@@ -360,6 +360,9 @@
       <TextBlock Style="{StaticResource SectionTitle}" Text="{DynamicResource Loc.setup.officialObs}" Margin="0,20,0,10" />
       <ctl:ObsDownloadCard />
 
+      <!-- ================================================== BUG 反馈（V2.9.3） -->
+      <ctl:FeedbackCard Margin="0,16,0,0" />
+
       <!-- ================================================== 快捷键速查 -->
       <TextBlock Style="{StaticResource SectionTitle}" Text="{DynamicResource Loc.toolbox.shortcuts}" Margin="0,20,0,10" />
       <Border Style="{StaticResource Card}" Padding="14">

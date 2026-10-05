@@ -415,7 +415,7 @@ public partial class ConsolePage : UserControl, INavigationAware
     // -------------------------------------------------------------- 交互
 
     private void OnPortPreviewTextInput(object sender, TextCompositionEventArgs e)
-        => e.Handled = !e.Text.All(char.IsAsciiDigit);
+        => e.Handled = !e.Text.All(Services.Compat.Compat.IsAsciiDigit);
 
     private async void OnConnectClick(object sender, RoutedEventArgs e) => await ConnectAsync();
 

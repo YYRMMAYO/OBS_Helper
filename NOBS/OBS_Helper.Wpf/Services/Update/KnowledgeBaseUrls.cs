@@ -27,19 +27,40 @@ public static class KnowledgeBaseUrls
     /// </summary>
     public const string SourcePathPrefix = "NOBS/OBS_Helper.Wpf/Assets/";
 
-    /// <summary>raw 主通道：问题库（problems.json）。</summary>
+    /// <summary>raw 主通道：问题库（problems.json，简体中文）。</summary>
     public const string RawProblems =
         "https://raw.githubusercontent.com/" + RepoSlug + "/" + Branch + "/" + SourcePathPrefix + "problems.json";
 
-    /// <summary>raw 主通道：插件目录（plugins.json）。</summary>
+    /// <summary>raw 主通道：插件目录（plugins.json，简体中文）。</summary>
     public const string RawPlugins =
         "https://raw.githubusercontent.com/" + RepoSlug + "/" + Branch + "/" + SourcePathPrefix + "plugins.json";
+
+    /// <summary>raw 主通道：问题库英文版（problems.en-US.json，V2.9.3 新增）。</summary>
+    public const string RawProblemsEn =
+        "https://raw.githubusercontent.com/" + RepoSlug + "/" + Branch + "/" + SourcePathPrefix + "problems.en-US.json";
+
+    /// <summary>raw 主通道：插件目录英文版（plugins.en-US.json，V2.9.3 新增）。</summary>
+    public const string RawPluginsEn =
+        "https://raw.githubusercontent.com/" + RepoSlug + "/" + Branch + "/" + SourcePathPrefix + "plugins.en-US.json";
 
     /// <summary>问题库在仓库里的相对路径（校验用，与 <see cref="RawProblems"/> 的尾部必须一致）。</summary>
     public const string RepoRelativeProblemsPath = SourcePathPrefix + "problems.json";
 
     /// <summary>插件目录在仓库里的相对路径（校验用）。</summary>
     public const string RepoRelativePluginsPath = SourcePathPrefix + "plugins.json";
+
+    /// <summary>英文问题库在仓库里的相对路径（V2.9.3）。</summary>
+    public const string RepoRelativeProblemsEnPath = SourcePathPrefix + "problems.en-US.json";
+
+    /// <summary>英文插件目录在仓库里的相对路径（V2.9.3）。</summary>
+    public const string RepoRelativePluginsEnPath = SourcePathPrefix + "plugins.en-US.json";
+
+    /// <summary>
+    /// 按语言取 raw 地址（V2.9.3）。英文走 <c>.en-US.json</c>，其余一律中文那份 ——
+    /// 与 <c>ContentAssets</c> 的资产命名约定完全一致，避免两处各写一套后缀。
+    /// </summary>
+    public static string RawFor(string baseName, string? language)
+        => RawBase + SourcePathPrefix + OBS_Helper.Wpf.Localization.ContentAssets.FileName(baseName, language);
 
     /// <summary>raw 主通道的基址（拼完整 URL 用，避免各处手写前缀）。</summary>
     public const string RawBase =

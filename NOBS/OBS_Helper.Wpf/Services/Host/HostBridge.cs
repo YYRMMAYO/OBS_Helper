@@ -155,7 +155,7 @@ public sealed class HostBridge
         var tag = new byte[16];
         try
         {
-            using (var aes = new AesGcm(key, 16))
+            using (var aes = Services.Compat.Compat.CreateAesGcm(key))
             {
                 aes.Encrypt(nonce, plainBytes, cipher, tag);
             }
@@ -208,7 +208,7 @@ public sealed class HostBridge
         var plain = new byte[cipher.Length];
         try
         {
-            using (var aes = new AesGcm(key, 16))
+            using (var aes = Services.Compat.Compat.CreateAesGcm(key))
             {
                 aes.Decrypt(nonce, cipher, tag, plain);
             }
@@ -301,7 +301,7 @@ public sealed class HostBridge
             throw new ArgumentException(Strings.T("host.badSecretKey"));
         foreach (var c in key)
         {
-            if (!char.IsAsciiLetterOrDigit(c) && c != '.' && c != '_' && c != '-')
+            if (!Services.Compat.Compat.IsAsciiLetterOrDigit(c) && c != '.' && c != '_' && c != '-')
                 throw new ArgumentException(Strings.T("host.badSecretKeyChars"));
         }
     }

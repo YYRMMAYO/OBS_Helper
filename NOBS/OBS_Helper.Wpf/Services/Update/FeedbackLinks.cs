@@ -1,0 +1,44 @@
+using OBS_Helper.Wpf.Localization;
+
+namespace OBS_Helper.Wpf.Services.Update;
+
+/// <summary>
+/// BUG 反馈入口的常量与校验（V2.9.3）。纯常量 + 纯校验，可被单测工程直接链接编译。
+///
+/// 为什么单独成一个类：反馈入口是**用户按了会看到的东西**，把它散落在 UI 代码里
+/// 很容易出现「链接失效但没人发现」。集中之后单测可以钉住「必须是 https + 限定域名」，
+/// 也可以钉住「二维码资源名与 csproj 的 LogicalName 一致」。
+/// </summary>
+public static class FeedbackLinks
+{
+    /// <summary>BUG 收集表（腾讯文档）。用户点按钮或扫二维码都到这里。</summary>
+    public const string BugReportForm = "https://docs.qq.com/form/page/DSXJMWkNDYVFUWHBo";
+
+    /// <summary>表单页所在的域名（用于校验，避免被替换成钓鱼页）。</summary>
+    public const string FormHost = "docs.qq.com";
+
+    /// <summary>二维码图片的内嵌资源名（PNG，随包离线可扫；由 scripts 生成）。</summary>
+    public const string QrResourceName = "OBS_Helper.Wpf.Assets.feedback_qr.png";
+
+    /// <summary>二维码编码的内容必须与 <see cref="BugReportForm"/> 一模一样，单测会断言这一点。</summary>
+    public const string QrPayload = BugReportForm;
+
+    /// <summary>问题反馈页（GitHub Issues）：需要附日志 / 贴截图时更适合。</summary>
+    public const string GitHubIssues = "https://github.com/YYRMMAYO/OBS_Helper/issues";
+
+    /// <summary>
+    /// 反馈入口是否可以放给用户点：必须 https，且落在 <see cref="FormHost"/> 或 GitHub 仓库下。
+    /// </summary>
+    public static bool IsTrustedFeedbackUrl(string? url)
+    {
+        if (!Uri.TryCreate(url, UriKind.Absolute, out var uri)) return false;
+        if (uri.Scheme != Uri.UriSchemeHttps) return false;
+
+        if (uri.Host.Equals(FormHost, StringComparison.OrdinalIgnoreCase)) return true;
+        return uri.Host.Equals("github.com", StringComparison.OrdinalIgnoreCase)
+            && uri.AbsolutePath.StartsWith("/YYRMMAYO/OBS_Helper", StringComparison.OrdinalIgnoreCase);
+    }
+
+    /// <summary>表单地址的自检（启动自检与单测共用同一判据）。</summary>
+    public static bool FormUrlIsValid => IsTrustedFeedbackUrl(BugReportForm);
+}

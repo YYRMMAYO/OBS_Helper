@@ -24,13 +24,14 @@ namespace OBS_Helper.Wpf.Services.ObsConfig;
 /// </summary>
 public sealed class SceneTemplateService
 {
-    private const string TemplatesResource = "OBS_Helper.Wpf.Assets.scene_templates.json";
-
     private readonly ObsConnectionService _obs;
     private readonly ObsPathService _paths;
     private readonly SemaphoreSlim _lock = new(1, 1);
     private List<SceneTemplate>? _cache;
     private string? _loadError;
+
+    /// <summary>当前缓存是在哪种语言下加载的（V2.9.3）。为空表示还没加载过。</summary>
+    private string _loadedLanguage = "";
 
     public SceneTemplateService(ObsConnectionService obs, ObsPathService paths)
     {
@@ -41,8 +42,35 @@ public sealed class SceneTemplateService
     /// <summary>数据加载失败时的错误信息（供 UI 展示）。</summary>
     public string? LoadError => _loadError;
 
+    /// <summary>清空缓存，下次读取时按当前语言重新加载（V2.9.3 语言切换后调用）。</summary>
+    public void Reload()
+    {
+        _lock.Wait();
+        try
+        {
+            _cache = null;
+            _loadError = null;
+            _loadedLanguage = "";
+        }
+        finally
+        {
+            _lock.Release();
+        }
+    }
+
+    /// <summary>语言变了就丢弃缓存：模板有中英两份，写进 OBS 的场景/来源名要跟着换。</summary>
+    private void InvalidateOnLanguageChange()
+    {
+        if (_loadedLanguage.Length > 0
+            && !string.Equals(_loadedLanguage, Strings.Current, StringComparison.Ordinal))
+        {
+            Reload();
+        }
+    }
+
     public async Task<IReadOnlyList<SceneTemplate>> LoadAsync()
     {
+        InvalidateOnLanguageChange();
         if (_cache is not null) return _cache;
         await _lock.WaitAsync().ConfigureAwait(false);
         try
@@ -59,9 +87,15 @@ public sealed class SceneTemplateService
 
     private List<SceneTemplate> LoadEmbedded()
     {
+        _loadedLanguage = Strings.Current;
         try
         {
-            var raw = ReadResource(TemplatesResource);
+            var raw = ContentAssets.ReadEmbeddedWithFallback(ContentAssets.SceneTemplates, Strings.Current, out var fellBack);
+            if (fellBack)
+            {
+                FileLogger.Warn("Templates", "英文场景模板资产缺失，已回退中文随包内容："
+                    + ContentAssets.FileName(ContentAssets.SceneTemplates, Strings.Current) + "（英文界面下会显示中文）");
+            }
             if (raw is null) { _loadError = Errors.ErrorCodes.ResourceMissing; return new List<SceneTemplate>(); }
             var list = JsonSerializer.Deserialize<List<SceneTemplate>>(raw, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
             if (list is null) { _loadError = Errors.ErrorCodes.DataParseFailed; return new List<SceneTemplate>(); }
@@ -882,12 +916,5 @@ public sealed class SceneTemplateService
         return string.IsNullOrEmpty(r) ? "template" : r;
     }
 
-    private static string? ReadResource(string name)
-    {
-        var asm = Assembly.GetExecutingAssembly();
-        using var stream = asm.GetManifestResourceStream(name);
-        if (stream is null) return null;
-        using var reader = new StreamReader(stream, Encoding.UTF8, detectEncodingFromByteOrderMarks: true);
-        return reader.ReadToEnd();
-    }
+    private static string? ReadResource(string name) => ContentAssets.ReadEmbedded(name);
 }

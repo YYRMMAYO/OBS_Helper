@@ -14,9 +14,6 @@ namespace OBS_Helper.Wpf.Services;
 /// </summary>
 public sealed class ProblemService
 {
-    private const string ProblemsResource = "OBS_Helper.Wpf.Assets.problems.json";
-    private const string GuideResource = "OBS_Helper.Wpf.Assets.troubleshooting.md";
-
     private static readonly JsonSerializerOptions JsonOpts = new()
     {
         PropertyNameCaseInsensitive = true
@@ -25,6 +22,9 @@ public sealed class ProblemService
     private ProblemData? _data;
     private string? _guideMarkdown;
     private readonly SemaphoreSlim _lock = new(1, 1);
+
+    /// <summary>当前缓存是在哪种语言下加载的（V2.9.3）。为空表示还没加载过。</summary>
+    private string _loadedLanguage = "";
 
     /// <summary>数据加载失败时的错误信息（供 UI 展示报错码）。</summary>
     public string? LoadError { get; private set; }
@@ -47,8 +47,10 @@ public sealed class ProblemService
         try
         {
             _data = null;
+            _guideMarkdown = null;
             _usingExternal = false;
             LoadError = null;
+            _loadedLanguage = "";
         }
         finally
         {
@@ -56,8 +58,22 @@ public sealed class ProblemService
         }
     }
 
+    /// <summary>
+    /// 语言变了就丢弃缓存（V2.9.3）：知识库与指引各有中英两份，缓存必须跟着语言走。
+    /// 由 <see cref="AppServices"/> 接在语言服务的事件上，页面下次取数据时自然重载。
+    /// </summary>
+    private void InvalidateOnLanguageChange()
+    {
+        if (_loadedLanguage.Length > 0
+            && !string.Equals(_loadedLanguage, Strings.Current, StringComparison.Ordinal))
+        {
+            Reload();
+        }
+    }
+
     public async Task<ProblemData> GetDataAsync()
     {
+        InvalidateOnLanguageChange();
         if (_data is not null) return _data;
 
         await _lock.WaitAsync().ConfigureAwait(false);
@@ -84,7 +100,7 @@ public sealed class ProblemService
         // 内置可用就不算「加载失败」，不设置 LoadError（首页错误面板只在两者都失败时出现）。
         try
         {
-            var externalPath = KnowledgeBaseUpdater.KbFile;
+            var externalPath = KnowledgeBaseUpdater.LocalDataFile(ContentAssets.Problems, Strings.Current);
             if (File.Exists(externalPath))
             {
                 var raw = File.ReadAllText(externalPath);
@@ -92,6 +108,7 @@ public sealed class ProblemService
                 if (data is not null && data.Problems.Count > 0)
                 {
                     _usingExternal = true;
+                    _loadedLanguage = Strings.Current;
                     return data;
                 }
                 FileLogger.Warn("KB", "外部知识库文件损坏，回退内置：" + externalPath);
@@ -109,9 +126,15 @@ public sealed class ProblemService
 
     private ProblemData LoadEmbedded()
     {
+        _loadedLanguage = Strings.Current;
         try
         {
-            var raw = ReadResource(ProblemsResource);
+            var raw = ContentAssets.ReadEmbeddedWithFallback(ContentAssets.Problems, Strings.Current, out var fellBack);
+            if (fellBack)
+            {
+                FileLogger.Warn("KB", "英文知识库资产缺失，已回退中文随包内容："
+                    + ContentAssets.FileName(ContentAssets.Problems, Strings.Current) + "（英文界面下会显示中文）");
+            }
             if (raw is null)
             {
                 LoadError = Errors.ErrorCodes.ResourceMissing;
@@ -137,21 +160,22 @@ public sealed class ProblemService
         }
     }
 
-    /// <summary>读取内置的排障指引 Markdown 原文。</summary>
+    /// <summary>读取内置的排障指引 Markdown 原文（随语言选资产）。</summary>
     public async Task<string> GetGuideMarkdownAsync()
     {
+        InvalidateOnLanguageChange();
         if (_guideMarkdown is not null) return _guideMarkdown;
-        _guideMarkdown = await Task.Run(() => ReadResource(GuideResource) ?? "").ConfigureAwait(false);
+        _guideMarkdown = await Task.Run(() =>
+        {
+            var text = ContentAssets.ReadEmbeddedWithFallback(ContentAssets.Troubleshooting, Strings.Current, out var fellBack);
+            if (fellBack)
+            {
+                FileLogger.Warn("Guide", "英文排障指引资产缺失，已回退中文随包内容："
+                    + ContentAssets.FileName(ContentAssets.Troubleshooting, Strings.Current) + "（英文界面下会显示中文）");
+            }
+            return text ?? "";
+        }).ConfigureAwait(false);
         return _guideMarkdown;
-    }
-
-    private static string? ReadResource(string name)
-    {
-        var asm = Assembly.GetExecutingAssembly();
-        using var stream = asm.GetManifestResourceStream(name);
-        if (stream is null) return null;
-        using var reader = new StreamReader(stream, Encoding.UTF8, detectEncodingFromByteOrderMarks: true);
-        return reader.ReadToEnd();
     }
 
     public async Task<List<Category>> GetCategoriesAsync() => (await GetDataAsync().ConfigureAwait(false)).Categories;

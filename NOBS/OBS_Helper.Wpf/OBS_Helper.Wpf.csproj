@@ -2,7 +2,16 @@
 
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
-    <TargetFramework>net10.0-windows</TargetFramework>
+    <!--
+      双目标并存（V2.9.3）：
+        · net10.0-windows —— 主构建，面向 Windows 10 / 11；
+        · net6.0-windows —— 兼容构建，面向 Windows 7 SP1 ~ Windows 11。
+
+      为什么是 .NET 6：它是**最后一个官方支持 Windows 7 SP1 的 .NET 版本**
+      （.NET 7 起最低要求 Windows 10）。自包含发布时运行时随包携带，目标机不需要另装运行时。
+      两个 TFM 的源码是同一份，差异只体现在发布产物与安装包的 MinVersion 上。
+    -->
+    <TargetFrameworks>net10.0-windows;net6.0-windows</TargetFrameworks>
     <UseWPF>true</UseWPF>
     <!-- 系统托盘（NotifyIcon）需要 WinForms 的消息循环支持 -->
     <UseWindowsForms>true</UseWindowsForms>
@@ -17,9 +26,9 @@
     <ApplicationIcon>Assets\appicon.ico</ApplicationIcon>
     <ApplicationManifest>app.manifest</ApplicationManifest>
 
-    <Version>2.9.2</Version>
-    <FileVersion>2.9.2.0</FileVersion>
-    <AssemblyVersion>2.9.2.0</AssemblyVersion>
+    <Version>2.9.3</Version>
+    <FileVersion>2.9.3.0</FileVersion>
+    <AssemblyVersion>2.9.3.0</AssemblyVersion>
     <AssemblyTitle>OBS 排障助手</AssemblyTitle>
     <Product>OBS 排障助手</Product>
     <Company>OBS Helper</Company>
@@ -55,12 +64,20 @@
 
   <ItemGroup>
     <!-- 离线知识库与排障指引：内嵌进程序集，单文件发布也能读到 -->
+    <!-- 中文文件名刻意保持不变：raw 热更新地址 / Release 资产名 / 用户已下载的缓存都依赖它。
+         英文资产是 V2.9.3 新增的并列文件（后缀 .en-US），由 Localization/ContentAssets 按语言选。 -->
     <EmbeddedResource Include="Assets\problems.json" LogicalName="OBS_Helper.Wpf.Assets.problems.json" />
     <EmbeddedResource Include="Assets\plugins.json" LogicalName="OBS_Helper.Wpf.Assets.plugins.json" />
     <EmbeddedResource Include="Assets\troubleshooting.md" LogicalName="OBS_Helper.Wpf.Assets.troubleshooting.md" />
     <EmbeddedResource Include="Assets\scene_templates.json" LogicalName="OBS_Helper.Wpf.Assets.scene_templates.json" />
+    <EmbeddedResource Include="Assets\problems.en-US.json" LogicalName="OBS_Helper.Wpf.Assets.problems.en-US.json" />
+    <EmbeddedResource Include="Assets\plugins.en-US.json" LogicalName="OBS_Helper.Wpf.Assets.plugins.en-US.json" />
+    <EmbeddedResource Include="Assets\troubleshooting.en-US.md" LogicalName="OBS_Helper.Wpf.Assets.troubleshooting.en-US.md" />
+    <EmbeddedResource Include="Assets\scene_templates.en-US.json" LogicalName="OBS_Helper.Wpf.Assets.scene_templates.en-US.json" />
     <!-- 托盘图标：运行时以 Stream 读取（WinForms Icon 需要流，不能直接用 WPF 资源） -->
     <EmbeddedResource Include="Assets\appicon.ico" LogicalName="OBS_Helper.Wpf.Assets.appicon.ico" />
+    <!-- BUG 反馈二维码（V2.9.3）：离线可扫，不依赖任何在线二维码服务 -->
+    <EmbeddedResource Include="Assets\feedback_qr.png" LogicalName="OBS_Helper.Wpf.Assets.feedback_qr.png" Condition="Exists('Assets\feedback_qr.png')" />
     <!-- 内置免费 AI 密钥：真实文件由 scripts/embed_free_ai_key.ps1 生成（已 gitignore），
          源码仓库只有脚本没有密钥；文件缺失时（开发机/未 embed）此资源自动跳过，免费通道按「未内置」处理 -->
     <EmbeddedResource Include="Assets\free_ai_key.json" LogicalName="OBS_Helper.Wpf.Assets.free_ai_key.json" Condition="Exists('Assets\free_ai_key.json')" />

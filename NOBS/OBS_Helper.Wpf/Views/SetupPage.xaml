@@ -12,9 +12,17 @@
       <!--
         获取官方 OBS（V2.9.1）：搭建流程第一步是「准备与权限」，但更前置的问题是
         「机器上还没有 OBS / 装到了下载站的仿冒包」。把官方入口放在流程之前。
+        V2.9.3：同一张卡里补了应用内下载、瓦特工具箱 / 微软商店两条备用通道。
       -->
       <TextBlock Style="{StaticResource SectionTitle}" Text="{DynamicResource Loc.setup.officialObs}" Margin="0,18,0,10" />
       <ctl:ObsDownloadCard />
+
+      <!--
+        一键部署录制环境（V2.9.3）：装好 OBS 之后最实际的一步 —— 把与录制质量直接相关的
+        几项配置一次到位（先备份、可回滚、逐项可取消）。
+      -->
+      <TextBlock Style="{StaticResource SectionTitle}" Text="{DynamicResource Loc.env.title}" Margin="0,18,0,10" />
+      <ctl:RecordingEnvCard x:Name="RecordingEnv" />
 
       <TextBlock Style="{StaticResource SectionTitle}" Text="{DynamicResource Loc.setup.flow}" Margin="0,18,0,10" />
       <StackPanel x:Name="FlowPanel" />
@@ -35,6 +43,9 @@
         <TextBlock Style="{StaticResource MutedText}"
                    Text="{DynamicResource Loc.setup.multiHint}" />
       </Border>
+
+      <!-- BUG 反馈（V2.9.3）：二维码 + 表单 / Issue 两个入口 -->
+      <ctl:FeedbackCard Margin="0,16,0,0" />
 
     </StackPanel>
   </ScrollViewer>

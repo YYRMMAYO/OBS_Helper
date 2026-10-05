@@ -66,14 +66,9 @@ public partial class ObsConfigPage : UserControl, INavigationAware
 
     private async void OnManualPathClick(object sender, RoutedEventArgs e)
     {
-        var dialog = new OpenFolderDialog
-        {
-            Title = Strings.T("obsconfig.pickTitle"),
-        };
-
-        if (dialog.ShowDialog() != true) return;
-
-        var path = dialog.FolderName;
+        // V2.9.3：OpenFolderDialog 是 .NET 8 才有的类型，兼容构建走 WinForms 分支。
+        var path = OBS_Helper.Wpf.Services.Compat.FolderPicker.Pick(Strings.T("obsconfig.pickTitle"));
+        if (string.IsNullOrEmpty(path)) return;
         if (string.IsNullOrEmpty(path)) return;
 
         AppServices.Store.SetItem(ObsPathService.OverrideKey, path);

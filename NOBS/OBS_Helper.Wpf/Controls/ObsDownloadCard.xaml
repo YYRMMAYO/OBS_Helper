@@ -2,10 +2,15 @@
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
   <!--
-    获取官方 OBS Studio 的统一下载入口（V2.9.1）。
-    只放三个官方入口：官网下载页 / GitHub 发布页 / 当前稳定版 Windows 安装包直链。
+    获取官方 OBS Studio 的统一下载入口（V2.9.1 起，V2.9.3 扩充）。
+    官方三条入口：官网下载页 / GitHub 发布页 / 当前稳定版 Windows 安装包直链。
     直链不是写死的版本号：由 ObsReleaseInfoService 从 GitHub releases/latest 里解析，
-    解析不到就退化成打开官方发布页（按钮文案与结果说明在 code-behind 里给出）。
+    解析不到就退化成打开官方发布页。
+
+    V2.9.3 新增：
+      · 应用内下载官方安装包（带进度、校验官方域名，下完可直接启动安装向导，不静默安装）；
+      · 备用通道 —— 瓦特工具箱（原 Steam++，给 GitHub 加速）与微软商店安装 OBS。
+        两者都明确标注「不是 OBS 官方源」，只作通道备选。
   -->
   <Border Style="{StaticResource Card}" Padding="14">
     <StackPanel>
@@ -24,6 +29,34 @@
         <Button x:Name="DirectButton" Content="{DynamicResource Loc.obs.directInstaller}"
                 Style="{StaticResource SecondaryButton}"
                 Margin="0,0,8,8" Click="OnDownloadLatestInstaller" />
+      </WrapPanel>
+
+      <!-- 应用内下载：进度 + 完成后直接启动安装向导 -->
+      <StackPanel Margin="0,2,0,0">
+        <WrapPanel>
+          <Button x:Name="DownloadButton" Content="{DynamicResource Loc.obs.dl.button}"
+                  Style="{StaticResource SecondaryButton}" Margin="0,0,8,8"
+                  Click="OnDownloadInstaller" />
+          <Button x:Name="RunButton" Content="{DynamicResource Loc.obs.dl.run}"
+                  Style="{StaticResource PrimaryButton}" Margin="0,0,8,8"
+                  Visibility="Collapsed" Click="OnRunInstaller" />
+          <Button x:Name="CancelButton" Content="{DynamicResource Loc.common.cancel}"
+                  Style="{StaticResource GhostButton}" Margin="0,0,8,8"
+                  Visibility="Collapsed" Click="OnCancelDownload" />
+        </WrapPanel>
+
+        <ProgressBar x:Name="DownloadBar" Height="6" Minimum="0" Maximum="100" Value="0"
+                     Margin="0,0,0,6" Visibility="Collapsed" />
+      </StackPanel>
+
+      <TextBlock x:Name="AlternateText" Style="{StaticResource CaptionText}"
+                 Margin="0,4,0,0" TextWrapping="Wrap" />
+
+      <WrapPanel Margin="0,8,0,0">
+        <Button x:Name="ToolkitButton" Content="{DynamicResource Loc.obs.toolkit}"
+                Style="{StaticResource GhostButton}" Margin="0,0,8,8" Click="OnOpenToolkit" />
+        <Button x:Name="StoreButton" Content="{DynamicResource Loc.obs.msStore}"
+                Style="{StaticResource GhostButton}" Margin="0,0,8,8" Click="OnOpenStore" />
       </WrapPanel>
 
       <TextBlock x:Name="StatusText" Style="{StaticResource CaptionText}" Margin="0,2,0,0"

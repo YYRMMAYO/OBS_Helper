@@ -76,6 +76,9 @@ public partial class SetupPage : UserControl, INavigationAware
         // 每次进入都重建卡片：ProblemCard 的收藏星标是 Bind 时取的快照，
         // 用户在详情页改过收藏后回到这里需要跟着变。
         RenderProblems();
+
+        // 一键部署录制环境（V2.9.3）：每次进入重读一次 OBS 配置，语言切换后也自然跟着刷新。
+        await RecordingEnv.RefreshAsync();
     }
 
     // ---------------------------------------------------------- 搭建流程

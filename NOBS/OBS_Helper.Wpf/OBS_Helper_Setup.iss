@@ -15,12 +15,29 @@
 ; 版本号默认与 csproj 对齐；build.ps1 会用 /DMyAppVersion=<ver> 覆盖此值。
 ; 用 #ifndef：ISPP 中命令行 /D 定义过的符号在脚本里不应再 #define 覆盖。
 #ifndef MyAppVersion
-#define MyAppVersion "2.9.2"
+#define MyAppVersion "2.9.3"
+#endif
+; 发布产物所在的 TFM 子目录（V2.9.3 起双目标：主构建 / Win7 兼容构建）
+#ifndef MyAppTfm
+#define MyAppTfm "net10.0-windows"
+#endif
+; 安装包文件名后缀（主构建留空，兼容构建给 "_win7"）
+#ifndef MyAppOutputSuffix
+#define MyAppOutputSuffix ""
+#endif
+; 最低 Windows 版本（Inno 的 MinVersion）：
+;   · 主构建 net10.0-windows → 10.0（.NET 10 最低只支持 Windows 10）；
+;   · 兼容构建 net6.0-windows → 6.1sp1（.NET 6 是最后一个支持 Win7 SP1 的版本）。
+#ifndef MyAppMinVersion
+#define MyAppMinVersion "10.0"
 #endif
 #define MyAppPublisher "OBS Helper"
 #define MyAppExeName "OBS_Helper.exe"
 ; AppId 与旧的 Blazor 版不同：两版可以并存安装，升级路径互不干扰。
 ; AppId 固定不变的另一个理由：安装目录 / 卸载项 / 升级识别都不随安装语言变化。
+;
+; 【两个 TFM 共用同一个 AppId 是有意为之】同一款应用的「主构建」与「Win7 兼容构建」
+; 在用户眼里就是一个软件：共用 AppId，Inno 才会把两者之间的切换识别成升级而不是并存装两份。
 #define MyAppId "{{4C9F2D18-5B63-4A7E-8E21-9D3A6C4B1F72}"
 
 [Setup]
@@ -39,7 +56,7 @@ UninstallDisplayName={cm:UninstallDisplayName}
 UninstallDisplayIcon={app}\{#MyAppExeName}
 
 OutputDir=..\PAKE\windows
-OutputBaseFilename=OBS_Helper_Setup_{#MyAppVersion}
+OutputBaseFilename=OBS_Helper_Setup_{#MyAppVersion}{#MyAppOutputSuffix}
 SetupIconFile=Assets\appicon.ico
 LicenseFile=..\LICENSE
 
@@ -60,6 +77,11 @@ LanguageDetectionMethod=none
 ArchitecturesAllowed=x64compatible
 ArchitecturesInstallIn64BitMode=x64compatible
 PrivilegesRequired=admin
+; 最低系统版本（V2.9.3）：由 build.ps1 按 TFM 传入。
+;   主构建 → 10.0；Win7 兼容构建 → 6.1sp1。
+; 这一条是「装得上但跑不起来」的最后一道拦截：错误的 TFM 装到错误系统上，
+; 用户看到的是「双击没反应」，而不是一句能照做的提示。
+MinVersion={#MyAppMinVersion}
 
 [Languages]
 ; 顺序即默认值：第一条是简体中文（默认语言），第二条是英文。
@@ -91,7 +113,7 @@ chinesesimplified.LaunchApp=安装完成后启动 OBS 排障助手
 english.LaunchApp=Launch OBS Helper when the installation finishes
 
 [Files]
-Source: "bin\Release\net10.0-windows\win-x64\publish\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "bin\Release\{#MyAppTfm}\win-x64\publish\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
 Source: "..\LICENSE"; DestDir: "{app}"; Flags: ignoreversion
 
 [INI]

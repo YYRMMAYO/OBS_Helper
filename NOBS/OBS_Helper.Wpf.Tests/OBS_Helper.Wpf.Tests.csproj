@@ -58,12 +58,32 @@
     <Compile Include="..\OBS_Helper.Wpf\Navigation\Routes.cs" Link="Linked\Navigation\Routes.cs" />
     <Compile Include="..\OBS_Helper.Wpf\Services\SystemCheck\GraphicsEnvCheckCore.cs" Link="Linked\SystemCheck\GraphicsEnvCheckCore.cs" />
     <Compile Include="..\OBS_Helper.Wpf\Services\Audio\AudioDeviceHealthCore.cs" Link="Linked\Audio\AudioDeviceHealthCore.cs" />
+    <Compile Include="..\OBS_Helper.Wpf\Services\Compat\Compat.cs" Link="Linked\Compat.cs" />
+    <Compile Include="..\OBS_Helper.Wpf\Services\OsSupport.cs" Link="Linked\OsSupport.cs" />
+    <Compile Include="..\OBS_Helper.Wpf\Services\Update\FeedbackLinks.cs" Link="Linked\Update\FeedbackLinks.cs" />
+    <Compile Include="..\OBS_Helper.Wpf\Services\ObsConfig\RecordingEnvCore.cs" Link="Linked\ObsConfig\RecordingEnvCore.cs" />
+    <Compile Include="..\OBS_Helper.Wpf\Localization\ContentAssets.cs" Link="Linked\ContentAssets.cs" />
     <Compile Include="..\OBS_Helper.Wpf\Services\Tools\VirtualCamCheckCore.cs" Link="Linked\Tools\VirtualCamCheckCore.cs" />
   </ItemGroup>
 
   <ItemGroup>
     <!-- 随包插件目录：给「数据自洽性」测试用（校验 id 唯一、分类有效、repo 可归一化、维护状态合法等） -->
     <None Include="..\OBS_Helper.Wpf\Assets\plugins.json" Link="Assets\plugins.json"
+          CopyToOutputDirectory="PreserveNewest" />
+    <!-- V2.9.3：英文并列资产也要拷进来，供「形状对等 / 无残留中文」两组测试直接读文件 -->
+    <None Include="..\OBS_Helper.Wpf\Assets\plugins.en-US.json" Link="Assets\plugins.en-US.json"
+          CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\OBS_Helper.Wpf\Assets\problems.json" Link="Assets\problems.json"
+          CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\OBS_Helper.Wpf\Assets\problems.en-US.json" Link="Assets\problems.en-US.json"
+          CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\OBS_Helper.Wpf\Assets\scene_templates.json" Link="Assets\scene_templates.json"
+          CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\OBS_Helper.Wpf\Assets\scene_templates.en-US.json" Link="Assets\scene_templates.en-US.json"
+          CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\OBS_Helper.Wpf\Assets\troubleshooting.md" Link="Assets\troubleshooting.md"
+          CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\OBS_Helper.Wpf\Assets\troubleshooting.en-US.md" Link="Assets\troubleshooting.en-US.md"
           CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 

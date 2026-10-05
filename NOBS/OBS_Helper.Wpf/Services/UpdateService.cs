@@ -369,26 +369,43 @@ public sealed class UpdateService
     }
 
     /// <summary>
-    /// 查询 GitHub 最新 Release 中的「独立知识库文件」（OBS_Helper_Knowledge_&lt;ver&gt;.json）下载地址。
-    /// 作为 raw.githubusercontent 通道失败时的兜底。永不抛异常。
+    /// Release 资产名是否属于指定语言（V2.9.3）。
+    ///
+    /// 中英资产挂在同一个 Release 上（<c>OBS_Helper_Knowledge_2.9.3.json</c> 与
+    /// <c>OBS_Helper_Knowledge_2.9.3.en-US.json</c>），而匹配器是「前缀 + .json 后缀」——
+    /// 不区分语言的话两者都能匹配上，中英用户会互相拿到对方的文件。这里按语言后缀严格区分。
     /// </summary>
-    public async Task<GitHubAssetInfo> GetLatestKbAssetAsync()
+    public static bool AssetMatchesLanguage(string? assetName, string prefix, string extension, bool english)
     {
+        if (string.IsNullOrEmpty(assetName)) return false;
+        if (!assetName.StartsWith(prefix, StringComparison.OrdinalIgnoreCase)) return false;
+        if (!assetName.EndsWith(extension, StringComparison.OrdinalIgnoreCase)) return false;
+
+        var isEnglish = assetName.EndsWith(ContentAssets.EnglishSuffix + extension, StringComparison.OrdinalIgnoreCase);
+        return isEnglish == english;
+    }
+
+    /// <summary>
+    /// 查询 GitHub 最新 Release 中的「独立知识库文件」（OBS_Helper_Knowledge_&lt;ver&gt;[.en-US].json）。
+    /// 作为 raw.githubusercontent 通道失败时的兜底，<b>按语言取对应那一份</b>。永不抛异常。
+    /// </summary>
+    public async Task<GitHubAssetInfo> GetLatestKbAssetAsync(string? language = null)
+    {
+        var english = ContentAssets.IsEnglish(language);
         return await FindNamedAssetAsync(
-            name => name.StartsWith("OBS_Helper_Knowledge_", StringComparison.OrdinalIgnoreCase)
-                 && name.EndsWith(".json", StringComparison.OrdinalIgnoreCase),
+            name => AssetMatchesLanguage(name, "OBS_Helper_Knowledge_", ".json", english),
             Strings.T("update.noKbRelease")).ConfigureAwait(false);
     }
 
     /// <summary>
-    /// 查询 GitHub 最新 Release 中的「插件目录文件」（OBS_Helper_Plugins_&lt;ver&gt;.json）下载地址。
-    /// 插件知识库 raw 通道失败时的兜底（V2.2 P0-3）。永不抛异常。
+    /// 查询 GitHub 最新 Release 中的「插件目录文件」（OBS_Helper_Plugins_&lt;ver&gt;[.en-US].json）。
+    /// 插件知识库 raw 通道失败时的兜底（V2.2 P0-3），同样按语言取。永不抛异常。
     /// </summary>
-    public async Task<GitHubAssetInfo> GetLatestPluginsAssetAsync()
+    public async Task<GitHubAssetInfo> GetLatestPluginsAssetAsync(string? language = null)
     {
+        var english = ContentAssets.IsEnglish(language);
         return await FindNamedAssetAsync(
-            name => name.StartsWith("OBS_Helper_Plugins_", StringComparison.OrdinalIgnoreCase)
-                 && name.EndsWith(".json", StringComparison.OrdinalIgnoreCase),
+            name => AssetMatchesLanguage(name, "OBS_Helper_Plugins_", ".json", english),
             Strings.T("update.noPluginsRelease")).ConfigureAwait(false);
     }
 
@@ -438,13 +455,16 @@ public sealed class UpdateService
     }
 
     /// <summary>
-    /// 应用内下载 GitHub Release 安装包到临时目录，返回本地文件路径；失败返回 null。
+    /// 应用内下载 GitHub Release 资产到临时目录，返回本地文件路径；失败返回 null。
     /// <paramref name="progress"/> 回调进度：(已下载字节, 总字节)，总字节未知时为 null。
+    /// <paramref name="tempFilePrefix"/> 只影响临时文件名，便于在临时目录里一眼看出是谁下的
+    /// （V2.9.3：同一个方法既下应用自己的安装包，也下官方 OBS 的安装包）。
     /// </summary>
     public async Task<string?> DownloadReleaseAssetAsync(
         string assetUrl,
         IProgress<(long Received, long? Total)>? progress = null,
-        CancellationToken ct = default)
+        CancellationToken ct = default,
+        string tempFilePrefix = "OBS_Helper_Setup_")
     {
         try
         {
@@ -460,7 +480,7 @@ public sealed class UpdateService
 
             // 随机文件名 + 下载后校验 PE 头：既避免临时文件被占位 / 符号链接劫持，
             // 也保证启动的一定是可执行的 Windows 程序（防止下载到残缺文件后白弹 UAC）。
-            var tmp = Path.Combine(Path.GetTempPath(), "OBS_Helper_Setup_" + Path.GetRandomFileName() + ".exe");
+            var tmp = Path.Combine(Path.GetTempPath(), tempFilePrefix + Path.GetRandomFileName() + ".exe");
 
             // 先完整写入，再关闭句柄，最后才校验 PE 头（旧版曾因句柄未释放导致共享冲突误判损坏）。
             var ok = await DownloadToTempFileAsync(resp, tmp, total, progress, ct).ConfigureAwait(false);

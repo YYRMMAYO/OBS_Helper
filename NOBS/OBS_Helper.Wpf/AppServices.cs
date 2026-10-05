@@ -40,6 +40,9 @@ public static class AppServices
     private static readonly Lazy<PreflightCheckService> _preflight = new(() => new PreflightCheckService(ObsPaths));
     // 录像工具 / 冲突软件扫描 / OBS 新版本情报（V2.6 工具箱）
     private static readonly Lazy<RecordingToolsService> _recTools = new(() => new RecordingToolsService(ObsPaths));
+    // 一键部署录制环境（V2.9.3）：按语言无关的推荐值改写录制相关配置，先备份、可回滚
+    private static readonly Lazy<RecordingEnvService> _recEnv =
+        new(() => new RecordingEnvService(ObsPaths, ObsBackups, Obs, RecordingTools));
     private static readonly Lazy<ObsReleaseInfoService> _obsRelease = new(() => new ObsReleaseInfoService());
     // 色彩体检 / 音频采样率体检（V2.7 工具箱）
     private static readonly Lazy<ColorCheckService> _colorCheck = new(() => new ColorCheckService(ObsPaths));
@@ -99,6 +102,8 @@ public static class AppServices
     public static SceneTemplateService Templates => _templates.Value;
     public static PreflightCheckService Preflight => _preflight.Value;
     public static RecordingToolsService RecordingTools => _recTools.Value;
+    /// <summary>一键部署录制环境（V2.9.3）。</summary>
+    public static RecordingEnvService RecordingEnv => _recEnv.Value;
     // 冲突扫描为纯逻辑核心 + 页面侧进程枚举，无独立服务实例
     public static ObsReleaseInfoService ObsRelease => _obsRelease.Value;
     // 色彩 / 采样率体检（V2.7）；磁盘测速、编码顾问、节点探测为纯静态核心，页面直接调用
@@ -150,6 +155,9 @@ public static class AppServices
         Appearance.Initialize();
         // 语言必须在任何窗口创建前定下来（App.OnStartup 已调一次，这里保证幂等）
         Localization.Initialize();
+        // V2.9.3：随包内容（知识库 / 插件目录 / 场景模板 / 排障指引）各有中英两份，
+        // 语言一变就丢弃缓存，并按新语言补一次静默热更新（P3-1 启动加速：不阻塞首屏）。
+        Localization.Changed += OnLanguageChanged;
         // P3-1 启动加速：两份设置加载互相独立，串行 await 改为并行，冷启动可省一次 IO 往返
         await Task.WhenAll(
             ObsSettings.LoadAsync(),
@@ -165,6 +173,28 @@ public static class AppServices
         // V2.8 后台守护：录制守护与实时日志尾随（按各自设置开关启动）
         RecordWatchdog.ApplyEnabled();
         LogTailer.ApplyEnabled();
+    }
+
+    /// <summary>
+    /// 语言切换后的内容侧善后（V2.9.3）：丢弃按语言缓存的内容，再补一次静默刷新。
+    ///
+    /// 只对**已经创建过**的服务调 Reload —— 惰性字段还没求值时缓存本来就是空的，
+    /// 强行求值会把 OBS 连接服务等一并提前拉起来，得不偿失。
+    /// </summary>
+    private static void OnLanguageChanged(string previous, string current)
+    {
+        try
+        {
+            Problems.Reload();
+            if (_pluginCatalog.IsValueCreated) PluginCatalog.Reload();
+            if (_templates.IsValueCreated) Templates.Reload();
+            // 切到英文时，英文那份的节流状态文件是全新的，这次调用会真的联网拉一次英文资产。
+            Kb.RefreshCurrentLanguageAsync().FireAndForget("KB", "语言切换后刷新内容");
+        }
+        catch (Exception ex)
+        {
+            FileLogger.Warn("Localization", $"语言切换后刷新内容失败：{ex.Message}");
+        }
     }
 
     /// <summary>应用退出时的清理（MainWindow.OnClosed 调用）。</summary>

@@ -27,11 +27,15 @@ namespace OBS_Helper.Wpf.Services.Update;
 /// </summary>
 public sealed class KnowledgeBaseUpdater
 {
-    /// <summary>远程问题库主通道（raw，仓库 master 分支）。地址常量见 <see cref="KnowledgeBaseUrls"/>。</summary>
+    /// <summary>远程问题库主通道（raw，仓库 master 分支，简体中文）。地址常量见 <see cref="KnowledgeBaseUrls"/>。</summary>
     public const string RawKbUrl = KnowledgeBaseUrls.RawProblems;
 
     /// <summary>远程插件目录主通道（P0-3）：同一仓库 master 分支的 plugins.json。</summary>
     public const string RawPluginsUrl = KnowledgeBaseUrls.RawPlugins;
+
+    /// <summary>按语言取 raw 主通道地址（V2.9.3）：英文走 <c>.en-US.json</c>。</summary>
+    public static string RawUrlFor(string baseName, string? language)
+        => KnowledgeBaseUrls.RawFor(baseName, language);
 
     /// <summary>问题库 Release 资产兜底的文件名前缀（OBS_Helper_Knowledge_&lt;ver&gt;.json）。</summary>
     public const string KbAssetPrefix = "OBS_Helper_Knowledge_";
@@ -48,14 +52,26 @@ public sealed class KnowledgeBaseUpdater
 
     private static string DataDir => Path.Combine(HostBridge.AppDataDirectory, "data");
 
-    /// <summary>本地问题库覆盖文件路径（%LocalAppData%\OBS_Helper\data\problems.json）。</summary>
-    public static string KbFile => Path.Combine(DataDir, "problems.json");
+    /// <summary>
+    /// 本地缓存文件路径。**按语言分文件**（V2.9.3）：中文沿用 <c>problems.json</c> 这个名字
+    /// （已下载到用户本机的缓存、raw 地址、Release 资产名都依赖它，改名就是静默回归），
+    /// 英文用 <c>problems.en-US.json</c>。
+    /// </summary>
+    public static string LocalDataFile(string baseName, string? language)
+        => Path.Combine(DataDir, ContentAssets.FileName(baseName, language));
 
-    /// <summary>本地插件目录覆盖文件路径（%LocalAppData%\OBS_Helper\data\plugins.json）。</summary>
-    public static string PluginsKbFile => Path.Combine(DataDir, "plugins.json");
+    /// <summary>本地问题库覆盖文件路径（%LocalAppData%\OBS_Helper\data\problems[.en-US].json）。</summary>
+    public static string KbFile => LocalDataFile(ContentAssets.Problems, Strings.Current);
 
-    private static string StateFile => Path.Combine(DataDir, "kb_state.json");
-    private static string PluginsStateFile => Path.Combine(DataDir, "kb_plugins_state.json");
+    /// <summary>本地插件目录覆盖文件路径（%LocalAppData%\OBS_Helper\data\plugins[.en-US].json）。</summary>
+    public static string PluginsKbFile => LocalDataFile(ContentAssets.Plugins, Strings.Current);
+
+    /// <summary>节流状态文件也按语言分（否则切到英文后会被中文那份的 6 小时节流挡住）。</summary>
+    private static string StatePath(string stem, string? language)
+        => Path.Combine(DataDir, ContentAssets.SuffixedFileName(stem, ".json", language));
+
+    private static string StateFile => StatePath("kb_state", Strings.Current);
+    private static string PluginsStateFile => StatePath("kb_plugins_state", Strings.Current);
 
     private static HttpClient CreateClient()
     {
@@ -139,21 +155,41 @@ public sealed class KnowledgeBaseUpdater
 
     /// <summary>
     /// 检查远程问题库并（若更新）自动应用。永不抛异常。
+    /// V2.9.3 起按**当前语言**分发：英文用户拉 <c>problems.en-US.json</c>，写进 <c>problems.en-US.json</c> 缓存。
     /// </summary>
     /// <returns>(是否更新成功, 新版本号, 说明)。未检查（节流内）返回 (false, null, null)。</returns>
     public Task<(bool Updated, string? NewVersion, string? Message)> RefreshAsync(bool manual)
-        => RefreshChannelAsync(manual, RawKbUrl, KbFile, StateFile, usePluginsChannel: false);
+        => RefreshChannelAsync(manual, RawUrlFor(ContentAssets.Problems, Strings.Current), KbFile, StateFile, usePluginsChannel: false);
 
     /// <summary>
-    /// 检查远程插件目录并（若更新）自动应用（P0-3）。机制与问题库通道完全一致。永不抛异常。
+    /// 检查远程插件目录并（若更新）自动应用（P0-3）。机制与问题库通道完全一致，同样按语言分发。
     /// </summary>
     public Task<(bool Updated, string? NewVersion, string? Message)> RefreshPluginsAsync(bool manual)
-        => RefreshChannelAsync(manual, RawPluginsUrl, PluginsKbFile, PluginsStateFile, usePluginsChannel: true);
+        => RefreshChannelAsync(manual, RawUrlFor(ContentAssets.Plugins, Strings.Current), PluginsKbFile, PluginsStateFile, usePluginsChannel: true);
+
+    /// <summary>
+    /// 语言切换后补一次静默刷新（V2.9.3）：切到英文时英文那份的节流状态文件是全新的，
+    /// 因此这次调用会真的联网拉一次英文资产，而不是被中文那份的 6 小时节流挡住。
+    /// </summary>
+    public async Task RefreshCurrentLanguageAsync()
+    {
+        try
+        {
+            await RefreshAsync(manual: false).ConfigureAwait(false);
+            await RefreshPluginsAsync(manual: false).ConfigureAwait(false);
+        }
+        catch (Exception ex)
+        {
+            FileLogger.Warn("KB", "语言切换后刷新内容失败：" + ex.Message);
+        }
+    }
 
     /// <summary>两条更新通道的共享实现：fetch → 校验 → 版本比较 → 原子写盘。</summary>
     private async Task<(bool Updated, string? NewVersion, string? Message)> RefreshChannelAsync(
         bool manual, string rawUrl, string localFile, string stateFile, bool usePluginsChannel)
     {
+        // 本次刷新绑定「开始时的语言」：中途用户切语言也不会把另一种语言的资产写进这份缓存。
+        var language = Strings.Current;
         await Lock.WaitAsync().ConfigureAwait(false);
         try
         {
@@ -163,7 +199,7 @@ public sealed class KnowledgeBaseUpdater
                 return (false, null, null); // 节流内，跳过
             }
 
-            var (remoteJson, fallback) = await FetchRemoteKbAsync(rawUrl, usePluginsChannel).ConfigureAwait(false);
+            var (remoteJson, fallback) = await FetchRemoteKbAsync(rawUrl, usePluginsChannel, language).ConfigureAwait(false);
             state.LastCheckedUtc = DateTime.UtcNow;
             SaveState(stateFile, state);
 
@@ -243,7 +279,7 @@ public sealed class KnowledgeBaseUpdater
     /// 两条通道都会记录失败原因：raw 地址写错这类问题在本机只表现为「兜底通道生效」，
     /// 不写日志的话等于没人能发现（V2.9 的 NOBS/ 前缀缺陷就是这么潜伏下来的）。
     /// </summary>
-    private async Task<(string? Json, bool Fallback)> FetchRemoteKbAsync(string rawUrl, bool usePluginsChannel)
+    private async Task<(string? Json, bool Fallback)> FetchRemoteKbAsync(string rawUrl, bool usePluginsChannel, string language)
     {
         try
         {
@@ -271,8 +307,8 @@ public sealed class KnowledgeBaseUpdater
         try
         {
             var info = usePluginsChannel
-                ? await AppServices.Updates.GetLatestPluginsAssetAsync().ConfigureAwait(false)
-                : await AppServices.Updates.GetLatestKbAssetAsync().ConfigureAwait(false);
+                ? await AppServices.Updates.GetLatestPluginsAssetAsync(language).ConfigureAwait(false)
+                : await AppServices.Updates.GetLatestKbAssetAsync(language).ConfigureAwait(false);
             if (info.IsOk)
             {
                 using var cts = new CancellationTokenSource(TimeSpan.FromMinutes(5));

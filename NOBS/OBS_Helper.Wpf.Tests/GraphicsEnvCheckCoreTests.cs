@@ -13,7 +13,7 @@ public class GraphicsEnvCheckCoreTests
         GameModeEnabled = true,
         Gpus = new List<GpuDriverInfo>
         {
-            new("NVIDIA GeForce RTX 4070", "551.23", "20260301000000.000000+480")
+            new("NVIDIA GeForce RTX 4070", "551.23", DriverDateMonthsAgo(3))
         },
         ActivePowerScheme = "平衡",
         OnBattery = false,
@@ -41,8 +41,8 @@ public class GraphicsEnvCheckCoreTests
     {
         var snapshot = CloneWith(Base(), gpus: new List<GpuDriverInfo>
         {
-            new("Intel(R) UHD Graphics", "31.0.101.5333", "20250601000000.000000+480"),
-            new("NVIDIA GeForce RTX 4070", "551.23", "20260301000000.000000+480")
+            new("Intel(R) UHD Graphics", "31.0.101.5333", DriverDateMonthsAgo(6)),
+            new("NVIDIA GeForce RTX 4070", "551.23", DriverDateMonthsAgo(3))
         }, obsGpuPreference: null);
         var items = GraphicsEnvCheckCore.Evaluate(snapshot);
         Assert.Contains(items, i => i.Status == "warn" && i.Title.Contains("双显卡"));
@@ -78,7 +78,7 @@ public class GraphicsEnvCheckCoreTests
     {
         var old = CloneWith(Base(), gpus: new List<GpuDriverInfo>
         {
-            new("AMD Radeon RX 6600", "31.0.1", "20230101000000.000000+480")
+            new("AMD Radeon RX 6600", "31.0.1", DriverDateMonthsAgo(30))
         });
         Assert.Contains(GraphicsEnvCheckCore.Evaluate(old),
             i => i.Status == "warn" && i.Title.StartsWith("驱动较旧"));
@@ -98,23 +98,35 @@ public class GraphicsEnvCheckCoreTests
     }
 
     [Theory]
-    [InlineData("20240311000000.000000+480", 29)]
-    [InlineData("20260801000000.000000+480", 0)]
-    [InlineData("", -1)]
-    [InlineData("garbage!", -1)]
-    public void DriverAgeParsing(string raw, int expected)
+    [InlineData(29)]
+    [InlineData(30)]
+    [InlineData(1)]
+    [InlineData(0)]
+    public void DriverAgeParsing(int monthsAgo)
     {
-        var age = GraphicsEnvCheckCore.TryParseDriverAgeMonths(raw);
-        if (expected < 0)
-        {
-            Assert.Null(age);
-        }
-        else
-        {
-            // 期望值随运行日期漂移，允许 ±1 个月误差
-            Assert.InRange(age!.Value, expected - 1, expected + 1);
-        }
+        var age = GraphicsEnvCheckCore.TryParseDriverAgeMonths(DriverDateMonthsAgo(monthsAgo));
+        Assert.NotNull(age);
+
+        // 期望值随运行日期漂移（跨月边界 / 闰年 2 月被 clamp），允许 ±1 个月误差。
+        Assert.InRange(age!.Value, monthsAgo - 1, monthsAgo + 1);
     }
+
+    [Theory]
+    [InlineData("")]
+    [InlineData("garbage!")]
+    [InlineData("20")]
+    public void DriverAgeParsing_Unparseable_ReturnsNull(string raw)
+        => Assert.Null(GraphicsEnvCheckCore.TryParseDriverAgeMonths(raw));
+
+    /// <summary>
+    /// 造一个「N 个月前」的 WMI 驱动日期串（形如 <c>20240311000000.000000+480</c>）。
+    ///
+    /// 【为什么不用写死的日期】原来这里写死了 <c>20260801000000.000000+480</c> 并断言 age ≈ 0，
+    /// 于是这份测试**随系统日期漂移**：2026-10 再跑就变成 2 个月，直接失败。
+    /// 也就是说测试本身是有保质期的 —— 这里改成相对当前日期生成，越久跑越准。
+    /// </summary>
+    private static string DriverDateMonthsAgo(int months)
+        => DateTime.Today.AddMonths(-months).ToString("yyyyMM01000000.000000+480");
 
     [Fact]
     public void IntegratedAndDiscreteDetection()

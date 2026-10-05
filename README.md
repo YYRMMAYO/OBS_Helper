@@ -2,16 +2,17 @@
 
 <img src="assets/banner.svg" alt="OBS Helper — 面向直播新手的 OBS 排障工具" width="100%"/>
 
-**当前版本：V2.9.2** —— 中英双语与即时切换 · 安装包语言选择（默认中文）· 全代码文案双语落地。
+**当前版本：V2.9.3** —— 随包内容全量英译 · 一键部署录制环境 · 获取与反馈通道扩展 · 兼容到 Windows 7 SP1。
 
 [![CI](https://github.com/YYRMMAYO/OBS_Helper/actions/workflows/ci.yml/badge.svg)](https://github.com/YYRMMAYO/OBS_Helper/actions/workflows/ci.yml)
-[![平台](https://img.shields.io/badge/Platform-Windows_10%2F11-0078D6.svg)]()
-[![.NET](https://img.shields.io/badge/.NET-10-512BD4.svg)]()
+[![平台](https://img.shields.io/badge/Platform-Windows_7_SP1%2B-0078D6.svg)]()
+[![.NET](https://img.shields.io/badge/.NET-10_%2F_6-512BD4.svg)]()
 [![技术栈](https://img.shields.io/badge/Stack-WPF_%2F_C%23-239120.svg)]()
-[![版本](https://img.shields.io/badge/Release-2.9.2-38bdf8.svg)](https://github.com/YYRMMAYO/OBS_Helper/releases)
+[![版本](https://img.shields.io/badge/Release-2.9.3-38bdf8.svg)](https://github.com/YYRMMAYO/OBS_Helper/releases)
 [![OBS](https://img.shields.io/badge/OBS-32.2.2-302E31.svg)](https://github.com/obsproject/obs-studio/releases)
 [![离线可用](https://img.shields.io/badge/offline--first-2ea44f.svg)]()
-[![增量更新](https://img.shields.io/badge/Incremental%20Update-1.27MB-7dd3fc.svg)]()
+[![增量更新](https://img.shields.io/badge/Incremental%20Update-1.9MB-7dd3fc.svg)]()
+[![测试](https://img.shields.io/badge/Tests-565%20passed-2ea44f.svg)]()
 [![许可](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
 [English](README.en.md) · **简体中文**
@@ -20,13 +21,15 @@
 
 **OBS 排障助手**是面向直播新手的 OBS Studio 排障工具：**纯离线可用**——212 条问题的知识库、排障指引、日志分析规则全部内嵌在程序里，不联网也能查；连上 OBS 之后还能远程控制场景、录制与推流，并做一键体检。
 
-这是原 Blazor WebAssembly + WebView2 版本的**原生 WPF 重构**（源码在 [`NOBS/`](NOBS/)），功能一比一对齐，但去掉了浏览器内核这一层：冷启动直接起窗口、自包含单目录发布、无需安装 WebView2 与 .NET 运行时。**V2.9.2 起支持中文 / English 即时切换**（界面、托盘、通知与全部报错提示双语，默认中文）；**V2.2 起内置插件广场**（57 个精选插件 + 本机只读体检，v1.4 目录已全量复核）；**V2.1 起支持增量更新与知识库独立更新**。
+这是原 Blazor WebAssembly + WebView2 版本的**原生 WPF 重构**（源码在 [`NOBS/`](NOBS/)），功能一比一对齐，但去掉了浏览器内核这一层：冷启动直接起窗口、自包含单目录发布、无需安装 WebView2 与 .NET 运行时。**V2.9.2 起支持中文 / English 即时切换**，**V2.9.3 起连随包离线内容也是中英双份**（知识库 212 条 / 插件目录 57 条 / 场景模板 12 套 / 排障指引全部英译，切语言即时生效）；**V2.2 起内置插件广场**（57 个精选插件 + 本机只读体检，v1.4 目录已全量复核）；**V2.1 起支持增量更新与知识库独立更新**。
 
-> **OBS 版本适配**：当前对齐 **OBS Studio 32.2.2**（最新稳定版）——日志解析、配置键、obs-websocket 协议与本机插件扫描（含 32.x 新增的「一插件一目录」插件根）均已按真实 32.2.2 环境核对，详见 [V2.9.2 发布说明](NOBS/RELEASE_NOTES_v2.9.2.md)。
+> **兼容性**：主构建面向 **Windows 10 / 11**（.NET 10）；另有一套 **Windows 7 SP1 兼容构建**（.NET 6，最后一个支持 Win7 的 .NET 版本），安装包与便携包都在 Release 里，按系统选一个即可。
+>
+> **OBS 版本适配**：当前对齐 **OBS Studio 32.2.2**（最新稳定版）——日志解析、配置键、obs-websocket 协议与本机插件扫描（含 32.x 新增的「一插件一目录」插件根）均已按真实 32.2.2 环境核对，详见 [V2.9.3 发布说明](NOBS/RELEASE_NOTES_v2.9.3.md)。
 
 ---
 
-**目录**：[宣传视频](#宣传视频) · [V2.9.2 亮点](#v292-亮点中英双语与即时切换--安装包语言选择--全代码文案双语落地) · [亮点](#亮点) · [功能](#功能) · [智能诊断](#智能诊断) · [隐私与安全](#隐私与安全) · [安装与更新](#安装与更新) · [构建](#构建) · [工程结构](#工程结构) · [许可](#许可)
+**目录**：[宣传视频](#宣传视频) · [V2.9.3 亮点](#v293-亮点随包内容全量英译--一键部署录制环境--获取与反馈通道扩展--兼容到-windows-7-sp1) · [亮点](#亮点) · [功能](#功能) · [智能诊断](#智能诊断) · [隐私与安全](#隐私与安全) · [安装与更新](#安装与更新) · [构建](#构建) · [工程结构](#工程结构) · [许可](#许可)
 
 ---
 
@@ -50,16 +53,39 @@ https://github.com/user-attachments/assets/25361c9d-5239-4a1a-aeba-9080b0044e78
 
 ---
 
-## V2.9.2 亮点：中英双语与即时切换 · 安装包语言选择 · 全代码文案双语落地
+## V2.9.3 亮点：随包内容全量英译 · 一键部署录制环境 · 获取与反馈通道扩展 · 兼容到 Windows 7 SP1
 
 | | |
 |---|---|
-| **中文 / English 即时切换（默认中文）** | 界面、托盘菜单与通知、报错提示、日志分析规则与结论、各类体检结论、诊断报告与导出内容全部双语，共 **1670 条文案键**。切换复用了换肤那套已经跑熟的机制（文案整体写进 `Application.Resources`，XAML 用 `{DynamicResource Loc.*}` 引用），**与换主题一样即时生效、不用重启**；代码里拼出来的文案由语言服务广播事件、主窗口把当前页面原地重放一次刷新（复用页面既有的导航生命周期）。文案表是纯 BCL、零 WPF 依赖，日志分析器 / 录前自检 / 各类体检核心这些被单测直接链接的纯逻辑文件共用同一份表，零第三方包的原则不变 |
-| **安装包语言选择页（默认中文）** | 安装向导提供简体中文与英文两种语言，**默认选中中文且不跟随系统语言探测**；向导文字、快捷方式名、卸载项显示名、附加任务与完成页文案都随语言切换。选定结果写进安装目录的 `language.ini`，应用首启时读取作为默认语言，判定次序是「应用内选过 > 安装向导选过 > 中文」——**重装 / 升级不会覆盖用户的选择**；安装目录名与 AppId 刻意不随语言变化（Inno 会记住目录并在升级时复用） |
-| **数据驱动的展示值两种语言都认** | 知识库的 `severity` / `level`、插件角标是展示文案（中文「常见」/ 英文 `Common`），但同时被逻辑用来排序与配色，而本机已下载的外部知识库可能是另一种语言写的、云端 AI 回传的严重度又跟随界面语言。新增 `Localization/DataValues` 统一做跨语言判定；冲突软件扫描把「风险等级（逻辑，与语言无关）」与「风险文案（展示）」拆开，避免中英切换后卡片风险色塌成默认值；主题色的中文名也挪进了文案表 |
-| **自检 + 单测补齐「静默错法」** | 自检新增 2 项（共 21 项）：**文案资源解析**（`{DynamicResource Loc.*}` 解析失败是静默的 —— 控件留空、编译期与运行期都不报错，因此直接断言代表性控件的实际取值）与**语言切换往返**（走生产路径跑中 → 英 → 中，断言导航项与顶栏标题即时跟随、往返后还原）。单测 381 → **441 项**，新增部分专盯编译器看不见的文案表错法：中英键集一致、无重复键、**英文表里不出现汉字**、两表**占位符集合一致**、XAML 引用的 `Loc.*` 键真实存在 |
-| **顺手修掉的既有问题** | ① 测试并行 × 进程级语言状态导致的偶发失败（「单跑通过、全量挂」）→ 测试工程显式关闭并行；② `scripts/check_resources.py` 原本不认识文案键 → 现已读入文案表并映射成 `Loc.<键>`（1392 处资源引用全部可解析）；③ AI 工具 schema 在构造时缓存了文案，切换语言后仍会把旧语言的说明发给模型 → 改为每次访问现建 |
-| **本版不做的事（已定计划）** | 随包离线内容（知识库 212 条 ≈ 5.8 万汉字、场景模板、插件目录 57 条、排障指引）的英译**未做** —— 英文界面下这四处仍显示中文。体量是界面文案的数倍且必须整份译完才有意义；字段约定（哪些能译、哪些是逻辑键）、热更新通道改造与验收口径见 [`NOBS/docs/I18N_EN_CONTENT_PLAN.md`](NOBS/docs/I18N_EN_CONTENT_PLAN.md) |
+| **随包离线内容全量英译** | V2.9.2 把界面与代码内文案做成了中英双语，但**数据资产只有中文**——英文界面下知识库、插件广场、场景模板、排障指引仍显示中文。本版补齐：知识库 **212 条 / 5.77 万汉字**、插件目录 **57 条**、场景模板 **12 套（323 处可译叶子）**、排障指引**全文**，全部有英文并列文件（`problems.en-US.json` 等）。**中文文件名刻意保持不变**——raw 热更新地址、Release 资产名、用户本机已下载的缓存都依赖它，改名就是静默回归 |
+| **只译展示文案，不译逻辑键** | `id` / `category` / `related` / `platforms` / `links[].url` / `repo` / `dlls` / `inputKind` / `transform` 与 `settings` 里的数值一律逐字照抄；`severity` / `level` / 插件角标这类**跨语言展示值用固定映射**（`常见→Common`、`进阶→Advanced`、`热门→Popular`…）并与 `Localization/DataValues` 认识的取值一一对应，否则卡片配色与排序会静默退化。**场景 / 来源名会被写进 OBS**，同一中文名必须译成同一英文名且不同名不撞名——这是唯一会导致「功能坏了」的翻译错误（shared 来源靠名字跨场景复用，撞名会重复创建设备），有专门单测 |
+| **内容按语言装载，回退必须写日志** | 新增 `Localization/ContentAssets` 统一入口，解析次序固定为「当前语言的外部缓存 → 当前语言的随包内嵌 → **中文随包内嵌**」，最后一级兜底**必写 WARN**。这条是刻意设计：否则英文用户会「安静地看到中文内容」——正是 V2.9.1 修 raw 404 时踩过的坑（静默失败能潜伏很久）。语言切换时丢弃按语言缓存（挂在语言服务事件上），因此切语言是即时的 |
+| **热更新两条通道按语言分发** | raw 主通道新增英文地址；**Release 资产匹配器按语言严格区分**——中英资产挂在同一个 Release 上，原来的「前缀 + `.json` 后缀」匹配会把两份都认下来，中英用户互相拿到对方的文件（而且内容合法、解析成功，**完全静默**）；本地缓存与节流状态也按语言分文件，切语言后补刷当前语言那一份。`build.ps1` 现在导出中英四份资产，兜底通道才真正对英文用户可用 |
+| **一键部署录制环境** | 装好 OBS 之后最实际的一步：按「录制向」逐项列出现状与建议（录像格式 → Hybrid MP4、录像质量 → HQ、录像目录、画布/输出 → 1920x1080、帧率 → 60、音频采样率 → 48kHz），**全部先自动备份、可一键回滚、每项可单独取消**。两条落地通道自动选择：连上 OBS 走 obs-websocket（即时生效、无需重启）；OBS 已退出则改当前配置集的 `basic.ini`（写盘前备份、**写盘后重新读回逐项校验**）。明确不碰推流参数与输出模式——那些属于用户自己的选择 |
+| **获取 OBS 的通道扩展** | 原有三条官方入口之上新增：**应用内下载官方安装包**（解析当前稳定版直链 → 再校验一次官方域名 → 带百分比进度流式下载 → 下完一键启动安装向导，**不静默安装**，UAC 与安装路径始终由你决定）；**瓦特工具箱（原 Steam++）** 给 GitHub 加速；**微软商店**的 OBS Studio（商店版更新略慢于官网，文案已如实标注；低于 Win10 1809 时入口直接隐藏）。备用通道与官方源**分开判定白名单**，否则「只从官方渠道下载」这句防伪提示就失真了 |
+| **BUG 反馈：表单 + 二维码** | 腾讯文档表单 + GitHub Issues 两个出口，出站前都过白名单（同前缀仿冒域拒绝）；**二维码随包内嵌、离线可扫**，生成脚本用两个互不相关的实现交叉核对、再用独立解码器把 PNG 读回来断言内容与地址逐字符一致；二维码内容与按钮地址由单测钉成同一个常量，防止二者漂移（扫码用户被送到另一个页面是**没有任何提示**的） |
+| **兼容到 Windows 7 SP1（双目标构建）** | .NET 10 最低只支持 Windows 10，而 **.NET 6 是最后一个官方支持 Win7 SP1 的版本**：本版改成双目标并存、同一份源码编两遍——主构建 `net10.0-windows`（安装包 MinVersion `10.0`）与兼容构建 `net6.0-windows`（MinVersion `6.1sp1`，产物带 `_win7` 后缀）。两者共用同一个 AppId，Inno 才会把「换构建」识别成升级而不是并存装两份。兼容层只做**语义完全等价**的替换（`required` 成员 polyfill、`char.IsAsciiDigit` 等价实现、`AesGcm` 新旧构造函数、文件夹选择对话框），不为迁就老框架降低功能 |
+| **质量基线** | **565 项单元测试全部通过**（上一版 441 项）。新增部分专盯「编译器看不见」的错法：中英形状逐条对等、英文侧无残留汉字与全角标点、展示值落在 `DataValues` 取值内、场景来源名一致且不撞名、指引标题层级与链接 URL 一一对应、资产按语言的解析与回退次序、Release 资产匹配不串语言、INI 打补丁的保真性与读回校验、Windows 版本判据每一档、下载与反馈入口白名单、`AesGcm` 兼容实现与原构造函数的**密文对拍**。三轮分视角审校，**如实标注了哪些结论有机器证据、哪些只是人工核对**（见 [审校记录](NOBS/docs/reviews/REVIEW_2026-10-05-v2.9.3.md)） |
+
+> **已知边界（如实说明）**：① Windows 7 **真机未验证**——只做到「目标框架可编译 + 安装包 MinVersion 正确下发」；
+> ② 英译**没有对着英文版 OBS 逐条核对菜单路径的逐字一致性**，也未经母语者校订；
+> ③ 一键部署的两条通道按协议/键名实现并有单测，但**没有对真实 OBS 跑过一次端到端落地**；
+> ④ 兼容构建用的 .NET 6 已停止安全更新，它是「必须跑 Win7」时的退路，新机器请用主构建。
+
+详见 [RELEASE_NOTES_v2.9.3.md](NOBS/RELEASE_NOTES_v2.9.3.md)。
+
+---
+
+## V2.9.2 亮点：中英双语与即时切换 · 安装包语言选择（默认中文）
+
+- **中文 / English 即时切换（默认中文）**：界面、托盘菜单与通知、报错提示、日志分析规则与结论、
+  各类体检结论、诊断报告与导出内容全部双语，共 **1670 条文案键**，切换与换主题一样即时生效、不用重启。
+- **安装包语言选择页（默认中文）**：向导提供简体中文与英文，**默认中文且不跟随系统语言探测**；
+  选定结果写进安装目录下的 `language.ini` 作为首启默认值，判定次序是「应用内选过 > 安装向导选过 > 中文」，
+  重装 / 升级不会覆盖用户的选择。
+- **数据驱动的展示值两种语言都认**：新增 `Localization/DataValues` 做跨语言判定，
+  避免中英切换后卡片的风险色塌成默认值。
+- **自检 + 单测补齐「静默错法」**：自检新增「文案资源解析」与「语言切换往返」两项；单测 381 → 441 项。
 
 详见 [RELEASE_NOTES_v2.9.2.md](NOBS/RELEASE_NOTES_v2.9.2.md)。
 
@@ -82,8 +108,8 @@ https://github.com/user-attachments/assets/25361c9d-5239-4a1a-aeba-9080b0044e78
 
 | | |
 |---|---|
-| **中文 / English 双语，可即时切换** | 界面、托盘、通知、报错提示、日志规则与体检结论全部双语，**默认中文**，在「设置 → 语言」里一点即换、不用重启；安装时会先问一次语言，作为首次启动的默认值。随包离线内容（知识库 / 模板 / 插件目录 / 排障指引）本版仍为中文，英文内容的落地计划见 [I18N_EN_CONTENT_PLAN](NOBS/docs/I18N_EN_CONTENT_PLAN.md) |
-| **212 条问题库，完全离线** | 内置 **212 条问题**（知识库 v2.2，首页按 10 个分类组织），含现象 / 成因 / 分步解决 / 小贴士 / 相关问题；步骤可勾选，进度自动记住。**知识库支持独立更新**（应用之外随拉随新，不用等发版） |
+| **中文 / English 双语，可即时切换** | 界面、托盘、通知、报错提示、日志规则与体检结论全部双语，**默认中文**，在「设置 → 语言」里一点即换、不用重启；安装时会先问一次语言，作为首次启动的默认值。**V2.9.3 起随包离线内容（知识库 / 模板 / 插件目录 / 排障指引）也是中英双份**，切语言即时生效 |
+| **212 条问题库，完全离线** | 内置 **212 条问题**（知识库 v2.2，首页按 10 个分类组织），含现象 / 成因 / 分步解决 / 小贴士 / 相关问题；步骤可勾选，进度自动记住。**知识库支持独立更新**（应用之外随拉随新，不用等发版），中英各一条通道 |
 | **插件广场 + 本机体检** | 收录 **57 个精选插件**（8 大分类，v1.4 目录已全量复核：仓库是否归档 / 最近提交与发行 / 有无 Windows 成品包），卡片上标注**维护状态**并直达 GitHub Releases 下载；**只读扫描本机已装插件**——全盘定位 OBS 安装目录（注册表多视图 / 全盘驱动器布局 / Steam 多库）并覆盖 OBS 32.x 的「一插件一目录」插件根，装在非 C 盘也不漏扫；日志分析发现可疑模块可一键跳转对应插件；已知风险插件自动黄标提示 |
 | **增量更新，更新更轻** | V2.1 起应用内「增量更新」只下载变更文件（相邻版本增量包通常只有几 MB）；逐文件 SHA-256 校验，失败自动回退完整安装包；安装版自动提权替换并重启 |
 | **安装包自动清理** | 启动后自动扫描临时 / 下载 / 桌面目录，删除本应用旧安装包与增量包（每类保留最新一份），只认 `OBS_Helper_*` 命名，不碰其它文件 |
@@ -93,7 +119,8 @@ https://github.com/user-attachments/assets/25361c9d-5239-4a1a-aeba-9080b0044e78
 | **深度日志分析** | 离线解析 OBS 日志：**39 条规则 + 3 项量化比值**（已按 OBS 32.2.2 真实日志核对解析）；日志在分析前**先脱敏**；掉帧 / 崩溃线索可关联到嫌疑插件并直达插件广场 |
 | **场景模板一键落地** | 6 套内置直播间模板（游戏 / 竖屏带货 / 双人连麦 / 教学 / 电台待机 / 开播三件套），连上 OBS 一键生成场景与来源（含过渡设置）；模板会标注推荐插件并对照本机体检提示缺失 |
 | **隐私优先** | 偏好文件不含任何凭据；密码与 API Key **双层加密**（AES-256-GCM + DPAPI）。只有你主动发起诊断才会联网，请求前先脱敏；本机插件体检全程只读、结果仅存本机 |
-| **零第三方依赖** | 原生 WPF + .NET 10，无 NuGet 包、无 WebView2，`obs-websocket` 协议纯手写；文案表也是纯 BCL 的 C# 字典（零依赖双语）；自包含单目录，秒开 |
+| **一键部署录制环境** | 装好 OBS 后一条龙：逐项列出「录制向」推荐值（录像格式 / 质量 / 目录 / 画布分辨率 / 帧率 / 采样率）与当前值对照，勾选后**先自动备份**再落地，可一键回滚；连上 OBS 走 obs-websocket 即时生效，OBS 已退出则改 `basic.ini`（写盘后读回校验） |
+| **零第三方依赖** | 原生 WPF + .NET 10（另有一套 .NET 6 的 Win7 兼容构建），无 NuGet 包、无 WebView2，`obs-websocket` 协议纯手写；文案表也是纯 BCL 的 C# 字典（零依赖双语）；自包含单目录，秒开 |
 
 ## 功能
 
@@ -133,7 +160,10 @@ https://github.com/user-attachments/assets/25361c9d-5239-4a1a-aeba-9080b0044e78
 - **OBS 配置管理** — 配置目录检测、备份 / 导出（ZIP，默认脱敏不含推流密钥）、导入（覆盖 / 合并，自动预备份）、轻度重置与彻底重置
 - **直播搭建** — 从零到开播的 6 步流程 + 10 个主流平台的推流配置
 - **外观** — 浅色 / 深色 / 跟随系统，4 档字号，高对比与减少动画
-- **语言** — 简体中文 / English 即时切换（默认中文，无需重启）；安装向导里选定的语言是首次启动的默认值
+- **语言** — 简体中文 / English 即时切换（默认中文，无需重启）；安装向导里选定的语言是首次启动的默认值。**界面与随包内容（知识库 / 模板 / 插件目录 / 指引）同步跟随**
+- **一键部署录制环境** — 搭建页的录制环境卡：逐项列出推荐值与当前值，勾选后先备份再落地，可一键回滚
+- **获取 OBS** — 官方三条入口 + 应用内下载官方安装包（带进度、可启动安装向导）+ 瓦特工具箱 / 微软商店两条备选通道
+- **BUG 反馈** — 表单二维码随包离线可扫，也可点按钮打开腾讯文档表单或到 GitHub 提 Issue
 
 ## 智能诊断
 
@@ -159,21 +189,28 @@ https://github.com/user-attachments/assets/25361c9d-5239-4a1a-aeba-9080b0044e78
 ## 安装与更新
 
 - **GitHub Releases** — 从 [Releases 页面](https://github.com/YYRMMAYO/OBS_Helper/releases) 下载安装包或便携版；便携版免安装、自带 .NET 运行时。**安装向导会先让你选语言**（简体中文 / English），默认中文，选定结果作为应用首次启动的默认语言
+  - `OBS_Helper_Setup_2.9.3.exe` / `OBS_Helper_Portable_2.9.3.zip` — **主构建**，面向 **Windows 10 / 11**
+  - `OBS_Helper_Setup_2.9.3_win7.exe` / `OBS_Helper_Portable_2.9.3_win7.zip` — **Win7 兼容构建**，面向 **Windows 7 SP1 及以上**（.NET 6，已停止安全更新；新机器请用主构建）
+  - 两个构建共用同一个 AppId，从兼容构建换到主构建会被识别成升级而不是装两份
 - **蓝奏云（国内镜像）** — 提取码 `YYKWY`（详见应用内更新弹窗）
 - **应用内更新（推荐）** — 「检查更新」对比 GitHub 最新版本后，可任选：
   - **增量更新全部功能**：只下载自上一版本以来的变更文件（通常几 MB），下载后自动校验、提权替换并重启
   - **仅更新知识库**：单独升级问题库，几秒完成，不用重装应用
   - **完整安装包**：蓝奏云 / 应用内下载整包覆盖安装
 
-> 支持 Windows 10 / 11。无需 WebView2、无需安装 .NET 运行时、无需管理员权限。
-> 已装 2.9.1 的用户可直接走应用内「增量更新」升到 2.9.2；2.9.0 及更早版本（2.1.x ~ 2.9.0）
-> 的增量包基准对不上，用安装包或便携包覆盖升级即可。
+> **主构建**支持 Windows 10 / 11；**兼容构建**支持 Windows 7 SP1 及以上。均无需 WebView2、无需另装 .NET 运行时。
+> 已装 2.9.2 的用户可直接走应用内「增量更新」升到 2.9.3；更早版本（2.1.x ~ 2.9.1）的增量包基准对不上，
+> 用安装包或便携包覆盖升级即可。
 > **语言与升级**：安装时选的语言只决定首次启动的默认值；之后在应用内改过语言，重装 / 升级都不会覆盖你的选择。
-> 还没装 OBS？应用内「搭建」页 / 「工具箱」/ 首页欢迎卡都提供**官方**下载入口（`obsproject.com` 与 GitHub 官方发布页）。
+> 还没装 OBS？应用内「搭建」页 / 「工具箱」/ 首页欢迎卡都提供**官方**下载入口
+> （`obsproject.com` 与 GitHub 官方发布页），也可以直接在应用内下载官方安装包；
+> GitHub 拉不动时可先用瓦特工具箱（原 Steam++）加速，或改用微软商店的 OBS。
+> 遇到问题？「搭建」页与「工具箱」页底部有 **BUG 反馈卡**（手机扫码即可填表）。
 
 ## 构建
 
-需要 [.NET 10 SDK](https://dotnet.microsoft.com/download)；打安装包还需要 [Inno Setup 6](https://jrsoftware.org/isdl.php)。
+需要 [.NET 10 SDK](https://dotnet.microsoft.com/download)（构建 Win7 兼容目标时会自动拉取 .NET 6 的参考包）；
+打安装包还需要 [Inno Setup 6](https://jrsoftware.org/isdl.php)。
 
 ```powershell
 # 在仓库根目录
@@ -182,10 +219,13 @@ cd NOBS
 # 跑起来看看
 dotnet run --project OBS_Helper.Wpf
 
-# 出安装包 + 便携 zip + 增量包 -> NOBS\PAKE\windows\（版本号取自 csproj 的 <Version>）
+# 双目标：主构建 + Win7 兼容构建 -> 安装包 / 便携 zip / 增量包 / 知识库资产
 .\build.ps1
 
-# 额外出一个单文件 exe
+# 只出主构建（快速迭代时）
+.\build.ps1 -SkipLegacy
+
+# 额外出一个单文件 exe（主构建）
 .\build.ps1 -SingleFile
 
 # 没装 Inno Setup 时只出便携包
@@ -195,17 +235,21 @@ dotnet run --project OBS_Helper.Wpf
 .\build.ps1 -DeltaBaseVersion 2.0.0
 
 # 发布后校验增量包可完整升级（模拟升级 + 全文件 SHA-256 比对）
-python scripts\verify_delta.py --old PAKE\windows\OBS_Helper_Portable_2.0.0.zip --delta PAKE\windows\OBS_Helper_Update_2.1.1.zip --publish OBS_Helper.Wpf\bin\Release\net10.0-windows\win-x64\publish
+python scripts\verify_delta.py --old PAKE\windows\OBS_Helper_Portable_2.0.0.zip --delta PAKE\windows\OBS_Helper_Update_2.9.3.zip --publish OBS_Helper.Wpf\bin\Release\net10.0-windows\win-x64\publish
+
+# 全量单测（含中英内容对等 / 资产按语言装载 / INI 打补丁 / 版本判据等）
+dotnet test OBS_Helper.Wpf.Tests\OBS_Helper.Wpf.Tests.csproj -c Release
 ```
 
 产物落在 `NOBS\PAKE\windows\`：
 
-- `OBS_Helper_Setup_2.9.2.exe` — 安装包（向导含语言选择页，默认中文）
-- `OBS_Helper_Portable_2.9.2.zip` — 解压即用
-- `OBS_Helper_Update_2.9.2.zip` — 增量更新包（含 `update_manifest.json`，应用内增量更新用）
-- `OBS_Helper_Portable_2.9.2.exe` — 单文件（需 `-SingleFile`）
-- `OBS_Helper_Plugins_1.4.json` — 插件广场目录 v1.4（独立热更新资产，随 Release 发布）
-- `OBS_Helper_Knowledge_2.2.json` — 问题库 v2.2（独立热更新资产，随 Release 发布）
+- `OBS_Helper_Setup_2.9.3.exe` — 安装包（主构建，MinVersion 10.0，向导含语言选择页）
+- `OBS_Helper_Setup_2.9.3_win7.exe` — 安装包（Win7 兼容构建，MinVersion 6.1sp1）
+- `OBS_Helper_Portable_2.9.3.zip` / `…_win7.zip` — 解压即用
+- `OBS_Helper_Update_2.9.3.zip` — 增量更新包（含 `update_manifest.json`，应用内增量更新用）
+- `OBS_Helper_Portable_2.9.3.exe` — 单文件（需 `-SingleFile`）
+- `OBS_Helper_Knowledge_2.9.3.json` / `…2.9.3.en-US.json` — 问题库热更新资产（中英各一份）
+- `OBS_Helper_Plugins_2.9.3.json` / `…2.9.3.en-US.json` — 插件广场目录热更新资产（中英各一份）
 - `manifests/manifest_<ver>.json` — 各版本完整文件清单（SHA-256，增量包 diff 基准；不随 Release 发布）
 
 ## 工程结构
@@ -217,24 +261,33 @@ NOBS/
     MainWindow.xaml(.cs)   左侧导航 + 顶栏 + 页面容器 + 新手引导覆盖层，路由注册在这里
     AppServices.cs         组合根：所有服务的惰性单例，手工装配
     Navigation/            极简路由（路由名 -> 页面工厂，带缓存与后退栈）
-    Localization/          文案表（中 / 英两份，纯 BCL 零 WPF 依赖）+ 跨语言展示值判定
+    Localization/          文案表（中 / 英两份，纯 BCL 零 WPF 依赖）
+                           + DataValues（跨语言展示值判定）
+                           + ContentAssets（随包内容按语言装载 + 回退标记）
+    Compat/                Windows 7 兼容构建（net6.0-windows）所需的编译期 polyfill
     Views/                 18 个页面 / 窗口
-    Controls/              共享控件与值转换器
+    Controls/              共享控件与值转换器（含下载卡 / 反馈卡 / 一键部署录制环境卡）
     Themes/                Palette.xaml 调色板 + Controls.xaml 样式库
     Models/                知识库、obs-websocket 协议、OBS 配置模型
     Services/
+      Compat/              FolderPicker（net6/net8 两条分支）等跨 TFM 等价实现
       Host/                HostBridge（DPAPI、日志读取、AI 转发）、LocalStore
       Obs/                 WebSocket 客户端、连接服务、日志分析、脱敏
-      ObsConfig/           OBS 配置定位（全盘多信号安装目录探测）、备份/导出/导入、重置、场景模板落地
+      ObsConfig/           OBS 配置定位、备份/导出/导入、重置、场景模板落地、
+                           RecordingEnvCore/Service（一键部署录制环境：推荐项 + INI 打补丁）
       Plugins/             插件广场：目录数据 / 本机体检扫描（含 OBS 32.x 插件根）/ Releases 查新 / 关注提醒
-      Update/              增量更新（清单/自举替换）、知识库独立更新、安装包自动清理
+      Update/              增量更新、知识库独立更新（按语言分发）、安装包自动清理、
+                           ObsDownloadLinks / FeedbackLinks（出站白名单常量）
       Ai/                  本地 / 免费 / 云端诊断引擎与编排（含免费档本地限频器）
-      Shell/               系统托盘、全局热键、场景自动切换、定时器、系统监控、录制守护、日志尾随、新手引导与日志文件定位（纯逻辑）
+      Shell/               系统托盘、全局热键、场景自动切换、定时器、系统监控、录制守护、日志尾随、新手引导
       Markdown/            排障指引的 Markdown 解析
+      OsSupport.cs         Windows 版本判据（决定商店入口等能力的显隐）
       LocalizationService.cs  语言服务：偏好持久化、写入 Application.Resources、广播语言切换
-    Assets/                problems.json / plugins.json（内嵌种子，运行时可用外部文件覆盖更新）、troubleshooting.md、scene_templates.json、图标
-  OBS_Helper.Wpf/OBS_Helper_Setup.iss  Inno Setup 脚本（语言选择页默认中文，UTF-8 带 BOM）
-  build.ps1                Windows 构建与打包脚本（安装包 / 便携 / 增量包 / 清单）
+    Assets/                problems[.en-US].json / plugins[.en-US].json / scene_templates[.en-US].json /
+                           troubleshooting[.en-US].md（中英并列，内嵌种子）、feedback_qr.png、图标
+  OBS_Helper.Wpf/OBS_Helper_Setup.iss  Inno Setup 脚本（按 TFM 传 MinVersion / 输出名，UTF-8 带 BOM）
+  OBS_Helper.Wpf.Tests/    565 项单测（直接链接纯逻辑源文件，不引用整个 WPF 工程）
+  build.ps1                Windows 构建与打包脚本（双目标：安装包 / 便携 / 增量包 / 清单 / 内容资产）
   scripts/verify_delta.py  增量包发布校验工具（模拟升级 + 全文件 SHA-256 比对）
 ```
 

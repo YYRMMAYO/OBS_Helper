@@ -16,12 +16,13 @@ namespace OBS_Helper.Wpf.Services.Plugins;
 /// </summary>
 public sealed class PluginCatalogService
 {
-    private const string ResourceName = "OBS_Helper.Wpf.Assets.plugins.json";
-
     private static readonly SemaphoreSlim Lock = new(1, 1);
 
     private PluginCatalogData? _data;
     private bool _usingExternal;
+
+    /// <summary>当前缓存是在哪种语言下加载的（V2.9.3）。为空表示还没加载过。</summary>
+    private string _loadedLanguage = "";
 
     /// <summary>当前生效的目录版本（外部文件优先，其次内置种子）。</summary>
     public string Version => Load().Version;
@@ -33,13 +34,28 @@ public sealed class PluginCatalogService
     public void Reload()
     {
         Lock.Wait();
-        try { _data = null; }
+        try
+        {
+            _data = null;
+            _loadedLanguage = "";
+        }
         finally { Lock.Release(); }
+    }
+
+    /// <summary>语言变了就丢弃缓存（V2.9.3）：中英各一份目录，缓存必须跟着语言走。</summary>
+    private void InvalidateOnLanguageChange()
+    {
+        if (_loadedLanguage.Length > 0
+            && !string.Equals(_loadedLanguage, Strings.Current, StringComparison.Ordinal))
+        {
+            Reload();
+        }
     }
 
     /// <summary>获取目录数据（带缓存，线程安全）。极端情况下返回空数据结构而非 null。</summary>
     public PluginCatalogData GetData()
     {
+        InvalidateOnLanguageChange();
         var d = Load();
         return d;
     }
@@ -56,13 +72,14 @@ public sealed class PluginCatalogService
             // 外部覆盖文件优先（与问题库同策略：损坏 / 缺失静默回退内置）
             try
             {
-                var externalPath = KnowledgeBaseUpdater.PluginsKbFile;
+                var externalPath = KnowledgeBaseUpdater.LocalDataFile(ContentAssets.Plugins, Strings.Current);
                 if (File.Exists(externalPath))
                 {
                     var parsed = PluginCatalogCore.Parse(File.ReadAllText(externalPath));
                     if (parsed is not null)
                     {
                         _usingExternal = true;
+                        _loadedLanguage = Strings.Current;
                         _data = parsed;
                         return _data;
                     }
@@ -75,6 +92,7 @@ public sealed class PluginCatalogService
             }
 
             _usingExternal = false;
+            _loadedLanguage = Strings.Current;
             _data = LoadEmbedded() ?? new PluginCatalogData();
             return _data;
         }
@@ -86,17 +104,16 @@ public sealed class PluginCatalogService
 
     private static PluginCatalogData? LoadEmbedded()
     {
+        var raw = ContentAssets.ReadEmbeddedWithFallback(ContentAssets.Plugins, Strings.Current, out var fellBack);
+        if (fellBack)
+        {
+            FileLogger.Warn("Plugins", "英文插件目录资产缺失，已回退中文随包内容："
+                + ContentAssets.FileName(ContentAssets.Plugins, Strings.Current) + "（英文界面下会显示中文）");
+        }
+        if (raw is null) return null;
         try
         {
-            var asm = Assembly.GetExecutingAssembly();
-            using var stream = asm.GetManifestResourceStream(ResourceName);
-            if (stream is null)
-            {
-                FileLogger.Warn("Plugins", "内嵌插件目录资源缺失：" + ResourceName);
-                return null;
-            }
-            using var reader = new StreamReader(stream, System.Text.Encoding.UTF8);
-            return PluginCatalogCore.Parse(reader.ReadToEnd());
+            return PluginCatalogCore.Parse(raw);
         }
         catch (Exception ex)
         {

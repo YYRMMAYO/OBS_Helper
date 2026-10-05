@@ -40,8 +40,47 @@ public static class ObsDownloadLinks
     /// <summary>官方 GitHub 最新 Release（始终指向当前稳定版）。</summary>
     public const string GitHubLatestRelease = "https://github.com/obsproject/obs-studio/releases/latest";
 
+    // ---------------------------------------------------------------- 备用获取通道（V2.9.3）
+
+    /// <summary>
+    /// 瓦特工具箱（原名 Steam++）官网。GitHub 拉不动时的第一条替代通道：
+    /// 它的「网络加速 → GitHub」是本地反向代理，只对白名单域名生效，不改系统路由，
+    /// 装完勾选 GitHub 一键加速即可再回官方通道下载（这也是国内用户最常用的做法）。
+    /// </summary>
+    public const string WattToolkitSite = "https://steampp.net/";
+
+    /// <summary>瓦特工具箱的官网域名（校验用）。</summary>
+    public const string WattToolkitHost = "steampp.net";
+
+    /// <summary>
+    /// 微软商店的 OBS Studio 商品页（官方下载页里的「Get it from Microsoft」就指向它）。
+    /// 第二条替代通道：Windows 10/11 可直接在商店里装，自动更新；缺点是版本比官网稍旧，
+    /// 且欧盟区曾出现区域限制 —— 所以只作备选，不做首推。
+    /// </summary>
+    public const string MicrosoftStoreObs = "https://apps.microsoft.com/detail/XPFFH613W8V6LV";
+
+    /// <summary>微软商店的域名（校验用）。</summary>
+    public const string MicrosoftStoreHost = "apps.microsoft.com";
+
+    /// <summary>
+    /// 备用通道是否可信：必须 https，且限定在瓦特工具箱官网或微软商店的官方域名下。
+    /// 与 <see cref="IsOfficialDownloadUrl"/> 分开：这两处**不是** OBS 官方源，
+    /// 不能混进「OBS 官方下载」的白名单里，否则提示文案会失真。
+    /// </summary>
+    public static bool IsTrustedAlternativeChannel(string? url)
+    {
+        if (!Uri.TryCreate(url, UriKind.Absolute, out var uri)) return false;
+        if (uri.Scheme != Uri.UriSchemeHttps) return false;
+
+        return uri.Host.Equals(WattToolkitHost, StringComparison.OrdinalIgnoreCase)
+            || uri.Host.Equals(MicrosoftStoreHost, StringComparison.OrdinalIgnoreCase);
+    }
+
     /// <summary>放给用户看的安全提示：只认官方两处入口，并给出可自行核对的判据。</summary>
     public static string SafetyNote => Strings.T("downloads.safetyNote", WindowsSignerName);
+
+    /// <summary>备用通道说明（瓦特工具箱 / 微软商店）。</summary>
+    public static string AlternativeNote => Strings.T("downloads.alternativeNote");
 
     /// <summary>允许的官方域名：obsproject.com 及其子域（如 cdn-fastly.obsproject.com）。</summary>
     public static bool IsOfficialObsHost(string? host)

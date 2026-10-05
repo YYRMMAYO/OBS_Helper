@@ -1,19 +1,26 @@
 ﻿<#
   OBS 排障助手（WPF 版）— Windows 构建与打包脚本
   ------------------------------------------------------------
-  流程：
-    1) 自包含发布 WPF 工程（含 .NET 运行时，目标机无需装运行时）
-    2) Inno Setup 生成安装包        -> PAKE\windows\OBS_Helper_Setup_<ver>.exe
-    3) 打便携压缩包（免安装解压即用）-> PAKE\windows\OBS_Helper_Portable_<ver>.zip
-    4) 生成增量更新包（仅变更文件）  -> PAKE\windows\OBS_Helper_Update_<ver>.zip
-    5) 可选：单文件便携 exe          -> PAKE\windows\OBS_Helper_Portable_<ver>.exe
+  V2.9.3 起是**双目标**构建（同一份源码，两个 TFM）：
+    · net10.0-windows —— 主构建，安装包 MinVersion=10.0，面向 Windows 10 / 11；
+    · net6.0-windows  —— Win7 兼容构建，MinVersion=6.1sp1，面向 Windows 7 SP1 及以上
+      （.NET 6 是最后一个官方支持 Windows 7 SP1 的版本）。
 
-  与旧的 Blazor + WebView2 版相比，这里没有「先发布站点再塞进壳工程」那一步了：
-  WPF 版的界面就在程序集里，problems.json / troubleshooting.md 也是内嵌资源，
-  所以一次 publish 就是完整产物。
+  流程：
+    1) 自包含发布主构建 / 兼容构建（含 .NET 运行时，目标机无需装运行时）
+    2) Inno Setup 生成安装包
+         -> PAKE\windows\OBS_Helper_Setup_<ver>.exe            （主构建）
+         -> PAKE\windows\OBS_Helper_Setup_<ver>_win7.exe       （兼容构建）
+    3) 打便携压缩包（免安装解压即用）
+         -> PAKE\windows\OBS_Helper_Portable_<ver>.zip / _win7.zip
+    4) 生成增量更新包（仅变更文件，基于主构建清单）-> OBS_Helper_Update_<ver>.zip
+    5) 随包知识库 / 插件目录的中英四份资产 -> PAKE\windows\OBS_Helper_Knowledge_<ver>[_en].json
+       等（供应用内「raw 主通道失败时的 Release 资产兜底」按语言取用）
+    6) 可选：单文件便携 exe（主构建）
 
   用法：
-    .\build.ps1                 # 安装包 + 便携 zip
+    .\build.ps1                 # 双目标：安装包 + 便携 zip + 资产
+    .\build.ps1 -SkipLegacy     # 只出主构建（快速迭代 / 不关心 Win7 时）
     .\build.ps1 -SingleFile     # 额外产出单文件 exe
     .\build.ps1 -SkipInstaller  # 只出便携包（没装 Inno Setup 时用）
 #>
@@ -23,6 +30,8 @@ param(
     [string]$Runtime = "win-x64",
     [switch]$SingleFile,
     [switch]$SkipInstaller,
+    # V2.9.3：跳过 Win7 兼容构建（net6.0-windows）。默认是构建的。
+    [switch]$SkipLegacy,
     # 指定增量包的基准版本（如 -DeltaBaseVersion 2.0.0）：强制以该版本清单做 diff，
     # 用于「跳版本发布」——让仍停留在更早版本的用户也能直接增量升级。
     # 不指定时默认取「低于当前版本的最近一份清单」。
@@ -32,10 +41,17 @@ param(
 $ErrorActionPreference = "Stop"
 
 $root    = $PSScriptRoot
-$proj    = Join-Path $root "OBS_Helper.Wpf\OBS_Helper.Wpf.csproj"
+# 脚本放在 NOBS/ 下，工程在 NOBS\OBS_Helper.Wpf\；旧布局（脚本与工程同层）也认。
 $projDir = Join-Path $root "OBS_Helper.Wpf"
+$proj    = Join-Path $projDir "OBS_Helper.Wpf.csproj"
+if (-not (Test-Path $proj)) {
+    $projDir = $root
+    $proj    = Join-Path $root "OBS_Helper.Wpf.csproj"
+}
 $pakeWin = Join-Path $root "PAKE\windows"
-$tfm     = "net10.0-windows"
+
+$tfmModern = "net10.0-windows"
+$tfmLegacy = "net6.0-windows"
 
 function Step($msg) { Write-Host ""; Write-Host "==> $msg" -ForegroundColor Cyan }
 function Warn($msg) { Write-Host "[!] $msg" -ForegroundColor Yellow }
@@ -76,57 +92,96 @@ Write-Host "版本号：$ver" -ForegroundColor DarkGray
 
 New-Item -ItemType Directory -Force -Path $pakeWin | Out-Null
 
-# ---------------------------------------------------------------- 1) 发布
+$iscc = $null
+foreach ($c in @(
+    "C:\Program Files (x86)\Inno Setup 6\ISCC.exe",
+    "C:\Program Files\Inno Setup 6\ISCC.exe"
+)) { if (Test-Path $c) { $iscc = $c; break } }
 
-Step "自包含发布 WPF 工程 ($Runtime / $Configuration)"
-dotnet publish $proj -c $Configuration -r $Runtime --self-contained true `
-    -p:PublishSingleFile=false -p:PublishReadyToRun=true | Out-Host
-if ($LASTEXITCODE -ne 0) { throw "dotnet publish 失败。" }
+# ---------------------------------------------------------------- 发布（一个 TFM 一轮）
 
-$pub = Join-Path $projDir "bin\$Configuration\$tfm\$Runtime\publish"
-$exe = Join-Path $pub "OBS_Helper.exe"
-if (-not (Test-Path $exe)) { throw "发布产物缺少 OBS_Helper.exe：检查 $pub" }
+function Publish-Wpf {
+    param([string]$Tfm, [switch]$ReadyToRun)
+    Step "自包含发布 WPF 工程（$Tfm / $Runtime / $Configuration）"
+    $args = @(
+        "publish", $proj, "-c", $Configuration, "-r", $Runtime, "--self-contained", "true",
+        "-p:PublishSingleFile=false", "-p:TargetFramework=$Tfm"
+    )
+    # ReadyToRun 对 net6.0 需要 6.0 的 crossgen 包；拿不到就退回非 R2R（只影响启动速度，不影响功能）。
+    if ($ReadyToRun) { $args += "-p:PublishReadyToRun=true" }
+    else { $args += "-p:PublishReadyToRun=false" }
 
-$sizeMb = [math]::Round((Get-ChildItem $pub -Recurse -File | Measure-Object Length -Sum).Sum / 1MB, 1)
-Write-Host "发布目录：$pub（$sizeMb MB）" -ForegroundColor DarkGray
+    & dotnet @args | Out-Host
+    if ($LASTEXITCODE -ne 0) { throw "dotnet publish 失败（$Tfm）。" }
 
-# ---------------------------------------------------------------- 2) 安装包
+    $pubDir = Join-Path $projDir "bin\$Configuration\$Tfm\$Runtime\publish"
+    $exe = Join-Path $pubDir "OBS_Helper.exe"
+    if (-not (Test-Path $exe)) { throw "发布产物缺少 OBS_Helper.exe：检查 $pubDir" }
 
-$setupPath = Join-Path $pakeWin "OBS_Helper_Setup_$ver.exe"
-if ($SkipInstaller) {
-    Warn "已指定 -SkipInstaller，跳过 Inno Setup。"
-    $setupPath = $null
-} else {
-    Step "Inno Setup 生成安装包"
-    $iscc = $null
-    foreach ($c in @(
-        "C:\Program Files (x86)\Inno Setup 6\ISCC.exe",
-        "C:\Program Files\Inno Setup 6\ISCC.exe"
-    )) { if (Test-Path $c) { $iscc = $c; break } }
+    $sizeMb = [math]::Round((Get-ChildItem $pubDir -Recurse -File | Measure-Object Length -Sum).Sum / 1MB, 1)
+    Write-Host "发布目录：$pubDir（$sizeMb MB）" -ForegroundColor DarkGray
+    return $pubDir
+}
 
+# ---------------------------------------------------------------- 安装包 / 便携包
+
+function New-Installer {
+    param([string]$Tfm, [string]$MinVersion, [string]$Suffix)
+    $setupPath = Join-Path $pakeWin "OBS_Helper_Setup_$ver$Suffix.exe"
+
+    if ($SkipInstaller) {
+        Warn "已指定 -SkipInstaller，跳过 Inno Setup。"
+        return $null
+    }
     if (-not $iscc) {
         # 没装 Inno 不该让整个构建失败——便携包仍然是可交付的产物
         Warn "找不到 Inno Setup 6（ISCC.exe），跳过安装包。下载：https://jrsoftware.org/isdl.php"
-        $setupPath = $null
-    } else {
-        # 用 csproj 的 <Version> 覆盖 iss 里的版本号，保证安装包命名/版本与代码一致
-        & $iscc "/DMyAppVersion=$ver" (Join-Path $projDir "OBS_Helper_Setup.iss") | Out-Host
-        if ($LASTEXITCODE -ne 0) { throw "Inno Setup 构建失败。" }
+        return $null
     }
+
+    Step "Inno Setup 生成安装包（$Tfm，MinVersion=$MinVersion）"
+    & $iscc "/DMyAppVersion=$ver" "/DMyAppTfm=$Tfm" "/DMyAppMinVersion=$MinVersion" `
+        "/DMyAppOutputSuffix=$Suffix" (Join-Path $projDir "OBS_Helper_Setup.iss") | Out-Host
+    if ($LASTEXITCODE -ne 0) { throw "Inno Setup 构建失败（$Tfm）。" }
+    return $setupPath
 }
 
-# ---------------------------------------------------------------- 3) 便携 zip
+function New-PortableZip {
+    param([string]$PubDir, [string]$Suffix)
+    $zip = Join-Path $pakeWin "OBS_Helper_Portable_$ver$Suffix.zip"
+    Remove-Artifact $zip
+    Compress-Archive -Path (Join-Path $PubDir "*") -DestinationPath $zip
+    Write-Host "便携包：$zip" -ForegroundColor DarkGray
+    return $zip
+}
+
+# ---------------------------------------------------------------- 1) 主构建
+
+$pub = Publish-Wpf -Tfm $tfmModern -ReadyToRun
+$setupPath = New-Installer -Tfm $tfmModern -MinVersion "10.0" -Suffix ""
+
+# ---------------------------------------------------------------- 2) Win7 兼容构建
+
+$setupLegacy = $null
+$zipLegacy = $null
+if (-not $SkipLegacy) {
+    $pubLegacy = Publish-Wpf -Tfm $tfmLegacy -ReadyToRun
+    $setupLegacy = New-Installer -Tfm $tfmLegacy -MinVersion "6.1sp1" -Suffix "_win7"
+    $zipLegacy = New-PortableZip -PubDir $pubLegacy -Suffix "_win7"
+} else {
+    Warn "已指定 -SkipLegacy，跳过 Win7 兼容构建（net6.0-windows）。"
+}
+
+# ---------------------------------------------------------------- 3) 便携 zip（主构建）
 
 Step "生成便携压缩包"
-$zip = Join-Path $pakeWin "OBS_Helper_Portable_$ver.zip"
-Remove-Artifact $zip
-Compress-Archive -Path (Join-Path $pub "*") -DestinationPath $zip
-Write-Host "便携包：$zip" -ForegroundColor DarkGray
+$zip = New-PortableZip -PubDir $pub -Suffix ""
 
 # ---------------------------------------------------------------- 4) 增量更新包
-
+#
 # 增量更新：对比上一版本完整清单，打包「只含变更文件 + update_manifest.json」的增量 zip，
 # 应用内下载后由 --apply-update 自举进程完成替换。清单存档在 PAKE\windows\manifests\ 供下次比对。
+# 基准与目标都取**主构建** —— 兼容构建与主构建的运行时文件完全不同，混进同一份清单没有意义。
 
 function New-FileManifest {
     param([string]$Dir, [string]$Version)
@@ -261,14 +316,39 @@ if ($prevManifestFile) {
     Warn "找不到可比的上一版本（清单/历史便携包均无），跳过增量包。"
 }
 
-# ---------------------------------------------------------------- 5) 单文件
+# ---------------------------------------------------------------- 5) 知识库 / 插件目录资产（中英各一份）
+#
+# 应用内的知识库热更新是「raw 主通道 → Release 资产兜底」两级。V2.9.3 把内容做成了中英并列，
+# 兜底这一级也必须是**四份**（中文 / 英文 × 知识库 / 插件目录），否则英文用户拿不到兜底内容。
+# 资产名带上版本号：应用按「版本号最高且带对应语言资产」的 Release 取，不会串语言。
+
+Step "导出知识库 / 插件目录资产（中英）"
+$assetsSrc = Join-Path $projDir "Assets"
+$assetMap = @(
+    @{ Src = "problems.json";             Dst = "OBS_Helper_Knowledge_$ver.json" },
+    @{ Src = "problems.en-US.json";       Dst = "OBS_Helper_Knowledge_$ver.en-US.json" },
+    @{ Src = "plugins.json";              Dst = "OBS_Helper_Plugins_$ver.json" },
+    @{ Src = "plugins.en-US.json";        Dst = "OBS_Helper_Plugins_$ver.en-US.json" }
+)
+$assetOut = @()
+foreach ($a in $assetMap) {
+    $src = Join-Path $assetsSrc $a.Src
+    if (-not (Test-Path $src)) { Warn "缺少资产源文件，跳过：$src"; continue }
+    $dst = Join-Path $pakeWin $a.Dst
+    Copy-Item $src $dst -Force
+    $assetOut += $dst
+    Write-Host "资产：$dst" -ForegroundColor DarkGray
+}
+
+# ---------------------------------------------------------------- 6) 单文件（主构建）
 
 $sfOut = $null
 if ($SingleFile) {
     Step "生成单文件便携 exe"
     # 单独发到 publish-single，避免和上面的多文件产物混在同一目录
-    $sfDir = Join-Path $projDir "bin\$Configuration\$tfm\$Runtime\publish-single"
+    $sfDir = Join-Path $projDir "bin\$Configuration\$tfmModern\$Runtime\publish-single"
     dotnet publish $proj -c $Configuration -r $Runtime --self-contained true `
+        -p:TargetFramework=$tfmModern `
         -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true `
         -p:EnableCompressionInSingleFile=true -p:PublishReadyToRun=true `
         -o $sfDir | Out-Host
@@ -286,10 +366,13 @@ if ($SingleFile) {
 
 Step "完成"
 Write-Host "产物目录：$pakeWin" -ForegroundColor Green
-if ($setupPath -and (Test-Path $setupPath)) { Write-Host "  - 安装包 : $setupPath" }
-Write-Host "  - 便携包 : $zip"
-if (Test-Path $deltaZip) { Write-Host "  - 增量包 : $deltaZip" }
-if ($sfOut) { Write-Host "  - 单文件 : $sfOut" }
+if ($setupPath -and (Test-Path $setupPath)) { Write-Host "  - 安装包（Win10+）   : $setupPath" }
+if ($setupLegacy -and (Test-Path $setupLegacy)) { Write-Host "  - 安装包（Win7 SP1+）: $setupLegacy" }
+Write-Host "  - 便携包             : $zip"
+if ($zipLegacy -and (Test-Path $zipLegacy)) { Write-Host "  - 便携包（Win7）     : $zipLegacy" }
+if (Test-Path $deltaZip) { Write-Host "  - 增量包             : $deltaZip" }
+if ($sfOut) { Write-Host "  - 单文件             : $sfOut" }
+foreach ($a in $assetOut) { Write-Host "  - 知识库/插件资产    : $a" }
 Get-ChildItem $pakeWin -File | ForEach-Object {
     Write-Host ("    {0}  ({1:N1} MB)" -f $_.Name, ($_.Length / 1MB))
 }

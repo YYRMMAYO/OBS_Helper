@@ -90,3 +90,13 @@ body:
       description: 截图、相关插件、是否稳定复现、是否只在该版本出现等，都可以写在这里。
     validations:
       required: false
+  - type: markdown
+    attributes:
+      value: |
+        ---
+        **语言 / Language**：中文或英文都可以，也可以用中英双语 —— 表达清楚比语言地道重要。
+        Chinese, English, or a mix of both is perfectly fine.
+
+        **安全漏洞请勿在这里公开**：安全问题请走 [SECURITY.md](https://github.com/YYRMMAYO/OBS_Helper/blob/master/SECURITY.md)
+        里的私密通道（GitHub Security 私密报告，或邮件 752139192@qq.com）。
+        Do not disclose security vulnerabilities in a public issue — use the private channels in SECURITY.md.

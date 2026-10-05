@@ -1,7 +1,12 @@
-# 贡献指南（Contributing Guide）
+# 贡献指南 · Contributing Guide
+
+**简体中文** · [English](#english)
 
 感谢你愿意为「OBS 排障助手」（OBS Helper）出一份力。
 本文说明本项目的技术约定、构建与测试方式，以及提交 Issue / Pull Request 时的要求。
+
+> **语言**：中文或英文都可以，**也可以用中英双语**。用你最舒服的语言写就行 ——
+> 表达清楚比语言正确重要得多，不必担心语法或措辞。
 
 提交贡献即表示你同意遵守本仓库的 [行为准则](CODE_OF_CONDUCT.md)。
 本项目代码以 [MIT 许可](LICENSE) 发布，你的贡献将以同一许可授权。
@@ -42,6 +47,12 @@
 - **新增或修改文案时，两份必须同步**：键名一致、键集由单元测试钉死，
   只改一份会导致测试失败。
 - XAML 中引用文案的键以 `Loc.` 前缀标识。
+- **占位符个数要对得上**：`Strings.T("键", 实参…)` 的实参个数必须与该键在文案表里的
+  `{0}`/`{1}` 个数一致。少传会让界面直接显示字面量 `{0}`，多传则参数被静默丢弃 ——
+  这两种错误编译器都看不见，所以有一条常驻测试（`StringsCallSiteTests`）静态扫描全部调用点。
+- **拼接键要留兜底**：像 `Strings.T("env.item." + key + ".label")` 这种拼接，缺键时
+  `Strings.T` 会**原样返回键名**（非空），因此不能用「取到非空就用」来判断，
+  必须比较「取到的值是否等于键名」。
 
 ## 4. 构建与打包
 
@@ -91,7 +102,7 @@ dotnet test NOBS/OBS_Helper.Wpf.Tests/OBS_Helper.Wpf.Tests.csproj -c Release
 以下是本仓库既有提交的实际写法（可用 `git log --oneline` 自行查看）：
 
 ```
-release(V2.9.3): 随包内容全量英译 + 一键部署录制环境 + 获取/反馈通道 + Win7 兼容构建
+release(V2.9.4): 简单录像（一键配置 OBS 并开录）+ 帮助与反馈页 + 仓库封面与社区文件
 docs(review): 如实标注「安装向导语言页」的证据边界
 fix(installer): 中文语言文件随仓库固定，修 CI 编不出安装包
 fix(log): 日志解析适配真实 OBS 日志 + 实时预警日志扩展名修正
@@ -102,7 +113,7 @@ chore: 新增 scripts/verify_delta.py 增量包发布校验工具（模拟升级
 refactor: 清理旧仓库结构——移除 WinForms/Tests 遗留，Windows 端统一至 NOBS/OBS_Helper.Wpf
 ```
 
-**规范：`<类型>(<范围>): <中文简述>`**
+**规范：`<类型>(<范围>): <简述>`**
 
 - **类型**（项目已在用的）：
   | 类型 | 适用场景 |
@@ -115,10 +126,10 @@ refactor: 清理旧仓库结构——移除 WinForms/Tests 遗留，Windows 端�
   | `refactor` | 不改变行为的代码重构 |
 
 - **范围**：模块名（如 `installer` / `log` / `toolbox` / `plugins` / `onboarding` / `ci` / `theme`），
-  或 `release` 提交里的版本号（如 `release(V2.9.3)`）。
+  或 `release` 提交里的版本号（如 `release(V2.9.4)`）。
   范围可省略（`docs: …`），改动横跨多个模块时也建议省略。
-- **简述用中文**，写清「改了什么」；一次提交包含多项改动时，用 `+` 或 `——` 分列要点。
-  结尾不加句号。
+- **简述**写清「改了什么」；一次提交包含多项改动时，用 `+` 或 `——` 分列要点，结尾不加句号。
+  用中文或英文都可以，**同一仓库里保持一致即可**（既有历史以中文为主）。
 - **不要**写 `update`、`fix bug`、`.` 这类无信息量的简述。
 - 历史中早期提交存在没有前缀的写法（如 `README: …`、`问题库 v2.1：…`）。新提交请统一使用上表的前缀风格。
 
@@ -131,6 +142,8 @@ refactor: 清理旧仓库结构——移除 WinForms/Tests 遗留，Windows 端�
 3. **怎么验证的** —— 跑了哪些命令（构建 / `dotnet test` / `check_resources.py` / `OBS_SELFTEST=1` 自检）
    以及手工验证步骤和结果。**没有验证说明的 PR 不会被合并。**
 
+仓库自带 [PR 模板](.github/pull_request_template.md)，会把上面几项与下面的约定列成勾选项。
+
 此外：
 
 - **涉及用户配置写入的功能，必须说明备份与回滚路径**：写入了哪些文件、写入前是否有备份、
@@ -140,11 +153,214 @@ refactor: 清理旧仓库结构——移除 WinForms/Tests 遗留，Windows 端�
 - 保持改动范围聚焦：一个 PR 尽量只解决一件事，不要把无关的格式化或重构混进来。
 - 不要提交构建产物、密钥或含真实流密钥的日志。
 
-## 9. 反馈问题
+## 9. 反馈与联系
 
-- 普通 Bug 与功能建议：请通过仓库的 Issue 表单提交，表单会引导你补齐环境信息。
-- **安全问题：请勿在公开 Issue 中披露细节**，走 [SECURITY.md](SECURITY.md) 里的私密报告通道。
+| 场景 | 渠道 |
+| --- | --- |
+| 普通 Bug / 功能建议 | 仓库的 [Issue 表单](https://github.com/YYRMMAYO/OBS_Helper/issues/new/choose)（表单会引导你补齐环境信息） |
+| **不适合公开讨论的问题**（个人隐私、人身安全、行为准则事件等） | 邮件 <752139192@qq.com> |
+| **贡献 / 发布相关的问题**（提交信息、打包流程、能否合并、如何署名等） | 邮件 <752139192@qq.com> |
+| 安全问题（漏洞） | **请勿在公开 Issue 中披露细节**，走 [SECURITY.md](SECURITY.md) 的私密通道（GitHub Security 私密报告或邮件） |
+
+> **为什么给的是邮箱**：GitHub 并没有提供面向任意用户的私信功能 ——
+> 以前文档里写的「GitHub 私信维护者」实际上无处可点，等于给了一条走不通的路。
+> 现在统一改成邮件，收到后会在方便的时候尽快回复。
+>
+> 邮件也可以用中文或英文写。
 
 ---
 
 再次感谢你的贡献。
+
+---
+
+<a id="english"></a>
+
+# Contributing Guide
+
+[简体中文](#贡献指南--contributing-guide) · **English**
+
+Thanks for taking the time to help with **OBS Helper**, a native Windows troubleshooting app for
+OBS Studio.
+
+> **Language**: Chinese, English, or a mix of both — use whichever you are most comfortable with.
+> Being clear matters far more than being grammatically perfect.
+
+By contributing you agree to follow this repository's [Code of Conduct](CODE_OF_CONDUCT.md).
+The project is released under the [MIT License](LICENSE); your contribution is licensed the same way.
+
+## 1. Where the maintained code lives
+
+- **The actively maintained code is in `NOBS/`** — a native Windows WPF desktop app.
+- The project targets **.NET 10 and net6.0 at once** (`net10.0-windows` is the primary build for
+  Windows 10 / 11; `net6.0-windows` is the compatibility build for Windows 7 SP1 and later).
+  Both target frameworks share the same source; they differ only in the published artifacts and the
+  minimum OS version required by the installer.
+- **The main app has zero third-party NuGet packages (pure BCL)**: the `OBS_Helper.Wpf` project has
+  **no `PackageReference` at all**. DPAPI (`System.Security.Cryptography.ProtectedData`), the
+  registry and `SystemEvents` are already available in the Windows desktop workload; adding a
+  package would only trigger `NU1510`. Please make sure your change does not add a NuGet dependency
+  to the main project. (Exception: the test project `OBS_Helper.Wpf.Tests` uses xUnit and
+  `Microsoft.NET.Test.Sdk`; those are test-time only and do not affect the app.)
+- Other directories in the repository root are not part of the current Windows mainline. Keep
+  changes focused on `NOBS/`.
+
+## 2. Code organization: pure logic goes in `*Core.cs`
+
+- **Pure logic belongs in `*Core.cs` files with zero WPF dependencies** (BCL only). Existing
+  examples: `Services/Tools/*Core.cs`, `Services/Obs/*Core.cs`,
+  `Services/Shell/RecordWatchdogCore.cs`.
+- The reason: the test project `NOBS/OBS_Helper.Wpf.Tests/` **links those source files directly via
+  `<Compile Include>`** instead of referencing the whole WPF project (which would drag in RID /
+  `UseWPF` / SDK conflicts). Linked files must depend on the BCL only so they can compile and run in
+  a plain `net10.0` test host.
+- Therefore: **when you add a pure-logic file, register it in the `<Compile Include>` list of
+  `NOBS/OBS_Helper.Wpf.Tests/OBS_Helper.Wpf.Tests.csproj`** — otherwise the test project cannot see it.
+- Code that touches WPF controls, navigation or window lifetimes does not belong in `*Core.cs`.
+
+## 3. UI text must exist in both Chinese and English
+
+- All UI text lives in two tables:
+  - `NOBS/OBS_Helper.Wpf/Localization/StringTableZhHans.cs`
+  - `NOBS/OBS_Helper.Wpf/Localization/StringTableEnUs.cs`
+- **Every new or changed string must be updated in both**: identical keys, and the key sets are
+  pinned by unit tests — updating only one table fails the build's tests.
+- XAML references text keys with the `Loc.` prefix.
+- **Placeholder counts must match**: the number of arguments passed to `Strings.T("key", …)` must
+  equal the number of `{0}` / `{1}` slots in that key. Too few shows a literal `{0}` in the UI; too
+  many silently drops arguments. Neither is visible to the compiler, which is why a dedicated test
+  (`StringsCallSiteTests`) statically scans every call site.
+- **Give concatenated keys a real fallback**: with something like
+  `Strings.T("env.item." + key + ".label")`, a missing key makes `Strings.T` **return the key name
+  itself** (non-empty), so "use it when it is non-empty" does not work — compare the result against
+  the key name instead.
+
+## 4. Build and packaging
+
+Use the script: `NOBS/build.ps1`. It performs:
+
+1. a self-contained publish (the .NET runtime is bundled; the target machine needs nothing installed);
+2. the Inno Setup installer (if Inno Setup is missing it warns and skips the installer while the
+   portable zip is still produced; pass `-SkipInstaller` to skip it explicitly);
+3. the portable zip;
+4. an **incremental update package** built by diffing against the previous version's manifest
+   (changed files only, plus `update_manifest.json`; use `-DeltaBaseVersion <version>` to publish
+   across several versions at once).
+
+The comment block at the top of the script documents every parameter. Read it first, and do not
+hand-assemble release artifacts around the script.
+
+## 5. Running the tests
+
+```powershell
+dotnet test NOBS/OBS_Helper.Wpf.Tests/OBS_Helper.Wpf.Tests.csproj -c Release
+```
+
+- New pure logic (`*Core.cs`) **must come with unit tests**, in the same pull request.
+- When fixing a bug, add a test that reproduces it first, then fix the implementation.
+
+## 6. Other self-checks
+
+- **XAML resource reference check**:
+
+  ```powershell
+  python NOBS/scripts/check_resources.py
+  ```
+
+  A mistyped key in `{StaticResource X}` / `{DynamicResource X}` does not fail the build — it throws
+  only when that page is navigated to at runtime. The script resolves the global resource keys under
+  `Themes/`, the per-page `x:Key` entries and the `Loc.` keys from the text tables, then cross-checks
+  every reference.
+
+- **Headless self-test**:
+
+  ```powershell
+  $env:OBS_SELFTEST = "1"
+  ```
+
+  Starting the app with `OBS_SELFTEST=1` walks every route without a UI and writes a result file.
+  It catches the "compiles fine, blows up on launch" class of problems (missing page resources,
+  route/page name mismatches).
+
+## 7. Commit message conventions
+
+These are real messages from this repository (see `git log --oneline`):
+
+```
+release(V2.9.4): 简单录像（一键配置 OBS 并开录）+ 帮助与反馈页 + 仓库封面与社区文件
+docs(review): 如实标注「安装向导语言页」的证据边界
+fix(installer): 中文语言文件随仓库固定，修 CI 编不出安装包
+fix(log): 日志解析适配真实 OBS 日志 + 实时预警日志扩展名修正
+feat(plugins): 目录 v1.4 全量复核 + 维护状态标注 + OBS 32.x 插件目录体检
+feat(onboarding): 首启四步新手教程 + 设置页可随时重看
+docs: 校正构建产物清单与 Release 资产实际约定
+chore: 新增 scripts/verify_delta.py 增量包发布校验工具（模拟升级+全文件SHA256比对）
+refactor: 清理旧仓库结构——移除 WinForms/Tests 遗留，Windows 端统一至 NOBS/OBS_Helper.Wpf
+```
+
+**Format: `<type>(<scope>): <summary>`**
+
+- **Types** already in use:
+
+  | Type | Use for |
+  | --- | --- |
+  | `feat` | New feature |
+  | `fix` | Bug fix |
+  | `docs` | Documentation, notes, review records |
+  | `release` | Version release (version bump, docs, packaging) |
+  | `chore` | Build scripts, tooling, repository housekeeping |
+  | `refactor` | Behaviour-preserving code restructuring |
+
+- **Scope**: a module name (`installer` / `log` / `toolbox` / `plugins` / `onboarding` / `ci` /
+  `theme`) or the version for `release` commits (`release(V2.9.4)`). The scope may be omitted
+  (`docs: …`), and should be omitted when a change spans several modules.
+- **The summary** should say what changed; for multi-part changes separate the points with `+` or
+  `——`, and do not end with a period. Chinese or English are both fine — just stay consistent within
+  the repository (the existing history is mostly Chinese).
+- Do **not** use empty summaries like `update`, `fix bug` or `.`.
+- Very early history has messages without a prefix (e.g. `README: …`). New commits should use the
+  prefixed style above.
+
+## 8. Pull request requirements
+
+A pull request description must cover three things:
+
+1. **What changed** — the files and behaviour affected;
+2. **Why** — the problem solved or the reasoning (for bugs, include the reproduction path);
+3. **How you verified it** — which commands you ran (build / `dotnet test` / `check_resources.py` /
+   `OBS_SELFTEST=1`) plus your manual steps and their results. **PRs without verification notes are
+   not merged.**
+
+The repository ships a [PR template](.github/pull_request_template.md) that turns the points above
+and the conventions below into a checklist.
+
+Additionally:
+
+- **Features that write user configuration must document backup and rollback**: which files are
+  written, whether a backup is taken first, and how a user restores the previous state if something
+  goes wrong.
+- **New UI text must exist in both languages** (section 3); mention in the PR that both tables were updated.
+- **New pure logic must ship with unit tests** (sections 2 and 5) and be registered in the test
+  project's `<Compile Include>` list.
+- Keep the change focused: one pull request should solve one thing — avoid unrelated formatting or
+  refactoring.
+- Do not commit build artifacts, secrets, or logs containing real stream keys.
+
+## 9. Feedback and contact
+
+| Situation | Channel |
+| --- | --- |
+| Ordinary bugs / feature requests | The repository's [issue forms](https://github.com/YYRMMAYO/OBS_Helper/issues/new/choose), which prompt you for the environment details |
+| **Anything not suitable for a public thread** (personal privacy, safety, Code of Conduct incidents) | Email <752139192@qq.com> |
+| **Contribution / release questions** (commit conventions, packaging, whether something can be merged, how you will be credited) | Email <752139192@qq.com> |
+| Security vulnerabilities | **Do not disclose details in a public issue** — use the private channels in [SECURITY.md](SECURITY.md) (GitHub Security advisories or email) |
+
+> **Why email**: GitHub does not offer direct messages to arbitrary users, so the older guidance
+> ("DM the maintainer on GitHub") pointed at something that does not exist. Everything private now
+> goes through email, and you will get a reply as soon as reasonably possible.
+>
+> Emails may be written in Chinese or English.
+
+---
+
+Thanks again for contributing.

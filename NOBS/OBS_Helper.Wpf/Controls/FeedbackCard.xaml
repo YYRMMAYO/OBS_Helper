@@ -41,6 +41,13 @@
 
         <TextBlock x:Name="StatusText" Style="{StaticResource CaptionText}" TextWrapping="Wrap"
                    Visibility="Collapsed" />
+
+        <!--
+          安全上报引导（V2.9.5）：以前只说「不要公开披露」，却没说该走哪条私密通道 ——
+          而 GitHub 没有私信功能，用户实际上只能去公开 Issue 里踩雷。
+        -->
+        <TextBlock x:Name="SecurityNoteText" Style="{StaticResource CaptionText}" Margin="0,8,0,0"
+                   TextWrapping="Wrap" />
       </StackPanel>
     </Grid>
   </Border>

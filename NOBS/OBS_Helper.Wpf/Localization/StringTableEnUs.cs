@@ -1809,6 +1809,7 @@ internal static class StringTableEnUs
         ["feedback.desc"] = "Scan the code or click the button to open the form, and paste the symptoms, your OBS version, and the log analysis result — that makes it far quicker to pin down. The form is hosted by Tencent Docs; this app never uploads any local data on its own.",
         ["feedback.openForm"] = "Open the bug report form",
         ["feedback.openIssues"] = "File an issue on GitHub",
+        ["feedback.securityNote"] = "Please do not disclose security issues in a public issue: GitHub has no direct messages, so email 752139192@qq.com instead (start the subject with [SECURITY]), or use the private report form under the repository's Security tab. Chinese or English, both fine.",
         ["feedback.qrHint"] = "Scan with your phone to fill it in",
         ["feedback.qrMissing"] = "The QR image is missing; use the button above to open the form.",
         ["feedback.linkFailed"] = "Could not open the form; copy this into your browser manually:",

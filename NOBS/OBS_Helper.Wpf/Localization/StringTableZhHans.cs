@@ -1811,6 +1811,7 @@ internal static class StringTableZhHans
         ["feedback.desc"] = "扫码或点按钮打开表单，把现象、OBS 版本与日志分析结论一起贴上，定位会快很多。表单由腾讯文档承载，本应用不会自动上传任何本机数据。",
         ["feedback.openForm"] = "打开 BUG 反馈表单",
         ["feedback.openIssues"] = "到 GitHub 提 Issue",
+        ["feedback.securityNote"] = "安全问题请勿在公开 Issue 里披露细节：GitHub 没有私信功能，请发邮件到 752139192@qq.com（标题以 [SECURITY] 开头），或走仓库 Security 选项卡的私密报告通道。中文或英文都可以。",
         ["feedback.qrHint"] = "手机扫码即可填写",
         ["feedback.qrMissing"] = "二维码资源缺失，请直接用上面的按钮打开表单。",
         ["feedback.linkFailed"] = "打不开表单，请手动复制到浏览器：",

@@ -26,9 +26,9 @@
     <ApplicationIcon>Assets\appicon.ico</ApplicationIcon>
     <ApplicationManifest>app.manifest</ApplicationManifest>
 
-    <Version>2.9.4</Version>
-    <FileVersion>2.9.4.0</FileVersion>
-    <AssemblyVersion>2.9.4.0</AssemblyVersion>
+    <Version>2.9.5</Version>
+    <FileVersion>2.9.5.0</FileVersion>
+    <AssemblyVersion>2.9.5.0</AssemblyVersion>
     <AssemblyTitle>OBS 排障助手</AssemblyTitle>
     <Product>OBS 排障助手</Product>
     <Company>OBS Helper</Company>

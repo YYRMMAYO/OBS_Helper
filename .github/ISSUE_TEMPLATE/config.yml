@@ -2,7 +2,13 @@ blank_issues_enabled: false
 contact_links:
   - name: BUG 反馈（官方表单）
     url: https://docs.qq.com/form/page/DSXJMWkNDYVFUWHBo
-    about: 请通过官方反馈表单提交 BUG，便于统一跟进与统计，也能更快收到回复。
-  - name: 项目主页与讨论
-    url: https://github.com/YYRMMAYO/OBS_Helper
-    about: 查看项目介绍、使用说明、常见问题与最新发布版本。
+    about: 请通过官方反馈表单提交 BUG，便于统一跟进与统计，也能更快收到回复。Sending a bug report? The official form is the fastest route.
+  - name: 私密沟通 / Private contact（邮件）
+    url: https://github.com/YYRMMAYO/OBS_Helper/blob/master/SECURITY.md
+    about: GitHub 没有私信功能。安全问题、隐私、人身安全、行为准则事件，或贡献/发布相关的问题，请发邮件至 752139192@qq.com（中文或英文均可）。GitHub has no DMs — for security, privacy, safety, Code of Conduct incidents, or contribution/release questions, email 752139192@qq.com (Chinese or English).
+  - name: 贡献指南 / Contributing
+    url: https://github.com/YYRMMAYO/OBS_Helper/blob/master/CONTRIBUTING.md
+    about: 提交代码或文档前请先读这份指南：构建、测试、文案中英成对、提交信息规范与 PR 要求。Read this before sending a pull request.
+  - name: 项目主页与最新版本
+    url: https://github.com/YYRMMAYO/OBS_Helper/releases
+    about: 查看项目介绍、使用说明、常见问题与最新发布版本（安装包 / 便携包 / 增量更新包）。

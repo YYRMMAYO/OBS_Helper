@@ -2,13 +2,13 @@
 
 <img src="assets/banner.svg" alt="OBS Helper — 面向直播新手的 OBS 排障工具" width="100%"/>
 
-**当前版本：V2.9.4** —— 简单录像：一键配置 OBS 并开录 · 帮助与反馈页 · 仓库封面与社区文件补齐。
+**当前版本：V2.9.5** —— 私密反馈通道修正（GitHub 无私信，统一走邮件）· 安全策略中英双语。
 
 [![CI](https://github.com/YYRMMAYO/OBS_Helper/actions/workflows/ci.yml/badge.svg)](https://github.com/YYRMMAYO/OBS_Helper/actions/workflows/ci.yml)
 [![平台](https://img.shields.io/badge/Platform-Windows_7_SP1%2B-0078D6.svg)]()
 [![.NET](https://img.shields.io/badge/.NET-10_%2F_6-512BD4.svg)]()
 [![技术栈](https://img.shields.io/badge/Stack-WPF_%2F_C%23-239120.svg)]()
-[![版本](https://img.shields.io/badge/Release-2.9.4-38bdf8.svg)](https://github.com/YYRMMAYO/OBS_Helper/releases)
+[![版本](https://img.shields.io/badge/Release-2.9.5-38bdf8.svg)](https://github.com/YYRMMAYO/OBS_Helper/releases)
 [![OBS](https://img.shields.io/badge/OBS-32.2.2-302E31.svg)](https://github.com/obsproject/obs-studio/releases)
 [![离线可用](https://img.shields.io/badge/offline--first-2ea44f.svg)]()
 [![增量更新](https://img.shields.io/badge/Incremental%20Update-1.9MB-7dd3fc.svg)]()
@@ -29,7 +29,7 @@
 
 ---
 
-**目录**：[宣传视频](#宣传视频) · [V2.9.4 亮点](#v294-亮点简单录像--帮助与反馈页--仓库封面与社区文件) · [V2.9.3 亮点](#v293-亮点随包内容全量英译--一键部署录制环境--获取与反馈通道扩展--兼容到-windows-7-sp1) · [亮点](#亮点) · [功能](#功能) · [智能诊断](#智能诊断) · [隐私与安全](#隐私与安全) · [安装与更新](#安装与更新) · [构建](#构建) · [工程结构](#工程结构) · [许可](#许可)
+**目录**：[宣传视频](#宣传视频) · [V2.9.5 亮点](#v295-亮点私密反馈通道修正--安全策略中英双语) · [V2.9.4 亮点](#v294-亮点简单录像--帮助与反馈页--仓库封面与社区文件) · [V2.9.3 亮点](#v293-亮点随包内容全量英译--一键部署录制环境--获取与反馈通道扩展--兼容到-windows-7-sp1) · [亮点](#亮点) · [功能](#功能) · [智能诊断](#智能诊断) · [隐私与安全](#隐私与安全) · [安装与更新](#安装与更新) · [构建](#构建) · [工程结构](#工程结构) · [许可](#许可)
 
 ---
 
@@ -50,6 +50,19 @@ https://github.com/user-attachments/assets/25361c9d-5239-4a1a-aeba-9080b0044e78
 ▲ **宣传视频二 · 守护与体检**（含背景音乐）：V2.8 录制守护、实时日志预警与专项体检实机演示 —— [高清版观看 / 下载](https://github.com/YYRMMAYO/OBS_Helper/releases/download/V2.8.0/promo02.mp4)
 
 </div>
+
+---
+
+## V2.9.5 亮点：私密反馈通道修正 · 安全策略中英双语
+
+| | |
+|---|---|
+| **修掉一条走不通的指引** | 社区文件里原先写着「安全问题请私信维护者」—— 但 **GitHub 并没有面向任意用户的私信功能**，这条指引无处可点，用户很可能退回公开 Issue 里贴漏洞细节。现在统一改成：安全漏洞走仓库 **Security → Report a vulnerability** 私密通道，或邮件 **752139192@qq.com**；隐私 / 人身安全 / 行为准则事件走邮件；贡献与发布相关的问题同样可以发邮件 |
+| **安全策略改为中英双语** | `SECURITY.md` 现在是中英两个完整版本：支持范围、私密报告方式、报告该包含与**不该包含**什么、我们关注的安全面（本地机密双层加密、日志目录白名单与 `..` 二次校验、出站 https 白名单、拒绝内网 / 回环、日志脱敏、配置写入可回滚）、响应时限与不在范围内的情形 |
+| **语言口径写清楚** | 中文、英文、中英双语都可以 —— 贡献指南、行为准则、Issue 表单与 PR 模板都加了同一句话；行为准则的中英两版**都是正式版本**（有出入以中文为准） |
+| **应用内也补了安全上报引导** | 反馈卡原先只说「请勿公开披露」，却没说该走哪条私密通道。本版在卡片上直接给出邮箱与私密报告通道（中英双语） |
+
+详见 [RELEASE_NOTES_v2.9.5.md](NOBS/RELEASE_NOTES_v2.9.5.md)。
 
 ---
 
@@ -188,7 +201,7 @@ https://github.com/user-attachments/assets/25361c9d-5239-4a1a-aeba-9080b0044e78
 - **一键部署录制环境** — 搭建页的录制环境卡：逐项列出推荐值与当前值，勾选后先备份再落地，可一键回滚
 - **简单录像** — 首页的简单录像卡：三档预设一键配好并开录，OBS 没启动时会先拉起并等就绪；录制中显示已录时长与剩余可录；停止后可打开目录或一键转 MP4
 - **获取 OBS** — 官方三条入口 + 应用内下载官方安装包（带进度、可启动安装向导）+ 瓦特工具箱 / 微软商店两条备选通道
-- **帮助与反馈** — 一级导航直达：表单二维码随包离线可扫、GitHub Issue 入口，以及**一键复制报错材料**（版本与检测结论，不含路径与日志原文）
+- **帮助与反馈** — 一级导航直达：表单二维码随包离线可扫、GitHub Issue 入口，**安全上报引导**（邮件 / 仓库 Security 私密通道），以及**一键复制报错材料**（版本与检测结论，不含路径与日志原文）
 
 ## 智能诊断
 
@@ -208,6 +221,8 @@ https://github.com/user-attachments/assets/25361c9d-5239-4a1a-aeba-9080b0044e78
 
 - **偏好**（外观、语言、收藏、步骤进度、连接设置、热键键位、自动切换规则、托盘行为）→ `%LocalAppData%\OBS_Helper\prefs.json`——明文 JSON，**均不含任何凭据**
 - **OBS 密码与 AI API Key** → `%LocalAppData%\OBS_Helper\secrets.dat`——**双层加密**：值先经 AES-256-GCM（密钥由本机 `MachineGuid` 经 PBKDF2-SHA256 派生）加密，整个文件再经 DPAPI（绑定当前 Windows 用户 + 应用熵）加密；换机 / 换用户无法解开，即使文件被离线窃取也无法还原
+
+**发现了安全漏洞？** 请勿在公开 Issue 里披露细节 —— 走仓库 **Security → Report a vulnerability** 私密通道，或发邮件到 **752139192@qq.com**（标题加 `[SECURITY]`）。完整策略见 [SECURITY.md](SECURITY.md)（中英双语）。中文或英文都可以。
 
 只有在你**主动开启**「免费 AI」或「云端诊断引擎」并发起诊断时才会联网，且请求前会先对日志脱敏。OBS 配置备份 / 导出默认不含推流密钥（可勾选包含），密码与 Token 自动脱敏。
 
@@ -230,8 +245,9 @@ https://github.com/user-attachments/assets/25361c9d-5239-4a1a-aeba-9080b0044e78
 > 还没装 OBS？应用内「搭建」页 / 「工具箱」/ 首页欢迎卡都提供**官方**下载入口
 > （`obsproject.com` 与 GitHub 官方发布页），也可以直接在应用内下载官方安装包；
 > GitHub 拉不动时可先用瓦特工具箱（原 Steam++）加速，或改用微软商店的 OBS。
-> 遇到问题？左侧导航的 **「帮助与反馈」** 页有反馈表单（手机扫码即可填）、GitHub Issue 入口，
-> 以及「一键复制报错材料」；首页快捷入口与托盘菜单也各有一个入口。
+> 遇到问题？左侧导航的 **「帮助与反馈」** 页有反馈表单（手机扫码即可填）、GitHub Issue 入口、
+> 安全上报引导，以及「一键复制报错材料」；首页快捷入口与托盘菜单也各有一个入口。
+> **安全问题请勿公开披露** —— 走仓库 **Security → Report a vulnerability**，或邮件 **752139192@qq.com**。
 
 ## 构建
 

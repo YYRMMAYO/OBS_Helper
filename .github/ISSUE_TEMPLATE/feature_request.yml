@@ -39,3 +39,14 @@ body:
       description: 截图、参考产品或同类工具的类似功能、相关讨论链接等。
     validations:
       required: false
+  - type: markdown
+    attributes:
+      value: |
+        ---
+        **语言 / Language**：中文或英文都可以，也可以用中英双语。
+        Chinese, English, or a mix of both is perfectly fine.
+
+        贡献 / 发布相关的问题（提交规范、打包流程、如何署名等）也可以直接发邮件到
+        752139192@qq.com；GitHub 没有私信功能，请不要指望能私信维护者。
+        For contribution or release questions you can also email 752139192@qq.com —
+        GitHub has no direct messages.

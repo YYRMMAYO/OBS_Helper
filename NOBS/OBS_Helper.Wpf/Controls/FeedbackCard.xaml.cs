@@ -23,6 +23,8 @@ public partial class FeedbackCard : UserControl
         TitleText.Text = Strings.T("feedback.title");
         DescText.Text = Strings.T("feedback.desc");
         QrHintText.Text = Strings.T("feedback.qrHint");
+        // 安全上报引导：明确告诉用户「公开 Issue 不能贴细节」时该走哪里
+        SecurityNoteText.Text = Strings.T("feedback.securityNote");
 
         var qr = LoadQrImage();
         if (qr is null)

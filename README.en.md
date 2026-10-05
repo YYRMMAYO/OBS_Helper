@@ -43,13 +43,13 @@ A 55-second tour of what OBS Helper actually does — **with background music**.
 
 <div align="center">
 
-[![Promo video · English (with BGM)](https://github.com/YYRMMAYO/OBS_Helper/releases/download/V2.9.6/nobs-promo-en-poster.png)](https://github.com/YYRMMAYO/OBS_Helper/releases/download/V2.9.6/nobs-promo-en.mp4)
+[![Promo video · English (with BGM)](assets/promo/poster-en.png)](https://github.com/YYRMMAYO/OBS_Helper/releases/download/V2.9.6/nobs-promo-en.mp4)
 
 ▲ **English version** (with BGM): pre-flight check · offline log analysis with dropped-frame triage · one-click recording setup · plugin catalogue with a read-only local scan · global hotkeys and live monitoring — [Watch / download HD](https://github.com/YYRMMAYO/OBS_Helper/releases/download/V2.9.6/nobs-promo-en.mp4) (1920×1080 · 30fps · 55s)
 
 <br/><br/>
 
-[![宣传视频 · 中文版（含背景音乐）](https://github.com/YYRMMAYO/OBS_Helper/releases/download/V2.9.6/nobs-promo-zh-poster.png)](https://github.com/YYRMMAYO/OBS_Helper/releases/download/V2.9.6/nobs-promo-zh.mp4)
+[![宣传视频 · 中文版（含背景音乐）](assets/promo/poster-zh.png)](https://github.com/YYRMMAYO/OBS_Helper/releases/download/V2.9.6/nobs-promo-zh.mp4)
 
 ▲ **Chinese version**（含背景音乐）: the same film with a Chinese interface and bilingual subtitles — [Watch / download HD](https://github.com/YYRMMAYO/OBS_Helper/releases/download/V2.9.6/nobs-promo-zh.mp4) (1920×1080 · 30fps · 55s)
 

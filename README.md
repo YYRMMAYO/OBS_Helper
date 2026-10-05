@@ -39,13 +39,13 @@
 
 <div align="center">
 
-[![宣传视频 · 中文版（含背景音乐）](https://github.com/YYRMMAYO/OBS_Helper/releases/download/V2.9.6/nobs-promo-zh-poster.png)](https://github.com/YYRMMAYO/OBS_Helper/releases/download/V2.9.6/nobs-promo-zh.mp4)
+[![宣传视频 · 中文版（含背景音乐）](assets/promo/poster-zh.png)](https://github.com/YYRMMAYO/OBS_Helper/releases/download/V2.9.6/nobs-promo-zh.mp4)
 
 ▲ **宣传视频 · 中文版**（含背景音乐）：录前自检 · 日志离线分析与掉帧三分类 · 一键部署录制环境 · 插件广场本机体检 · 全局热键与实时监控 —— [观看 / 下载高清版](https://github.com/YYRMMAYO/OBS_Helper/releases/download/V2.9.6/nobs-promo-zh.mp4)（1920×1080 · 30fps · 55s）
 
 <br/><br/>
 
-[![Promo video · English (with BGM)](https://github.com/YYRMMAYO/OBS_Helper/releases/download/V2.9.6/nobs-promo-en-poster.png)](https://github.com/YYRMMAYO/OBS_Helper/releases/download/V2.9.6/nobs-promo-en.mp4)
+[![Promo video · English (with BGM)](assets/promo/poster-en.png)](https://github.com/YYRMMAYO/OBS_Helper/releases/download/V2.9.6/nobs-promo-en.mp4)
 
 ▲ **Promo video · English**（含背景音乐 / with BGM）：同一支片子的英文版，界面与字幕全英文 —— [Watch / download HD](https://github.com/YYRMMAYO/OBS_Helper/releases/download/V2.9.6/nobs-promo-en.mp4)（1920×1080 · 30fps · 55s）
 

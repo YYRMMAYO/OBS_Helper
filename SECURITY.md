@@ -2,7 +2,7 @@
 
 **简体中文** · [English](#english)
 
-「OBS 排障助手」（OBS Helper）是一个运行在 Windows 本地的 OBS Studio 排障工具。
+「OBS帮助助手」（OBS Helper）是一个运行在 Windows 本地的 OBS Studio 排障工具。
 我们重视用户的数据安全与隐私，感谢你以负责任的方式报告安全问题。
 
 > **语言**：中文或英文都可以，**也可以用中英双语**。

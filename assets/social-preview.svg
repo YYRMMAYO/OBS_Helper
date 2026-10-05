@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1280" height="640" viewBox="0 0 1280 640"
-     role="img" aria-label="OBS 排障助手 OBS Helper — 本地优先的 OBS 直播 / 录制排障助手">
-  <title>OBS 排障助手 · OBS Helper（社交预览）</title>
+     role="img" aria-label="OBS帮助助手 OBS Helper — 本地优先的 OBS 直播 / 录制助手">
+  <title>OBS帮助助手 · OBS Helper（社交预览）</title>
   <desc>GitHub 仓库社交预览图：1280x640，深色底 + 居中封面 + 底部署名。</desc>
 
   <defs>
@@ -67,7 +67,7 @@
   <use href="#appmark" x="150" y="222" width="196" height="196"/>
 
   <text x="392" y="308" font-family="Segoe UI, Arial, 'Microsoft YaHei', sans-serif"
-        font-size="72" font-weight="700" fill="#f8fafc">OBS 排障助手</text>
+        font-size="72" font-weight="700" fill="#f8fafc">OBS帮助助手</text>
   <text x="396" y="356" font-family="Segoe UI, Arial, 'Microsoft YaHei', sans-serif"
         font-size="28" font-weight="600" fill="#7dd3fc">OBS Helper · Troubleshooting copilot for OBS Studio</text>
   <text x="396" y="396" font-family="Segoe UI, Arial, 'Microsoft YaHei', sans-serif"

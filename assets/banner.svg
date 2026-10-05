@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1280" height="320" viewBox="0 0 1280 320"
-     role="img" aria-label="OBS 排障助手 OBS Helper — 本地优先的 OBS 直播 / 录制排障助手">
-  <title>OBS 排障助手 · OBS Helper</title>
+     role="img" aria-label="OBS帮助助手 OBS Helper — 本地优先的 OBS 直播 / 录制助手">
+  <title>OBS帮助助手 · OBS Helper</title>
   <desc>仓库封面：左侧为应用图标，右侧为名称、一句话定位与三条能力标签。</desc>
 
   <defs>
@@ -72,7 +72,7 @@
 
   <!-- 右侧文字 -->
   <text x="296" y="156" font-family="Segoe UI, Arial, 'Microsoft YaHei', sans-serif"
-        font-size="62" font-weight="700" fill="#f8fafc">OBS 排障助手</text>
+        font-size="62" font-weight="700" fill="#f8fafc">OBS帮助助手</text>
   <text x="300" y="200" font-family="Segoe UI, Arial, 'Microsoft YaHei', sans-serif"
         font-size="25" font-weight="600" fill="#7dd3fc">OBS Helper · Troubleshooting copilot for OBS Studio</text>
   <text x="300" y="236" font-family="Segoe UI, Arial, 'Microsoft YaHei', sans-serif"

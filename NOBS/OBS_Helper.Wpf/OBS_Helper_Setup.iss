@@ -1,4 +1,4 @@
-﻿; OBS 排障助手（WPF 版）Windows 安装包脚本（Inno Setup 6）
+﻿; OBS帮助助手（WPF 版）Windows 安装包脚本（Inno Setup 6）
 ;
 ; 源目录：OBS_Helper.Wpf\bin\Release\net10.0-windows\win-x64\publish
 ;    （自包含发布，含 .NET 运行时；界面与知识库都在程序集内，无需附带站点文件）
@@ -11,11 +11,11 @@
 ; 它也会自动识别 UTF-8，带上 BOM 只是更明确 —— 换编辑器或换旧版 ISCC 都不会退化成按 ANSI 读，
 ; 那会让中文整片变成乱码）。改动本文件后请确认 BOM 没有被编辑器丢掉。
 
-#define MyAppName "OBS 排障助手"
+#define MyAppName "OBS帮助助手"
 ; 版本号默认与 csproj 对齐；build.ps1 会用 /DMyAppVersion=<ver> 覆盖此值。
 ; 用 #ifndef：ISPP 中命令行 /D 定义过的符号在脚本里不应再 #define 覆盖。
 #ifndef MyAppVersion
-#define MyAppVersion "2.9.5"
+#define MyAppVersion "2.9.6"
 #endif
 ; 发布产物所在的 TFM 子目录（V2.9.3 起双目标：主构建 / Win7 兼容构建）
 #ifndef MyAppTfm
@@ -99,17 +99,17 @@ Name: "english"; MessagesFile: "compiler:Default.isl"
 
 [CustomMessages]
 ; 随安装语言切换的可见文案（快捷方式 / 任务 / 完成页）
-chinesesimplified.UninstallDisplayName=OBS 排障助手
+chinesesimplified.UninstallDisplayName=OBS帮助助手
 english.UninstallDisplayName=OBS Helper
-chinesesimplified.AppShortcut=OBS 排障助手
+chinesesimplified.AppShortcut=OBS帮助助手
 english.AppShortcut=OBS Helper
-chinesesimplified.UninstallShortcut=卸载 OBS 排障助手
+chinesesimplified.UninstallShortcut=卸载 OBS帮助助手
 english.UninstallShortcut=Uninstall OBS Helper
 chinesesimplified.DesktopIcon=创建桌面快捷方式(&D)
 english.DesktopIcon=Create a &desktop shortcut
 chinesesimplified.AdditionalIcons=附加任务：
 english.AdditionalIcons=Additional tasks:
-chinesesimplified.LaunchApp=安装完成后启动 OBS 排障助手
+chinesesimplified.LaunchApp=安装完成后启动 OBS帮助助手
 english.LaunchApp=Launch OBS Helper when the installation finishes
 
 [Files]

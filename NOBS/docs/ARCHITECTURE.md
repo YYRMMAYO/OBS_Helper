@@ -1,4 +1,4 @@
-# OBS 排障助手 · 架构文档（ARCHITECTURE）
+# OBS帮助助手 · 架构文档（ARCHITECTURE）
 
 > 本文描述 `OBS_Helper.Wpf`（Windows 原生 WPF 版）的整体架构。
 > 代码清单见 [`docs/CODEBASE.md`](CODEBASE.md)，单文件职责不在此重复。

@@ -64,7 +64,7 @@ public class CompatTests
     {
         var key = Enumerable.Range(0, 32).Select(i => (byte)i).ToArray();
         var nonce = Enumerable.Range(100, 12).Select(i => (byte)i).ToArray();
-        var plain = Encoding.UTF8.GetBytes("OBS 排障助手 · secrets.dat 往返对拍 v2.9.3");
+        var plain = Encoding.UTF8.GetBytes("OBS帮助助手 · secrets.dat 往返对拍 v2.9.3");
 
         var expectedCipher = new byte[plain.Length];
         var expectedTag = new byte[16];

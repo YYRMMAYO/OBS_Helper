@@ -2,24 +2,24 @@
 
 <img src="assets/banner.svg" alt="OBS Helper — 面向直播新手的 OBS 排障工具" width="100%"/>
 
-**当前版本：V2.9.5** —— 私密反馈通道修正（GitHub 无私信，统一走邮件）· 安全策略中英双语。
+**当前版本：V2.9.6** —— 更名为 **OBS帮助助手**（功能不变）· 应用图标与仓库图标统一 · 文档同步。
 
 [![CI](https://github.com/YYRMMAYO/OBS_Helper/actions/workflows/ci.yml/badge.svg)](https://github.com/YYRMMAYO/OBS_Helper/actions/workflows/ci.yml)
 [![平台](https://img.shields.io/badge/Platform-Windows_7_SP1%2B-0078D6.svg)]()
 [![.NET](https://img.shields.io/badge/.NET-10_%2F_6-512BD4.svg)]()
 [![技术栈](https://img.shields.io/badge/Stack-WPF_%2F_C%23-239120.svg)]()
-[![版本](https://img.shields.io/badge/Release-2.9.5-38bdf8.svg)](https://github.com/YYRMMAYO/OBS_Helper/releases)
+[![版本](https://img.shields.io/badge/Release-2.9.6-38bdf8.svg)](https://github.com/YYRMMAYO/OBS_Helper/releases)
 [![OBS](https://img.shields.io/badge/OBS-32.2.2-302E31.svg)](https://github.com/obsproject/obs-studio/releases)
 [![离线可用](https://img.shields.io/badge/offline--first-2ea44f.svg)]()
 [![增量更新](https://img.shields.io/badge/Incremental%20Update-1.9MB-7dd3fc.svg)]()
-[![测试](https://img.shields.io/badge/Tests-624%20passed-2ea44f.svg)]()
+[![测试](https://img.shields.io/badge/Tests-630%20passed-2ea44f.svg)]()
 [![许可](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
 [English](README.en.md) · **简体中文**
 
 </div>
 
-**OBS 排障助手**是面向直播新手的 OBS Studio 排障工具：**纯离线可用**——212 条问题的知识库、排障指引、日志分析规则全部内嵌在程序里，不联网也能查；连上 OBS 之后还能远程控制场景、录制与推流，并做一键体检。
+**OBS帮助助手**（V2.9.6 前的名字是「OBS 排障助手」，同一个软件、同一条升级链路）是面向直播新手的 OBS Studio 排障工具：**纯离线可用**——212 条问题的知识库、排障指引、日志分析规则全部内嵌在程序里，不联网也能查；连上 OBS 之后还能远程控制场景、录制与推流，并做一键体检。
 
 这是原 Blazor WebAssembly + WebView2 版本的**原生 WPF 重构**（源码在 [`NOBS/`](NOBS/)），功能一比一对齐，但去掉了浏览器内核这一层：冷启动直接起窗口、自包含单目录发布、无需安装 WebView2 与 .NET 运行时。**V2.9.2 起支持中文 / English 即时切换**，**V2.9.3 起连随包离线内容也是中英双份**（知识库 212 条 / 插件目录 57 条 / 场景模板 12 套 / 排障指引全部英译，切语言即时生效）；**V2.2 起内置插件广场**（57 个精选插件 + 本机只读体检，v1.4 目录已全量复核）；**V2.1 起支持增量更新与知识库独立更新**。
 
@@ -29,13 +29,13 @@
 
 ---
 
-**目录**：[宣传视频](#宣传视频) · [V2.9.5 亮点](#v295-亮点私密反馈通道修正--安全策略中英双语) · [V2.9.4 亮点](#v294-亮点简单录像--帮助与反馈页--仓库封面与社区文件) · [V2.9.3 亮点](#v293-亮点随包内容全量英译--一键部署录制环境--获取与反馈通道扩展--兼容到-windows-7-sp1) · [亮点](#亮点) · [功能](#功能) · [智能诊断](#智能诊断) · [隐私与安全](#隐私与安全) · [安装与更新](#安装与更新) · [构建](#构建) · [工程结构](#工程结构) · [许可](#许可)
+**目录**：[宣传视频](#宣传视频) · [V2.9.6 亮点](#v296-亮点更名-obs帮助助手--图标统一--文档同步) · [V2.9.5 亮点](#v295-亮点私密反馈通道修正--安全策略中英双语) · [V2.9.4 亮点](#v294-亮点简单录像--帮助与反馈页--仓库封面与社区文件) · [V2.9.3 亮点](#v293-亮点随包内容全量英译--一键部署录制环境--获取与反馈通道扩展--兼容到-windows-7-sp1) · [亮点](#亮点) · [功能](#功能) · [智能诊断](#智能诊断) · [隐私与安全](#隐私与安全) · [安装与更新](#安装与更新) · [构建](#构建) · [工程结构](#工程结构) · [许可](#许可)
 
 ---
 
 ## 宣传视频
 
-一分钟看懂 OBS 排障助手能帮你做什么：
+一分钟看懂 OBS帮助助手能帮你做什么：
 
 <div align="center">
 
@@ -50,6 +50,23 @@ https://github.com/user-attachments/assets/25361c9d-5239-4a1a-aeba-9080b0044e78
 ▲ **宣传视频二 · 守护与体检**（含背景音乐）：V2.8 录制守护、实时日志预警与专项体检实机演示 —— [高清版观看 / 下载](https://github.com/YYRMMAYO/OBS_Helper/releases/download/V2.8.0/promo02.mp4)
 
 </div>
+
+---
+
+## V2.9.6 亮点：更名 OBS帮助助手 · 图标统一 · 文档同步
+
+> 本版**不新增功能**，做的是把「这个软件是谁」讲清楚：**名字、图标、文档**三处对齐。
+> 一句话给老用户：**换成新名字，还是原来那个软件** —— 升级路径、数据目录、增量更新全都没动。
+
+| | |
+|---|---|
+| **更名为「OBS帮助助手」** | 旧名「OBS 排障助手」从此只出现在「曾用名」语境里。窗口标题、托盘与通知、新手引导、诊断报告署名、反馈材料抬头、安装向导的快捷方式 / 卸载项 / 完成页（中英各一套）全部换名；英文界面仍是 `OBS Helper`。**刻意不动的四件事**：`AppId`、`OBS_Helper.exe` 文件名、`%LocalAppData%\OBS_Helper` 数据目录、Release 资产命名 —— 老用户升级后仍装在原目录、设置与密钥不丢、应用内增量更新照旧；只有全新安装才用新目录名 `{autopf}\OBS帮助助手` |
+| **应用图标与仓库图标统一** | 此前应用用的是旧版「OBS 圆标 + 齿轮角标」位图，与 README / 仓库头像 / 社交预览上的图标（深色圆角底 + 显示器 + 健康波形 + 录制指示点 + 体检对勾）**不是同一枚**。本版统一为后者，并给 16 / 24 / 32 px **单独重绘**（描边加粗、波形减到一峰、对勾徽章放大并夹在底板内），托盘与任务栏不再糊成一团；生成脚本 `NOBS/scripts/gen_appicon.py` 重写入库（源 = 仓库图标，输出 7 档尺寸），可复现、不依赖任何本机路径 |
+| **随包素材与文案同步** | 品牌三图（`icon.svg` / `banner.svg` / `social-preview.svg`）的文字与新名一致，并按原脚本重新渲染 PNG 入库；插件广场里的官方 Dock 插件条目改为「OBS帮助助手（Dock 版）」；AI 系统提示里的角色描述不再与产品名混用 |
+| **文档同步** | 根 README / [English README](README.en.md) / NOBS README / [贡献指南](CONTRIBUTING.md) / [安全策略](SECURITY.md) / [行为准则](CODE_OF_CONDUCT.md) / [架构](NOBS/docs/ARCHITECTURE.md) 与代码清单全部对齐到 2.9.6；历史发布说明与审校记录里的**品牌名**一并归一（版本内容与结论不动），旧名只保留在「更名」说明里 —— 否则新用户会以为是两个软件 |
+| **质量基线** | **630 项单元测试全部通过**（上一版 626 项，本版新增 4 项，专钉这次最容易漏的地方：产品名在 csproj / 安装包脚本 / 文案表**三处一致**、文案表里不再出现旧名、版本号在 csproj 与 .iss 之间一致、图标含 Windows Shell 会取的 7 档尺寸且三处引用齐全）；Headless 自检 22 项 PASS |
+
+详见 [RELEASE_NOTES_v2.9.6.md](NOBS/RELEASE_NOTES_v2.9.6.md)。
 
 ---
 
@@ -229,8 +246,8 @@ https://github.com/user-attachments/assets/25361c9d-5239-4a1a-aeba-9080b0044e78
 ## 安装与更新
 
 - **GitHub Releases** — 从 [Releases 页面](https://github.com/YYRMMAYO/OBS_Helper/releases) 下载安装包或便携版；便携版免安装、自带 .NET 运行时。**安装向导会先让你选语言**（简体中文 / English），默认中文，选定结果作为应用首次启动的默认语言
-  - `OBS_Helper_Setup_2.9.3.exe` / `OBS_Helper_Portable_2.9.3.zip` — **主构建**，面向 **Windows 10 / 11**
-  - `OBS_Helper_Setup_2.9.3_win7.exe` / `OBS_Helper_Portable_2.9.3_win7.zip` — **Win7 兼容构建**，面向 **Windows 7 SP1 及以上**（.NET 6，已停止安全更新；新机器请用主构建）
+  - `OBS_Helper_Setup_2.9.6.exe` / `OBS_Helper_Portable_2.9.6.zip` — **主构建**，面向 **Windows 10 / 11**
+  - `OBS_Helper_Setup_2.9.6_win7.exe` / `OBS_Helper_Portable_2.9.6_win7.zip` — **Win7 兼容构建**，面向 **Windows 7 SP1 及以上**（.NET 6，已停止安全更新；新机器请用主构建）
   - 两个构建共用同一个 AppId，从兼容构建换到主构建会被识别成升级而不是装两份
 - **蓝奏云（国内镜像）** — 提取码 `YYKWY`（详见应用内更新弹窗）
 - **应用内更新（推荐）** — 「检查更新」对比 GitHub 最新版本后，可任选：
@@ -239,7 +256,8 @@ https://github.com/user-attachments/assets/25361c9d-5239-4a1a-aeba-9080b0044e78
   - **完整安装包**：蓝奏云 / 应用内下载整包覆盖安装
 
 > **主构建**支持 Windows 10 / 11；**兼容构建**支持 Windows 7 SP1 及以上。均无需 WebView2、无需另装 .NET 运行时。
-> 已装 2.9.2 的用户可直接走应用内「增量更新」升到 2.9.3；更早版本（2.1.x ~ 2.9.1）的增量包基准对不上，
+> 已装 2.9.5 的用户可直接走应用内「增量更新」升到 2.9.6；**本版只是更名，`AppId` / 安装目录 / 数据目录
+> 都没变**，所以增量升级与覆盖安装都照旧。停留在 2.1.x ~ 2.9.4 的用户增量包基准对不上，
 > 用安装包或便携包覆盖升级即可。
 > **语言与升级**：安装时选的语言只决定首次启动的默认值；之后在应用内改过语言，重装 / 升级都不会覆盖你的选择。
 > 还没装 OBS？应用内「搭建」页 / 「工具箱」/ 首页欢迎卡都提供**官方**下载入口
@@ -277,7 +295,7 @@ dotnet run --project OBS_Helper.Wpf
 .\build.ps1 -DeltaBaseVersion 2.0.0
 
 # 发布后校验增量包可完整升级（模拟升级 + 全文件 SHA-256 比对）
-python scripts\verify_delta.py --old PAKE\windows\OBS_Helper_Portable_2.0.0.zip --delta PAKE\windows\OBS_Helper_Update_2.9.3.zip --publish OBS_Helper.Wpf\bin\Release\net10.0-windows\win-x64\publish
+python scripts\verify_delta.py --old PAKE\windows\OBS_Helper_Portable_2.9.5.zip --delta PAKE\windows\OBS_Helper_Update_2.9.6.zip --publish OBS_Helper.Wpf\bin\Release\net10.0-windows\win-x64\publish
 
 # 全量单测（含中英内容对等 / 资产按语言装载 / INI 打补丁 / 版本判据等）
 dotnet test OBS_Helper.Wpf.Tests\OBS_Helper.Wpf.Tests.csproj -c Release
@@ -285,13 +303,13 @@ dotnet test OBS_Helper.Wpf.Tests\OBS_Helper.Wpf.Tests.csproj -c Release
 
 产物落在 `NOBS\PAKE\windows\`：
 
-- `OBS_Helper_Setup_2.9.3.exe` — 安装包（主构建，MinVersion 10.0，向导含语言选择页）
-- `OBS_Helper_Setup_2.9.3_win7.exe` — 安装包（Win7 兼容构建，MinVersion 6.1sp1）
-- `OBS_Helper_Portable_2.9.3.zip` / `…_win7.zip` — 解压即用
-- `OBS_Helper_Update_2.9.3.zip` — 增量更新包（含 `update_manifest.json`，应用内增量更新用）
-- `OBS_Helper_Portable_2.9.3.exe` — 单文件（需 `-SingleFile`）
-- `OBS_Helper_Knowledge_2.9.3.json` / `…2.9.3.en-US.json` — 问题库热更新资产（中英各一份）
-- `OBS_Helper_Plugins_2.9.3.json` / `…2.9.3.en-US.json` — 插件广场目录热更新资产（中英各一份）
+- `OBS_Helper_Setup_2.9.6.exe` — 安装包（主构建，MinVersion 10.0，向导含语言选择页）
+- `OBS_Helper_Setup_2.9.6_win7.exe` — 安装包（Win7 兼容构建，MinVersion 6.1sp1）
+- `OBS_Helper_Portable_2.9.6.zip` / `…_win7.zip` — 解压即用
+- `OBS_Helper_Update_2.9.6.zip` — 增量更新包（含 `update_manifest.json`，应用内增量更新用）
+- `OBS_Helper_Portable_2.9.6.exe` — 单文件（需 `-SingleFile`）
+- `OBS_Helper_Knowledge_2.9.6.json` / `…2.9.6.en-US.json` — 问题库热更新资产（中英各一份）
+- `OBS_Helper_Plugins_2.9.6.json` / `…2.9.6.en-US.json` — 插件广场目录热更新资产（中英各一份）
 - `manifests/manifest_<ver>.json` — 各版本完整文件清单（SHA-256，增量包 diff 基准；不随 Release 发布）
 
 ## 工程结构
@@ -328,7 +346,7 @@ NOBS/
     Assets/                problems[.en-US].json / plugins[.en-US].json / scene_templates[.en-US].json /
                            troubleshooting[.en-US].md（中英并列，内嵌种子）、feedback_qr.png、图标
   OBS_Helper.Wpf/OBS_Helper_Setup.iss  Inno Setup 脚本（按 TFM 传 MinVersion / 输出名，UTF-8 带 BOM）
-  OBS_Helper.Wpf.Tests/    624 项单测（直接链接纯逻辑源文件，不引用整个 WPF 工程）
+  OBS_Helper.Wpf.Tests/    630 项单测（直接链接纯逻辑源文件，不引用整个 WPF 工程）
   build.ps1                Windows 构建与打包脚本（双目标：安装包 / 便携 / 增量包 / 清单 / 内容资产）
   scripts/verify_delta.py  增量包发布校验工具（模拟升级 + 全文件 SHA-256 比对）
 ```

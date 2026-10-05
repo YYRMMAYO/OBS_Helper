@@ -3,7 +3,7 @@
 **简体中文** · [English](#english)
 
 本准则参考 [Contributor Covenant v2.1](https://www.contributor-covenant.org/version/2/1/code_of_conduct/)
-编写，并结合「OBS 排障助手」项目的实际情况做了落地化说明。
+编写，并结合「OBS帮助助手」项目的实际情况做了落地化说明。
 中英两个版本**都是正式版本**；两者若有出入，以**中文版**为准。
 
 > **语言**：中文或英文都可以，**也可以用中英双语**。

@@ -1,4 +1,4 @@
-# OBS 排障助手 · 项目库代码清单（CODEBASE）
+# OBS帮助助手 · 项目库代码清单（CODEBASE）
 
 > 本文件是 `OBS_Helper.Wpf`（Windows 原生 WPF 版）的完整代码清单：
 > 按模块列出每个源码 / 资源文件及其职责，方便快速定位代码。
@@ -210,7 +210,7 @@ NOBS/
 | `Themes/Palette.xaml` | 配色（深浅两套语义色板）。 |
 | `Themes/Controls.xaml` | 通用控件样式（按钮/卡片/输入框等）。 |
 | `Themes/Icons.xaml` | 品牌 SVG 矢量图标（DrawingImage）。 |
-| `Assets/appicon.ico` | 应用图标。 |
+| `Assets/appicon.ico` | 应用图标（7 档尺寸 16/24/32/48/64/128/256）。V2.9.6 起与仓库图标（`assets/icon.svg`）统一，由 `scripts/gen_appicon.py` 生成；小尺寸帧是单独绘制的简化版。 |
 | `Assets/problems.json` | 离线知识库（问题库，独立热更新 v1.6）。 |
 | `Assets/plugins.json` | 插件广场目录（V2.2 外置数据，独立热更新）。 |
 | `Assets/scene_templates.json` | 场景模板数据（含推荐插件依赖标注）。 |
@@ -243,7 +243,7 @@ NOBS/
 | `scripts/add_problems.py` | 向 `problems.json` 追加问题条目（可复用改数据）。 |
 | `scripts/add_templates.py` | 向 `scene_templates.json` 追加模板。 |
 | `scripts/check_resources.py` | XAML 资源引用体检：`Themes/*.xaml` 的主题键 **+ `Localization/StringTable*.cs` 的文案键**（映射成 `Loc.<键>`），校验每个 `{Static\|Dynamic}Resource}` 引用都有定义；另含 `problems.json` 分类语义色白名单校验。 |
-| `scripts/gen_appicon.py` | 生成应用图标。 |
+| `scripts/gen_appicon.py` | 生成应用图标 `Assets/appicon.ico`（V2.9.6 重写）：48px 以上取自 `assets/icon.png`（仓库图标渲染图，补回透明圆角），16/24/32px 按同一套几何另画简化版，避免托盘尺寸糊成一团。只依赖 Pillow；旧版实现依赖本机参考图，已替换。 |
 | `scripts/embed_free_ai_key.ps1` | 构建期注入免费 AI 密钥。 |
 | `build.ps1` | 出包脚本：publish R2R → Inno Setup → 便携 zip，产物进 `PAKE/windows/`（gitignore）。 |
 
@@ -258,7 +258,8 @@ NOBS/
 | `docs/reviews/REVIEW_2026-08-08*.md` | 各版本发布审查报告（v1.7.0 / v1.7.1 / v1.8.0 / v1.8.1）。 |
 | `docs/reviews/REVIEW_2026-09-27-v2.9.2.md` | **V2.9.2 发布审查报告（国际化）**：三轮审校的发现与修复、刻意保留中文的边界、全量验证结果。 |
 | `docs/I18N_EN_CONTENT_PLAN.md` | **V2.9.3 计划：随包离线内容（知识库 / 模板 / 插件 / 指引）的英译**——字段约定（哪些是逻辑键不可译）、热更新通道改造、验收口径与风险点。 |
-| `RELEASE_NOTES_v2.9.2.md` | 本版发布说明（国际化）。 |
+| `RELEASE_NOTES_v2.9.6.md` | 本版发布说明（更名「OBS帮助助手」+ 图标统一 + 文档同步；含改名时**刻意不动**的四件事与验证证据）。 |
+| `RELEASE_NOTES_v2.9.2.md` | 发布说明（国际化）。 |
 
 ## 5. 快速定位索引
 

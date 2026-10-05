@@ -2,7 +2,7 @@
 
 **简体中文** · [English](#english)
 
-感谢你愿意为「OBS 排障助手」（OBS Helper）出一份力。
+感谢你愿意为「OBS帮助助手」（OBS Helper）出一份力。
 本文说明本项目的技术约定、构建与测试方式，以及提交 Issue / Pull Request 时的要求。
 
 > **语言**：中文或英文都可以，**也可以用中英双语**。用你最舒服的语言写就行 ——
@@ -102,7 +102,7 @@ dotnet test NOBS/OBS_Helper.Wpf.Tests/OBS_Helper.Wpf.Tests.csproj -c Release
 以下是本仓库既有提交的实际写法（可用 `git log --oneline` 自行查看）：
 
 ```
-release(V2.9.4): 简单录像（一键配置 OBS 并开录）+ 帮助与反馈页 + 仓库封面与社区文件
+release(V2.9.6): 更名 OBS帮助助手 + 应用图标与仓库图标统一 + 文档同步
 docs(review): 如实标注「安装向导语言页」的证据边界
 fix(installer): 中文语言文件随仓库固定，修 CI 编不出安装包
 fix(log): 日志解析适配真实 OBS 日志 + 实时预警日志扩展名修正
@@ -126,7 +126,7 @@ refactor: 清理旧仓库结构——移除 WinForms/Tests 遗留，Windows 端�
   | `refactor` | 不改变行为的代码重构 |
 
 - **范围**：模块名（如 `installer` / `log` / `toolbox` / `plugins` / `onboarding` / `ci` / `theme`），
-  或 `release` 提交里的版本号（如 `release(V2.9.4)`）。
+  或 `release` 提交里的版本号（如 `release(V2.9.6)`）。
   范围可省略（`docs: …`），改动横跨多个模块时也建议省略。
 - **简述**写清「改了什么」；一次提交包含多项改动时，用 `+` 或 `——` 分列要点，结尾不加句号。
   用中文或英文都可以，**同一仓库里保持一致即可**（既有历史以中文为主）。
@@ -287,7 +287,7 @@ dotnet test NOBS/OBS_Helper.Wpf.Tests/OBS_Helper.Wpf.Tests.csproj -c Release
 These are real messages from this repository (see `git log --oneline`):
 
 ```
-release(V2.9.4): 简单录像（一键配置 OBS 并开录）+ 帮助与反馈页 + 仓库封面与社区文件
+release(V2.9.6): 更名 OBS帮助助手 + 应用图标与仓库图标统一 + 文档同步
 docs(review): 如实标注「安装向导语言页」的证据边界
 fix(installer): 中文语言文件随仓库固定，修 CI 编不出安装包
 fix(log): 日志解析适配真实 OBS 日志 + 实时预警日志扩展名修正
@@ -312,7 +312,7 @@ refactor: 清理旧仓库结构——移除 WinForms/Tests 遗留，Windows 端�
   | `refactor` | Behaviour-preserving code restructuring |
 
 - **Scope**: a module name (`installer` / `log` / `toolbox` / `plugins` / `onboarding` / `ci` /
-  `theme`) or the version for `release` commits (`release(V2.9.4)`). The scope may be omitted
+  `theme`) or the version for `release` commits (`release(V2.9.6)`). The scope may be omitted
   (`docs: …`), and should be omitted when a change spans several modules.
 - **The summary** should say what changed; for multi-part changes separate the points with `+` or
   `——`, and do not end with a period. Chinese or English are both fine — just stay consistent within

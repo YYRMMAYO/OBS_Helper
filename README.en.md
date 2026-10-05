@@ -2,7 +2,7 @@
 
 <img src="assets/banner.svg" alt="OBS Helper — offline-first troubleshooting copilot for OBS Studio" width="100%"/>
 
-# OBS Helper · OBS 排障助手
+# OBS Helper · OBS帮助助手
 
 **The offline-first troubleshooting companion for [OBS Studio](https://obsproject.com/) — built for streamers who are just getting started.**
 
@@ -10,10 +10,10 @@
 [![Platform](https://img.shields.io/badge/Platform-Windows_7_SP1%2B-0078D6.svg)]()
 [![.NET](https://img.shields.io/badge/.NET-10_%2F_6-512BD4.svg)]()
 [![Stack](https://img.shields.io/badge/Stack-WPF_%2F_C%23-239120.svg)]()
-[![Release](https://img.shields.io/badge/Release-2.9.4-38bdf8.svg)](https://github.com/YYRMMAYO/OBS_Helper/releases)
+[![Release](https://img.shields.io/badge/Release-2.9.6-38bdf8.svg)](https://github.com/YYRMMAYO/OBS_Helper/releases)
 [![OBS](https://img.shields.io/badge/OBS-32.2.2-302E31.svg)](https://github.com/obsproject/obs-studio/releases)
 [![Offline](https://img.shields.io/badge/offline--first-2ea44f.svg)]()
-[![Tests](https://img.shields.io/badge/Tests-624%20passed-2ea44f.svg)]()
+[![Tests](https://img.shields.io/badge/Tests-630%20passed-2ea44f.svg)]()
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
 **English** · [简体中文](README.md)
@@ -25,6 +25,8 @@
 > This is the **native WPF rewrite** of the original Blazor + WebView2 version (source lives in [`NOBS/`](NOBS/)). The browser engine is gone, startup is instant, and it ships as a single self-contained folder.
 >
 > **Since V2.2 there's a built-in plugin directory**: 57 curated plugins with direct GitHub Releases downloads, a read-only scan of locally installed plugins (with multi-drive OBS install detection), and log-analysis links that jump straight to the suspect plugin. **Since V2.1, updates are incremental and knowledge bases update independently**: only changed files are downloaded, and both the issue database and the plugin catalog can be upgraded without waiting for a new release.
+>
+> **V2.9.6 renames the app to 「OBS帮助助手」** — the Chinese display name only; the English name stays **OBS Helper**. It also unifies the application icon with the repository mark (same monitor / waveform / record-dot / check design as `assets/icon.svg`) and redraws the 16 / 24 / 32 px frames for small sizes so the taskbar and tray icon stay readable. **Nothing about installing or upgrading changed**: same `AppId`, same `OBS_Helper.exe`, same `%LocalAppData%\OBS_Helper` data folder, same Release asset names — existing installs upgrade in place with their settings intact, and only brand-new installs use the new folder name. V2.9.5, the previous release, fixed a feedback route that could never work (GitHub has no user-to-user DMs) and made the security policy bilingual. See [RELEASE_NOTES_v2.9.6.md](NOBS/RELEASE_NOTES_v2.9.6.md) (Chinese).
 >
 > **V2.9.4 adds simple recording.** V2.9.3 answered "what should the settings look like"; this release answers "click once and it is recording, and you know what is happening while it records". A card on the home page offers three presets — **Quick** (1080p60), **Meeting / lecture** (1080p30) and **Game, high bitrate** (1080p60 with automatic file splitting) — and one click runs the whole chain: pre-flight check → full backup → apply → *if OBS is not running, launch it and wait for obs-websocket* → start recording. While recording you see the elapsed time (from OBS's own timecode, so pauses are not counted) and an estimated time left; when you stop, the file is reported (with its size) and you can open the folder or remux it to MP4. Write scope is deliberately limited to recording-side keys (format / quality / audio tracks / splitting): **streaming settings, output mode, encoder family and bitrate are never touched**. There is also a new top-level **Help & feedback** page (report form, GitHub issues, offline QR code, plus a one-click snapshot of version / OS / OBS state / pre-flight result — no paths and no raw logs), and the repository gained a redrawn vector icon, cover and social preview plus the missing community files. See [RELEASE_NOTES_v2.9.4.md](NOBS/RELEASE_NOTES_v2.9.4.md) (Chinese).
 >
@@ -39,7 +41,7 @@
 
 | | |
 |---|---|
-| **Chinese / English, switched instantly** | The interface, tray, notifications, error messages, log rules and health-check verdicts all ship in both languages — **Simplified Chinese by default** — and switching under *Settings → Language* takes effect immediately, with no restart. The installer asks first and uses that answer as the first-run default. Bundled offline content (issue database, templates, plugin catalog, guide) is still Chinese in this release; see [I18N_EN_CONTENT_PLAN](NOBS/docs/I18N_EN_CONTENT_PLAN.md) |
+| **Chinese / English, switched instantly** | The interface, tray, notifications, error messages, log rules and health-check verdicts all ship in both languages — **Simplified Chinese by default** — and switching under *Settings → Language* takes effect immediately, with no restart. The installer asks first and uses that answer as the first-run default. Bundled offline content (issue database, templates, plugin catalog, guide) is bilingual too, since V2.9.3; see [I18N_EN_CONTENT_PLAN](NOBS/docs/I18N_EN_CONTENT_PLAN.md) |
 | **212 fixes, fully offline** | A built-in knowledge base of **212 curated issues** (knowledge base v2.2, organised into 10 categories on the home screen) — symptoms, root causes, step-by-step fixes, tips and related questions. Steps are checkable and your progress is remembered. The **knowledge base updates independently** from the app. |
 | **First-run tutorial (V2.9, guided since V2.9.1)** | A four-step tour on first launch — connect to OBS → where to look when something breaks → one-click health check → go live & decorate. Since V2.9.1 each step **switches the app to the page it is describing** (card tucked into the bottom-right corner, overlay kept light so the page stays readable) and offers extra jump buttons for the other pages it mentions. Replay it any time from *Settings → Onboarding* without restarting. |
 | **Official OBS download entries (V2.9.1)** | For people who can't get hold of genuine OBS: the build page, the toolbox, the home welcome card, the first tutorial step and the troubleshooting guide all link to the **official site** (obsproject.com, Chinese page) and the **official GitHub releases**, plus a "download the current stable Windows installer" button whose direct link is resolved from the GitHub API. Every URL is forced to https and restricted to official hosts (`obsproject.com`, `cdn-fastly.obsproject.com`, `github.com/obsproject/obs-studio`) — a tampered API response makes the app fall back to the release page instead of opening a third-party site. |
@@ -125,8 +127,9 @@ The app only goes online when you **explicitly** enable the free-AI or cloud dia
   - **Full installer**: Lanzou or in-app download of the complete package
 
 > Windows 10 / 11. No WebView2, no .NET runtime install, no administrator rights required.
-> Users on 2.9.1 can use the in-app incremental update to reach 2.9.2; on 2.9.0 and older
-> (2.1.x – 2.9.0) the delta base version does not match, so install with the setup or portable package instead.
+> Users on 2.9.5 can use the in-app incremental update to reach 2.9.6 — this release only renames the app,
+> and `AppId` / install folder / data folder are unchanged, so incremental and in-place upgrades work exactly as before.
+> On 2.1.x – 2.9.4 the delta base version does not match, so install with the setup or portable package instead.
 > **Language and upgrades:** the installer choice only sets the first-run default — once you change the language in the app, reinstalling or upgrading never overrides it.
 > No OBS yet? The in-app *Setup* page, the *Toolbox* and the home welcome card all link to **official** download sources (obsproject.com and the official GitHub releases).
 
@@ -154,17 +157,17 @@ dotnet run --project OBS_Helper.Wpf
 .\build.ps1 -DeltaBaseVersion 2.0.0
 
 # verify the delta package upgrades cleanly (simulated upgrade + full SHA-256 diff)
-python scripts\verify_delta.py --old PAKE\windows\OBS_Helper_Portable_2.0.0.zip --delta PAKE\windows\OBS_Helper_Update_2.1.1.zip --publish OBS_Helper.Wpf\bin\Release\net10.0-windows\win-x64\publish
+python scripts\verify_delta.py --old PAKE\windows\OBS_Helper_Portable_2.9.5.zip --delta PAKE\windows\OBS_Helper_Update_2.9.6.zip --publish OBS_Helper.Wpf\bin\Release\net10.0-windows\win-x64\publish
 ```
 
 Artifacts land in `NOBS\PAKE\windows\`:
 
-- `OBS_Helper_Setup_2.9.2.exe` — installer (the wizard includes the language page, Chinese by default)
-- `OBS_Helper_Portable_2.9.2.zip` — unzip-and-run portable build
-- `OBS_Helper_Update_2.9.2.zip` — incremental update package (contains `update_manifest.json`, used by the in-app updater)
-- `OBS_Helper_Portable_2.9.2.exe` — single-file build (with `-SingleFile`)
-- `OBS_Helper_Plugins_1.4.json` — plugin directory v1.4 (independent hot-update asset, published with the release)
-- `OBS_Helper_Knowledge_2.2.json` — issue database v2.2 (independent hot-update asset, published with the release)
+- `OBS_Helper_Setup_2.9.6.exe` / `OBS_Helper_Setup_2.9.6_win7.exe` — installer (the wizard includes the language page, Chinese by default; `_win7` targets Windows 7 SP1+)
+- `OBS_Helper_Portable_2.9.6.zip` / `OBS_Helper_Portable_2.9.6_win7.zip` — unzip-and-run portable build
+- `OBS_Helper_Update_2.9.6.zip` — incremental update package (contains `update_manifest.json`, used by the in-app updater)
+- `OBS_Helper_Portable_2.9.6.exe` — single-file build (with `-SingleFile`)
+- `OBS_Helper_Plugins_2.9.6.json` / `…2.9.6.en-US.json` — plugin directory hot-update assets (one per language, published with the release)
+- `OBS_Helper_Knowledge_2.9.6.json` / `…2.9.6.en-US.json` — issue database hot-update assets (one per language, published with the release)
 - `manifests/manifest_<ver>.json` — per-version file manifest (SHA-256, delta diff base; not published as a release asset)
 
 ## Project Structure

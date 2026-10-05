@@ -47,7 +47,7 @@
   "plugins": [
     {
       "id": "helper-dock",
-      "name": "OBS 排障助手（Dock 版）",
+      "name": "OBS帮助助手（Dock 版）",
       "category": "tool",
       "badge": "推荐",
       "desc": "本软件的官方 OBS 停靠面板插件（C++ / Qt6 原生）：体检、日志分析、设置体检、系统信息四大页签，本地离线对齐官方 Log Analyzer 规则集，支持「元凶插件」一键禁用。",

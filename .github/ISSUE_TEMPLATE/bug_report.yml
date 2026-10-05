@@ -40,7 +40,7 @@ body:
     attributes:
       label: 应用版本
       description: 在「设置 → 关于」里可以查看。
-      placeholder: 例如 2.9.3
+      placeholder: 例如 2.9.6
     validations:
       required: false
   - type: input

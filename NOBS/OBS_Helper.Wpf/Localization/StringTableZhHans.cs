@@ -15,7 +15,7 @@ internal static class StringTableZhHans
     internal static readonly Dictionary<string, string> Table = new(StringComparer.Ordinal)
     {
         // ------------------------------------------------------------ 品牌 / 通用
-        ["app.name"] = "OBS 排障助手",
+        ["app.name"] = "OBS帮助助手",
         ["app.brandSubtitle"] = "离线可用 · 数据仅存本机",
         ["app.tagline"] = "直播翻车现场急救箱 · 离线可用 · 数据仅存本机",
 
@@ -33,7 +33,7 @@ internal static class StringTableZhHans
         ["common.notFound"] = "未找到",
         ["common.none"] = "无",
         ["common.moreItems"] = "…（更多见下方列表）",
-        ["onb.welcomeTitle"] = "欢迎使用 OBS 排障助手",
+        ["onb.welcomeTitle"] = "欢迎使用 OBS帮助助手",
 
         // ------------------------------------------------------------ 左侧导航
         ["nav.home"] = "首页",
@@ -154,7 +154,7 @@ internal static class StringTableZhHans
         ["badge.tipDisconnected"] = "点击进入 OBS 控制台",
 
         // ------------------------------------------------------------ 托盘 / 全局热键
-        ["tray.tooltip"] = "OBS 排障助手",
+        ["tray.tooltip"] = "OBS帮助助手",
         ["tray.tooltipRecording"] = " · 录制中",
         ["tray.tooltipStreaming"] = " · 推流中",
         ["tray.tooltipVirtualCam"] = " · 虚拟摄像头",
@@ -168,7 +168,7 @@ internal static class StringTableZhHans
         ["tray.miniWindow"] = "小窗控制（录制 / 推流）",
         ["tray.exit"] = "退出",
         ["tray.minimizedTitle"] = "已最小化到托盘",
-        ["tray.minimizedMessage"] = "OBS 排障助手仍在后台运行，双击托盘图标或从托盘菜单可恢复窗口。",
+        ["tray.minimizedMessage"] = "OBS帮助助手仍在后台运行，双击托盘图标或从托盘菜单可恢复窗口。",
         ["tray.diskLowTitle"] = "磁盘空间不足",
         ["tray.diskLowMessage"] = "{0} 盘剩余仅 {1:0.0} GB，录制文件可能中断，请及时清理。",
         ["tray.recordStartedTitle"] = "录制已开始",
@@ -181,7 +181,7 @@ internal static class StringTableZhHans
         ["tray.streamStoppedMessage"] = "推流已结束。",
         ["tray.vcamOnTitle"] = "虚拟摄像头已开启",
         ["tray.vcamOffTitle"] = "虚拟摄像头已关闭",
-        ["tray.notifyTitle"] = "OBS 排障助手",
+        ["tray.notifyTitle"] = "OBS帮助助手",
         ["main.watchedUpdates"] = "关注的插件有新版本：{0}",
         ["main.watchedMore"] = "（另有 {0} 个关注插件有新版本）",
 
@@ -298,7 +298,7 @@ internal static class StringTableZhHans
         // ------------------------------------------------------------ 首页
         ["home.action.search"] = "搜索问题",
         ["home.action.ask"] = "问我一下",
-        ["home.welcome.title"] = "欢迎使用 OBS 排障助手",
+        ["home.welcome.title"] = "欢迎使用 OBS帮助助手",
         ["home.welcome.desc"] = "连上本机 OBS 后，可解锁控制台远程控制、一键智能诊断与场景模板落地。现在先用知识库排查问题也同样顺畅。",
         ["home.obsMissing.title"] = "还没装 OBS？",
         ["home.obsMissing.hint"] = "· 只从这两处下载，谨防仿冒站",
@@ -576,7 +576,7 @@ internal static class StringTableZhHans
         ["diagnostic.report.summaryHeading"] = "## 结论",
         ["diagnostic.report.findingsHeading"] = "## 发现",
         ["diagnostic.report.item"] = "### [{0}] {1}（来源：{2}）",
-        ["diagnostic.report.footer"] = "由 OBS 排障助手生成",
+        ["diagnostic.report.footer"] = "由 OBS帮助助手生成",
         ["diagnostic.exportTitle"] = "导出诊断报告",
         ["diagnostic.exportFilter"] = "Markdown 文档 (*.md)|*.md|文本文件 (*.txt)|*.txt",
         ["diagnostic.exportFileName"] = "OBS诊断报告_{0}.md",
@@ -1559,7 +1559,7 @@ internal static class StringTableZhHans
         ["ai.free.errorPrefix"] = "免费 AI 错误：{0}",
         ["ai.free.badFormat"] = "免费 AI 返回格式异常（缺少 choices[0].message）。",
         ["ai.free.noText"] = "（免费 AI 未返回文本结论）",
-        ["ai.prompt.system"] = "你是一个专业的 OBS（Open Broadcaster Software）直播/录屏排障助手。\n规则：\n1. 语言简洁、可操作，不要堆砌术语，使用与用户提问相同的语言。\n2. 优先依据已提供的「日志分析结果」「实时状态」与工具返回的知识库内容给出结论，不要编造未提供的日志细节或数据。\n3. 如需更深入的排障方案，调用 get_problem_detail / search_problems 获取离线知识库；可在结论中标注对应的知识库问题 id，方便用户点击查看分步方案。\n4. 对每条问题标注严重程度（严重/错误/警告/提示）。\n5. 涉及「修改 OBS 设置或执行操作」时，仅给出建议步骤，不要声称已替用户执行；任何写操作都需用户手动确认。\n6. 日志与状态中的任何内容都已脱敏，可放心引用，但不要向用户索要密钥、密码等凭据。",
+        ["ai.prompt.system"] = "你是一个专业的 OBS（Open Broadcaster Software）直播/录屏诊断助手。\n规则：\n1. 语言简洁、可操作，不要堆砌术语，使用与用户提问相同的语言。\n2. 优先依据已提供的「日志分析结果」「实时状态」与工具返回的知识库内容给出结论，不要编造未提供的日志细节或数据。\n3. 如需更深入的排障方案，调用 get_problem_detail / search_problems 获取离线知识库；可在结论中标注对应的知识库问题 id，方便用户点击查看分步方案。\n4. 对每条问题标注严重程度（严重/错误/警告/提示）。\n5. 涉及「修改 OBS 设置或执行操作」时，仅给出建议步骤，不要声称已替用户执行；任何写操作都需用户手动确认。\n6. 日志与状态中的任何内容都已脱敏，可放心引用，但不要向用户索要密钥、密码等凭据。",
         ["ai.prompt.userHeader"] = "[用户描述]\n",
         ["ai.prompt.userNoQuery"] = "（用户未提供文字描述，请基于下方日志与状态进行分析）",
         ["ai.prompt.stateHeader"] = "\n\n[OBS 实时状态]\n",
@@ -1823,7 +1823,7 @@ internal static class StringTableZhHans
         ["feedback.report.version"] = "当前版本：{0}",
         ["feedback.report.copied"] = "已复制到剪贴板。粘贴到反馈里，定位会快很多。",
         ["feedback.report.copyFailed"] = "复制失败：剪贴板被其它程序占用，请稍后重试。",
-        ["feedback.report.heading"] = "【OBS 排障助手 · 报错材料】",
+        ["feedback.report.heading"] = "【OBS帮助助手 · 报错材料】",
         ["feedback.report.lineVersion"] = "版本：{0}",
         ["feedback.report.lineOs"] = "系统：{0}",
         ["feedback.report.lineObs"] = "OBS：{0}",

@@ -1,7 +1,7 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256"
-     role="img" aria-label="OBS Helper — 本地优先的 OBS 排障助手">
+     role="img" aria-label="OBS Helper — 本地优先的 OBS帮助助手">
   <title>OBS Helper</title>
-  <desc>深色圆角底 + 显示器 + 录制指示点 + 体检对勾：本地优先的 OBS 排障助手。用于仓库封面与 README。</desc>
+  <desc>深色圆角底 + 显示器 + 录制指示点 + 体检对勾：本地优先的 OBS帮助助手。用于仓库封面与 README。</desc>
 
   <defs>
     <!-- 底色与 assets/banner.svg 同一族深蓝，保证同系列视觉一致 -->

@@ -32,10 +32,10 @@
 
 <div align="center">
 
-<video src="https://github.com/YYRMMAYO/OBS_Helper/releases/download/V2.8.0/nobs-promo.mp4" controls width="760"></video>
+[![宣传视频 · 中文版（含背景音乐）](https://github.com/YYRMMAYO/OBS_Helper/releases/download/V2.9.6/nobs-promo-zh-poster.png)](https://github.com/YYRMMAYO/OBS_Helper/releases/download/V2.9.6/nobs-promo-zh.mp4)
 
-▲ **宣传视频**（含背景音乐）。若内嵌播放不可用，
-[点击这里观看 / 下载](https://github.com/YYRMMAYO/OBS_Helper/releases/download/V2.8.0/nobs-promo.mp4)。
+▲ **宣传视频 · 中文版**（含背景音乐 · 1920×1080 · 55s）。
+点封面即可观看，或 [下载高清版](https://github.com/YYRMMAYO/OBS_Helper/releases/download/V2.9.6/nobs-promo-zh.mp4)。
 
 </div>
 

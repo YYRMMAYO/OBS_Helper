@@ -35,19 +35,19 @@
 
 ## 宣传视频
 
-一分钟看懂 OBS帮助助手能帮你做什么：
+55 秒看懂 OBS帮助助手能帮你做什么 —— 中英两支都带背景音乐。点封面即看高清成片：
 
 <div align="center">
 
-https://github.com/user-attachments/assets/045890fa-d555-4ee3-97be-9c0ddbde7915
+[![宣传视频 · 中文版（含背景音乐）](https://github.com/YYRMMAYO/OBS_Helper/releases/download/V2.9.6/nobs-promo-zh-poster.png)](https://github.com/YYRMMAYO/OBS_Helper/releases/download/V2.9.6/nobs-promo-zh.mp4)
 
-▲ **宣传视频一 · 功能总览**（含背景音乐）—— [高清版观看 / 下载](https://github.com/YYRMMAYO/OBS_Helper/releases/download/V2.8.0/nobs-promo.mp4)
+▲ **宣传视频 · 中文版**（含背景音乐）：录前自检 · 日志离线分析与掉帧三分类 · 一键部署录制环境 · 插件广场本机体检 · 全局热键与实时监控 —— [观看 / 下载高清版](https://github.com/YYRMMAYO/OBS_Helper/releases/download/V2.9.6/nobs-promo-zh.mp4)（1920×1080 · 30fps · 55s）
 
 <br/><br/>
 
-https://github.com/user-attachments/assets/25361c9d-5239-4a1a-aeba-9080b0044e78
+[![Promo video · English (with BGM)](https://github.com/YYRMMAYO/OBS_Helper/releases/download/V2.9.6/nobs-promo-en-poster.png)](https://github.com/YYRMMAYO/OBS_Helper/releases/download/V2.9.6/nobs-promo-en.mp4)
 
-▲ **宣传视频二 · 守护与体检**（含背景音乐）：V2.8 录制守护、实时日志预警与专项体检实机演示 —— [高清版观看 / 下载](https://github.com/YYRMMAYO/OBS_Helper/releases/download/V2.8.0/promo02.mp4)
+▲ **Promo video · English**（含背景音乐 / with BGM）：同一支片子的英文版，界面与字幕全英文 —— [Watch / download HD](https://github.com/YYRMMAYO/OBS_Helper/releases/download/V2.9.6/nobs-promo-en.mp4)（1920×1080 · 30fps · 55s）
 
 </div>
 

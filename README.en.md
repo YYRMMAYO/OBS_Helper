@@ -37,6 +37,24 @@
 > **V2.9.1 fixes the knowledge-base raw channel** (both GitHub-raw URLs were missing the repository's leading `NOBS/` segment, so they had always returned 404 and every check silently fell back to the Release asset — a commit now really does reach every install, and non-2xx responses are logged), turns the **first-run tutorial into a guided tour that navigates the UI** for you, and adds **official OBS download entries** (obsproject.com / the official GitHub releases, plus a direct link to the current stable Windows installer resolved via the GitHub API — official hosts only, so fake "download sites" don't get a chance). See [RELEASE_NOTES_v2.9.1.md](NOBS/RELEASE_NOTES_v2.9.1.md) (Chinese).
 ---
 
+## Promo video
+
+A 55-second tour of what OBS Helper actually does — **with background music**. Click the cover to watch the HD cut:
+
+<div align="center">
+
+[![Promo video · English (with BGM)](https://github.com/YYRMMAYO/OBS_Helper/releases/download/V2.9.6/nobs-promo-en-poster.png)](https://github.com/YYRMMAYO/OBS_Helper/releases/download/V2.9.6/nobs-promo-en.mp4)
+
+▲ **English version** (with BGM): pre-flight check · offline log analysis with dropped-frame triage · one-click recording setup · plugin catalogue with a read-only local scan · global hotkeys and live monitoring — [Watch / download HD](https://github.com/YYRMMAYO/OBS_Helper/releases/download/V2.9.6/nobs-promo-en.mp4) (1920×1080 · 30fps · 55s)
+
+<br/><br/>
+
+[![宣传视频 · 中文版（含背景音乐）](https://github.com/YYRMMAYO/OBS_Helper/releases/download/V2.9.6/nobs-promo-zh-poster.png)](https://github.com/YYRMMAYO/OBS_Helper/releases/download/V2.9.6/nobs-promo-zh.mp4)
+
+▲ **Chinese version**（含背景音乐）: the same film with a Chinese interface and bilingual subtitles — [Watch / download HD](https://github.com/YYRMMAYO/OBS_Helper/releases/download/V2.9.6/nobs-promo-zh.mp4) (1920×1080 · 30fps · 55s)
+
+</div>
+
 ## Highlights
 
 | | |

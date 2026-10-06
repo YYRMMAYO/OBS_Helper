@@ -441,3 +441,12 @@ foreach ($a in $assetOut) { Write-Host "  - 知识库/插件资产    : $a" }
 Get-ChildItem $pakeWin -File | ForEach-Object {
     Write-Host ("    {0}  ({1:N1} MB)" -f $_.Name, ($_.Length / 1MB))
 }
+
+# 显式归零退出码（V3.0 第六轮修复）。
+#
+# 为什么必须写：PowerShell 脚本**没有** exit 语句时，进程退出码会继承脚本里最后一个原生命令的
+# $LASTEXITCODE —— 而本脚本内部用过 robocopy（复制成功返回 1）等工具，于是「打包全部成功」
+# 也会以 1 退出。CI 里那句 `if ($LASTEXITCODE -ne 0) { throw }` 因此必然误报失败，
+# 本地手工跑也会看到 EXIT=1 而误以为出了问题（发版时就是这么漏过去的）。
+# 上面的 throw 会走非零退出码，所以这里只需在正常路径末尾归零。
+exit 0

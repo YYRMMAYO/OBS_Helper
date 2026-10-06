@@ -243,6 +243,11 @@ jobs:
       # 于是「无文字内容的按钮没有可访问名称」「自绘鼠标按钮键盘用不了」这类问题只能靠人工发现，
       # 也不会随代码变化被自动纠正。这个脚本把能静态判定的三条钉进 CI（本地同样可跑）。
       - name: 无障碍静态检查
+        env:
+          # 双保险：脚本内部已把 stdout/stderr 重配成 UTF-8；这里再显式要求 Python 用 UTF-8，
+          # 避免 runner 的 ANSI 代码页把中文结论变成 UnicodeEncodeError。
+          PYTHONUTF8: '1'
+          PYTHONIOENCODING: 'utf-8'
         run: python NOBS/scripts/check_accessibility.py
         shell: pwsh
 

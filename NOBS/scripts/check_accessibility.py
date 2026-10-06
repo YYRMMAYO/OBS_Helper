@@ -25,6 +25,14 @@ import re
 import sys
 from pathlib import Path
 
+# 控制台编码：CI（windows-latest）上 Python 的 stdout 默认走 ANSI 代码页，
+# 本脚本要打印中文结论 → 会直接抛 UnicodeEncodeError 让整条流水线变红
+# （第一次把这个脚本接入 CI 时就是这么挂的）。与 check_resources.py / verify_delta.py 同一处理：
+# 显式把两个流重配成 UTF-8。
+for _stream in (sys.stdout, sys.stderr):
+    if hasattr(_stream, "reconfigure"):
+        _stream.reconfigure(encoding="utf-8", errors="replace")
+
 ROOT = Path(__file__).resolve().parents[2]
 APP = ROOT / "NOBS" / "OBS_Helper.Wpf"
 

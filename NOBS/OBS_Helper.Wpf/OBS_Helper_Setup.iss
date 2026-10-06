@@ -137,8 +137,11 @@ Filename: "{app}\{#MyAppExeName}"; Description: "{cm:LaunchApp}"; Flags: nowait 
 
 [UninstallDelete]
 ; 用户的偏好与加密的凭据存在 %LocalAppData%\OBS_Helper 下。
-; 这里只在卸载时清掉应用自己写的文件，不删整个目录，避免误伤。
+;
+; V3.0（第五轮验证改动）：**不再在卸载时删除 prefs.json / secrets.dat**。
+; 原因：本安装包是 PrivilegesRequired=admin（管理员安装模式），此时 {localappdata} 解析成
+; **安装者/卸载者**的 profile，而不是真正使用者的 —— 于是这两行会「删错人的数据」或「漏删」，
+; 而 Inno 也会就这一点给出 UsedUserAreasWarning。考虑到 V3.0 的主题就是「数据安全」，
+; 这里选择**一律保留**：用户设置与加密凭据留给用户自己决定（路径见 README/发布说明）。
+; 未安装到用户目录下的文件仍按原样清理，不删整个目录以免误伤。
 Type: files; Name: "{app}\language.ini"
-Type: files; Name: "{localappdata}\OBS_Helper\prefs.json"
-Type: files; Name: "{localappdata}\OBS_Helper\secrets.dat"
-Type: dirifempty; Name: "{localappdata}\OBS_Helper"

@@ -1,5 +1,14 @@
 # V2.9.4 详细设计：简单录像（一键配置 OBS 并开录）
 
+> ⚠️ **本文是 2026-10 的 V2.9.4 设计稿快照**：其中的数字（知识库条数 / 测试项数 / 自检项数）
+> 与**部分方法签名**已过期 —— 最新数字见 [`README.md`](../README.md)
+> （当前：知识库 212 条 · 单测 630 项（V2.9.6 发布基线）· 无界面自检 22 项）。
+> 历史结论**刻意保留原样**，不随版本回填。
+>
+> **读本文的正确顺序**：先读 **§0.1「实现与本文的差异」**，那里集中记录了设计稿与最终实现的
+> 全部出入，并且**以 §0.1 为准**。正文里与 §0.1 冲突的段落已就地标了
+> 「【已被 V2.9.4 实现取代，见 §0.1】」—— 只读某一节会照不存在的方法签名写代码。
+
 > 上游结论见 [`FEATURES_USERVIEW_2026-10-05.md`](FEATURES_USERVIEW_2026-10-05.md)。
 > 本文是施工图：逐文件改动、文案键、单测清单、验收口径。
 > 所有纯逻辑放 `*Core.cs`（零 WPF、被单测工程直接链接），界面只做展示与确认。
@@ -146,6 +155,11 @@ public static class ObsLaunchCore
   这里把「正在推流」的**原因**补上（原来会掉进「OBS 在跑但没连上」的误导性文案）。
 
 ### 2.3 `Services/ObsConfig/ObsPathService.cs`
+
+> 【已被 V2.9.4 实现取代，见 §0.1 第 7 行 —— **`LaunchObsAsync()` 这个方法不存在**。
+> 最终只新增 `FindObsExecutable()`，`Process.Start` 放在
+> `SimpleRecordingService.LaunchAndWaitAsync`（配合确认弹窗、就绪轮询与状态机）。
+> 下面的签名仅作设计史保留，**不要照它写代码**。】
 
 - 新增 `public string? FindObsExecutable()`：注册表 `Uninstall\OBS Studio`（HKLM/HKCU/WOW6432Node）
   的 `DisplayIcon` → `ObsLaunchCore.ExeFromDisplayIcon`；再叠加已探测到的安装根

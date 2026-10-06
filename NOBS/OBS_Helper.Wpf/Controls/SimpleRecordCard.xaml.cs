@@ -288,7 +288,9 @@ public partial class SimpleRecordCard : UserControl
         // 而且中英各自的标点习惯（全角/半角）也不同（V2.9.4 审查发现）。
         RemainingText.Text = Strings.T("simple.record.remaining")
             + (progress.FreeGb > 0
-                ? Strings.T("simple.record.remainingValue",
+                ? Strings.T(progress.FromMeasuredRate
+                        ? "simple.record.remainingValueMeasured"
+                        : "simple.record.remainingValue",
                     progress.RemainingMinutes.ToString("0"), progress.FreeGb.ToString("0.#"))
                 : unknown);
         RemainingText.SetResourceReference(TextBlock.ForegroundProperty,

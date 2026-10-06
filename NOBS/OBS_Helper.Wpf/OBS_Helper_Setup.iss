@@ -15,7 +15,7 @@
 ; 版本号默认与 csproj 对齐；build.ps1 会用 /DMyAppVersion=<ver> 覆盖此值。
 ; 用 #ifndef：ISPP 中命令行 /D 定义过的符号在脚本里不应再 #define 覆盖。
 #ifndef MyAppVersion
-#define MyAppVersion "2.9.6"
+#define MyAppVersion "3.0.0"
 #endif
 ; 发布产物所在的 TFM 子目录（V2.9.3 起双目标：主构建 / Win7 兼容构建）
 #ifndef MyAppTfm
@@ -113,7 +113,10 @@ chinesesimplified.LaunchApp=安装完成后启动 OBS帮助助手
 english.LaunchApp=Launch OBS Helper when the installation finishes
 
 [Files]
-Source: "bin\Release\{#MyAppTfm}\win-x64\publish\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
+; V3.0（F10）：打包时排除调试符号与自检产物。
+; 理由：pdb 只对开发调试有意义，装到用户机器上纯属体积与噪声（本项目自包含发布约 160MB，
+; 每一点都影响下载体验）；selftest_result.txt 是本机自检写出的临时文件，更不该进安装包。
+Source: "bin\Release\{#MyAppTfm}\win-x64\publish\*"; DestDir: "{app}"; Excludes: "*.pdb,selftest_result.txt"; Flags: ignoreversion recursesubdirs createallsubdirs
 Source: "..\LICENSE"; DestDir: "{app}"; Flags: ignoreversion
 
 [INI]

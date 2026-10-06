@@ -73,6 +73,7 @@ public partial class SettingsPage : UserControl, INavigationAware
             CloudPanel.Visibility = mode == DiagnosticEngineMode.Cloud ? Visibility.Visible : Visibility.Collapsed;
 
             var provider = ai.FreeProviderMode;
+            UpdateEgressNote(mode, provider);
             FreeProviderZhipu.IsChecked = provider == FreeAiProvider.Zhipu;
             FreeProviderPollinations.IsChecked = provider == FreeAiProvider.Pollinations;
             FillFreeModelItems(provider, selectEffective: true);
@@ -200,6 +201,22 @@ public partial class SettingsPage : UserControl, INavigationAware
             VcamHotkeyWin.IsChecked = h.VirtualCam.Win;
             VcamHotkeyKey.Text = h.VirtualCam.Key;
 
+            // V3.0：存片热键（回放缓存）
+            ReplayHotkeyEnabled.IsChecked = h.SaveReplayEnabled;
+            ReplayHotkeyCtrl.IsChecked = h.SaveReplay.Ctrl;
+            ReplayHotkeyAlt.IsChecked = h.SaveReplay.Alt;
+            ReplayHotkeyShift.IsChecked = h.SaveReplay.Shift;
+            ReplayHotkeyWin.IsChecked = h.SaveReplay.Win;
+            ReplayHotkeyKey.Text = h.SaveReplay.Key;
+
+            // V3.0（D3）：录制打点热键
+            MarkHotkeyEnabled.IsChecked = h.MarkRecordingEnabled;
+            MarkHotkeyCtrl.IsChecked = h.MarkRecording.Ctrl;
+            MarkHotkeyAlt.IsChecked = h.MarkRecording.Alt;
+            MarkHotkeyShift.IsChecked = h.MarkRecording.Shift;
+            MarkHotkeyWin.IsChecked = h.MarkRecording.Win;
+            MarkHotkeyKey.Text = h.MarkRecording.Key;
+
             WinHotkeyEnabled.IsChecked = h.ToggleWindowEnabled;
             WinHotkeyCtrl.IsChecked = h.ToggleWindow.Ctrl;
             WinHotkeyAlt.IsChecked = h.ToggleWindow.Alt;
@@ -305,6 +322,8 @@ public partial class SettingsPage : UserControl, INavigationAware
         RecHotkeyDisplay.Text = HotkeyDisplay(RecHotkeyCtrl, RecHotkeyAlt, RecHotkeyShift, RecHotkeyWin, RecHotkeyKey);
         StreamHotkeyDisplay.Text = HotkeyDisplay(StreamHotkeyCtrl, StreamHotkeyAlt, StreamHotkeyShift, StreamHotkeyWin, StreamHotkeyKey);
         VcamHotkeyDisplay.Text = HotkeyDisplay(VcamHotkeyCtrl, VcamHotkeyAlt, VcamHotkeyShift, VcamHotkeyWin, VcamHotkeyKey);
+        ReplayHotkeyDisplay.Text = HotkeyDisplay(ReplayHotkeyCtrl, ReplayHotkeyAlt, ReplayHotkeyShift, ReplayHotkeyWin, ReplayHotkeyKey);
+        MarkHotkeyDisplay.Text = HotkeyDisplay(MarkHotkeyCtrl, MarkHotkeyAlt, MarkHotkeyShift, MarkHotkeyWin, MarkHotkeyKey);
         MiniHotkeyDisplay.Text = HotkeyDisplay(MiniHotkeyCtrl, MiniHotkeyAlt, MiniHotkeyShift, MiniHotkeyWin, MiniHotkeyKey);
         WinHotkeyDisplay.Text = HotkeyDisplay(WinHotkeyCtrl, WinHotkeyAlt, WinHotkeyShift, WinHotkeyWin, WinHotkeyKey);
     }
@@ -331,6 +350,10 @@ public partial class SettingsPage : UserControl, INavigationAware
         h.Stream = ReadBinding(StreamHotkeyCtrl, StreamHotkeyAlt, StreamHotkeyShift, StreamHotkeyWin, StreamHotkeyKey);
         h.VirtualCamEnabled = VcamHotkeyEnabled.IsChecked == true;
         h.VirtualCam = ReadBinding(VcamHotkeyCtrl, VcamHotkeyAlt, VcamHotkeyShift, VcamHotkeyWin, VcamHotkeyKey);
+        h.SaveReplayEnabled = ReplayHotkeyEnabled.IsChecked == true;
+        h.SaveReplay = ReadBinding(ReplayHotkeyCtrl, ReplayHotkeyAlt, ReplayHotkeyShift, ReplayHotkeyWin, ReplayHotkeyKey);
+        h.MarkRecordingEnabled = MarkHotkeyEnabled.IsChecked == true;
+        h.MarkRecording = ReadBinding(MarkHotkeyCtrl, MarkHotkeyAlt, MarkHotkeyShift, MarkHotkeyWin, MarkHotkeyKey);
         h.MiniWindowEnabled = MiniHotkeyEnabled.IsChecked == true;
         h.MiniWindow = ReadBinding(MiniHotkeyCtrl, MiniHotkeyAlt, MiniHotkeyShift, MiniHotkeyWin, MiniHotkeyKey);
         h.ToggleWindowEnabled = WinHotkeyEnabled.IsChecked == true;
@@ -521,9 +544,31 @@ public partial class SettingsPage : UserControl, INavigationAware
 
         FreePanel.Visibility = mode == DiagnosticEngineMode.Free ? Visibility.Visible : Visibility.Collapsed;
         CloudPanel.Visibility = mode == DiagnosticEngineMode.Cloud ? Visibility.Visible : Visibility.Collapsed;
+        UpdateEgressNote(mode, AppServices.AiSettings.FreeProviderMode);
         RefreshCloudWarning();
         if (mode == DiagnosticEngineMode.Free) await RefreshFreeQuotaAsync();
         if (mode == DiagnosticEngineMode.Cloud) await RefreshKeyStatusAsync();
+    }
+
+    /// <summary>
+    /// 按当前引擎模式更新「数据出站」提示的最后一行（V3.0 / B3）。
+    ///
+    /// 为什么要有这一行：上面两行说的是**一般情况**，而用户真正需要知道的是「我现在这个选择会怎样」。
+    /// 免费通道与自建云端是两台不同的接收方，必须分别点名。
+    /// </summary>
+    private void UpdateEgressNote(DiagnosticEngineMode mode, FreeAiProvider provider)
+    {
+        if (AiEgressNowText is null) return;   // 初始化早期可能尚未构建
+
+        AiEgressNowText.Text = mode switch
+        {
+            DiagnosticEngineMode.Local => Strings.T("settings.ai.egress.now.local"),
+            DiagnosticEngineMode.Free => Strings.T("settings.ai.egress.now.free",
+                Strings.T(provider == FreeAiProvider.Pollinations
+                    ? "settings.ai.egress.host.pollinations"
+                    : "settings.ai.egress.host.zhipu")),
+            _ => Strings.T("settings.ai.egress.now.cloud", AppServices.AiSettings.Settings.CloudUrl)
+        };
     }
 
     /// <summary>按通道填充模型下拉（数据源 = 服务端的线上可用白名单，避免两处维护漂移）。</summary>
@@ -812,6 +857,20 @@ public partial class SettingsPage : UserControl, INavigationAware
     private void OnBgSwatchClick(object sender, MouseButtonEventArgs e)
     {
         if (_syncing || sender is not Border { Tag: string hex }) return;
+        AppServices.Appearance.SetBackgroundColor(hex);
+        SyncBgColorState();
+    }
+
+    /// <summary>
+    /// 色板的键盘激活（V3.0 / E4）：Border 不是控件，回车/空格不会自动触发点击。
+    /// 键盘用户此前**换不了背景色** —— 这属于「功能对某类用户直接不可用」，不是小瑕疵。
+    /// </summary>
+    private void OnBgSwatchKeyDown(object sender, KeyEventArgs e)
+    {
+        if (e.Key is not (Key.Enter or Key.Space)) return;
+        if (_syncing || sender is not Border { Tag: string hex }) return;
+
+        e.Handled = true;
         AppServices.Appearance.SetBackgroundColor(hex);
         SyncBgColorState();
     }

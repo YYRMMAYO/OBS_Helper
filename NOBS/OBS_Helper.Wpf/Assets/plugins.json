@@ -54,6 +54,7 @@
       "url": "https://github.com/YYRMMAYO/OBS_Helper_Plugin",
       "repo": "YYRMMAYO/OBS_Helper_Plugin",
       "dlls": ["obs-helper-dock"],
+    "obsCompat": "30-32",
       "maintain": "active"
     },
     {

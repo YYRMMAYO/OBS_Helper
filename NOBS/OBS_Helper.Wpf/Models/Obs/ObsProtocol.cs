@@ -61,6 +61,92 @@ public static class ObsRequestStatusCode
     public const int ResourceNotFound = 600;
     public const int InvalidResourceState = 604;
     public const int NotReady = 207;
+
+    /// <summary>
+    /// 客户端**本地**校验失败（请求根本没发出去）。
+    ///
+    /// 第三轮验证修正：原先用 400，而 obs-websocket 的 400 就是 <c>InvalidRequestField</c>
+    /// （OBS 对非法 mediaAction 等回的正是这个码）—— 「刻意与 OBS 区分」根本没做到。
+    /// 现在用负数：OBS 从不返回负码，因此 <c>code &lt; 0</c> 就能可靠地区分「本地拦截」与「服务端拒绝」。
+    /// </summary>
+    public const int ClientValidationFailed = -1;
+
+    /// <summary>该返回码是否来自本地校验（请求未发出）。</summary>
+    public static bool IsLocalValidation(int code) => code < 0;
+}
+
+/// <summary>来源上挂的一个滤镜（V3.0 / D7）。</summary>
+public sealed class ObsFilterInfo
+{
+    public string Name { get; init; } = "";
+    public string Kind { get; init; } = "";
+    public int Index { get; init; }
+    public bool Enabled { get; init; }
+
+    /// <summary>展示名：优先给已知滤镜种类一个中文名，未知则原样显示种类 id。</summary>
+    public string KindLabel => Localization.DataValues.FilterKindLabel(Kind);
+}
+
+/// <summary>媒体源状态（V3.0 / D7）。</summary>
+public sealed class ObsMediaStatus
+{
+    public string State { get; init; } = "";
+    public long DurationMs { get; init; }
+    public long CursorMs { get; init; }
+
+    public bool IsPlaying => State.Contains("PLAYING", StringComparison.OrdinalIgnoreCase);
+    public bool IsPaused => State.Contains("PAUSED", StringComparison.OrdinalIgnoreCase);
+    public bool IsEnded => State.Contains("ENDED", StringComparison.OrdinalIgnoreCase);
+    public bool IsStopped => State.Contains("STOPPED", StringComparison.OrdinalIgnoreCase) || State.Length == 0;
+}
+
+/// <summary>媒体源动作白名单（V3.0 / D7）。拼错取值时 OBS 的报错很难懂，因此本地先拦一道。</summary>
+public static class ObsMediaActions
+{
+    public const string Play = "OBS_WEBSOCKET_MEDIA_INPUT_ACTION_PLAY";
+    public const string Pause = "OBS_WEBSOCKET_MEDIA_INPUT_ACTION_PAUSE";
+    public const string Restart = "OBS_WEBSOCKET_MEDIA_INPUT_ACTION_RESTART";
+    public const string Stop = "OBS_WEBSOCKET_MEDIA_INPUT_ACTION_STOP";
+    public const string Next = "OBS_WEBSOCKET_MEDIA_INPUT_ACTION_NEXT";
+    public const string Previous = "OBS_WEBSOCKET_MEDIA_INPUT_ACTION_PREVIOUS";
+
+    public static readonly string[] All = { Play, Pause, Restart, Stop, Next, Previous };
+
+    public static bool IsValid(string? action) => action is not null && All.Contains(action);
+}
+
+/// <summary>音频监听类型（V3.0 / D7）。</summary>
+public static class ObsMonitorTypes
+{
+    public const string None = "OBS_MONITORING_TYPE_NONE";
+    public const string MonitorOnly = "OBS_MONITORING_TYPE_MONITOR_ONLY";
+    public const string MonitorAndOutput = "OBS_MONITORING_TYPE_MONITOR_AND_OUTPUT";
+
+    public static readonly string[] All = { None, MonitorOnly, MonitorAndOutput };
+
+    /// <summary>
+    /// 把常见写法归一化为官方取值；认不出来返回 null（调用方据此直接报错，不发无效请求）。
+    /// 接受简写（<c>none</c> / <c>monitorOnly</c> / <c>monitorAndOutput</c>）与中文（<c>关闭</c>/<c>仅监听</c>/<c>监听并输出</c>）。
+    /// </summary>
+    public static string? Normalize(string? monitorType)
+    {
+        if (string.IsNullOrWhiteSpace(monitorType)) return null;
+        var s = monitorType.Trim();
+
+        foreach (var t in All)
+        {
+            if (string.Equals(t, s, StringComparison.OrdinalIgnoreCase)) return t;
+        }
+
+        var key = s.Replace("_", "").Replace("-", "").Replace(" ", "").ToLowerInvariant();
+        return key switch
+        {
+            "none" or "off" or "关闭" or "关" => None,
+            "monitoronly" or "only" or "仅监听" or "只听" => MonitorOnly,
+            "monitorandoutput" or "both" or "监听并输出" or "同时输出" => MonitorAndOutput,
+            _ => null
+        };
+    }
 }
 
 /// <summary>连接状态机。</summary>
@@ -163,6 +249,14 @@ public sealed class ObsOutputStatus
     public double Congestion { get; set; }
     public long SkippedFrames { get; set; }
     public long TotalFrames { get; set; }
+
+    /// <summary>
+    /// OBS 自报的实时码率（kbps）；拿不到时为 0（V3.0 / D2）。
+    ///
+    /// 只有旧协议（obs-websocket 4.x 的 <c>kbits-per-sec</c>）会填它：v5 的 <c>GetStreamStatus</c>
+    /// 不给实时码率，只能由「已发送字节 ÷ 已播秒数」估算。界面优先用自报值。
+    /// </summary>
+    public double Kbps { get; set; }
 
     public double DroppedRatio => TotalFrames > 0 ? (double)SkippedFrames / TotalFrames : 0;
 }

@@ -1,0 +1,61 @@
+<Window x:Class="OBS_Helper.Wpf.Controls.SyncOffsetDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="{DynamicResource Loc.sync.title}"
+        Width="480" SizeToContent="Height"
+        WindowStartupLocation="CenterOwner"
+        ResizeMode="NoResize"
+        ShowInTaskbar="False"
+        Background="{DynamicResource SurfaceBrush}">
+  <!--
+    音画同步偏移（V3.0 / D7）。
+
+    OBS 自己的入口藏在「高级音频属性」里，而且只给一个毫秒输入框 —— 用户既不知道该调多少，
+    也不知道该往哪个方向调。这个对话框把「往哪个方向、大概多少」讲清楚，并给几个常用档位。
+  -->
+  <Border Padding="18">
+    <StackPanel>
+
+      <TextBlock x:Name="HeaderText" FontWeight="SemiBold" FontSize="{DynamicResource FontSizeMd}"
+                 Foreground="{DynamicResource TextBrush}" TextWrapping="Wrap" />
+      <TextBlock Text="{DynamicResource Loc.sync.hint}" Style="{StaticResource CaptionText}"
+                 Margin="0,8,0,0" TextWrapping="Wrap" />
+
+      <!-- 当前值 -->
+      <Border Style="{StaticResource SoftPanel}" Margin="0,12,0,0" Padding="12,10">
+        <StackPanel Orientation="Horizontal">
+          <TextBlock Text="{DynamicResource Loc.sync.current}" Style="{StaticResource CaptionText}"
+                     VerticalAlignment="Center" Margin="0,0,8,0" />
+          <TextBlock x:Name="ValueText" FontSize="{DynamicResource FontSizeLg}" FontWeight="Bold"
+                     Foreground="{DynamicResource BrandBrush}" VerticalAlignment="Center" />
+        </StackPanel>
+      </Border>
+
+      <Slider x:Name="OffsetSlider" Minimum="-500" Maximum="500" TickFrequency="5"
+              SmallChange="5" LargeChange="25" IsSnapToTickEnabled="True"
+              Margin="0,14,0,0" ValueChanged="OnSliderChanged" />
+
+      <!-- 常用档位：免得用户从 0 开始一点点试 -->
+      <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
+        <Button Content="{DynamicResource Loc.sync.presetEarliest}" Style="{StaticResource SecondaryButton}"
+                Margin="0,0,8,0" Tag="-200" Click="OnPreset" />
+        <Button Content="-100" Style="{StaticResource SecondaryButton}" Margin="0,0,8,0" Tag="-100" Click="OnPreset" />
+        <Button Content="-20" Style="{StaticResource SecondaryButton}" Margin="0,0,8,0" Tag="-20" Click="OnPreset" />
+        <Button Content="0" Style="{StaticResource SecondaryButton}" Margin="0,0,8,0" Tag="0" Click="OnPreset" />
+        <Button Content="+20" Style="{StaticResource SecondaryButton}" Margin="0,0,8,0" Tag="20" Click="OnPreset" />
+        <Button Content="+100" Style="{StaticResource SecondaryButton}" Tag="100" Click="OnPreset" />
+      </StackPanel>
+
+      <TextBlock Text="{DynamicResource Loc.sync.effect}" Style="{StaticResource CaptionText}"
+                 Margin="0,10,0,0" TextWrapping="Wrap" />
+
+      <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,16,0,0">
+        <Button x:Name="CancelButton" Content="{DynamicResource Loc.common.cancel}"
+                Style="{StaticResource SecondaryButton}" Margin="0,0,10,0" Click="OnCancel" />
+        <Button x:Name="ApplyButton" Content="{DynamicResource Loc.sync.apply}"
+                Style="{StaticResource PrimaryButton}" Click="OnApply" />
+      </StackPanel>
+
+    </StackPanel>
+  </Border>
+</Window>

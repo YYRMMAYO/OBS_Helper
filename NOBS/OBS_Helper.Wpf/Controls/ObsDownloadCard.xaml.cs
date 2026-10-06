@@ -31,8 +31,7 @@ public partial class ObsDownloadCard : UserControl
     public ObsDownloadCard()
     {
         InitializeComponent();
-        SafetyText.Text = ObsDownloadLinks.SafetyNote;
-        AlternateText.Text = ObsDownloadLinks.AlternativeNote;
+        ApplyLanguage();
 
         // 微软商店需要 Win10 1809+；老系统上把入口隐掉，而不是留一个点了报错的按钮。
         var storeOk = OsSupport.IsMicrosoftStoreAvailable(OsSupport.Current);
@@ -41,6 +40,19 @@ public partial class ObsDownloadCard : UserControl
         {
             ToolkitButton.Margin = new Thickness(0, 0, 8, 8);
         }
+    }
+
+    /// <summary>
+    /// 重新取一遍文案（V3.0 / F5）。
+    ///
+    /// 与 <see cref="FeedbackCard"/> 同一个原因：本控件被搭建页 / 工具箱共用，
+    /// 文案原先只在构造函数里取一次，切语言后仍是旧语言。宿主页面进入时调用即可。
+    /// （商店入口的显隐只取决于系统版本，留在构造函数里。）
+    /// </summary>
+    public void ApplyLanguage()
+    {
+        SafetyText.Text = ObsDownloadLinks.SafetyNote;
+        AlternateText.Text = ObsDownloadLinks.AlternativeNote;
     }
 
     // ---------------------------------------------------------------- 官方入口

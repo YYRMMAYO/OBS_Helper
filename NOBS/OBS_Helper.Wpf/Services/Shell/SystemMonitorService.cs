@@ -51,6 +51,8 @@ public sealed class SystemMonitorService : IDisposable
 
     private readonly DispatcherTimer _timer;
     private readonly List<SystemSample> _history = new();
+    /// <summary>采样互斥：常驻计时器与「只取一次快照」共用同一批字段（_tick / _netPoints / _netInterfaces）。</summary>
+    private readonly object _sampleGate = new();
 
     private PerformanceCounter? _cpuCounter;
     private List<(long Recv, long Sent, DateTime At)> _netPoints = new();
@@ -76,6 +78,49 @@ public sealed class SystemMonitorService : IDisposable
     public void Start()
     {
         if (_timer.IsEnabled) return;
+        EnsureCpuCounter();
+        _timer.Start();
+    }
+
+    /// <summary>
+    /// 取一次快照但**不启动**常驻计时器（V3.0）。
+    ///
+    /// 为什么需要它：插件页的「AI 预算提示」原来在里面调了 <c>monitor.Start()</c>，
+    /// 而全仓只有监控页会 <c>Stop()</c> —— 用户只要进过一次插件广场，
+    /// 这个 1 秒一次的采样计时器就会常驻 UI 线程直到进程退出（含 2 次 P/Invoke、网卡统计、磁盘枚举）。
+    /// 只需要看一眼的地方应该用这个方法。
+    /// </summary>
+    public SystemSample SampleOnce()
+    {
+        lock (_sampleGate)
+        {
+            var ownsCounter = false;
+            if (_cpuCounter is null)
+            {
+                EnsureCpuCounter();
+                ownsCounter = _cpuCounter is not null;
+            }
+            try
+            {
+                var s = BuildSample();
+                Latest = s;
+                return s;
+            }
+            finally
+            {
+                // 临时计数器用完即弃，避免「只取一次快照」反而留下一个未释放的 PerformanceCounter
+                if (ownsCounter && !_timer.IsEnabled)
+                {
+                    try { _cpuCounter?.Dispose(); } catch (Exception) { }
+                    _cpuCounter = null;
+                }
+            }
+        }
+    }
+
+    private void EnsureCpuCounter()
+    {
+        if (_cpuCounter is not null) return;
         try
         {
             _cpuCounter = new PerformanceCounter("Processor", "% Processor Time", "_Total");
@@ -85,7 +130,6 @@ public sealed class SystemMonitorService : IDisposable
         {
             _cpuCounter = null;            // 无计数器权限等：CPU 降级为 0
         }
-        _timer.Start();
     }
 
     public void Stop()
@@ -101,8 +145,22 @@ public sealed class SystemMonitorService : IDisposable
 
     private void OnTick(object? sender, EventArgs e)
     {
+        lock (_sampleGate)
+        {
+            var sample = BuildSample();
+            Latest = sample;
+            _history.Add(sample);
+            if (_history.Count > MaxHistory) _history.RemoveAt(0);
+        }
+        _tick++;
+        SampleReady?.Invoke();
+    }
+
+    /// <summary>真正去读各项指标并组装一个采样（调用方负责加锁与保存历史）。</summary>
+    private SystemSample BuildSample()
+    {
         var disks = DiskProbe.Sample();
-        var sample = new SystemSample
+        return new SystemSample
         {
             CpuPercent = SampleCpu(),
             MemUsedMb = SampleMemUsedMb(),
@@ -111,13 +169,6 @@ public sealed class SystemMonitorService : IDisposable
             NetUpKbps = up,
             Disks = disks
         };
-
-        Latest = sample;
-        _history.Add(sample);
-        if (_history.Count > MaxHistory) _history.RemoveAt(0);
-
-        _tick++;
-        SampleReady?.Invoke();
     }
 
     private double SampleCpu()

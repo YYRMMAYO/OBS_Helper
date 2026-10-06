@@ -419,6 +419,18 @@
             <Trigger Property="IsMouseOver" Value="True">
               <Setter TargetName="Bd" Property="BorderBrush" Value="{DynamicResource BrandBrush}" />
             </Trigger>
+            <!--
+              V3.0 无障碍：这两条给纯键盘用户一个**看得见**的焦点。
+              此前 SegmentButton 只有 IsMouseOver / IsChecked，而同文件的 CardButton / NavTabButton /
+              AppCheckBox / AppSwitch / BaseButton 都有焦点指示 —— 受影响最大的恰好是
+              语言 / 主题 / 字号 / 录像预设这些「纯键盘操作最容易迷路」的控件。
+              边框加粗 1px 的同时把内边距减 1px，保证总尺寸不变（不产生布局跳动）。
+            -->
+            <Trigger Property="IsKeyboardFocused" Value="True">
+              <Setter TargetName="Bd" Property="BorderBrush" Value="{DynamicResource TextBrush}" />
+              <Setter TargetName="Bd" Property="BorderThickness" Value="2" />
+              <Setter Property="Padding" Value="11,5" />
+            </Trigger>
             <Trigger Property="IsChecked" Value="True">
               <Setter TargetName="Bd" Property="Background" Value="{DynamicResource BrandBrush}" />
               <Setter TargetName="Bd" Property="BorderBrush" Value="{DynamicResource BrandBrush}" />
@@ -426,6 +438,15 @@
               <Setter Property="Foreground" Value="{DynamicResource BrandForegroundBrush}" />
               <Setter Property="FontWeight" Value="SemiBold" />
             </Trigger>
+            <!-- 选中且聚焦：焦点框不能因为底色变成品牌色就看不见 -->
+            <MultiTrigger>
+              <MultiTrigger.Conditions>
+                <Condition Property="IsChecked" Value="True" />
+                <Condition Property="IsKeyboardFocused" Value="True" />
+              </MultiTrigger.Conditions>
+              <Setter TargetName="Bd" Property="BorderBrush" Value="{DynamicResource BrandForegroundBrush}" />
+              <Setter TargetName="Bd" Property="BorderThickness" Value="2" />
+            </MultiTrigger>
           </ControlTemplate.Triggers>
         </ControlTemplate>
       </Setter.Value>
@@ -643,6 +664,12 @@
             <Trigger Property="IsMouseOver" Value="True">
               <Setter TargetName="Bd" Property="BorderBrush" Value="{DynamicResource BrandBrush}" />
             </Trigger>
+            <!-- V3.0 无障碍：下拉框本身拿键盘焦点时，边框要跟着亮 —— 原来这里只有 IsMouseOver，
+                 纯键盘用户在「主题 / 字号 / 预设」这些 ComboBox 上完全看不出焦点在哪。 -->
+            <DataTrigger Binding="{Binding IsKeyboardFocusWithin, RelativeSource={RelativeSource AncestorType=ComboBox}}" Value="True">
+              <Setter TargetName="Bd" Property="BorderBrush" Value="{DynamicResource TextBrush}" />
+              <Setter TargetName="Bd" Property="BorderThickness" Value="2" />
+            </DataTrigger>
           </ControlTemplate.Triggers>
         </ControlTemplate>
       </Setter.Value>
@@ -655,6 +682,12 @@
     <Setter Property="MinHeight" Value="36" />
     <Setter Property="Padding" Value="10,6" />
     <Setter Property="Cursor" Value="Hand" />
+    <!--
+      V3.0 无障碍：把下拉项样式提到这里。此前只有 SettingsPage 那一处显式设了 ItemContainerStyle，
+      其余 4 个下拉框用系统默认项样式 —— 于是新加的「键盘选中高亮」只覆盖了 1/5。
+      用 DynamicResource 是因为 AppComboBoxItem 定义在本样式之后（StaticResource 要求先定义）。
+    -->
+    <Setter Property="ItemContainerStyle" Value="{DynamicResource AppComboBoxItem}" />
     <Setter Property="Template">
       <Setter.Value>
         <ControlTemplate TargetType="ComboBox">
@@ -691,7 +724,9 @@
     <Setter Property="Template">
       <Setter.Value>
         <ControlTemplate TargetType="ComboBoxItem">
-          <Border x:Name="Bd" Background="Transparent" CornerRadius="{DynamicResource CornerRadiusSm}"
+          <!-- 默认就留 1px 透明边框：聚焦时只换颜色，不产生 1px 布局跳动 -->
+          <Border x:Name="Bd" Background="Transparent" BorderBrush="Transparent" BorderThickness="1"
+                  CornerRadius="{DynamicResource CornerRadiusSm}"
                   Padding="{TemplateBinding Padding}">
             <ContentPresenter />
           </Border>
@@ -701,6 +736,12 @@
             </Trigger>
             <Trigger Property="IsSelected" Value="True">
               <Setter TargetName="Bd" Property="Background" Value="{DynamicResource BrandSoftBrush}" />
+            </Trigger>
+            <!-- V3.0 无障碍：键盘上下选择时，高亮必须看得见（原来只有鼠标悬停与选中两态） -->
+            <Trigger Property="IsKeyboardFocused" Value="True">
+              <Setter TargetName="Bd" Property="Background" Value="{DynamicResource Surface3Brush}" />
+              <Setter TargetName="Bd" Property="BorderBrush" Value="{DynamicResource TextBrush}" />
+              <Setter TargetName="Bd" Property="BorderThickness" Value="1" />
             </Trigger>
           </ControlTemplate.Triggers>
         </ControlTemplate>
@@ -845,6 +886,13 @@
     <Setter Property="Margin" Value="0,8,0,0" />
     <Setter Property="MaxWidth" Value="440" />
     <Setter Property="Effect" Value="{DynamicResource CardShadowStrong}" />
+    <!--
+      V3.0 无障碍：把轻提示声明成「实时区域」。
+      不然读屏用户完全收不到「已连接 OBS」「开录失败」这类**唯一的**结果反馈 ——
+      这类提示不需要焦点，LiveSetting 是它们能被播报的唯一途径。
+      Assertive = 立即打断当前朗读；轻提示里既有成功也有失败，用 Assertive 才不会漏。
+    -->
+    <Setter Property="AutomationProperties.LiveSetting" Value="Assertive" />
     <Setter Property="Template">
       <Setter.Value>
         <ControlTemplate TargetType="ContentControl">

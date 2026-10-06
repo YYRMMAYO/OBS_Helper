@@ -116,7 +116,12 @@
             <ColumnDefinition Width="Auto" />
           </Grid.ColumnDefinitions>
 
+          <!--
+            图标按钮必须显式给可访问名称（V3.0 / E4）：WPF 对纯图形内容不会自动生成名称，
+            而 ToolTip **不能**当名称用 —— 读屏用户只会听到「按钮」。
+          -->
           <Button x:Name="BackButton" Grid.Column="0" Style="{StaticResource IconButton}"
+                  AutomationProperties.Name="{DynamicResource Loc.main.back}"
                   ToolTip="{DynamicResource Loc.main.back}" Click="OnBackClick"
                   Visibility="Collapsed" Margin="0,0,10,0">
             <!-- 矢量返回箭头：替代 unicode ←，避免字体渲染差异 -->
@@ -145,6 +150,31 @@
 
       <!-- 页面容器 -->
       <ContentControl x:Name="PageHost" Grid.Row="1" Focusable="False" />
+
+      <!--
+        内容资产回退提示条（V3.0 / E5）：英文内容资产缺失时会静默回退成中文，
+        以前只在日志里留 WARN、界面上什么都不说 —— 英文用户只会觉得「怎么一半是中文」。
+        这里给一条可关闭的提示，明确说是哪几块内容受了影响。
+      -->
+      <Border x:Name="FallbackBanner" Grid.Row="1" VerticalAlignment="Top" Margin="16,8,16,0"
+              Visibility="Collapsed" Background="{DynamicResource WarnSoftBrush}"
+              BorderBrush="{DynamicResource WarnBrush}" BorderThickness="1"
+              CornerRadius="{DynamicResource CornerRadiusMd}" Padding="12,8">
+        <DockPanel>
+          <Button x:Name="FallbackDismissButton" DockPanel.Dock="Right"
+                  Content="{DynamicResource Loc.i18n.fallback.dismiss}"
+                  Style="{StaticResource GhostButton}" Padding="8,2" Margin="10,0,0,0"
+                  Click="OnDismissFallback" />
+          <StackPanel>
+            <TextBlock x:Name="FallbackTitleText" Text="{DynamicResource Loc.i18n.fallback.title}"
+                       FontWeight="SemiBold" FontSize="{DynamicResource FontSizeSm}"
+                       Foreground="{DynamicResource TextBrush}" />
+            <TextBlock x:Name="FallbackMessageText" Margin="0,3,0,0" TextWrapping="Wrap"
+                       FontSize="{DynamicResource FontSizeXs}"
+                       Foreground="{DynamicResource MutedBrush}" />
+          </StackPanel>
+        </DockPanel>
+      </Border>
 
       <!-- 全局加载态遮罩（覆盖顶栏 + 页面；P0，由 BusyService 控制显隐与文案） -->
       <ContentControl x:Name="BusyOverlayHost" Grid.Row="0" Grid.RowSpan="2"
@@ -196,7 +226,7 @@
                      Margin="0,14,0,0" TextWrapping="Wrap"
                      FontSize="{DynamicResource FontSizeMd}"
                      Foreground="{DynamicResource BrandBrush}" />
-          <TextBlock x:Name="OnbStepDesc" Text="" LineHeight="20"
+          <TextBlock x:Name="OnbStepDesc" Text=""
                      TextWrapping="Wrap" Margin="0,9,0,0"
                      FontSize="{DynamicResource FontSizeSm}"
                      Foreground="{DynamicResource MutedBrush}" />

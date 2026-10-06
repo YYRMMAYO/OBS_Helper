@@ -73,7 +73,11 @@ public sealed record SimpleLaunchPlan(
     bool ViaWebSocket,
     string? BlockedReason,
     string? BasicIniPath,
-    IReadOnlyList<RecordingEnvItem> Items);
+    IReadOnlyList<RecordingEnvItem> Items)
+{
+    /// <summary>OBS 配置目录（V3.0：文件通道写入前要过 <c>ObsSafePath.AssertWritable</c> 护栏）。</summary>
+    public string? ConfigDir { get; init; }
+}
 
 /// <summary>录制中的进度与容量估算。</summary>
 public sealed record SimpleProgress(
@@ -82,10 +86,20 @@ public sealed record SimpleProgress(
     double FreeGb,
     /// <summary>当前录像文件已写入的大小（MB）；读不到为 0。</summary>
     double UsedMb,
-    /// <summary>按预设码率 × 50% 冗余估算的剩余可录分钟数。</summary>
+    /// <summary>剩余可录分钟数（按实测写入速率或预设码率估算）。</summary>
     double RemainingMinutes,
     /// <summary>剩余可录不足 <see cref="SimpleRecordingCore.LowSpaceMinutes"/> 分钟。</summary>
-    bool LowSpace);
+    bool LowSpace)
+{
+    /// <summary>
+    /// 剩余可录是否基于**实测写入速率**（V3.0）。false = 基于预设码率估算。
+    /// 界面上要如实区分：本产品刻意不写码率，预设常数与用户实际设置可能差几倍。
+    /// </summary>
+    public bool FromMeasuredRate { get; init; }
+
+    /// <summary>实测写入速率（kbps）；未取得样本时为 0。</summary>
+    public double MeasuredKbps { get; init; }
+}
 
 /// <summary>
 /// 「简单录像」的核心逻辑（V2.9.4）。纯 BCL、零 WPF 依赖，单测工程直接链接编译。
@@ -105,6 +119,17 @@ public static class SimpleRecordingCore
 
     /// <summary>剩余可录时长的冗余系数：按预估码率的 1.5 倍算，宁可低估。</summary>
     public const double BitrateSafetyFactor = 1.5;
+
+    /// <summary>
+    /// 实测写入速率下的冗余系数（V3.0）：与预设码率**同为 1.5**。
+    ///
+    /// 为什么不因为「实测更准」就收紧到 1.15（原本这么写，审查后回退）：
+    /// 实测样本来自「录像文件长度差」，自动分段/切换文件时会回落归零，本质是
+    /// 「最近一次画面复杂度」的外推；而画面复杂度是可以突然变化的（静止画面 → 高速运动）。
+    /// 1.5 是唯一还能兜住这种突变、并让低空告警**提前**响起的余量 ——
+    /// 用「看起来更准」换「告警更晚」，在这个场景里是负收益。
+    /// </summary>
+    public const double MeasuredSafetyFactor = 1.5;
 
     private static readonly SimplePreset[] AllPresets =
     {
@@ -275,18 +300,43 @@ public static class SimpleRecordingCore
 
     /// <summary>
     /// 录制进度估算。
-    /// 剩余可录分钟 = 剩余空间(GB) × 1024 × 8 ÷ (预估码率 × 冗余) ÷ 60。
+    ///
+    /// 剩余可录分钟 = 剩余空间(GB) × 1024 × 1024 × 8 ÷ (生效码率 kbps × 60)。
+    ///
+    /// 三个换算是不能省的：GB→MB 是 ×1024，MB→Mb 是 ×8，而 Mb→kb 还要再 ×1024
+    /// （本项目的「码率」一律按 1024 进制，与界面的 kbps 显示一致）。
+    ///
+    /// **V3.0 修正**：这里原先漏了最后一个 ×1024（写成 <c>freeGb × 1024 × 8</c>），
+    /// 于是「剩余可录」被低估 1024 倍 —— 100 GB 空闲 @30 Mbps 真实约 466 分钟，却算成 0.45 分钟，
+    /// 结果就是**低空告警在任何机器上都恒亮**（告警疲劳），而新产品名下的「按实测写入速率」也一起失去意义。
+    /// 这条从 V2.9.4 就存在，第二轮对抗式审查才把它算清楚。
     /// </summary>
     public static SimpleProgress Estimate(TimeSpan elapsed, double freeGb, int bitrateKbps, double usedMb)
+        => Estimate(elapsed, freeGb, bitrateKbps, usedMb, measuredKbps: 0);
+
+    /// <summary>
+    /// 录制进度估算（V3.0 起支持**实测写入速率**校正）。
+    ///
+    /// <paramref name="measuredKbps"/> &gt; 0 时优先用它：本产品刻意不写码率，
+    /// 预设常数只是「典型值」，与用户实际设置（CQP/HQ 等）可能差几倍，
+    /// 于是「还能录多久」这个录制场景第一大未知会失准。有了实测样本就用实测值，
+    /// 界面据此如实标注「按实测写入速率」。
+    /// </summary>
+    public static SimpleProgress Estimate(TimeSpan elapsed, double freeGb, int bitrateKbps, double usedMb,
+        double measuredKbps)
     {
         if (freeGb < 0) freeGb = 0;
         if (usedMb < 0) usedMb = 0;
 
+        var fromMeasured = measuredKbps > 0;
+        var rateForEstimate = fromMeasured ? measuredKbps * MeasuredSafetyFactor : bitrateKbps * BitrateSafetyFactor;
+
         var remaining = 0.0;
-        if (bitrateKbps > 0)
+        if (rateForEstimate > 0)
         {
-            var effectiveKbps = bitrateKbps * BitrateSafetyFactor;
-            remaining = freeGb * 1024 * 8 / effectiveKbps / 60;
+            // GB → MB (×1024) → Mb (×8) → kb (×1024)，再除以码率与 60 秒
+            var availableKb = freeGb * 1024 * 1024 * 8;
+            remaining = availableKb / rateForEstimate / 60;
         }
 
         return new SimpleProgress(
@@ -294,7 +344,11 @@ public static class SimpleRecordingCore
             FreeGb: freeGb,
             UsedMb: usedMb,
             RemainingMinutes: remaining,
-            LowSpace: bitrateKbps > 0 && remaining < LowSpaceMinutes);
+            LowSpace: rateForEstimate > 0 && remaining < LowSpaceMinutes)
+        {
+            FromMeasuredRate = fromMeasured,
+            MeasuredKbps = measuredKbps
+        };
     }
 
     /// <summary>文件通道落地后必须重启 OBS 才生效；WebSocket 通道即时生效。</summary>

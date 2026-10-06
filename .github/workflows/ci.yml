@@ -3,9 +3,28 @@ name: Build & Package (Windows WPF)
 on:
   push:
     branches: [master]
+    # V* 标签推送 = 发版：下面的 release job 会创建/更新 Release 并上传资产
+    tags: ['V*']
   pull_request:
     branches: [master]
+  # 保留手动触发；三个输入是「增量包可升级性校验」的基准资产来源
   workflow_dispatch:
+    inputs:
+      delta_base_version:
+        description: '增量包基准版本（如 2.9.5）；留空则自动从 Releases 取上一版便携包'
+        required: false
+        default: ''
+        type: string
+      delta_base_zip_url:
+        description: '基准便携包直链（优先于版本号；Release 里找不到资产时使用）'
+        required: false
+        default: ''
+        type: string
+      require_delta_verify:
+        description: '基准资产取不到时是否直接失败（默认 false：仅警告并在 summary 说明）'
+        required: false
+        default: false
+        type: boolean
 
 concurrency:
   group: build-${{ github.ref }}
@@ -18,8 +37,32 @@ jobs:
   windows:
     name: Windows 安装包 (WPF -> NOBS/PAKE/windows)
     runs-on: windows-latest
+    # gh release list / download 读 Release 需要仓库读权限（默认 token 通常已够，这里显式声明）
+    permissions:
+      contents: read
     steps:
       - uses: actions/checkout@v4
+
+      # 为什么：runner 的 %TEMP% 偶发不可写，dotnet test 会有 15 项「临时目录被拒」的假失败；
+      # 把 TEMP/TMP 统一指到工作区内（PAKE/ 已在 .gitignore，且不在上传产物的 glob 内）。
+      - name: 准备可写的临时目录（TEMP/TMP -> 工作区）
+        shell: pwsh
+        run: |
+          $tmp = Join-Path $env:GITHUB_WORKSPACE 'NOBS/PAKE/tmp'
+          New-Item -ItemType Directory -Force -Path $tmp | Out-Null
+          "TEMP=$tmp" >> $env:GITHUB_ENV
+          "TMP=$tmp" >> $env:GITHUB_ENV
+          Write-Host "TEMP/TMP -> $tmp"
+
+      # 为什么：双目标自包含发布要还原大量包，缓存 ~/.nuget/packages 明显缩短出包时间；
+      # key 用 csproj / 锁文件哈希，依赖一变自动换新缓存。
+      - name: Cache NuGet packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: ${{ runner.os }}-nuget-${{ hashFiles('**/packages.lock.json', '**/*.csproj', '**/Directory.Packages.props', '**/global.json') }}
+          restore-keys: |
+            ${{ runner.os }}-nuget-
 
       - name: Setup .NET 10 SDK
         uses: actions/setup-dotnet@v4
@@ -34,11 +77,153 @@ jobs:
         run: choco install innosetup -y
         shell: bash
 
+      # 为什么：build.ps1 只对「低于当前版本的上一份清单 / 历史便携包」做 diff，而 PAKE/ 不入库，
+      # 全新 runner 上拿不到基准 —— 增量包会被静默跳过。这里先从 Releases（或直链）取上一版便携包
+      # 放进 PAKE\windows（build.ps1 的「历史便携包重建基准清单」回退路径据此工作），构建后再清理。
+      - name: 准备增量基准便携包（取不到则跳过并说明做法）
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          OBS_DELTA_BASE_VERSION_INPUT: ${{ inputs.delta_base_version }}
+          OBS_DELTA_BASE_URL_INPUT: ${{ inputs.delta_base_zip_url }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+          # 原生命令失败不升级成异常：下面的探测靠 $LASTEXITCODE 判断
+          $PSNativeCommandUseErrorActionPreference = $false
+          $ws        = $env:GITHUB_WORKSPACE
+          $pakeWin   = Join-Path $ws 'NOBS/PAKE/windows'
+          $baseStore = Join-Path $ws 'NOBS/PAKE/delta-base'
+          New-Item -ItemType Directory -Force -Path $pakeWin, $baseStore | Out-Null
+
+          # 当前版本与 build.ps1 一致：取 csproj 的 <Version>
+          $csproj = Join-Path $ws 'NOBS/OBS_Helper.Wpf/OBS_Helper.Wpf.csproj'
+          $curVer = "$((([xml](Get-Content $csproj -Raw)).Project.PropertyGroup.Version | Where-Object { $_ } | Select-Object -First 1))".Trim()
+          Write-Host "当前版本：$curVer"
+
+          $baseVersion = "$env:OBS_DELTA_BASE_VERSION_INPUT".Trim()
+          $baseUrl     = "$env:OBS_DELTA_BASE_URL_INPUT".Trim()
+
+          # 没给输入时自动解析：从已发布 Release 里取「版本号低于当前版本的最高一版」当基准
+          if (-not $baseVersion -and -not $baseUrl) {
+              $relsJson = gh release list --limit 50 --exclude-drafts --json tagName 2>$null
+              if ($LASTEXITCODE -eq 0 -and $relsJson) {
+                  # 兼容 PS 5.1 / PS 7：ConvertFrom-Json 对 JSON 数组的枚举行为不同（5.1 返回单个 Object[]），
+                  # 用 += 展平（数组 += 数组 即拼接），不依赖版本差异。
+                  $rels = @()
+                  foreach ($r in @($relsJson | ConvertFrom-Json)) { $rels += $r }
+                  $pick = $rels |
+                      ForEach-Object {
+                          $v = "$($_.tagName)".Trim() -replace '^[Vv]', ''
+                          if ($v -match '^\d+\.\d+\.\d+$') { [pscustomobject]@{ Tag = "$($_.tagName)".Trim(); Ver = [version]$Matches[0] } }
+                      } |
+                      Where-Object { $_.Ver -lt [version]$curVer } |
+                      Sort-Object Ver -Descending | Select-Object -First 1
+                  if ($pick) {
+                      $baseVersion = $pick.Ver.ToString()
+                      Write-Host "自动解析到基准版本 $baseVersion（tag $($pick.Tag)）"
+                  } else {
+                      Write-Host "Release 里没有版本低于 $curVer 的可用基准"
+                  }
+              } else {
+                  Write-Host "gh release list 不可用（退出码 $LASTEXITCODE），跳过自动解析"
+              }
+          }
+
+          $baseZip = $null
+          if ($baseUrl) {
+              $dest = Join-Path $baseStore (Split-Path $baseUrl -Leaf)
+              Write-Host "从直链下载基准便携包：$baseUrl"
+              try {
+                  Invoke-WebRequest -Uri $baseUrl -OutFile $dest -MaximumRedirection 5
+              } catch {
+                  Write-Warning "直链下载失败：$($_.Exception.Message)"
+              }
+              if (Test-Path $dest) { $baseZip = $dest }
+          } elseif ($baseVersion) {
+              $name = "OBS_Helper_Portable_$baseVersion.zip"
+              # 仓库历史 tag 大小写混用（V2.9.6 / v2.0.0），两种都试
+              foreach ($tag in @("V$baseVersion", "v$baseVersion")) {
+                  $dest = Join-Path $baseStore $name
+                  gh release download $tag --pattern $name --dir $baseStore --clobber 2>$null
+                  if ($LASTEXITCODE -eq 0 -and (Test-Path $dest)) {
+                      $baseZip = $dest
+                      Write-Host "已从 Release $tag 下载 $name"
+                      break
+                  }
+              }
+              if (-not $baseZip) { Write-Host "Release 里没有找到资产 $name" }
+          }
+
+          # build.ps1 靠 ^OBS_Helper_Portable_(\d+\.\d+\.\d+)$ 识别历史便携包，文件名不符就用不上
+          if ($baseZip) {
+              if ((Split-Path $baseZip -Leaf) -match '^OBS_Helper_Portable_(\d+\.\d+\.\d+)\.zip$') {
+                  $baseVersion = $Matches[1]
+              } else {
+                  Write-Warning "基准包文件名不是 OBS_Helper_Portable_<版本>.zip，build.ps1 无法识别：$baseZip"
+                  $baseZip = $null
+              }
+          }
+
+          $reason = ''
+          if (-not $baseZip) {
+              $reason = '未能从 GitHub Releases 或直链取得上一版便携包'
+          } elseif ([version]$baseVersion -ge [version]$curVer) {
+              $reason = "基准版本 $baseVersion 不低于当前版本 $curVer（build.ps1 只 diff 更低的版本）"
+              $baseZip = $null
+          }
+
+          if ($baseZip) {
+              # build.ps1 的无清单回退只扫描 PAKE\windows（非递归），构建期间必须放一份在那里；
+              # 构建后由下一步清理，避免它混进上传产物 / Release 资产。
+              Copy-Item -LiteralPath $baseZip -Destination (Join-Path $pakeWin (Split-Path $baseZip -Leaf)) -Force
+              "OBS_DELTA_BASE_READY=1" >> $env:GITHUB_ENV
+              "OBS_DELTA_BASE_VERSION=$baseVersion" >> $env:GITHUB_ENV
+              "OBS_DELTA_BASE_ZIP=$baseZip" >> $env:GITHUB_ENV
+              Write-Host "增量基准就绪：$baseVersion（$baseZip）"
+          } else {
+              Write-Warning "增量包基准不可得，跳过基准准备：$reason"
+              $md = @(
+                  '### 增量包未生成：基准资产在本次 CI 中不可得',
+                  '',
+                  "- 原因：$reason",
+                  '- 影响：不会产出 OBS_Helper_Update_<版本>.zip，增量可升级性校验跳过（job 不失败）。',
+                  '- 可行做法（任选其一）：',
+                  '  1. 手动触发本 workflow，填 delta_base_version（如 2.9.5）；',
+                  '  2. 或填 delta_base_zip_url，指向上一个版本 OBS_Helper_Portable_<版本>.zip 的直链；',
+                  '  3. 或确认上一个版本的 Release 存在且带 OBS_Helper_Portable_<版本>.zip 资产（本步骤默认就去那里取）；',
+                  '  4. 需要「取不到基准即失败」时，勾选 require_delta_verify。'
+              )
+              Add-Content -Path $env:GITHUB_STEP_SUMMARY -Value ($md -join "`n")
+          }
+
       # 双目标（V2.9.3）：脚本会发两轮 —— net10.0-windows（主构建，MinVersion=10.0）
       # 与 net6.0-windows（Win7 兼容构建，MinVersion=6.1sp1），并导出中英四份知识库资产。
       - name: Build & Package (installer + portable zip)
-        run: ./NOBS/build.ps1 -Configuration Release -Runtime win-x64
         shell: pwsh
+        run: |
+          # 为什么条件传参：只有真拿到基准便携包时才指定 -DeltaBaseVersion，
+          # 否则 build.ps1 会对不存在的清单发「找不到指定基准清单」的警告（拿不到基准时它自己会跳过）。
+          $buildArgs = @('-Configuration', 'Release', '-Runtime', 'win-x64')
+          if ($env:OBS_DELTA_BASE_READY -eq '1' -and $env:OBS_DELTA_BASE_VERSION) {
+              $buildArgs += @('-DeltaBaseVersion', $env:OBS_DELTA_BASE_VERSION)
+          }
+          Write-Host "build.ps1 $($buildArgs -join ' ')"
+          & ./NOBS/build.ps1 @buildArgs
+          if ($LASTEXITCODE -ne 0) { throw "build.ps1 失败（退出码 $LASTEXITCODE）" }
+
+      # 为什么：基准便携包只是 diff 的输入，绝不能混进本次构建产物（否则会被当成发布资产上传）。
+      - name: 清理增量基准临时副本
+        if: always()
+        shell: pwsh
+        run: |
+          if (-not $env:OBS_DELTA_BASE_ZIP) { Write-Host '本次没有准备增量基准，无需清理'; exit 0 }
+          $stale = Join-Path $env:GITHUB_WORKSPACE ('NOBS/PAKE/windows/' + (Split-Path $env:OBS_DELTA_BASE_ZIP -Leaf))
+          if (Test-Path $stale) {
+              Remove-Item -LiteralPath $stale -Force
+              Write-Host "已移除 PAKE\windows 里的基准便携包副本：$stale"
+          } else {
+              Write-Host "没有需要清理的副本：$stale"
+          }
 
       - name: Setup Python
         uses: actions/setup-python@v5
@@ -49,6 +234,158 @@ jobs:
         run: python NOBS/scripts/check_resources.py
         shell: pwsh
 
+      # 为什么：无障碍此前**没有任何自动化检查**（ACCESSIBILITY.md §5 自己就是这么写的），
+      # 于是「无文字内容的按钮没有可访问名称」「自绘鼠标按钮键盘用不了」这类问题只能靠人工发现，
+      # 也不会随代码变化被自动纠正。这个脚本把能静态判定的三条钉进 CI（本地同样可跑）。
+      - name: 无障碍静态检查
+        run: python NOBS/scripts/check_accessibility.py
+        shell: pwsh
+
+      # 为什么：发布说明里每次手工跑的 OBS_SELFTEST=1 自检（24 项；数量随版本增长，这里只说明来源）此前没进 CI，
+      # 「编译过但运行时炸」（尤其 XAML 资源名拼错）只能靠人肉发现。这里跑便携包里的 exe
+      # （= 真正发给用户的那份），读回 selftest_result.txt 并断言 FAIL=0。
+      - name: 无界面自检 OBS_SELFTEST=1（断言 0 FAIL）
+        shell: pwsh
+        timeout-minutes: 15
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $ws      = $env:GITHUB_WORKSPACE
+          $pakeWin = Join-Path $ws 'NOBS/PAKE/windows'
+
+          # 用便携包（真正交付的东西）跑自检，而不是直接跑 publish 目录：既验证了打包产物完整，
+          # 又不会把 selftest_result.txt 写进 publish 目录 —— 后面的增量校验会把 publish 目录
+          # 与旧版逐文件比对，publish 里多出一个文件就会判 FAIL。
+          $zips = @(Get-ChildItem -LiteralPath $pakeWin -Filter 'OBS_Helper_Portable_*.zip' -File |
+              Where-Object { $_.BaseName -notmatch '_win7$' } |
+              Sort-Object { [version]($_.BaseName -replace '^OBS_Helper_Portable_', '') } |
+              Select-Object -Last 1)
+          if ($zips.Count -eq 0) { throw "找不到主构建便携包 OBS_Helper_Portable_*.zip（$pakeWin）：自检需要它" }
+          $zipPath = $zips[0].FullName
+          Write-Host "自检使用的便携包：$zipPath"
+
+          $work = Join-Path $ws 'NOBS/PAKE/tmp/selftest'
+          if (Test-Path $work) { Remove-Item -LiteralPath $work -Recurse -Force }
+          New-Item -ItemType Directory -Force -Path $work | Out-Null
+          if (-not ('System.IO.Compression.ZipFile' -as [type])) { Add-Type -AssemblyName System.IO.Compression.FileSystem }
+          [System.IO.Compression.ZipFile]::ExtractToDirectory($zipPath, $work)
+
+          $exe = Join-Path $work 'OBS_Helper.exe'
+          if (-not (Test-Path $exe)) { throw "便携包里没有 OBS_Helper.exe：$zipPath" }
+          $result = Join-Path $work 'selftest_result.txt'
+          if (Test-Path $result) { Remove-Item -LiteralPath $result -Force }
+          $logOut = Join-Path $work 'selftest_stdout.log'
+          $logErr = Join-Path $work 'selftest_stderr.log'
+
+          # 为什么用 Start-Process + 超时：WPF 进程一旦卡在启动/弹窗上会挂死 runner，
+          # 必须能超时打断，并把已有的 stdout/stderr 打出来定位。
+          Write-Host '以 OBS_SELFTEST=1 运行 OBS_Helper.exe（无界面自检，最多等 300 秒）'
+          $env:OBS_SELFTEST = '1'
+          $timeoutSec = 300
+          $proc = Start-Process -FilePath $exe -WorkingDirectory $work -PassThru `
+              -RedirectStandardOutput $logOut -RedirectStandardError $logErr
+          if (-not $proc.WaitForExit($timeoutSec * 1000)) {
+              try { $proc.Kill($true) } catch { }
+              Write-Host '--- 超时前的 stdout ---'
+              if (Test-Path $logOut) { Get-Content -LiteralPath $logOut -Raw | Write-Host }
+              throw "自检超时（${timeoutSec}s）：OBS_Helper.exe 没有自行退出。若是无头 runner 缺交互桌面会话所致，需要换带桌面会话的 runner 或调整自检实现。"
+          }
+          Write-Host "自检进程退出码：$($proc.ExitCode)"
+
+          # 结果文件写在 exe 同目录（MainWindow.xaml.cs RunSelfTestAsync 用 AppDomain.CurrentDomain.BaseDirectory）
+          if (-not (Test-Path $result)) {
+              Write-Host '--- stdout ---'
+              if (Test-Path $logOut) { Get-Content -LiteralPath $logOut -Raw | Write-Host }
+              Write-Host '--- stderr ---'
+              if (Test-Path $logErr) { Get-Content -LiteralPath $logErr -Raw | Write-Host }
+              throw "自检没有写出结果文件（期望 $result，进程退出码 $($proc.ExitCode)）：可能是自检早期崩溃或缺少桌面会话。"
+          }
+
+          # 显式按 UTF-8 读回：报告里是中文，别让控制台默认编码把断言内容读花
+          $text = Get-Content -LiteralPath $result -Raw -Encoding UTF8
+          Write-Host '---------------- selftest_result.txt ----------------'
+          Write-Host $text
+          Write-Host '------------------------------------------------------'
+
+          # 计数行格式：检查项: <n> PASS / <n> FAIL （路由 18 项 + 新手引导 + 迷你小窗 + 文案资源 + 语言切换）
+          $mCount = [regex]::Match($text, '(?m)^检查项:\s*(\d+)\s*PASS\s*/\s*(\d+)\s*FAIL')
+          if ($mCount.Success) {
+              $pass = [int]$mCount.Groups[1].Value
+              $fail = [int]$mCount.Groups[2].Value
+          } else {
+              # 兼容计数行格式变动：退化为数 PASS / FAIL 开头的行
+              $pass = @([regex]::Matches($text, '(?m)^PASS\b')).Count
+              $fail = @([regex]::Matches($text, '(?m)^FAIL\b')).Count
+              Write-Warning '结果文件里没有「检查项: N PASS / M FAIL」计数行，已退化为统计 PASS/FAIL 行数'
+          }
+
+          $md = @(
+              '### 无界面自检（OBS_SELFTEST=1）',
+              '',
+              "- 结果：**$pass PASS / $fail FAIL**",
+              "- 便携包：$(Split-Path $zipPath -Leaf)"
+          )
+          Add-Content -Path $env:GITHUB_STEP_SUMMARY -Value ($md -join "`n")
+
+          if ($fail -ne 0) { throw "无界面自检失败：FAIL=$fail（PASS=$pass），详见上方 selftest_result.txt 内容" }
+          Write-Host "无界面自检通过：$pass PASS / 0 FAIL"
+
+      # 为什么：增量包漏文件/漏删除时，老用户升级后会缺文件或残留旧文件 —— 只有「旧版目录 + 应用增量包
+      # 再与最新 publish 逐文件比 SHA-256」的端到端模拟才拦得住。失败（非 0 退出码）即让 job 失败。
+      - name: 增量包可升级性校验（verify_delta.py）
+        shell: pwsh
+        timeout-minutes: 15
+        env:
+          OBS_REQUIRE_DELTA_VERIFY: ${{ inputs.require_delta_verify }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $PSNativeCommandUseErrorActionPreference = $false
+          $ws      = $env:GITHUB_WORKSPACE
+          $pakeWin = Join-Path $ws 'NOBS/PAKE/windows'
+          $publish = Join-Path $ws 'NOBS/OBS_Helper.Wpf/bin/Release/net10.0-windows/win-x64/publish'
+          $require = "$env:OBS_REQUIRE_DELTA_VERIFY" -eq 'true'
+
+          if ("$env:OBS_DELTA_BASE_READY" -ne '1') {
+              # 基准资产拿不到：说清原因与可行做法。默认只警告（普通 push/PR 不该因为这个变红），
+              # 勾了 require_delta_verify 则直接失败。
+              $msg = '增量基准资产不可得，本次未做增量包可升级性校验：原因与可行做法见「准备增量基准便携包」步骤的 job summary（delta_base_version / delta_base_zip_url / 确认上一版 Release 带便携包资产 / require_delta_verify）。'
+              if ($require) { throw $msg }
+              Write-Warning $msg
+              exit 0
+          }
+
+          $deltas = @(Get-ChildItem -LiteralPath $pakeWin -Filter 'OBS_Helper_Update_*.zip' -File |
+              Sort-Object { [version]($_.BaseName -replace '^OBS_Helper_Update_', '') } |
+              Select-Object -Last 1)
+          if ($deltas.Count -eq 0) {
+              Write-Warning "基准 $env:OBS_DELTA_BASE_VERSION 与本次构建无文件差异，build.ps1 没有生成增量包，跳过校验"
+              exit 0
+          }
+          if (-not (Test-Path -LiteralPath $env:OBS_DELTA_BASE_ZIP)) { throw "基准便携包不在了：$env:OBS_DELTA_BASE_ZIP" }
+          if (-not (Test-Path -LiteralPath $publish)) { throw "找不到发布目录：$publish" }
+
+          $deltaPath = $deltas[0].FullName
+          Write-Host "校验增量包：$deltaPath"
+          Write-Host "  基准便携包：$env:OBS_DELTA_BASE_ZIP"
+          Write-Host "  发布目录  ：$publish"
+          # verify_delta.py 内部已把 stdout/stderr 重配成 UTF-8，这里再兜一层，防控制台编码炸
+          $env:PYTHONUTF8 = '1'
+          $env:PYTHONIOENCODING = 'utf-8'
+          # 比对基准优先用**新版便携包**（真正的发货产物）：publish 目录里含 *.pdb 这类
+          # 打包时按设计排除的文件，拿它当基准会把「老包里的 pdb 被正确删除」误判成
+          # 「最新发布缺失 OBS_Helper.pdb」，让这条门禁永远红（第四轮验证实测）。
+          $newZip = Get-ChildItem -LiteralPath $pakeWin -Filter 'OBS_Helper_Portable_*.zip' -File |
+              Where-Object { $_.BaseName -notmatch 'win7$' } |
+              Sort-Object { [version]($_.BaseName -replace '^OBS_Helper_Portable_', '') } |
+              Select-Object -Last 1
+          if ($newZip) {
+              python NOBS/scripts/verify_delta.py --old "$env:OBS_DELTA_BASE_ZIP" --delta "$deltaPath" --publish "$publish" --new "$($newZip.FullName)"
+          } else {
+              python NOBS/scripts/verify_delta.py --old "$env:OBS_DELTA_BASE_ZIP" --delta "$deltaPath" --publish "$publish"
+          }
+          $code = $LASTEXITCODE
+          if ($code -ne 0) { throw "增量包可升级性校验失败：verify_delta.py 退出码 $code（0=PASS，非 0=FAIL）" }
+          Write-Host '增量包可升级性校验通过（PASS）'
+
       - name: Upload NOBS/PAKE/windows
         if: always()
         uses: actions/upload-artifact@v4
@@ -56,3 +393,90 @@ jobs:
           name: OBS_Helper_Windows
           path: NOBS/PAKE/windows/*
           if-no-files-found: warn
+
+  # ---------------- tag（V*）推送：算资产 SHA-256 并创建/更新 Release ----------------
+  # 为什么独立成 job：发版只在打标签时发生，并且需要 contents: write（构建 job 不需要这么高权限）。
+  release:
+    name: '打标签自动发版 (tag V*)'
+    needs: windows
+    # 只在 tag 推送时发版：master 推送 / PR 也会跑 windows job，但不能建 Release
+    if: startsWith(github.ref, 'refs/tags/')
+    runs-on: windows-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      # 为什么复用 windows job 的产物：发布的就是刚跑过单测 + 无界面自检 + 增量校验的那一份比特，
+      # 避免在 tag 上重复构建两个 TFM（十几分钟）导致「发布的」与「验证过的」不是同一份。
+      - name: 下载 Windows 构建产物
+        uses: actions/download-artifact@v4
+        with:
+          name: OBS_Helper_Windows
+          path: NOBS/PAKE/windows
+
+      # 为什么：Release 只有文件名，没有哈希就没法核对下载到的包是否被改过 / 传坏。
+      - name: 计算资产 SHA-256（日志 + job summary + SHA256SUMS.txt）
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          # 一律用绝对路径：.NET API（WriteAllLines / Get-FileHash）按进程当前目录解析相对路径，
+          # 不跟随 PowerShell 的 Set-Location，相对路径在别的 step 里会写错地方。
+          $ws = $env:GITHUB_WORKSPACE
+          $pakeWin = Join-Path $ws 'NOBS/PAKE/windows'
+          # 只哈希顶层文件（安装包 / 便携包 / 增量包 / 知识库资产）；manifests/ 是内部清单，不作为发布资产
+          $assets = @(Get-ChildItem -LiteralPath $pakeWin -File | Sort-Object Name)
+          if ($assets.Count -eq 0) { throw "没有找到可发布的产物：$pakeWin（检查 windows job 的 upload-artifact 是否成功）" }
+
+          $sumLines = @()
+          $table = @('| 资产 | 大小 (MB) | SHA-256 |', '| --- | --- | --- |')
+          foreach ($f in $assets) {
+              $hash = (Get-FileHash -LiteralPath $f.FullName -Algorithm SHA256).Hash.ToLowerInvariant()
+              $size = [math]::Round($f.Length / 1MB, 1)
+              $sumLines += "$hash  $($f.Name)"
+              $table += "| $($f.Name) | $size | $hash |"
+              Write-Host "$hash  $($f.Name)"
+          }
+
+          # SHA256SUMS.txt 用 sha256sum 兼容格式（<hash> 两空格 <文件名>），Linux/mac 上可直接 sha256sum -c
+          $sumFile = Join-Path $pakeWin 'SHA256SUMS.txt'
+          [System.IO.File]::WriteAllLines($sumFile, [string[]]$sumLines, (New-Object System.Text.UTF8Encoding($false)))
+          Write-Host "已写入 $sumFile"
+
+          $md = @("## 发版资产 SHA-256（$env:GITHUB_REF_NAME）", '') + $table + @('', '完整的 SHA256SUMS.txt 也作为 Release 资产上传，可用 sha256sum -c SHA256SUMS.txt 校验。')
+          Add-Content -Path $env:GITHUB_STEP_SUMMARY -Value ($md -join "`n")
+
+          # Release 说明也用同一张表，便于下载后直接核对
+          $notes = @("OBS 帮助助手 $env:GITHUB_REF_NAME", '', '### 资产 SHA-256', '') + $table
+          [System.IO.File]::WriteAllLines((Join-Path $ws 'NOBS/PAKE/release_notes.md'), [string[]]$notes, (New-Object System.Text.UTF8Encoding($false)))
+
+      - name: 创建/更新 Release 并上传资产
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $PSNativeCommandUseErrorActionPreference = $false
+          $tag = $env:GITHUB_REF_NAME
+          $ws = $env:GITHUB_WORKSPACE
+          $assetPaths = @(Get-ChildItem -LiteralPath (Join-Path $ws 'NOBS/PAKE/windows') -File | Sort-Object Name | ForEach-Object { $_.FullName })
+          if ($assetPaths.Count -eq 0) { throw '没有可上传的资产：NOBS/PAKE/windows' }
+          $notesPath = Join-Path $ws 'NOBS/PAKE/release_notes.md'
+          $title = "OBS 帮助助手 $tag"
+
+          # 为什么先 view：Release 已存在时 gh release create 会直接报错，必须改走 upload --clobber 覆盖
+          gh release view $tag --json tagName 2>$null | Out-Null
+          if ($LASTEXITCODE -eq 0) {
+              Write-Host "Release $tag 已存在：更新标题/说明后覆盖上传资产"
+              gh release edit $tag --title $title --notes-file $notesPath
+              if ($LASTEXITCODE -ne 0) { Write-Warning "gh release edit 失败（继续覆盖上传资产）" }
+          } else {
+              Write-Host "Release $tag 不存在：新建（--verify-tag 要求 tag 已在远端）"
+              gh release create $tag --title $title --notes-file $notesPath --verify-tag
+              if ($LASTEXITCODE -ne 0) { throw "gh release create 失败：$tag" }
+          }
+
+          # --clobber：同名资产直接覆盖，重跑发版不会因「资产已存在」失败
+          gh release upload $tag @assetPaths --clobber
+          if ($LASTEXITCODE -ne 0) { throw "gh release upload 失败：$tag" }
+          Write-Host "已上传 $($assetPaths.Count) 个资产到 Release $tag"

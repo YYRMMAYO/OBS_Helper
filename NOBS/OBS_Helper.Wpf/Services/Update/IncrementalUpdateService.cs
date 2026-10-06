@@ -26,8 +26,23 @@ public sealed class IncrementalUpdateService
     /// <summary>当前应用目录（自举进程与被更新目标均为这里）。</summary>
     public static string AppDir => AppContext.BaseDirectory;
 
+    /// <summary>
+    /// 增量包体积上限（V3.0）。完整安装包一直有 <c>MaxInstallerBytes</c> 上限，增量包原先没有 ——
+    /// 异常 / 恶意响应可以把系统盘写满（增量包落在 %LocalAppData%）。
+    /// 512MB 对「只含变更文件」的增量包而言已经非常宽松。
+    /// </summary>
+    private const long MaxDeltaBytes = 512L * 1024 * 1024;
+
     /// <summary>增量包暂存目录：%LocalAppData%\OBS_Helper\updates\pending\。</summary>
     public static string PendingDir => Path.Combine(HostBridge.AppDataDirectory, "updates", "pending");
+
+    /// <summary>
+    /// 最近一次准备失败是否属于**完整性校验未通过**（V3.0 审查修正）。
+    ///
+    /// 为什么要这个布尔：界面原先靠 `error.Contains("SHA-256")` 判断该上报哪个错误码 ——
+    /// 拿本地化文案当判据，改一次措辞就会静默变成「下载失败」。结构化标志从根上避免这件事。
+    /// </summary>
+    public bool LastFailureWasIntegrity { get; private set; }
 
     /// <summary>暂存目录内的新文件根（保持发布目录的相对结构）。</summary>
     public static string PendingFilesDir => Path.Combine(PendingDir, "files");
@@ -71,8 +86,10 @@ public sealed class IncrementalUpdateService
     /// 下载增量包并解压、校验，做好应用前的一切准备。失败时返回 Error 并清理暂存目录。
     /// </summary>
     public async Task<(UpdateManifest? Manifest, string? Error)> PrepareDeltaAsync(
-        string assetUrl, IProgress<(long Received, long? Total)>? progress, CancellationToken ct = default)
+        string assetUrl, IProgress<(long Received, long? Total)>? progress, CancellationToken ct = default,
+        string? expectedSha256 = null)
     {
+        LastFailureWasIntegrity = false;
         try
         {
             // 1) 下载 zip 到应用私有目录的临时文件
@@ -88,12 +105,15 @@ public sealed class IncrementalUpdateService
                     var buffer = new byte[81920];
                     long received = 0;
                     var total = resp.Content.Headers.ContentLength;
+                    // V3.0：增量包也要有体积上限（完整包一直有，增量包原先没有）—— 异常响应不该写满系统盘
+                    if (total is > MaxDeltaBytes) return (null, Strings.T("delta.tooLarge"));
                     while (true)
                     {
                         var n = await stream.ReadAsync(buffer, ct).ConfigureAwait(false);
                         if (n == 0) break;
                         await fs.WriteAsync(buffer.AsMemory(0, n), ct).ConfigureAwait(false);
                         received += n;
+                        if (received > MaxDeltaBytes) return (null, Strings.T("delta.tooLarge"));
                         progress?.Report((received, total));
                     }
                 }
@@ -101,6 +121,32 @@ public sealed class IncrementalUpdateService
             catch (Exception ex)
             {
                 return (null, Strings.T("delta.downloadFailed", ex.Message));
+            }
+
+            // V3.0：有 GitHub 摘要就逐字节校验（清单里的 SHA-256 只能证明「zip 与自带清单一致」，
+            // 清单本身没有锚点；摘要由托管方给出，是独立于包体的那一个锚点）。
+            if (!string.IsNullOrWhiteSpace(expectedSha256))
+            {
+                try
+                {
+                    var actual = FileHasher.Sha256(tmp);
+                    var want = UpdateService.NormalizeDigest(expectedSha256);
+                    if (!string.Equals(actual, want, StringComparison.OrdinalIgnoreCase))
+                    {
+                        FileLogger.Error("Delta", $"增量包 SHA-256 与 GitHub 摘要不一致，已丢弃：期望 {want}，实际 {actual}");
+                        LastFailureWasIntegrity = true;
+                        try { File.Delete(tmp); } catch (Exception) { }
+                        return (null, Strings.T("delta.packageHashMismatch"));
+                    }
+                }
+                catch (Exception ex)
+                {
+                    return (null, Strings.T("delta.downloadFailed", ex.Message));
+                }
+            }
+            else
+            {
+                FileLogger.Warn("Delta", "增量包没有 GitHub 摘要，仅做清单内逐文件校验");
             }
 
             // 2) 清空旧暂存并安全解压（逐条目校验路径，防 zip-slip）

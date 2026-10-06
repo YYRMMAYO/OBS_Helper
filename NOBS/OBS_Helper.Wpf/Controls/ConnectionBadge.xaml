@@ -1,9 +1,16 @@
 <UserControl x:Class="OBS_Helper.Wpf.Controls.ConnectionBadge"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+  <!--
+    连接徽章（V3.0 / E4）：它是个点击入口，因此必须能用键盘操作。
+    Border 不是控件，默认不可聚焦、也不响应空格/回车 —— 这里补上 Focusable + KeyDown，
+    可访问名称由代码在每次刷新时写入（名称里带当前状态，读屏才听得出「已连接」还是「连接失败」）。
+  -->
   <Border x:Name="Root" CornerRadius="999" Padding="9,4"
           Background="{DynamicResource Surface3Brush}"
           Cursor="Hand"
+          Focusable="True" KeyboardNavigation.IsTabStop="True"
+          KeyDown="OnKeyDown"
           MouseLeftButtonUp="OnClick"
           ToolTip="{DynamicResource Loc.badge.tipDisconnected}">
     <StackPanel Orientation="Horizontal">

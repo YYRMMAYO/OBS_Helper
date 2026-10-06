@@ -34,7 +34,7 @@
 
 ## 3. 组合根：AppServices（无 DI 容器）
 
-`AppServices.cs` 是唯一的服务装配点：**28 个 Lazy 单例**，构造函数注入依赖，刻意不用 DI 容器（服务数少、依赖是静态树、零依赖、启动快、依赖关系一屏可见）。
+`AppServices.cs` 是唯一的服务装配点：**52 个 Lazy 单例**，构造函数注入依赖，刻意不用 DI 容器（依赖是一棵静态树、零依赖、启动快、依赖关系一屏可见）。
 
 ```text
 Store ─┬─ BookmarkService ── AssistantService
@@ -152,7 +152,7 @@ SceneTemplateService 场景模板：在线落地（建专属配置集合 → 逐
   - WebSocket 收包循环（`ObsWebSocketClient.ReceiveLoop`）→ 事件经 Dispatcher 封送；
   - 系统采样计时器（`SystemMonitorService`）→ 数据发布到 UI 线程；
   - AI / HTTP / 文件 IO → `async/await`（`ConfigureAwait(false)` 后自行封送）；
-  - 自检模式（`OBS_SELFTEST=1`）→ 无界面跑 17 条路由 + 新手引导覆盖层 + 迷你小窗共 19 项自检，结果写 `selftest_result.txt`。
+  - 自检模式（`OBS_SELFTEST=1`）→ 无界面跑 **26 项**自检（18 条路由用例，覆盖 `Routes.cs` 的 17 条路由 —— `plugins` 带参跑两次；外加新手引导覆盖层、迷你小窗、文案资源解析、语言切换往返、**逐页语言重放**、**内容回退提示条**、**D7 连接态护栏**、**双构建协议分支** 8 项），结果写 `selftest_result.txt`。
 - **跨线程事件约定**：服务只发布事件，不直接碰控件；页面在事件处理器里用 `Dispatcher` 或服务已封送的回调更新 UI。
 
 ## 12. 日志与错误处理
@@ -167,8 +167,9 @@ SceneTemplateService 场景模板：在线落地（建专属配置集合 → 逐
 `UpdateService`：
 
 1. **蓝奏云**：内置 `DownloadUrl` 常量 + 密码，直接下载安装包；
-2. **GitHub Release**：`releases/latest` 找 `OBS_Helper_Setup_*.exe` 资产，去 `V/v` 前缀后 `Version.TryParse` 比较；下载用随机临时名 + **MZ 头校验**。
+2. **GitHub Release**：走 `releases?per_page=100` 而不是 `releases/latest`（后者只按发布时间取，只推 tag 没建 Release 的版本会把「最新」钉在旧包上），遍历全部 Release 取「版本号最高**且确实带目标资产**」的一条，去 `V/v` 前缀后 `Version.TryParse` 比较；下载用随机临时名 + **MZ 头校验**。
    - Release 未建时方式二因「最新版不高于当前版」拒绝下载——这是特性。
+   - **资产家族与语言严格匹配**（V2.9.3 起）：`OBS_Helper_Setup_*.exe`（安装包）、`OBS_Helper_Update_*.zip`（增量包）、`OBS_Helper_Knowledge_<ver>[.en-US].json`、`OBS_Helper_Plugins_<ver>[.en-US].json`。知识库 / 插件资产**中英两份挂在同一个 Release 上**，只按「前缀 + 后缀」匹配会把两份都认下来，中英用户互相拿到对方的文件（内容合法、解析成功，**完全静默**），因此后缀必须与当前界面语言一致（`UpdateService.AssetMatchesLanguage`）。核对这条链路时别只看安装包资产。
 
 **知识库 / 插件目录的独立更新**（`KnowledgeBaseUpdater`）同样是双通道：主通道 GitHub raw，兜底 Release 资产
 （`OBS_Helper_Knowledge_*.json` / `OBS_Helper_Plugins_*.json`）。raw 地址在 `KnowledgeBaseUrls` 里——
@@ -201,7 +202,7 @@ SceneTemplateService 场景模板：在线落地（建专属配置集合 → 逐
 
 - `build.ps1`：`dotnet publish`（Release、R2R、自包含单文件）→ Inno Setup 安装包 → 便携 zip；产物到 `PAKE/windows/`（gitignore）。
 - 免费 AI 密钥：构建期由 `scripts/embed_free_ai_key.ps1` 注入 `Assets/free_ai_key.json`（真实密钥不入库）。
-- 自检：`OBS_SELFTEST=1` 无界面跑 17 条路由 + 新手引导覆盖层 + 迷你小窗共 19 项自检，结果写 `selftest_result.txt`——「编译过但运行炸」类错误的最有效拦截。引导一项会**逐步真实导航**并校验「页面名与路由表一致」「跳转按钮数量与步骤定义一致」「站外链接落在官方域名」。
+- 自检：`OBS_SELFTEST=1` 无界面跑 **26 项**自检（18 条路由用例 + 新手引导覆盖层 + 迷你小窗 + 文案资源解析 + 语言切换往返 + 逐页语言重放 + 内容回退提示条 + D7 连接态护栏 + 双构建协议分支；**两个 TFM 各跑一次**），结果写 `selftest_result.txt`——「编译过但运行炸」类错误的最有效拦截。引导一项会**逐步真实导航**并校验「页面名与路由表一致」「跳转按钮数量与步骤定义一致」「站外链接落在官方域名」。
 - 数据脚本：`scripts/add_problems.py` / `add_templates.py` 可复用改知识库 / 模板数据。
 
 ## 16. 国际化（V2.9.2）

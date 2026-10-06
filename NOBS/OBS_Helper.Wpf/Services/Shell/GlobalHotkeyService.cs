@@ -4,6 +4,7 @@ using System.Windows.Interop;
 using OBS_Helper.Wpf.Models.Shell;
 using OBS_Helper.Wpf.Services.Host;
 using OBS_Helper.Wpf.Services.Obs;
+using OBS_Helper.Wpf.Services.Recording;
 
 namespace OBS_Helper.Wpf.Services.Shell;
 
@@ -13,6 +14,10 @@ public enum HotkeyAction
     Record,
     Stream,
     VirtualCam,
+    /// <summary>回放缓存存片（V3.0）：把「刚才那段」落盘。</summary>
+    SaveReplay,
+    /// <summary>录制中打点（V3.0 / D3）：标出精彩瞬间，停止后导出成章节。</summary>
+    MarkRecording,
     MiniWindow,
     ToggleWindow
 }
@@ -39,12 +44,14 @@ public sealed class GlobalHotkeyService : IDisposable
     private const uint ModShift = 0x4;
     private const uint ModWin = 0x8;
 
-    // 5 个动作的注册 id（约定固定值，仅进程内使用）
+    // 6 个动作的注册 id（约定固定值，仅进程内使用）
     private static readonly (HotkeyAction Action, int Id)[] Bindings =
     {
         (HotkeyAction.Record, 0xC101),
         (HotkeyAction.Stream, 0xC102),
         (HotkeyAction.VirtualCam, 0xC103),
+        (HotkeyAction.SaveReplay, 0xC106),
+        (HotkeyAction.MarkRecording, 0xC107),
         (HotkeyAction.MiniWindow, 0xC105),
         (HotkeyAction.ToggleWindow, 0xC104)
     };
@@ -192,6 +199,28 @@ public sealed class GlobalHotkeyService : IDisposable
                 case HotkeyAction.VirtualCam:
                     await _obs.ToggleVirtualCamAsync();
                     break;
+                case HotkeyAction.SaveReplay:
+                    // 存片：没开回放缓存时给出明确原因，而不是静默什么也不发生
+                    if (!_obs.ReplayBufferStatus.Active)
+                    {
+                        TrayNotify?.Invoke(Strings.T("tray.replayNotActive"));
+                        break;
+                    }
+                    var saveResult = await _obs.SaveReplayBufferAsync();
+                    if (!saveResult.Ok)
+                        TrayNotify?.Invoke(Strings.T("tray.replaySaveFailed"));
+                    break;
+                case HotkeyAction.MarkRecording:
+                    // 录制中打点（V3.0 / D3）：没在录制时给出明确原因，而不是静默什么也不发生
+                    if (!_obs.RecordStatus.Active)
+                    {
+                        TrayNotify?.Invoke(Strings.T("tray.markerNotRecording"));
+                        break;
+                    }
+                    var markerAt = AppServices.SimpleRecord.AddMarker();
+                    if (markerAt is { } at)
+                        TrayNotify?.Invoke(Strings.T("tray.markerAdded", RecordingArchiveCore.FormatDuration(at)));
+                    break;
                 case HotkeyAction.MiniWindow:
                     ToggleMiniWindowRequested?.Invoke();
                     break;
@@ -200,17 +229,26 @@ public sealed class GlobalHotkeyService : IDisposable
                     break;
             }
         }
-        catch (Exception)
+        catch (Exception ex)
         {
-            // 热键动作失败静默：Obs 状态事件会刷新 UI，避免反复打扰
+            // V3.0：不再完全静默。未连 OBS 时按录制热键毫无反应，用户会以为「热键没生效」——
+            // 至少要落日志，并在托盘给一句原因（托盘通知节流由 TrayService 统一处理）。
+            FileLogger.Warn("Hotkey", $"全局热键动作 {action} 失败：{ex.Message}");
+            if (!_obs.IsConnected)
+                TrayNotify?.Invoke(Strings.T("hotkey.notConnected"));
         }
     }
+
+    /// <summary>热键动作失败时的轻提示出口（由 MainWindow 注入；未注入则只落日志）。</summary>
+    public Action<string>? TrayNotify { get; set; }
 
     private bool IsEnabled(HotkeyAction action) => action switch
     {
         HotkeyAction.Record => Settings.RecordEnabled,
         HotkeyAction.Stream => Settings.StreamEnabled,
         HotkeyAction.VirtualCam => Settings.VirtualCamEnabled,
+        HotkeyAction.SaveReplay => Settings.SaveReplayEnabled,
+        HotkeyAction.MarkRecording => Settings.MarkRecordingEnabled,
         HotkeyAction.MiniWindow => Settings.MiniWindowEnabled,
         HotkeyAction.ToggleWindow => Settings.ToggleWindowEnabled,
         _ => false
@@ -221,6 +259,8 @@ public sealed class GlobalHotkeyService : IDisposable
         HotkeyAction.Record => Settings.Record,
         HotkeyAction.Stream => Settings.Stream,
         HotkeyAction.VirtualCam => Settings.VirtualCam,
+        HotkeyAction.SaveReplay => Settings.SaveReplay,
+        HotkeyAction.MarkRecording => Settings.MarkRecording,
         HotkeyAction.MiniWindow => Settings.MiniWindow,
         HotkeyAction.ToggleWindow => Settings.ToggleWindow,
         _ => Settings.Record
@@ -264,7 +304,7 @@ public sealed class GlobalHotkeyService : IDisposable
     /// <summary>收敛配置：清掉空主键、Win 键组合需显式允许（默认去勾）等。</summary>
     private static void Normalize(HotkeySettings s)
     {
-        foreach (var b in new[] { s.Record, s.Stream, s.VirtualCam, s.MiniWindow, s.ToggleWindow })
+        foreach (var b in new[] { s.Record, s.Stream, s.VirtualCam, s.SaveReplay, s.MarkRecording, s.MiniWindow, s.ToggleWindow })
         {
             b.Key = (b.Key ?? "").Trim();
             // 只有 Ctrl/Alt/Shift/Win 任意一个作为修饰才注册（裸键太容易误触）

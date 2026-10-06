@@ -20,22 +20,39 @@ public partial class FeedbackCard : UserControl
     {
         InitializeComponent();
 
+        var qr = LoadQrImage();
+        if (qr is null)
+        {
+            // 资源缺失：把二维码那一整格收掉（留个白框更让人困惑），并说明改用按钮打开表单。
+            QrPanel.Visibility = Visibility.Collapsed;
+        }
+        else
+        {
+            QrImage.Source = qr;
+        }
+
+        ApplyLanguage();
+    }
+
+    /// <summary>
+    /// 重新取一遍文案（V3.0 / F5）。
+    ///
+    /// 原先这几句文案只在**构造函数**里取一次，而本控件被搭建页 / 工具箱 / 反馈页共用、
+    /// 页面实例又是被导航服务缓存的 —— 于是切语言后这几张卡仍是旧语言（自检「逐页语言重放」
+    /// 就是这样把它抓出来的）。宿主页面在进入时调用本方法即可。
+    /// </summary>
+    public void ApplyLanguage()
+    {
         TitleText.Text = Strings.T("feedback.title");
         DescText.Text = Strings.T("feedback.desc");
         QrHintText.Text = Strings.T("feedback.qrHint");
         // 安全上报引导：明确告诉用户「公开 Issue 不能贴细节」时该走哪里
         SecurityNoteText.Text = Strings.T("feedback.securityNote");
 
-        var qr = LoadQrImage();
-        if (qr is null)
+        if (QrImage.Source is null)
         {
-            // 资源缺失：把二维码那一整格收掉（留个白框更让人困惑），并说明改用按钮打开表单。
-            QrPanel.Visibility = Visibility.Collapsed;
+            // 二维码资源确实缺失时把降级说明补回去（与构造函数里的判断同一口径）
             DescText.Text = Strings.T("feedback.desc") + "  " + Strings.T("feedback.qrMissing");
-        }
-        else
-        {
-            QrImage.Source = qr;
         }
     }
 

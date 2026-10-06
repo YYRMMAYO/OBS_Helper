@@ -34,6 +34,7 @@ public partial class ProblemPage : UserControl, INavigationAware
     public async Task OnNavigatedToAsync(object? parameter)
     {
         ResetUi();
+        FeedbackStatusText.Visibility = Visibility.Collapsed;
 
         var id = parameter as string ?? "";
 
@@ -60,7 +61,7 @@ public partial class ProblemPage : UserControl, INavigationAware
             BuildBullets(CauseList, problem.Causes);
             BuildSteps(problem);
 
-            if (problem.Tips.Length > 0)
+            if (problem.Tips is { Length: > 0 })
             {
                 BuildBullets(TipList, problem.Tips);
                 TipsBlock.Visibility = Visibility.Visible;
@@ -111,7 +112,22 @@ public partial class ProblemPage : UserControl, INavigationAware
 
     private void BuildBadges(Problem problem)
     {
-        foreach (var platform in problem.Platforms)
+        // 本地条目（V3.0 / D8）：让用户一眼分清「官方说的」和「我自己记的」
+        if (problem.IsLocal)
+        {
+            var minePill = new Border
+            {
+                Style = (Style)FindResource("Pill"),
+                Margin = new Thickness(0, 0, 6, 6)
+            };
+            var mineText = new TextBlock { Text = Strings.T("kb.mine.badge") };
+            mineText.SetResourceReference(TextBlock.FontSizeProperty, "FontSizeXs");
+            mineText.SetResourceReference(TextBlock.ForegroundProperty, "BrandBrush");
+            minePill.Child = mineText;
+            BadgePanel.Children.Add(minePill);
+        }
+
+        foreach (var platform in problem.Platforms ?? Array.Empty<string>())
         {
             var pill = new Border
             {
@@ -177,7 +193,10 @@ public partial class ProblemPage : UserControl, INavigationAware
             _doneSteps.Add(index);
         }
 
-        if (problem.Steps.Count == 0)
+        // 局部变量接一手：可空集合上的 `?.Count` 与随后的下标访问分两次求值，
+        // 编译器（正确地）无法证明第二次不是 null —— 零警告基线不允许这种写法。
+        var steps = problem.Steps ?? new List<Step>();
+        if (steps.Count == 0)
         {
             StepProgress.Visibility = Visibility.Collapsed;
             var empty = new TextBlock { Text = Strings.T("problem.noSteps"), Style = (Style)FindResource("MutedText") };
@@ -185,9 +204,9 @@ public partial class ProblemPage : UserControl, INavigationAware
             return;
         }
 
-        for (var i = 0; i < problem.Steps.Count; i++)
+        for (var i = 0; i < steps.Count; i++)
         {
-            var step = problem.Steps[i];
+            var step = steps[i];
 
             var content = new Grid();
             content.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
@@ -410,6 +429,96 @@ public partial class ProblemPage : UserControl, INavigationAware
         {
             // 剪贴板被别的进程占用时会抛 COM 异常，这属于可重试的小故障，就地提示即可
             ShowHint(Strings.T("common.copyFailed") + ex.Message);
+        }
+    }
+
+    // -------------------------------------------------------------- 知识库回执（V3.0 / D8）
+
+    private void OnSolvedClick(object sender, RoutedEventArgs e) => SendFeedback(solved: true);
+
+    private void OnUnsolvedClick(object sender, RoutedEventArgs e) => SendFeedback(solved: false);
+
+    /// <summary>
+    /// 生成回执并复制到剪贴板，然后打开 GitHub 新建 Issue 页面。
+    ///
+    /// **只带标题不带正文**：正文上千字，塞进 URL 有可能被浏览器/代理截断，
+    /// 而截断后的 Issue 比没有更糟（用户以为贴上了）。正文由用户从剪贴板粘贴。
+    /// </summary>
+    private async void SendFeedback(bool solved)
+    {
+        if (_problem is null) return;
+
+        // 占位符现在走 Tag（不再进 Text），所以 Text 就是用户真正写的东西
+        var note = FeedbackNoteBox.Text ?? "";
+
+        Services.Knowledge.ProblemFeedback Build() => new(
+            Problem: _problem,
+            Solved: solved,
+            UserNote: note,
+            KbVersion: AppServices.Problems.Version,
+            AppVersion: FeedbackPage.AppVersion(),
+            UsingExternalKb: AppServices.Problems.DataSource == "external",
+            ObsVersion: AppServices.Obs.Profile.ObsVersion ?? "",
+            Platform: AppServices.Obs.Profile.Platform ?? "");
+
+        try
+        {
+            Clipboard.SetText(Services.Knowledge.ProblemFeedbackCore.BuildMarkdown(Build()));
+            ShowFeedbackStatus(Strings.T("kb.feedback.copied"), ok: true);
+            // 发完就清空：留在框里会让下一次回执把上一轮的说明再带一遍
+            FeedbackNoteBox.Text = "";
+        }
+        catch (Exception ex)
+        {
+            ShowFeedbackStatus(Strings.T("kb.feedback.copyFailed", ex.Message), ok: false);
+            return;
+        }
+
+        try
+        {
+            var url = Services.Knowledge.ProblemFeedbackCore.BuildIssueUrl(
+                Services.Update.FeedbackLinks.RepositorySlug, Build());
+
+            if (await AppServices.Host.OpenExternalAsync(url))
+                ShowFeedbackStatus(Strings.T("kb.feedback.issueOpened"), ok: true);
+        }
+        catch (Exception ex)
+        {
+            ShowFeedbackStatus(Strings.T("kb.feedback.copyFailed", ex.Message), ok: false);
+        }
+    }
+
+    private void ShowFeedbackStatus(string text, bool ok)
+    {
+        FeedbackStatusText.Text = text;
+        FeedbackStatusText.SetResourceReference(TextBlock.ForegroundProperty, ok ? "MutedBrush" : "WarnBrush");
+        FeedbackStatusText.Visibility = Visibility.Visible;
+    }
+
+    /// <summary>
+    /// 创建「我的知识库」示例文件并打开目录（本地新增条目的入口）。
+    ///
+    /// V3.0 第三轮验证修正：创建后必须**立刻重载知识库**并原地重导航 ——
+    /// 原先文案让用户「按刷新」，而本页根本没有刷新按钮，用户按提示做完会以为功能坏了。
+    /// </summary>
+    private async void OnCreateMineFileClick(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            var created = AppServices.MyKnowledge.WriteStarterFile();
+            var dir = System.IO.Path.GetDirectoryName(AppServices.MyKnowledge.FilePath)!;
+            System.IO.Directory.CreateDirectory(dir);
+            Services.ObsConfig.RecordingToolsService.OpenInExplorer(dir);
+
+            // 重新载入 + 原地重放本页：用户编辑完文件回到应用时，条目已经在列表/搜索里
+            AppServices.Problems.Reload();
+            await AppServices.Navigation.NavigateAsync(Navigation.Routes.Problem, _problem?.Id, pushHistory: false)
+                .ConfigureAwait(true);
+
+            ShowFeedbackStatus(Strings.T(created ? "kb.mine.created" : "kb.mine.exists"), ok: true);        }
+        catch (Exception ex)
+        {
+            ShowFeedbackStatus(Strings.T("kb.mine.failed", ex.Message), ok: false);
         }
     }
 

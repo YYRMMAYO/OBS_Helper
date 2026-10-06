@@ -8,6 +8,31 @@
       <TextBlock Style="{StaticResource MutedText}"
                  Text="{DynamicResource Loc.logs.intro}" />
 
+      <!--
+        本次会话复盘（V3.0 / D5）：实时预警只在首次命中时弹一次，事后无从回顾。
+        这里累计本次会话的全部命中（按规则码去重计数），并与上次会话比较。
+      -->
+      <Border Style="{StaticResource Card}" Margin="0,14,0,0">
+        <StackPanel>
+          <TextBlock Style="{StaticResource SectionTitle}" Text="{DynamicResource Loc.d5.title}" />
+          <TextBlock Style="{StaticResource MutedText}" Margin="0,0,0,12" TextWrapping="Wrap"
+                     Text="{DynamicResource Loc.d5.desc}" />
+
+          <TextBlock x:Name="SessionSummaryText" Style="{StaticResource BodyText}" TextWrapping="Wrap" />
+
+          <WrapPanel Margin="0,10,0,0">
+            <Button x:Name="SessionExportButton" Content="{DynamicResource Loc.d5.export}"
+                    Style="{StaticResource SecondaryButton}" Margin="0,0,8,8" Click="OnExportSessionReview" />
+            <Button x:Name="SessionEndButton" Content="{DynamicResource Loc.d5.endSession}"
+                    Style="{StaticResource GhostButton}" Margin="0,0,0,8" Click="OnEndSession" />
+          </WrapPanel>
+
+          <TextBlock x:Name="SessionHitsHeading" Style="{StaticResource MutedText}" Margin="0,4,0,0"
+                     Text="{DynamicResource Loc.d5.hitsHeading}" Visibility="Collapsed" />
+          <StackPanel x:Name="SessionHitsPanel" Margin="0,6,0,0" />
+        </StackPanel>
+      </Border>
+
       <!-- 没有宿主能力时（例如未来的非桌面壳）只能手动选文件，保留这条降级提示 -->
       <Border x:Name="NoHostPanel" Style="{StaticResource Card}" Margin="0,14,0,0"
               Visibility="Collapsed">

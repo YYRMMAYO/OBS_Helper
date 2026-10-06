@@ -124,6 +124,14 @@
               <TextBlock Text="{DynamicResource Loc.metric.encodeSkip}" Style="{StaticResource CaptionText}" Margin="0,2,0,0" />
             </StackPanel>
           </UniformGrid>
+
+          <!--
+            V3.0（C1）：下面这两行显示的値**早就采到了**，只是此前没有任何界面在用 ——
+            `GetVideoSettings` 的画布/输出/帧率只喂给了 AI，`GetStreamStatus` 的拥塞与丢帧同样只喂给 AI。
+            而它们正是「为什么糊 / 为什么卡」的第一手依据，用户却要切回 OBS 才能核对。
+          -->
+          <TextBlock x:Name="ObsVideoText" Style="{StaticResource CaptionText}" Margin="0,10,0,0" />
+          <TextBlock x:Name="ObsOutputHealthText" Style="{StaticResource CaptionText}" Margin="0,4,0,0" />
         </StackPanel>
       </Border>
 

@@ -17,12 +17,26 @@ public sealed class SceneTemplate
     /// <summary>
     /// 默认过渡名。这是**逻辑值**而不是展示文案（V2.9.2）：它经
     /// <c>SceneTemplateService.PickTransitionName</c> 映射到 OBS 的过渡名，别名表同时认
-    /// 「淡入淡出」/「直接切换」与 OBS 英文界面里的 Fade / Cut，所以这里保持中文默认值不会影响英文环境。
+    /// 「淡入淡出」/「直接切换」与 OBS 英文界面里的 Fade / Cut。
+    ///
+    /// V3.0（E5）：默认值改为取文案键而不是写死中文 —— 内置模板数据里都带显式 <c>transition</c>，
+    /// 这里只影响「程序自己构造的模板」（例如 D6 反向捕获时本地尚未读到过渡信息的情况）。
+    /// 英文环境下新建的模板会记成 "Fade"，而别名表两种写法都认，因此跨语言共用模板不会失效。
     /// </summary>
-    public string Transition { get; set; } = "淡入淡出";
+    public string Transition { get; set; } = Localization.Strings.T("template.transition.default");
     /// <summary>默认场景切换过渡时长（毫秒）。</summary>
     public int TransitionDurationMs { get; set; } = 300;
     public List<TemplateScene> Scenes { get; set; } = new();
+
+    /// <summary>
+    /// 是否为用户自己存的「我的模板」（V3.0 / D6）。
+    ///
+    /// 内置模板没有这个字段（读出来是 false）。这个标记可以安全地随 JSON 一起序列化：
+    /// 用户模板落在 <c>%LocalAppData%\OBS_Helper\templates</c>，内置模板仍在程序集里，
+    /// 但两者的 schema **完全一致** —— 落地器与离线导出因此共用同一条代码路径。
+    /// </summary>
+    public bool IsMine { get; set; }
+
     /// <summary>推荐 / 依赖的插件（V2.2 P2-2）：落地前对照本机体检结果标注是否已装，缺失给跳转。</summary>
     public List<TemplatePluginRequirement> RequiresPlugins { get; set; } = new();
 }
@@ -74,6 +88,25 @@ public sealed class TemplateSource
     public TransformSpec? Transform { get; set; }
     /// <summary>落地后仍需用户在 OBS 里手动补齐的项（设备 / 文件 / URL 等）。</summary>
     public PlaceholderSpec? Placeholder { get; set; }
+
+    /// <summary>
+    /// 该来源上挂的滤镜（V3.0 / D6）。
+    ///
+    /// 内置模板走空列表；「我的模板」反向捕获时会把降噪 / 色键 / 锐化这类**与画面内容有关、
+    /// 与机器无关**的滤镜一并带走 —— 这正是用户换机后最不想重配的东西。
+    /// 滤镜设置里机器相关的键在捕获阶段就已剔除（见 <c>SceneTemplateCaptureCore.SanitizeSettings</c>）。
+    /// </summary>
+    public List<TemplateFilter> Filters { get; set; } = new();
+}
+
+/// <summary>模板里的一个滤镜（V3.0 / D6）。</summary>
+public sealed class TemplateFilter
+{
+    public string Name { get; set; } = "";
+    /// <summary>滤镜种类 id（obs-websocket filterKind），如 <c>noise_suppress_filter</c>。</summary>
+    public string Kind { get; set; } = "";
+    public bool Enabled { get; set; } = true;
+    public JsonObject? Settings { get; set; }
 }
 
 public sealed class TransformSpec
@@ -88,6 +121,18 @@ public sealed class TransformSpec
     public double? BoundsHeight { get; set; }
     /// <summary>对齐：0 正中，5 左上，6 右上，9 左下，10 右下 等。</summary>
     public int? Alignment { get; set; }
+
+    // ---------------- 裁剪与旋转（V3.0 第三轮验证补）----------------
+    //
+    // 为什么必须补：D6「我的模板」写明的动机就是「摄像头裁剪、滤镜、降噪换机不重配」，
+    // 而模型里没有裁剪/旋转 → 每次捕获都静默丢掉「Alt+拖动裁掉黑边」这件事，
+    // 落地后画面回正、黑边回来，且状态是成功（用户只能自己发现）。
+    public double? CropLeft { get; set; }
+    public double? CropTop { get; set; }
+    public double? CropRight { get; set; }
+    public double? CropBottom { get; set; }
+    /// <summary>旋转角度（度）。</summary>
+    public double? Rotation { get; set; }
 }
 
 public sealed class PlaceholderSpec

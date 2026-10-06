@@ -38,6 +38,88 @@ public partial class TemplatePage : UserControl, INavigationAware
         _depScan = null;
         await LoadTemplatesAsync();
         BuildCards();
+
+        // 已经有「我的模板」时把「打开模板目录」露出来（V3.0 / D6），否则用户找不到自己存的文件
+        OpenMineDirButton.Visibility = _templates.Any(t => t.IsMine) ? Visibility.Visible : Visibility.Collapsed;
+    }
+
+    // -------------------------------------------------------------- 我的模板（V3.0 / D6）
+
+    /// <summary>
+    /// 把当前场景集合反向存成模板。
+    ///
+    /// 标题默认用场景集合名（用户自己起的名字，最接近他想表达的意思），冲突时自动加后缀 ——
+    /// 不弹输入框是有意的：这一步的价值是「别让我重配」，多一个输入框就多一步摩擦，
+    /// 而模板存下之后随时可以改名（文件就在 %LocalAppData%，重命名即可）。
+    /// </summary>
+    private async void OnCaptureClick(object sender, RoutedEventArgs e)
+    {
+        if (_busy) return;
+
+        try
+        {
+            SetBusy(true);
+            var (template, error) = await AppServices.Templates.CaptureCurrentAsync(null, CancellationToken.None);
+            if (template is null)
+            {
+                ShowStatus(error ?? Strings.T("mytemplate.empty"), "warn");
+                return;
+            }
+
+            await LoadTemplatesAsync();
+            BuildCards();
+            ShowStatus(Strings.T("mytemplate.saved", template.Title), "ok");
+            OpenMineDirButton.Visibility = Visibility.Visible;
+        }
+        catch (Exception ex)
+        {
+            ShowStatus(Strings.T("mytemplate.failed", ex.Message), "danger");
+            App.ReportError(ErrorCodes.DataLoadFailed, ex);
+        }
+        finally
+        {
+            SetBusy(false);
+        }
+    }
+
+    private void OnOpenMineDirClick(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            var dir = SceneTemplateService.MineDirectory;
+            Directory.CreateDirectory(dir);
+            RecordingToolsService.OpenInExplorer(dir);
+        }
+        catch (Exception ex)
+        {
+            ShowStatus(Strings.T("mytemplate.failed", ex.Message), "warn");
+        }
+    }
+
+    private async void OnDeleteMineClick(object sender, RoutedEventArgs e)
+    {
+        if (sender is not Button { Tag: string id }) return;
+
+        var template = _templates.FirstOrDefault(x => x.Id == id);
+        if (!ConfirmDialog.Show(
+                Strings.T("mytemplate.deleteConfirmTitle"),
+                Strings.T("mytemplate.deleteConfirmMessage"),
+                Strings.T("mytemplate.delete"), Strings.T("common.cancel"),
+                danger: true, icon: "🗑"))
+        {
+            return;
+        }
+
+        if (AppServices.Templates.DeleteMine(id))
+        {
+            await LoadTemplatesAsync();
+            BuildCards();
+            ShowStatus(Strings.T("mytemplate.deleted", template?.Title ?? id), "ok");
+        }
+        else
+        {
+            ShowStatus(Strings.T("mytemplate.failed", id), "warn");
+        }
     }
 
     // -------------------------------------------------------------- 加载
@@ -143,6 +225,8 @@ public partial class TemplatePage : UserControl, INavigationAware
 
         // --- 场景 / 来源 / 待补
         var counts = new WrapPanel { Margin = new Thickness(0, 0, 0, 6) };
+        if (t.IsMine)
+            counts.Children.Add(BuildPill(Strings.T("mytemplate.badge"), "BrandBrush"));
         counts.Children.Add(BuildPill(Strings.T("template.sceneCount", t.Scenes.Count), ""));
         var totalSources = t.Scenes.Sum(s => s.Sources.Count);
         var placeholders = t.Scenes.Sum(s => s.Sources.Count(x => x.Placeholder is not null));
@@ -217,6 +301,20 @@ public partial class TemplatePage : UserControl, INavigationAware
         };
         exportBtn.Click += OnExportClick;
         buttons.Children.Add(exportBtn);
+
+        // 我的模板（V3.0 / D6）：可以删掉自己存的那份（只删模板文件，不动 OBS 里的场景）
+        if (t.IsMine)
+        {
+            var deleteBtn = new Button
+            {
+                Content = Strings.T("mytemplate.delete"),
+                Style = (Style)FindResource("GhostButton"),
+                Tag = t.Id,
+                Margin = new Thickness(10, 0, 0, 0)
+            };
+            deleteBtn.Click += OnDeleteMineClick;
+            buttons.Children.Add(deleteBtn);
+        }
 
         stack.Children.Add(buttons);
 

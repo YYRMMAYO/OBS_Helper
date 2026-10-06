@@ -15,7 +15,7 @@
         V2.9.3：同一张卡里补了应用内下载、瓦特工具箱 / 微软商店两条备用通道。
       -->
       <TextBlock Style="{StaticResource SectionTitle}" Text="{DynamicResource Loc.setup.officialObs}" Margin="0,18,0,10" />
-      <ctl:ObsDownloadCard />
+      <ctl:ObsDownloadCard x:Name="DownloadCardControl" />
 
       <!--
         一键部署录制环境（V2.9.3）：装好 OBS 之后最实际的一步 —— 把与录制质量直接相关的
@@ -45,7 +45,7 @@
       </Border>
 
       <!-- BUG 反馈（V2.9.3）：二维码 + 表单 / Issue 两个入口 -->
-      <ctl:FeedbackCard Margin="0,16,0,0" />
+      <ctl:FeedbackCard x:Name="FeedbackCardControl" Margin="0,16,0,0" />
 
     </StackPanel>
   </ScrollViewer>

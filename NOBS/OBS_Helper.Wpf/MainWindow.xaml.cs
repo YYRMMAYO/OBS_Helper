@@ -78,6 +78,8 @@ public partial class MainWindow : Window
         // 设置页「重新展示引导」→ 立即重播（静态事件解耦，见 App.RequestOnboardingReset）
         App.OnboardingResetRequested += OnOnboardingResetRequested;
         AppServices.Localization.Changed += OnLanguageChanged;
+        // 内容资产回退（V3.0 / E5）：登记处一变就刷新提示条（首次加载资产是异步的）
+        FallbackNotice.Changed += OnFallbackNoticeChanged;
         BuildOnboardingDots();
     }
 
@@ -120,6 +122,8 @@ public partial class MainWindow : Window
         AppServices.Tray.OpenRecordingFolderRequested += OnOpenRecordingFolderRequested;
         AppServices.Hotkeys.ToggleWindowRequested += OnToggleWindowRequested;
         AppServices.Hotkeys.ToggleMiniWindowRequested += OnMiniWindowRequested;
+        // V3.0：热键动作失败时给一句可见的提示（未连 OBS 时按录制热键毫无反应最容易被当成「热键坏了」）
+        AppServices.Hotkeys.TrayNotify = message => AppServices.Toast?.Show(message);
 
         // 自检测试：逐个导航所有路由，把异常写到 selftest_result.txt 后退出。
         // 用环境变量触发，避免影响正常启动。
@@ -758,12 +762,196 @@ public partial class MainWindow : Window
             results.Add($"FAIL  i18n-swap -> {ex.GetType().Name}: {ex.Message}");
         }
 
+        // 中英往返 + 逐页重放（V3.0 / F5）。检查两件事：
+        //   ① 页面上直接显示了文案键（Loc.xxx 或表里的键本身）；
+        //   ② 英文界面上显示着**只存在于中文表的文案** —— 这正是「文案被冻在首次加载/静态字段」
+        //      那一类缺陷在界面上的表现（切完语言只有这一页还是旧语言），人工不逐页看就发现不了。
+        //
+        // 为什么按「值」比对而不是按「键」：冻结的是取值结果，键两边都有。
+        // 判定范围刻意收窄为「恰好等于某条中文文案」，因此知识库正文里的中文散文不会被误报 ——
+        // 那些内容不来自文案表（而来自按语言选装的资产）。
+        try
+        {
+            var originalLanguage = Strings.Current;
+            var frozen = new List<string>();
+            var rawKeys = new List<string>();
+
+            var enValues = new HashSet<string>(
+                StringTableEnUs.Table.Values.Where(v => v.Length > 0), StringComparer.Ordinal);
+            var zhOnly = new HashSet<string>(
+                StringTableZhHans.Table.Values.Where(v => v.Length >= 2 && !enValues.Contains(v)), StringComparer.Ordinal);
+
+            AppServices.Localization.SetLanguage(Strings.EnUs);
+            await WaitForUiIdleAsync().ConfigureAwait(true);
+
+            foreach (var (route, param) in cases)
+            {
+                try
+                {
+                    await _nav.NavigateAsync(route, param, pushHistory: false).ConfigureAwait(true);
+                    // 只走**页面内容宿主**：这是「逐页重放」该看的范围。
+                    // 从整窗遍历会把顶栏、引导覆盖层（可能仍带着上次渲染的文案）一起算进来，
+                    // 那些不是本检查要管的对象（顶栏跟随由 i18n-swap 单独钉住）。
+                    var texts = new List<string>();
+                    CollectTexts(PageHost, texts);
+
+                    foreach (var raw in texts)
+                    {
+                        var text = raw.Trim();
+                        if (text.Length == 0) continue;
+
+                        if (text.StartsWith(Strings.ResourceKeyPrefix, StringComparison.Ordinal)
+                            || (Strings.Table().ContainsKey(text) && !enValues.Contains(text)))
+                        {
+                            rawKeys.Add($"{route}:{text}");
+                        }
+                        else if (zhOnly.Contains(text))
+                        {
+                            frozen.Add($"{route}:{text}");
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    frozen.Add($"{route}:重放异常 {ex.GetType().Name}");
+                }
+            }
+
+            AppServices.Localization.SetLanguage(originalLanguage);
+            await WaitForUiIdleAsync().ConfigureAwait(true);
+
+            var problems = new List<string>();
+            if (rawKeys.Count > 0)
+            {
+                problems.Add($"显示文案键 {rawKeys.Count} 处（{rawKeys.Distinct().Count()} 条不同，涉及 "
+                    + $"{string.Join("、", rawKeys.Select(x => x.Split(':')[0]).Distinct())}）："
+                    + string.Join("；", rawKeys.Distinct().Take(3)));
+            }
+            if (frozen.Count > 0)
+            {
+                problems.Add($"英文界面下仍是中文 {frozen.Count} 处（{frozen.Distinct().Count()} 条不同，涉及 "
+                    + $"{string.Join("、", frozen.Select(x => x.Split(':')[0]).Distinct())}）："
+                    + string.Join("；", frozen.Distinct().Take(3)));
+            }
+
+            results.Add(problems.Count == 0
+                ? $"PASS  i18n-pages ({cases.Length} 路由英文重放：无未译键、无冻结文案)"
+                : $"FAIL  i18n-pages -> {string.Join(" | ", problems)}");
+        }
+        catch (Exception ex)
+        {
+            results.Add($"FAIL  i18n-pages -> {ex.GetType().Name}: {ex.Message}");
+        }
+
+        // 内容资产回退提示条（V3.0 / E5）：登记处一报回退，提示条就该出现；
+        // 点「知道了」后消失；语言切回中文后不该提示。这条覆盖的是**接线**（事件 → 刷新 → 显隐），
+        // 判定逻辑本身有单测。「英文资产缺失」属于静默且合法的坑，界面必须自己说出来。
+        try
+        {
+            var originalLanguage = Strings.Current;
+            var fallbackProblems = new List<string>();
+
+            AppServices.Localization.SetLanguage(Strings.EnUs);
+            await WaitForUiIdleAsync().ConfigureAwait(true);
+
+            FallbackNotice.Reset();
+            await WaitForUiIdleAsync().ConfigureAwait(true);
+            if (FallbackBanner.Visibility != Visibility.Collapsed)
+                fallbackProblems.Add("初始状态提示条应当是隐藏的");
+
+            FallbackNotice.Report(ContentAssets.Problems);
+            FallbackNotice.Report(ContentAssets.Plugins);
+            await WaitForUiIdleAsync().ConfigureAwait(true);
+
+            if (FallbackBanner.Visibility != Visibility.Visible)
+                fallbackProblems.Add("上报回退后提示条未出现");
+            else if (FallbackMessageText.Text.Length == 0)
+                fallbackProblems.Add("提示条正文为空");
+            // 正文要点名受影响的内容，否则用户只知道「有问题」而不知道「哪几块」
+            else if (!FallbackMessageText.Text.Contains(FallbackNoticeCore.AssetLabel(ContentAssets.Plugins), StringComparison.Ordinal))
+                fallbackProblems.Add($"提示条未列出受影响的资产（{FallbackMessageText.Text}）");
+
+            FallbackNotice.Dismiss();
+            await WaitForUiIdleAsync().ConfigureAwait(true);
+            if (FallbackBanner.Visibility != Visibility.Collapsed)
+                fallbackProblems.Add("点「知道了」后提示条未隐藏");
+
+            // 中文界面下不该提示（回退到中文本来就是对的）
+            FallbackNotice.Reset();
+            FallbackNotice.Report(ContentAssets.Problems);
+            AppServices.Localization.SetLanguage(Strings.ZhHans);
+            await WaitForUiIdleAsync().ConfigureAwait(true);
+            if (FallbackBanner.Visibility != Visibility.Collapsed)
+                fallbackProblems.Add("中文界面下不该显示回退提示");
+
+            FallbackNotice.Reset();
+            AppServices.Localization.SetLanguage(originalLanguage);
+            await WaitForUiIdleAsync().ConfigureAwait(true);
+
+            results.Add(fallbackProblems.Count == 0
+                ? "PASS  i18n-fallback (上报 → 显示 → 忽略 → 语言判定)"
+                : $"FAIL  i18n-fallback -> {string.Join("；", fallbackProblems)}");
+        }
+        catch (Exception ex)
+        {
+            results.Add($"FAIL  i18n-fallback -> {ex.GetType().Name}: {ex.Message}");
+            try { FallbackNotice.Reset(); } catch (Exception) { /* 自检收尾 */ }
+        }
+
+        // D7 连接态护栏（V3.0 第三轮验证）：自检全程不连 OBS，因此「演播室模式 / 切换 / 节目截图」
+        // 三个入口都必须是禁用的。不能点才点不动 —— 灰掉的按钮本身就是「现在不能用」最清楚的表达。
+        try
+        {
+            await _nav.NavigateAsync(Routes.Console, null, pushHistory: false).ConfigureAwait(true);
+            await WaitForUiIdleAsync().ConfigureAwait(true);
+
+            if (PageHost.Content is not Views.ConsolePage console)
+            {
+                results.Add("FAIL  d7-guard   -> 控制台页取不到实例");
+            }
+            else
+            {
+                var (studio, transition, screenshot) = console.RemoteControlEnabledState;
+                results.Add(studio || transition || screenshot
+                    ? $"FAIL  d7-guard   -> 未连接 OBS 时仍有可用入口（演播室={studio} 转场={transition} 截图={screenshot}）"
+                    : "PASS  d7-guard   (未连接 OBS：演播室 / 转场 / 截图 三个入口均禁用)");
+            }
+        }
+        catch (Exception ex)
+        {
+            results.Add($"FAIL  d7-guard   -> {ex.GetType().Name}: {ex.Message}");
+        }
+
+        // 双构建的协议分支（V3.0 第四轮验证）：主构建必须**关着**旧协议（OBS 28+ 不需要在握手时
+        // 多等一次「没有 Hello」），兼容构建必须**开着**并按 4444 端口。
+        // 这条以前只靠 csproj 里的 DefineConstants 保证 —— 而「条件编译被改错」是那种
+        // 编译得过、单测也全绿、只有 Win7 用户会发现的问题。两个 TFM 各跑一次自检即双向钉住。
+        try
+        {
+            var legacy = Services.Obs.ObsLegacyV4Core.LegacyEnabled;
+            var port = Services.Obs.ObsLegacyV4Core.DefaultPort;
+#if WIN7_COMPAT
+            var okBranch = legacy && port == Services.Obs.ObsLegacyV4Core.LegacyDefaultPort;
+            var expectation = $"兼容构建应启用旧协议且端口 {Services.Obs.ObsLegacyV4Core.LegacyDefaultPort}";
+#else
+            var okBranch = !legacy && port == Services.Obs.ObsLegacyV4Core.ModernDefaultPort;
+            var expectation = $"主构建应关闭旧协议且端口 {Services.Obs.ObsLegacyV4Core.ModernDefaultPort}";
+#endif
+            results.Add(okBranch
+                ? $"PASS  protocol  (本构建：旧协议={(legacy ? "启用" : "关闭")}，默认端口={port})"
+                : $"FAIL  protocol  -> {expectation}，实际 旧协议={legacy} 端口={port}");
+        }
+        catch (Exception ex)
+        {
+            results.Add($"FAIL  protocol  -> {ex.GetType().Name}: {ex.Message}");
+        }
+
         var ok = results.Count(r => r.StartsWith("PASS"));
         var fail = results.Count - ok;
         var report = new StringBuilder();
         report.AppendLine($"OBS_Helper WPF 自检  {DateTime.Now:yyyy-MM-dd HH:mm:ss}");
         // 总数不能只写 cases.Length：列表里还有引导覆盖层 / 小窗 / 文案解析三项非路由检查
-        report.AppendLine($"检查项: {ok} PASS / {fail} FAIL  （路由 {cases.Length} 项 + 新手引导 + 迷你小窗 + 文案资源 + 语言切换）");
+        report.AppendLine($"检查项: {ok} PASS / {fail} FAIL  （路由 {cases.Length} 项 + 新手引导 + 迷你小窗 + 文案资源 + 语言切换 + 逐页语言重放 + 回退提示条 + D7 连接态护栏 + 双构建协议分支）");
         report.AppendLine(new string('-', 60));
         foreach (var line in results) report.AppendLine(line);
         if (App.HeadlessErrors.Count > 0)
@@ -780,11 +968,48 @@ public partial class MainWindow : Window
         _ = Dispatcher.BeginInvoke(new Action(() => Application.Current.Shutdown()));
     }
 
+    /// <summary>
+    /// 收集可视树里所有**实际可见**的文本（自检用，V3.0 / F5）。
+    ///
+    /// 判据用 <see cref="UIElement.IsVisible"/> 而不是 <c>Visibility == Visible</c>：
+    /// 父节点 Collapsed 时子控件自身的 Visibility 仍然是 Visible，用后者会把隐藏覆盖层
+    /// （例如已收起的引导层）里的**旧语言**文案也算进来 —— 那是误报，它下次显示前会重新渲染。
+    /// </summary>
+    private static void CollectTexts(DependencyObject root, List<string> sink)
+    {
+        try
+        {
+            var count = VisualTreeHelper.GetChildrenCount(root);
+            for (var i = 0; i < count; i++)
+            {
+                var child = VisualTreeHelper.GetChild(root, i);
+                if (child is UIElement { IsVisible: false }) continue;   // 整棵子树都不可见：跳过
+
+                switch (child)
+                {
+                    case TextBlock tb when !string.IsNullOrWhiteSpace(tb.Text):
+                        sink.Add(tb.Text);
+                        break;
+                    case ContentControl cc when cc.Content is string s && s.Length > 0:
+                        sink.Add(s);
+                        break;
+                }
+
+                CollectTexts(child, sink);
+            }
+        }
+        catch (Exception)
+        {
+            // 遍历失败不影响结论
+        }
+    }
+
     private async void OnClosed(object? sender, EventArgs e)
     {
         // 静态事件持有本窗口引用：退出时退订，避免残留引用
         App.OnboardingResetRequested -= OnOnboardingResetRequested;
         AppServices.Localization.Changed -= OnLanguageChanged;
+        FallbackNotice.Changed -= OnFallbackNoticeChanged;
         // 退出时断开 OBS，避免 WebSocket 线程拖住进程
         try { await AppServices.Obs.DisposeAsync(); } catch { /* 退出路径，忽略 */ }
         AppServices.Appearance.Dispose();
@@ -970,6 +1195,7 @@ public partial class MainWindow : Window
         TopBadge.Refresh();
         SideBadge.Refresh();
         AppServices.Tray.RefreshLanguage();
+        RefreshFallbackBanner();   // 语言变了要重新判定（中文界面下不该提示回退）
 
         var route = _nav.CurrentRoute;
         if (string.IsNullOrEmpty(route)) return;
@@ -993,6 +1219,48 @@ public partial class MainWindow : Window
     private void OnBackClick(object sender, RoutedEventArgs e) => _nav.GoBack();
 
     private void OnSettingsClick(object sender, RoutedEventArgs e) => _nav.Navigate(Routes.Settings);
+
+    // ============================================================ 内容资产回退提示（V3.0 / E5）
+
+    /// <summary>
+    /// 按登记处状态刷新提示条。
+    ///
+    /// 语言也参与判定（中文界面下回退到中文本来就对，不该提示），因此语言切换后要重刷一次。
+    /// </summary>
+    private void RefreshFallbackBanner()
+    {
+        try
+        {
+            var assets = FallbackNotice.FallbackAssets;
+            var show = FallbackNoticeCore.ShouldShow(Strings.Current, FallbackNotice.HasFallback, FallbackNotice.Dismissed);
+
+            FallbackBanner.Visibility = show ? Visibility.Visible : Visibility.Collapsed;
+            if (!show) return;
+
+            FallbackMessageText.Text = FallbackNoticeCore.BuildMessage(
+                Strings.Current, assets, FallbackNotice.HasFallback, FallbackNotice.Dismissed);
+        }
+        catch (Exception)
+        {
+            // 提示条本身出问题绝不能影响主界面
+        }
+    }
+
+    private void OnFallbackNoticeChanged()
+    {
+        if (!Dispatcher.CheckAccess())
+        {
+            Dispatcher.BeginInvoke(new Action(RefreshFallbackBanner));
+            return;
+        }
+        RefreshFallbackBanner();
+    }
+
+    private void OnDismissFallback(object sender, RoutedEventArgs e)
+    {
+        FallbackNotice.Dismiss();
+        RefreshFallbackBanner();
+    }
 
     /// <summary>Ctrl+F：引导覆盖层正开着时不响应，避免「隔着引导」跳页面。</summary>
     private void OnFindExecuted(object sender, ExecutedRoutedEventArgs e)

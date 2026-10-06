@@ -1,10 +1,14 @@
 ﻿<#
-  OBS帮助助手（WPF 版，原名 OBS帮助助手）— Windows 构建与打包脚本
+  OBS帮助助手（WPF 版，原名 OBS 排障助手）— Windows 构建与打包脚本
   ------------------------------------------------------------
+  版本号以 csproj 的 <Version> 为准（本文件从工程里读，不硬编码，见「前置检查」一节）。
+
   V2.9.3 起是**双目标**构建（同一份源码，两个 TFM）：
     · net10.0-windows —— 主构建，安装包 MinVersion=10.0，面向 Windows 10 / 11；
     · net6.0-windows  —— Win7 兼容构建，MinVersion=6.1sp1，面向 Windows 7 SP1 及以上
       （.NET 6 是最后一个官方支持 Windows 7 SP1 的版本）。
+      V3.0 起该构建额外启用**旧协议 obs-websocket 4.x**（Win7 上只能跑 OBS 27 + 4.9 插件），
+      并使用独立的数据目录 %LocalAppData%\OBS_Helper_Win7（见 HostBridge.AppDataDirectory）。
 
   流程：
     1) 自包含发布主构建 / 兼容构建（含 .NET 运行时，目标机无需装运行时）
@@ -35,7 +39,14 @@ param(
     # 指定增量包的基准版本（如 -DeltaBaseVersion 2.0.0）：强制以该版本清单做 diff，
     # 用于「跳版本发布」——让仍停留在更早版本的用户也能直接增量升级。
     # 不指定时默认取「低于当前版本的最近一份清单」。
-    [string]$DeltaBaseVersion = ""
+    [string]$DeltaBaseVersion = "",
+    # ---- 可选：代码签名（V3.0）----
+    # 提供 .pfx 与其密码即对 exe / 安装包 / 便携包内主程序签名；不提供则跳过并打印提示。
+    # 为什么这一步重要：没有 Authenticode 签名时，客户端只能靠「MZ 头 + GitHub 摘要」判断
+    # 下载到的安装包是不是我们的（见 UpdateService 的摘要校验）；有签名才能让 Windows 自己作证。
+    [string]$SignPfxPath = "",
+    [string]$SignPfxPassword = "",
+    [string]$SignTimestampUrl = "http://timestamp.digicert.com"
 )
 
 $ErrorActionPreference = "Stop"
@@ -100,6 +111,41 @@ foreach ($c in @(
 
 # ---------------------------------------------------------------- 发布（一个 TFM 一轮）
 
+# ---- 可选：代码签名（V3.0）----
+# 为什么需要：没有 Authenticode 签名时，客户端只能靠「MZ 头 + GitHub 资产摘要」判断
+# 下载到的安装包是不是我们的；有签名才能让 Windows 自己作证（SmartScreen 与「发布者」一栏）。
+# 用法：.\build.ps1 -SignPfxPath D:\cert.pfx -SignPfxPassword ***
+function Find-Signtool {
+    $kits = "${env:ProgramFiles(x86)}\Windows Kits\10\bin"
+    if (Test-Path $kits) {
+        $st = Get-ChildItem $kits -Recurse -Filter signtool.exe -ErrorAction SilentlyContinue |
+            Where-Object { $_.FullName -like "*\x64\*" } |
+            Sort-Object FullName -Descending | Select-Object -First 1
+        if ($st) { return $st.FullName }
+    }
+    return (Get-Command signtool -ErrorAction SilentlyContinue).Source
+}
+
+function Invoke-Sign {
+    param([string[]]$Paths)
+    if (-not $SignPfxPath -or -not (Test-Path $SignPfxPath) -or -not $SignPfxPassword) {
+        Warn "未提供签名证书（-SignPfxPath / -SignPfxPassword），本次产物**未签名**。"
+        return
+    }
+    $signtool = Find-Signtool
+    if (-not $signtool) {
+        Warn "未找到 signtool.exe（Windows SDK），跳过签名。"
+        return
+    }
+    foreach ($p in $Paths) {
+        if (-not $p -or -not (Test-Path $p)) { continue }
+        Step "代码签名：$(Split-Path $p -Leaf)"
+        & $signtool sign /f "$SignPfxPath" /p "$SignPfxPassword" /fd SHA256 `
+            /tr $SignTimestampUrl /td SHA256 "$p" | Out-Host
+        if ($LASTEXITCODE -ne 0) { throw "签名失败：$p" }
+    }
+}
+
 function Publish-Wpf {
     param([string]$Tfm, [switch]$ReadyToRun)
     Step "自包含发布 WPF 工程（$Tfm / $Runtime / $Configuration）"
@@ -150,7 +196,20 @@ function New-PortableZip {
     param([string]$PubDir, [string]$Suffix)
     $zip = Join-Path $pakeWin "OBS_Helper_Portable_$ver$Suffix.zip"
     Remove-Artifact $zip
-    Compress-Archive -Path (Join-Path $PubDir "*") -DestinationPath $zip
+
+    # V3.0（F10）：便携包排除调试符号与自检产物（与 .iss 的 [Files] 口径一致）。
+    # 用 robocopy 而不是逐个文件传给 Compress-Archive：后者会把文件拍平到压缩包根目录，
+    # 丢掉 en-US / zh-Hans 这类子目录（卫星资源程序集就在里面）。
+    $stage = Join-Path ([System.IO.Path]::GetTempPath()) ("obshelper_portable_" + [guid]::NewGuid().ToString('N'))
+    try {
+        robocopy $PubDir $stage /E /XF *.pdb selftest_result.txt /NFL /NDL /NJH /NJS /NP | Out-Null
+        # robocopy 约定：0-7 都算成功，>=8 才是失败
+        if ($LASTEXITCODE -ge 8) { throw "robocopy 暂存失败（exit $LASTEXITCODE）" }
+        Compress-Archive -Path (Join-Path $stage "*") -DestinationPath $zip
+    } finally {
+        Remove-Item $stage -Recurse -Force -ErrorAction SilentlyContinue
+    }
+
     Write-Host "便携包：$zip" -ForegroundColor DarkGray
     return $zip
 }
@@ -158,7 +217,10 @@ function New-PortableZip {
 # ---------------------------------------------------------------- 1) 主构建
 
 $pub = Publish-Wpf -Tfm $tfmModern -ReadyToRun
+# 签名必须在打包**之前**：便携 zip 与安装包都要装进已签名的 exe
+Invoke-Sign @((Join-Path $pub "OBS_Helper.exe"))
 $setupPath = New-Installer -Tfm $tfmModern -MinVersion "10.0" -Suffix ""
+Invoke-Sign @($setupPath)
 
 # ---------------------------------------------------------------- 2) Win7 兼容构建
 
@@ -166,7 +228,9 @@ $setupLegacy = $null
 $zipLegacy = $null
 if (-not $SkipLegacy) {
     $pubLegacy = Publish-Wpf -Tfm $tfmLegacy -ReadyToRun
+    Invoke-Sign @((Join-Path $pubLegacy "OBS_Helper.exe"))
     $setupLegacy = New-Installer -Tfm $tfmLegacy -MinVersion "6.1sp1" -Suffix "_win7"
+    Invoke-Sign @($setupLegacy)
     $zipLegacy = New-PortableZip -PubDir $pubLegacy -Suffix "_win7"
 } else {
     Warn "已指定 -SkipLegacy，跳过 Win7 兼容构建（net6.0-windows）。"
@@ -185,10 +249,11 @@ $zip = New-PortableZip -PubDir $pub -Suffix ""
 
 function New-FileManifest {
     param([string]$Dir, [string]$Version)
-    # 排除运行时产物（如 OBS_SELFTEST 写入的 selftest_result.txt）：它们不属于发布内容，
-    # 一旦存在会污染清单并让增量包多出无意义文件。
+    # 排除运行时产物与调试符号：它们不属于发布内容。
+    # 「排除规则」必须与安装包（.iss 的 Excludes）和便携包（New-PortableZip 的 /XF）**同一口径** ——
+    # 否则增量包会把 .pdb 当成「新增文件」反复带上（清单取自已发布的便携包时更明显）。
     $entries = Get-ChildItem $Dir -Recurse -File |
-        Where-Object { $_.Name -ne 'selftest_result.txt' } |
+        Where-Object { $_.Name -ne 'selftest_result.txt' -and $_.Extension -ne '.pdb' } |
         ForEach-Object {
             $rel = $_.FullName.Substring($Dir.Length).TrimStart('\', '/').Replace('\', '/')
             [pscustomobject]@{

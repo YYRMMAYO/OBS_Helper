@@ -37,13 +37,41 @@ public sealed class ObsPathService
 
     public ObsPathService(LocalStore store) => _store = store;
 
+    // ------------------------------------------------------------ 探测结果缓存（V3.0 性能）
+    //
+    // 首页首屏原来会串 3~4 轮完整探测（进程枚举 ×3 + 注册表 ×6 + 全盘布局 Directory.Exists + 读 ini），
+    // 而且 `LocateAsync` 用 Task.FromResult 把同步探测伪装成异步 —— await 它等于在 UI 线程原地跑完。
+    // 现在：定位结果缓存 5 秒（同一轮界面刷新内只探一次），进程状态缓存 1 秒（界面要看得见启停）。
+    private const int LocateCacheMs = 5000;
+    private const int ProcessCacheMs = 1000;
+    private static readonly object CacheGate = new();
+    private static ObsConfigLocation? _locCache;
+    private static DateTime _locCacheAtUtc;
+    private static ObsProcessInfo? _procCache;
+    private static DateTime _procCacheAtUtc;
+
+    /// <summary>丢弃探测缓存。用户手动指定配置目录、或 OBS 启停状态明显变化后调用。</summary>
+    public static void InvalidateCache()
+    {
+        lock (CacheGate)
+        {
+            _locCache = null;
+            _procCache = null;
+        }
+    }
+
     /// <summary>应用私有数据下的备份目录（手动指定目录外的自动备份落这里）。</summary>
     public static string BackupsRoot => Path.Combine(HostBridge.AppDataDirectory, "backups");
 
     /// <summary>应用私有数据下的回收站目录（彻底重置 / 覆盖导入时把旧文件移到这里，供恢复）。</summary>
     public static string TrashRoot => Path.Combine(HostBridge.AppDataDirectory, "trash");
 
-    /// <summary>清理回收站，只保留最近 keepGroups 组（对应「永不硬删，但回收站也不能无限增长」）。</summary>
+    /// <summary>
+    /// 清理回收站，只保留最近 keepGroups 组（对应「永不硬删，但回收站也不能无限增长」）。
+    ///
+    /// V3.0：带 <see cref="FileTx.RetainedMarkerFileName"/> 标记的目录**永不清理** ——
+    /// 那是「回滚没能完全恢复」时留下的**唯一**副本，清理它等于把用户的配置真正删掉。
+    /// </summary>
     public static void CleanupTrash(int keepGroups = 5)
     {
         try
@@ -52,6 +80,19 @@ public sealed class ObsPathService
             if (!Directory.Exists(root)) return;
             var groups = Directory.GetDirectories(root)
                 .Where(d => Path.GetFileName(d).StartsWith("tx_", StringComparison.OrdinalIgnoreCase))
+                .Where(d =>
+                {
+                    try
+                    {
+                        // 两种标记都跳过：
+                        //  · 「在途」= 事务还没结束（此时目录里是操作前的唯一备份）；
+                        //  · 「保留」= 回滚没能完全恢复（唯一副本仍在）。
+                        // 读不到标记时同样按「保留」处理（fail-closed，宁可多留）。
+                        return !File.Exists(Path.Combine(d, FileTx.RetainedMarkerFileName))
+                            && !File.Exists(Path.Combine(d, FileTx.InFlightMarkerFileName));
+                    }
+                    catch (Exception) { return false; }   // 判断不了就不删（宁可多留）
+                })
                 .OrderByDescending(d => Directory.GetCreationTimeUtc(d))
                 .Skip(keepGroups);
             foreach (var g in groups)
@@ -62,10 +103,36 @@ public sealed class ObsPathService
         catch (Exception) { }
     }
 
-    /// <summary>定位 OBS 配置目录。不存在时 <see cref="ObsConfigLocation.Exists"/> 为 false，不抛。</summary>
-    public Task<ObsConfigLocation> LocateAsync() => Task.FromResult(ResolveLocation());
+    /// <summary>
+    /// 定位 OBS 配置目录。不存在时 <see cref="ObsConfigLocation.Exists"/> 为 false，不抛。
+    ///
+    /// V3.0 起：真异步（探测含进程枚举 / 注册表 / 全盘目录检查，属阻塞 IO，不能在 UI 线程跑）+
+    /// 结果缓存 5 秒，避免首页一次刷新里重复探测 3~4 轮。
+    /// </summary>
+    public Task<ObsConfigLocation> LocateAsync() => Task.Run(ResolveLocation);
 
     private ObsConfigLocation ResolveLocation()
+    {
+        lock (CacheGate)
+        {
+            if (_locCache is not null && (DateTime.UtcNow - _locCacheAtUtc).TotalMilliseconds < LocateCacheMs)
+                return _locCache;
+        }
+
+        var loc = ResolveLocationCore();
+
+        // 登记为可信根：写 / 删 OBS 配置的护栏按这份登记判定，而不是按目录名（见 ObsSafePath 闸 3）
+        ObsSafePath.RegisterTrustedRoot(loc.ConfigDir);
+
+        lock (CacheGate)
+        {
+            _locCache = loc;
+            _locCacheAtUtc = DateTime.UtcNow;
+        }
+        return loc;
+    }
+
+    private ObsConfigLocation ResolveLocationCore()
     {
         // 1) 手动覆盖优先（用户通过「手动指定目录」指过去）
         var overridePath = _store.GetItem(OverrideKey);
@@ -152,8 +219,30 @@ public sealed class ObsPathService
             .FirstOrDefault();
     }
 
-    /// <summary>双信号检测：① 进程名 obs*/obs64/obs32；② <c>global.ini</c> 排他锁（OBS 运行时会持写句柄）。</summary>
+    /// <summary>
+    /// 双信号检测：① 进程名 obs*/obs64/obs32；② <c>global.ini</c> 排他锁（OBS 运行时会持写句柄）。
+    ///
+    /// V3.0 起结果缓存 1 秒：界面上「OBS 在不在跑」要看得见启停，但一次界面刷新里没必要重复枚举进程。
+    /// </summary>
     public ObsProcessInfo DetectProcess()
+    {
+        lock (CacheGate)
+        {
+            if (_procCache is not null && (DateTime.UtcNow - _procCacheAtUtc).TotalMilliseconds < ProcessCacheMs)
+                return _procCache;
+        }
+
+        var info = DetectProcessCore();
+
+        lock (CacheGate)
+        {
+            _procCache = info;
+            _procCacheAtUtc = DateTime.UtcNow;
+        }
+        return info;
+    }
+
+    private ObsProcessInfo DetectProcessCore()
     {
         var info = new ObsProcessInfo();
 

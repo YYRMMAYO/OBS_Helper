@@ -472,9 +472,28 @@ public class SimpleRecordingCoreTests
         Assert.Equal(TimeSpan.FromMinutes(3.5), progress.Elapsed);
         Assert.Equal(100.0, progress.FreeGb);
         Assert.Equal(4096.5, progress.UsedMb);         // 已写文件大小原样回传，不在这里重算
-        // 100GB * 1024 * 8 / (6000kbps * 1.5 冗余) / 60 分钟
-        Assert.Equal(1.5170370370, progress.RemainingMinutes, 6);
-        Assert.True(progress.LowSpace);
+        // 100GB × 1024(MB) × 1024(kb/Mb) × 8 ÷ (6000kbps × 1.5 冗余) ÷ 60 ≈ 1553.45 分钟
+        // V3.0 修正：这里原先漏了 Mb→kb 的那个 ×1024，把结果低估了 1024 倍
+        Assert.Equal(1553.4459259259, progress.RemainingMinutes, 6);
+        Assert.False(progress.LowSpace);               // 26 小时余量当然不是「低空」
+    }
+
+    /// <summary>
+    /// 单位换算的**回归锚点**：100 GB 空闲 + 常见推流码率，剩余必须是「小时级」。
+    ///
+    /// 这条测试专门防住 V3.0 修掉的那个 1024 倍错误 —— 它当年让低空告警在任何机器上恒亮，
+    /// 而单纯断言公式系数（上面那条）在没有「量级直觉」时很容易被再次改错。
+    /// </summary>
+    [Theory]
+    [InlineData(6000, 200)]      // 1080p60 保守
+    [InlineData(20000, 60)]      // 直播档
+    [InlineData(30000, 40)]      // 高质量档
+    public void Estimate_HundredGigabytes_IsHoursNotMinutes(int bitrateKbps, int minimumMinutes)
+    {
+        var progress = SimpleRecordingCore.Estimate(TimeSpan.Zero, 100.0, bitrateKbps, 0);
+        Assert.True(progress.RemainingMinutes > minimumMinutes,
+            $"{bitrateKbps} kbps 下 100GB 应能录 {minimumMinutes} 分钟以上，实际 {progress.RemainingMinutes:0.#}");
+        Assert.False(progress.LowSpace);
     }
 
     [Fact]
@@ -513,17 +532,34 @@ public class SimpleRecordingCoreTests
     [Fact]
     public void Estimate_TreatsExactlyTenMinutesAsEnoughSpace()
     {
-        // FreeGb = 101250/1024 且码率 900 → 1024*8/(900*1.5)/60 * FreeGb = 整 10 分钟
-        var exactlyTen = SimpleRecordingCore.Estimate(TimeSpan.Zero, 101250.0 / 1024, 900, 0);
+        // 让剩余恰好等于 10 分钟：freeGb × 1024 × 1024 × 8 ÷ (900 × 1.5) ÷ 60 = 10
+        //   ⇒ freeGb = 10 × 60 × 1350 ÷ (1024 × 1024 × 8)
+        var hundredTenMinutesGb = 10.0 * 60 * (900 * 1.5) / (1024.0 * 1024 * 8);
+
+        var exactlyTen = SimpleRecordingCore.Estimate(TimeSpan.Zero, hundredTenMinutesGb, 900, 0);
         Assert.Equal(10.0, exactlyTen.RemainingMinutes, 9);
         Assert.False(exactlyTen.LowSpace);            // 阈值是「严格小于 10 分钟」
 
-        var justBelow = SimpleRecordingCore.Estimate(TimeSpan.Zero, 101250.0 / 1024 - 1, 900, 0);
+        var justBelow = SimpleRecordingCore.Estimate(TimeSpan.Zero, hundredTenMinutesGb - 0.01, 900, 0);
         Assert.True(justBelow.RemainingMinutes < 10);
         Assert.True(justBelow.LowSpace);
 
-        var justAbove = SimpleRecordingCore.Estimate(TimeSpan.Zero, 101250.0 / 1024 + 1, 900, 0);
+        var justAbove = SimpleRecordingCore.Estimate(TimeSpan.Zero, hundredTenMinutesGb + 0.01, 900, 0);
         Assert.False(justAbove.LowSpace);
+    }
+
+    /// <summary>实测写入速率同样要走修好的单位换算（否则「按实测」这条新路径还是 1024 倍错）。</summary>
+    [Fact]
+    public void Estimate_WithMeasuredRate_UsesTheSameUnitMath()
+    {
+        // 实测 6000 kbps：100GB 应能录约 1553 分钟 ÷ (1.15/1.5 的系数差)…
+        // 这里只钉量级与「不再恒亮低空告警」，避免把系数写死成实现细节。
+        var progress = SimpleRecordingCore.Estimate(TimeSpan.FromMinutes(1), 100.0, 20000, 100, measuredKbps: 6000);
+
+        Assert.True(progress.FromMeasuredRate);
+        Assert.True(progress.RemainingMinutes > 60, $"实测速率下 100GB 应有小时级余量，实际 {progress.RemainingMinutes:0.#}");
+        Assert.False(progress.LowSpace);
+        Assert.Equal(6000, progress.MeasuredKbps, 3);
     }
 
     // ------------------------------------------------------------ 生效通道与展示格式

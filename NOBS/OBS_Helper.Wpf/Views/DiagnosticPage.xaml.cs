@@ -3,8 +3,12 @@ using System.Text;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Documents;
+using OBS_Helper.Wpf.Controls;
+using OBS_Helper.Wpf.Services.ObsConfig;
+using OBS_Helper.Wpf.Services.Diagnostics;
 using OBS_Helper.Wpf.Errors;
 using OBS_Helper.Wpf.Navigation;
+using OBS_Helper.Wpf.Services;
 using OBS_Helper.Wpf.Services.Ai;
 
 namespace OBS_Helper.Wpf.Views;
@@ -17,24 +21,42 @@ namespace OBS_Helper.Wpf.Views;
 /// </summary>
 public partial class DiagnosticPage : UserControl, INavigationAware
 {
-    /// <summary>自检清单一项。勾选状态只存在内存里，与 Blazor 版一致（刷新即重置）。</summary>
+    /// <summary>
+    /// 自检清单一项。
+    ///
+    /// V3.0 修了两件事：
+    /// ① 勾选状态**落盘**（原先只在内存里，刷新即重置 —— 而问题页的步骤勾选一直是落盘的，
+    ///    两处口径不一致，用户第二天回来要重新勾一遍）；
+    /// ② 文案存**键**而不是成品字符串（原先在字段初始化时就取 `Strings.T`，
+    ///    切英文后这一块仍是中文）。
+    /// </summary>
     private sealed class CheckItem
     {
-        public required string Text { get; init; }
+        public required string Key { get; init; }
         public bool Done { get; set; }
+        /// <summary>渲染出来的文本块，供语言切换后就地刷新。</summary>
+        public TextBlock? Label { get; set; }
+        /// <summary>本机实测证据（V3.0 / D4）；未回填时为 null。</summary>
+        public TextBlock? EvidenceLabel { get; set; }
     }
 
-    private readonly List<CheckItem> _checks = new()
+    /// <summary>清单项的文案键（顺序即界面顺序）。</summary>
+    private static readonly string[] CheckKeys =
     {
-        new CheckItem { Text = Strings.T("diagnostic.check.1") },
-        new CheckItem { Text = Strings.T("diagnostic.check.2") },
-        new CheckItem { Text = Strings.T("diagnostic.check.3") },
-        new CheckItem { Text = Strings.T("diagnostic.check.4") },
-        new CheckItem { Text = Strings.T("diagnostic.check.5") },
-        new CheckItem { Text = Strings.T("diagnostic.check.6") },
-        new CheckItem { Text = Strings.T("diagnostic.check.7") },
-        new CheckItem { Text = Strings.T("diagnostic.check.8") }
+        "diagnostic.check.1", "diagnostic.check.2", "diagnostic.check.3", "diagnostic.check.4",
+        "diagnostic.check.5", "diagnostic.check.6", "diagnostic.check.7", "diagnostic.check.8"
     };
+
+    private readonly List<CheckItem> _checks = CheckKeys.Select(k => new CheckItem { Key = k }).ToList();
+
+    /// <summary>清单勾选的落盘键与结构。</summary>
+    private const string ChecklistStoreKey = "diagnostic_checklist";
+
+    private sealed class SavedChecklist
+    {
+        public Dictionary<string, bool> Items { get; set; } = new();
+        public string SavedAt { get; set; } = "";
+    }
 
     private bool _diagnosing;
 
@@ -47,6 +69,7 @@ public partial class DiagnosticPage : UserControl, INavigationAware
     public DiagnosticPage()
     {
         InitializeComponent();
+        LoadChecklist();
         BuildChecks();
         RefreshCheckProgress();
         RefreshHeader();
@@ -54,8 +77,47 @@ public partial class DiagnosticPage : UserControl, INavigationAware
 
     public Task OnNavigatedToAsync(object? parameter)
     {
+        // V3.0：语言切换后清单文案要跟着变（文案存在键上，这里就地重取）
+        foreach (var item in _checks)
+        {
+            if (item.Label is not null) item.Label.Text = Strings.T(item.Key);
+        }
+        RefreshCheckProgress();   // V3.0 审查修正：进度文案（x/y）也必须跟随语言，而不是停在旧语言
         RefreshHeader();
         return Task.CompletedTask;
+    }
+
+    // ------------------------------------------------------ 自检清单的落盘
+
+    private void LoadChecklist()
+    {
+        try
+        {
+            var saved = AppServices.Store.GetObject<SavedChecklist>(ChecklistStoreKey);
+            if (saved is null) return;
+            foreach (var item in _checks)
+                if (saved.Items.TryGetValue(item.Key, out var done)) item.Done = done;
+        }
+        catch (Exception ex)
+        {
+            FileLogger.Warn("Checklist", $"自检清单读取失败（按未勾选处理）：{ex.Message}");
+        }
+    }
+
+    private void SaveChecklist()
+    {
+        try
+        {
+            AppServices.Store.SetObject(ChecklistStoreKey, new SavedChecklist
+            {
+                Items = _checks.ToDictionary(c => c.Key, c => c.Done),
+                SavedAt = DateTime.Now.ToString("yyyy-MM-dd HH:mm")
+            });
+        }
+        catch (Exception ex)
+        {
+            FileLogger.Warn("Checklist", $"自检清单保存失败：{ex.Message}");
+        }
     }
 
     // ------------------------------------------------------ 顶部状态提示
@@ -276,18 +338,30 @@ public partial class DiagnosticPage : UserControl, INavigationAware
             };
             no.HorizontalAlignment = HorizontalAlignment.Center;
 
-            var text = MakeText(item.Text, "FontSizeBase", "TextBrush");
+            var text = MakeText(Strings.T(item.Key), "FontSizeBase", "TextBrush");
             text.VerticalAlignment = VerticalAlignment.Center;
+            item.Label = text;   // 语言切换后由 OnNavigatedToAsync 就地刷新
 
             var row = new StackPanel { Orientation = Orientation.Horizontal };
             row.Children.Add(noPill);
             row.Children.Add(text);
 
+            // 证据行（V3.0 / D4）：回填后就地显示「本机实测到什么、为什么这么判」
+            var evidence = MakeText("", "FontSizeXs", "MutedBrush");
+            evidence.Margin = new Thickness(34, 2, 0, 0);
+            evidence.Visibility = Visibility.Collapsed;
+            item.EvidenceLabel = evidence;
+
+            var rowWithEvidence = new StackPanel();
+            rowWithEvidence.Children.Add(row);
+            rowWithEvidence.Children.Add(evidence);
+
             var box = new CheckBox
             {
-                Content = row,
+                Content = rowWithEvidence,
                 Tag = item,
                 Style = TryFindResource("AppCheckBox") as Style,
+                IsChecked = item.Done,          // 回填上次的勾选状态
                 Margin = new Thickness(0, 0, 0, 10)
             };
             box.Checked += OnCheckToggled;
@@ -302,6 +376,7 @@ public partial class DiagnosticPage : UserControl, INavigationAware
         {
             item.Done = box.IsChecked == true;
             RefreshCheckProgress();
+            SaveChecklist();   // V3.0：勾选落盘，第二天回来不用重勾
         }
     }
 
@@ -310,6 +385,7 @@ public partial class DiagnosticPage : UserControl, INavigationAware
         foreach (var box in CheckList.Children.OfType<CheckBox>()) box.IsChecked = false;
         // 勾选状态由 Unchecked 事件同步回 _checks，这里只需刷新一次进度
         RefreshCheckProgress();
+        SaveChecklist();
     }
 
     private void RefreshCheckProgress()
@@ -319,8 +395,172 @@ public partial class DiagnosticPage : UserControl, INavigationAware
         CheckCountText.Text = Strings.T("diagnostic.checkProgress", done, _checks.Count);
     }
 
-    // -------------------------------------------------------------- 跳转
+    /// <summary>
+    /// 按本机实测回填清单（V3.0 / D4）。
+    ///
+    /// 只读：采集事实 → 纯逻辑判定 → 写回勾选与证据。只有判定为「通过」的才勾上，
+    /// 「需注意」与「无法判定」都不勾，并各自说明原因 —— 不替用户假装通过。
+    /// </summary>
+    private async void OnAutoFillChecks(object sender, RoutedEventArgs e)
+    {
+        AutoFillChecksButton.IsEnabled = false;
+        AutoFillNoteText.Text = Strings.T("check.auto.busy");
+        AutoFillNoteText.Visibility = Visibility.Visible;
 
+        try
+        {
+            var evidence = await AppServices.ChecklistAutoFill.CollectAsync();
+            var results = ChecklistAutoFillCore.Evaluate(evidence);
+
+            var byKey = results.ToDictionary(r => r.ItemKey, StringComparer.Ordinal);
+            var boxes = CheckList.Children.OfType<CheckBox>().ToList();
+
+            for (var i = 0; i < _checks.Count && i < boxes.Count; i++)
+            {
+                var item = _checks[i];
+                if (!byKey.TryGetValue(item.Key, out var result)) continue;
+
+                var shouldCheck = ChecklistAutoFillCore.ShouldCheck(result.Status);
+                item.Done = shouldCheck;
+                boxes[i].IsChecked = shouldCheck;
+
+                if (item.EvidenceLabel is not null)
+                {
+                    item.EvidenceLabel.Text = EvidencePrefix(result.Status) + result.Evidence;
+                    item.EvidenceLabel.SetResourceReference(TextBlock.ForegroundProperty,
+                        result.Status switch
+                        {
+                            ChecklistStatus.Pass => "OkBrush",
+                            ChecklistStatus.Attention => "WarnBrush",
+                            _ => "MutedBrush"
+                        });
+                    item.EvidenceLabel.Visibility = Visibility.Visible;
+                }
+            }
+
+            RefreshCheckProgress();
+            SaveChecklist();
+
+            AutoFillNoteText.Text = Strings.T("check.auto.done",
+                results.Count, ChecklistAutoFillCore.DecidedCount(results));
+        }
+        catch (Exception ex)
+        {
+            FileLogger.Warn("Diagnostic", $"清单自动回填失败：{ex.Message}");
+            AutoFillNoteText.Text = Strings.T("check.auto.failed", ex.Message);
+        }
+        finally
+        {
+            AutoFillNoteText.Visibility = Visibility.Visible;
+            AutoFillChecksButton.IsEnabled = true;
+        }
+    }
+
+    /// <summary>证据前缀：用符号区分「通过 / 需注意 / 无法判定」，不靠颜色单独传达信息。</summary>
+    private static string EvidencePrefix(ChecklistStatus status) => status switch
+    {
+        ChecklistStatus.Pass => "✅ ",
+        ChecklistStatus.Attention => "⚠️ ",
+        _ => "ℹ️ "
+    };
+
+    // ------------------------------------------------------------ 开播前体检（V3.0 / D4 后半段）
+
+    /// <summary>最近一次体检结果（「按建议落地」按钮要用）。</summary>
+    private MachineProfile? _machineProfile;
+
+    private async void OnRunMachineProfile(object sender, RoutedEventArgs e)
+    {
+        MachineRunButton.IsEnabled = false;
+        MachineApplyButton.Visibility = Visibility.Collapsed;
+        MachineItemsPanel.Children.Clear();
+
+        var progress = new Progress<string>(msg => MachineConclusionText.Text = Strings.T("machine.running", msg));
+        try
+        {
+            _machineProfile = await AppServices.MachineProfile.RunAsync(progress);
+            RenderMachineProfile(_machineProfile);
+        }
+        catch (Exception ex)
+        {
+            FileLogger.Warn("Diagnostic", $"开播前体检失败：{ex.Message}");
+            MachineConclusionText.Text = Strings.T("check.auto.failed", ex.Message);
+        }
+        finally
+        {
+            MachineRunButton.IsEnabled = true;
+        }
+    }
+
+    private void RenderMachineProfile(MachineProfile profile)
+    {
+        MachineConclusionText.Text = profile.Conclusion;
+
+        MachineItemsPanel.Children.Clear();
+        foreach (var item in profile.Items)
+            MachineItemsPanel.Children.Add(BuildMachineItemRow(item));
+
+        MachineApplyButton.Visibility = profile.SuggestedPreset is null ? Visibility.Collapsed : Visibility.Visible;
+    }
+
+    private UIElement BuildMachineItemRow(MachineItem item)
+    {
+        var panel = new StackPanel { Margin = new Thickness(0, 0, 0, 10) };
+
+        var title = new TextBlock
+        {
+            Text = $"{MachineProfileCore.SeveritySymbol(item.Severity)} {MachineProfileCore.AreaSymbol(item.Area)} {item.Title}",
+            TextWrapping = TextWrapping.Wrap
+        };
+        title.SetResourceReference(TextBlock.FontSizeProperty, "FontSizeSm");
+        title.SetResourceReference(TextBlock.ForegroundProperty,
+            item.Severity == MachineSeverity.Blocker ? "DangerBrush"
+            : item.Severity == MachineSeverity.Recommend ? "WarnBrush"
+            : "TextBrush");
+        panel.Children.Add(title);
+
+        var detail = new TextBlock { Text = item.Detail, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 2, 0, 0) };
+        detail.SetResourceReference(TextBlock.FontSizeProperty, "FontSizeXs");
+        detail.SetResourceReference(TextBlock.ForegroundProperty, "MutedBrush");
+        panel.Children.Add(detail);
+
+        return panel;
+    }
+
+    /// <summary>按建议落地录制档位（复用 SimpleRecordingService 的备份 + 回滚链路，只写录制侧）。</summary>
+    private async void OnApplySuggestedPreset(object sender, RoutedEventArgs e)
+    {
+        if (_machineProfile?.SuggestedPreset is not { } preset) return;
+        if (!ConfirmDialog.Show(
+                Strings.T("machine.applyPreset"),
+                Strings.T("machine.conclusion.preset", SimpleRecordingCore.Get(preset).Key),
+                Strings.T("machine.applyPreset"), Strings.T("common.cancel"),
+                danger: false, icon: "🎬"))
+        {
+            return;
+        }
+
+        MachineApplyButton.IsEnabled = false;
+        AppServices.Busy.Show(Strings.T("machine.applyPresetBusy"));
+        try
+        {
+            var (ok, error) = await AppServices.SimpleRecord.ApplyPresetAsync(preset);
+            AppServices.Toast?.Show(
+                ok ? Strings.T("machine.applyPresetDone") : Strings.T("machine.applyPresetBlocked", error ?? ""),
+                ok ? "ok" : "warn");
+        }
+        catch (Exception ex)
+        {
+            AppServices.Toast?.Show(Strings.T("machine.applyPresetFailed", ex.Message), "warn");
+        }
+        finally
+        {
+            AppServices.Busy.Hide();
+            MachineApplyButton.IsEnabled = true;
+        }
+    }
+
+    // -------------------------------------------------------------- 跳转
     private void OnOpenProblem(object sender, RoutedEventArgs e)
     {
         if (sender is Button { Tag: string id } && !string.IsNullOrEmpty(id))
@@ -504,6 +744,18 @@ public partial class DiagnosticPage : UserControl, INavigationAware
             sb.AppendLine();
         }
 
+        // V3.0（C7）：把最近弹出的提示一并写进报告。
+        // 用户报障时最常说的是「刚才弹了句什么」，而 Toast 只停留几秒 ——
+        // 把最近 30 条留在报告里，比让用户复述界面状态可靠得多。
+        var toasts = AppServices.Toast?.Recent;
+        if (toasts is { Count: > 0 })
+        {
+            sb.AppendLine();
+            sb.AppendLine(Strings.T("diagnostic.report.toastsHeading"));
+            foreach (var t in toasts)
+                sb.AppendLine(Strings.T("diagnostic.report.toastItem", t.LocalTime.ToString("HH:mm:ss"), t.Severity, t.Message));
+        }
+
         sb.AppendLine("---");
         sb.AppendLine(Strings.T("diagnostic.report.footer"));
 
@@ -520,7 +772,7 @@ public partial class DiagnosticPage : UserControl, INavigationAware
         try
         {
             File.WriteAllText(dialog.FileName, sb.ToString(), new UTF8Encoding(false));
-            AppServices.Toast.Show(Strings.T("diagnostic.exported", Path.GetFileName(dialog.FileName)), "ok");
+            AppServices.Toast?.Show(Strings.T("diagnostic.exported", Path.GetFileName(dialog.FileName)), "ok");
         }
         catch (Exception ex)
         {

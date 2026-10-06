@@ -27,8 +27,10 @@ public partial class ObsConfigPage : UserControl, INavigationAware
     }
 
     public async Task OnNavigatedToAsync(object? parameter)
-    {        await RefreshLocationAsync();
+    {
+        await RefreshLocationAsync();
         await RefreshBackupListAsync();
+        await RefreshTrashAsync();
     }
 
     // -------------------------------------------------------------- 位置
@@ -69,11 +71,53 @@ public partial class ObsConfigPage : UserControl, INavigationAware
         // V2.9.3：OpenFolderDialog 是 .NET 8 才有的类型，兼容构建走 WinForms 分支。
         var path = OBS_Helper.Wpf.Services.Compat.FolderPicker.Pick(Strings.T("obsconfig.pickTitle"));
         if (string.IsNullOrEmpty(path)) return;
-        if (string.IsNullOrEmpty(path)) return;
+
+        // V3.0（审查发现的缺陷）：手动目录原先**零校验**就落盘，随后被登记为「可信配置根」——
+        // 把整卷（D:\）或任意目录都变成可写区。这里按「必须像 OBS 配置目录」收口。
+        if (!LooksLikeObsConfig(path, out var reason))
+        {
+            ShowResult("⚠️", Strings.T("obsconfig.manualRejected", reason));
+            return;
+        }
 
         AppServices.Store.SetItem(ObsPathService.OverrideKey, path);
+        // 覆盖目录变了，探测缓存（含进程状态）必须作废，否则界面还会显示旧位置
+        ObsPathService.InvalidateCache();
         await RefreshLocationAsync();
         ShowResult("✅", Strings.T("obsconfig.manualSet", path));
+    }
+
+    /// <summary>
+    /// 手动指定的目录是否「像 OBS 配置目录」：不是盘符根 / 系统目录，且含 <c>basic</c> 或 <c>global.ini</c>。
+    /// 判定失败时给出可照做的原因。
+    /// </summary>
+    private static bool LooksLikeObsConfig(string path, out string reason)
+    {
+        reason = "";
+        try
+        {
+            if (!Directory.Exists(path)) { reason = Strings.T("obsconfig.rejectNotExist"); return false; }
+
+            var full = Path.GetFullPath(path);
+            var root = Path.GetPathRoot(full)?.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+            if (!string.IsNullOrEmpty(root) &&
+                string.Equals(full.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar), root, StringComparison.OrdinalIgnoreCase))
+            {
+                reason = Strings.T("obsconfig.rejectDriveRoot");
+                return false;
+            }
+
+            if (Directory.Exists(Path.Combine(full, "basic")) || File.Exists(Path.Combine(full, "global.ini")))
+                return true;
+
+            reason = Strings.T("obsconfig.rejectNotObsConfig");
+            return false;
+        }
+        catch (Exception ex)
+        {
+            reason = ex.Message;
+            return false;
+        }
     }
 
     // -------------------------------------------------------------- 备份 / 导出
@@ -82,7 +126,9 @@ public partial class ObsConfigPage : UserControl, INavigationAware
     {
         try
         {
-            var backups = AppServices.ObsBackups.ListBackups();
+            // V3.0（F8）：列出备份要逐个 zip「打开 + 读 manifest」，是实打实的磁盘 IO。
+            // 方法本来就标了 async，但以前是同步调用 —— 备份多了会在 UI 线程上卡一下。
+            var backups = await Task.Run(AppServices.ObsBackups.ListBackups).ConfigureAwait(true);
             BackupList.Children.Clear();
 
             if (backups.Count == 0)
@@ -125,6 +171,149 @@ public partial class ObsConfigPage : UserControl, INavigationAware
             BackupListHint.Text = Strings.T("obsconfig.backupsUnavailable");
             BackupListHint.Visibility = Visibility.Visible;
         }
+    }
+
+    // -------------------------------------------------------------- 配置回收站（V3.0 / A4）
+
+    private async void OnRefreshTrash(object sender, RoutedEventArgs e)
+    {
+        if (_busy) return;
+        SetBusy(true, Strings.T("trash.refresh"));
+        try { await RefreshTrashAsync(); }
+        finally { SetBusy(false); }
+    }
+
+    /// <summary>
+    /// 列出「永不硬删」留下的恢复副本。
+    ///
+    /// 这一块补的是本产品数据安全承诺的**最后一环**：副本一直在写，但此前用户看不到它们。
+    /// 列表按时间倒序，每条给出时间、文件数、体积、是否被锁定（回滚未竟），
+    /// 有原始路径记录时提供「放回原位」。
+    /// </summary>
+    private Task RefreshTrashAsync()
+    {
+        try
+        {
+            var groups = AppServices.Trash.List();
+            TrashList.Children.Clear();
+
+            if (groups.Count == 0)
+            {
+                TrashHint.Text = Strings.T("trash.empty");
+                TrashHint.Visibility = Visibility.Visible;
+                TrashList.Visibility = Visibility.Collapsed;
+                return Task.CompletedTask;
+            }
+
+            TrashHint.Visibility = Visibility.Collapsed;
+            TrashList.Visibility = Visibility.Visible;
+
+            foreach (var g in groups)
+                TrashList.Children.Add(BuildTrashRow(g));
+        }
+        catch (Exception ex)
+        {
+            TrashHint.Text = Strings.T("trash.restore.failed", "", ex.Message);
+            TrashHint.Visibility = Visibility.Visible;
+        }
+        return Task.CompletedTask;
+    }
+    private UIElement BuildTrashRow(TrashGroup g)
+    {
+        var panel = new StackPanel { Margin = new Thickness(0, 0, 0, 14) };
+
+        var head = new TextBlock
+        {
+            Text = Strings.T("trash.groupMeta", g.CreatedLocal.ToString("yyyy-MM-dd HH:mm"),
+                g.FileCount, FormatSize(g.TotalBytes)),
+            TextWrapping = TextWrapping.Wrap
+        };
+        panel.Children.Add(head);
+
+        if (g.Retained)
+        {
+            var badge = new TextBlock { Text = "⚠️ " + Strings.T("trash.retainedBadge"), TextWrapping = TextWrapping.Wrap };
+            badge.SetResourceReference(TextBlock.ForegroundProperty, "WarnBrush");
+            badge.SetResourceReference(TextBlock.FontSizeProperty, "FontSizeXs");
+            panel.Children.Add(badge);
+        }
+
+        // 没有原始路径记录的旧事务目录：如实说明，只提供「打开文件夹」
+        if (!g.CanRestore)
+        {
+            var noManifest = new TextBlock { Text = Strings.T("trash.noManifest"), TextWrapping = TextWrapping.Wrap };
+            noManifest.SetResourceReference(TextBlock.ForegroundProperty, "MutedBrush");
+            noManifest.SetResourceReference(TextBlock.FontSizeProperty, "FontSizeXs");
+            panel.Children.Add(noManifest);
+        }
+
+        var buttons = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 6, 0, 0) };
+
+        if (g.CanRestore)
+        {
+            var restore = new Button
+            {
+                Content = Strings.T("trash.restore"),
+                Style = TryFindResource("SecondaryButton") as Style,
+                Margin = new Thickness(0, 0, 8, 0),
+                Tag = g
+            };
+            restore.Click += OnRestoreTrashGroup;
+            buttons.Children.Add(restore);
+        }
+
+        var open = new Button
+        {
+            Content = Strings.T("trash.openFolder"),
+            Style = TryFindResource("GhostButton") as Style,
+            Tag = g.Dir
+        };
+        open.Click += (_, _) => { if (open.Tag is string dir) TrashService.OpenInExplorer(dir); };
+        buttons.Children.Add(open);
+
+        panel.Children.Add(buttons);
+        return panel;
+    }
+
+    private static string FormatSize(long bytes)
+        => bytes >= 1024L * 1024 * 1024 ? $"{bytes / 1024.0 / 1024 / 1024:0.#} GB"
+         : bytes >= 1024 * 1024 ? $"{bytes / 1024.0 / 1024:0.#} MB"
+         : $"{bytes / 1024.0:0.#} KB";
+
+    private async void OnRestoreTrashGroup(object sender, RoutedEventArgs e)
+    {
+        if (sender is not Button { Tag: TrashGroup g }) return;
+        if (_busy) return;   // 与页面其它处理器一致：防重复触发（连点会不断产生 .restoredN）
+
+        if (!ConfirmDialog.Show(
+                Strings.T("trash.restoreConfirmTitle"),
+                Strings.T("trash.restoreConfirmMessage"),
+                Strings.T("trash.restore"), Strings.T("common.cancel"),
+                danger: false, icon: "↩️"))
+        {
+            return;
+        }
+
+        SetBusy(true, Strings.T("trash.restore"));
+        try
+        {
+            var result = await AppServices.Trash.RestoreAsync(g);
+            ShowResult(result.Failed == 0 ? "✅" : "⚠️",
+                Strings.T("trash.restoreDone", result.Restored, result.PlacedAside, result.Failed));
+
+            // 逐条结果放进结果栏的详情里（用户需要知道具体哪一项去了哪里）
+            ResultDetailText.Text = string.Join("\n", result.Messages);
+            ResultDetailText.Visibility = Visibility.Visible;
+
+            if (result.Failed > 0) App.ReportError(ErrorCodes.FileTransactionRollbackFailed);
+            await RefreshTrashAsync();
+        }
+        catch (Exception ex)
+        {
+            ShowResult("❌", Strings.T("trash.restore.failed", "", ex.Message));
+            App.ReportError(ErrorCodes.FileTransactionRollbackFailed, ex);
+        }
+        finally { SetBusy(false); }
     }
 
     private async void OnCreateBackup(object sender, RoutedEventArgs e)
@@ -320,7 +509,7 @@ public partial class ObsConfigPage : UserControl, INavigationAware
                 Strings.T("obsconfig.fullTitle"),
                 Strings.T("obsconfig.fullMessage"),
                 Strings.T("obsconfig.fullButton"), Strings.T("common.cancel"),
-                danger: true))
+                danger: true, irreversible: true))
         {
             return;
         }
@@ -330,7 +519,7 @@ public partial class ObsConfigPage : UserControl, INavigationAware
                 Strings.T("obsconfig.fullConfirmTitle"),
                 Strings.T("obsconfig.fullConfirmMessage"),
                 Strings.T("obsconfig.fullConfirmButton"), Strings.T("common.cancel"),
-                danger: true))
+                danger: true, irreversible: true))
         {
             return;
         }

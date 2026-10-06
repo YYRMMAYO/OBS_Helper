@@ -29,8 +29,7 @@
 
       <TextBlock TextWrapping="Wrap"
                  FontSize="{DynamicResource FontSizeBase}"
-                 Foreground="{DynamicResource TextBrush}"
-                 LineHeight="21">
+                 Foreground="{DynamicResource TextBrush}">
         <Run x:Name="CurrentRun" Text="{DynamicResource Loc.update.currentUnknown}" />&#x0a;<Run x:Name="LatestRun" Text="{DynamicResource Loc.update.latestUnknown}" FontWeight="SemiBold" />
       </TextBlock>
 
@@ -44,11 +43,11 @@
 
           <!-- 方式〇：增量更新（推荐） -->
           <TextBlock TextWrapping="Wrap" FontSize="{DynamicResource FontSizeBase}"
-                     Foreground="{DynamicResource TextBrush}" LineHeight="21">
+                     Foreground="{DynamicResource TextBrush}">
             <Run Text="{DynamicResource Loc.update.delta.head}" FontWeight="SemiBold" />
           </TextBlock>
           <TextBlock TextWrapping="Wrap" FontSize="{DynamicResource FontSizeSm}"
-                     Foreground="{DynamicResource MutedBrush}" Margin="0,4,0,0" LineHeight="20">
+                     Foreground="{DynamicResource MutedBrush}" Margin="0,4,0,0">
             {DynamicResource Loc.update.delta.desc}
           </TextBlock>
           <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
@@ -72,7 +71,7 @@
 
           <!-- 方式一：蓝奏云网盘（浏览器打开） -->
           <TextBlock TextWrapping="Wrap" FontSize="{DynamicResource FontSizeBase}"
-                     Foreground="{DynamicResource TextBrush}" LineHeight="21">
+                     Foreground="{DynamicResource TextBrush}">
             <Run Text="{DynamicResource Loc.update.lanzou.head}" FontWeight="SemiBold" />
           </TextBlock>
           <StackPanel Orientation="Horizontal" Margin="0,6,0,10">
@@ -99,7 +98,7 @@
                      FontSize="{DynamicResource FontSizeBase}" FontWeight="SemiBold"
                      Foreground="{DynamicResource TextBrush}" />
           <TextBlock TextWrapping="Wrap" FontSize="{DynamicResource FontSizeSm}"
-                     Foreground="{DynamicResource MutedBrush}" Margin="0,4,0,8" LineHeight="20">
+                     Foreground="{DynamicResource MutedBrush}" Margin="0,4,0,8">
             {DynamicResource Loc.update.github.desc}
           </TextBlock>
 

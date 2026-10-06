@@ -5,7 +5,10 @@ using System.Windows;
 using System.Windows.Controls;
 using Microsoft.Win32;
 using OBS_Helper.Wpf.Errors;
+using OBS_Helper.Wpf.Controls;
 using OBS_Helper.Wpf.Navigation;
+using OBS_Helper.Wpf.Services;
+using OBS_Helper.Wpf.Services.Diagnostics;
 using OBS_Helper.Wpf.Services.Host;
 using OBS_Helper.Wpf.Services.Obs;
 using OBS_Helper.Wpf.Services.Plugins;
@@ -22,6 +25,13 @@ public partial class LogsPage : UserControl, INavigationAware
 {
     /// <summary>与宿主读取策略一致：超过 8MB 只取尾部，关键错误都集中在末尾。</summary>
     private const long MaxLogBytes = 8L * 1024 * 1024;
+
+    /// <summary>
+    /// 报告里需要跨导航保留的脱敏日志前缀长度。云端诊断的提示词本来就只取前 16000 字符
+    /// （见 CloudDiagnosticEngine.BuildUserPrompt 里的 cap），离开页面时把全文截到这里即可：
+    /// 该给云端看的正文一字不少，而一份 8MB 日志（约 16MB 内存）不再跟着进程常驻。
+    /// </summary>
+    private const int CloudLogPreviewChars = 16000;
 
     private List<HostLogFile> _files = new();
     private string? _selectedPath;
@@ -44,7 +54,137 @@ public partial class LogsPage : UserControl, INavigationAware
     public async Task OnNavigatedToAsync(object? parameter)
     {
         if (AppServices.Host.IsAvailable) await ReloadListAsync();
+        SubscribeSessionHits();
+        RefreshSessionReview();
     }
+
+    // ---------------------------------------------------------- 本次会话复盘（V3.0 / D5）
+
+    private bool _sessionHitsSubscribed;
+
+    /// <summary>订阅命中变化，让复盘卡片随日志增长自动更新（不再只在进入页面时算一次）。</summary>
+    private void SubscribeSessionHits()
+    {
+        if (_sessionHitsSubscribed) return;
+        AppServices.LogTailer.HitsChanged += OnSessionHitsChanged;
+        _sessionHitsSubscribed = true;
+    }
+
+    private void UnsubscribeSessionHits()
+    {
+        if (!_sessionHitsSubscribed) return;
+        AppServices.LogTailer.HitsChanged -= OnSessionHitsChanged;
+        _sessionHitsSubscribed = false;
+    }
+
+    private void OnSessionHitsChanged()
+    {
+        // 命中来自计时器线程：切回 UI 线程再刷（本页离开时会退订，见 CanReleaseOnLeave）
+        try { Dispatcher.BeginInvoke(new Action(RefreshSessionReview)); }
+        catch (Exception) { /* 退出途中 Dispatcher 已关闭 */ }
+    }
+
+    /// <summary>
+    /// 刷新复盘卡片。数据来自实时日志的命中累计，因此每次进入页面都重算一次。
+    /// </summary>
+    private void RefreshSessionReview()
+    {
+        try
+        {
+            var review = AppServices.SessionReview.BuildCurrent(_report?.Findings.Count ?? 0);
+            SessionSummaryText.Text = SessionReviewCore.BuildSummary(review);
+
+            SessionHitsPanel.Children.Clear();
+            SessionHitsHeading.Visibility = review.KindCount == 0 ? Visibility.Collapsed : Visibility.Visible;
+            if (review.KindCount == 0)
+            {
+                var empty = new TextBlock { Text = Strings.T("d5.noHits"), TextWrapping = TextWrapping.Wrap };
+                empty.SetResourceReference(TextBlock.FontSizeProperty, "FontSizeXs");
+                empty.SetResourceReference(TextBlock.ForegroundProperty, "MutedBrush");
+                SessionHitsPanel.Children.Add(empty);
+                return;
+            }
+
+            foreach (var hit in review.Hits.Take(SessionReviewCore.MaxListedKinds))
+            {
+                var row = new TextBlock
+                {
+                    Text = Strings.T("d5.hitItem", hit.Code, hit.Title, hit.Count, hit.LastLocal.ToString("HH:mm:ss")),
+                    TextWrapping = TextWrapping.Wrap,
+                    Margin = new Thickness(0, 0, 0, 4)
+                };
+                row.SetResourceReference(TextBlock.FontSizeProperty, "FontSizeSm");
+                row.SetResourceReference(TextBlock.ForegroundProperty, "TextBrush");
+                SessionHitsPanel.Children.Add(row);
+            }
+        }
+        catch (Exception ex)
+        {
+            FileLogger.Warn("Logs", $"刷新会话复盘失败：{ex.Message}");
+        }
+    }
+
+    private void OnExportSessionReview(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            var review = AppServices.SessionReview.BuildCurrent(_report?.Findings.Count ?? 0);
+            var dialog = new Microsoft.Win32.SaveFileDialog
+            {
+                Title = Strings.T("d5.export"),
+                FileName = SessionReviewCore.BuildFileName(review.EndedLocal),
+                DefaultExt = ".md",
+                Filter = Strings.T("logs.mdFilter")
+            };
+            if (dialog.ShowDialog(Window.GetWindow(this)) != true) return;
+
+            System.IO.File.WriteAllText(dialog.FileName, SessionReviewCore.BuildMarkdown(review),
+                new System.Text.UTF8Encoding(false));
+            AppServices.Toast?.Show(Strings.T("d5.exported", System.IO.Path.GetFileName(dialog.FileName)), "ok");
+        }
+        catch (Exception ex)
+        {
+            AppServices.Toast?.Show(Strings.T("d5.exportFailed", ex.Message), "warn");
+        }
+    }
+
+    private void OnEndSession(object sender, RoutedEventArgs e)
+    {
+        if (!ConfirmDialog.Show(
+                Strings.T("d5.endSessionConfirmTitle"),
+                Strings.T("d5.endSessionConfirmMessage"),
+                Strings.T("d5.endSession"), Strings.T("common.cancel"),
+                danger: false, icon: "📋"))
+        {
+            return;
+        }
+
+        AppServices.SessionReview.EndSessionAndReset(_report?.Findings.Count ?? 0);
+        RefreshSessionReview();
+        AppServices.Toast?.Show(Strings.T("d5.ended"), "ok");
+    }
+
+    /// <summary>
+    /// 离开页面时放掉脱敏日志全文这段大字符串（V3.0 / F7）：报告对象本身还被
+    /// <see cref="Services.Ai.DiagnosticOrchestrator.LatestReport"/> 引用着（诊断页要读问题清单、
+    /// 云端引擎要读日志前缀），所以只截断不置空 —— 先把内存从「一份全文」降到「一段前缀」。
+    ///
+    /// 注意：这里必须用 <c>TrimSanitizedText</c> 而**不能**先读 <c>SanitizedText.Length</c> ——
+    /// 后者会把懒构造提前触发（等于当场拼出整份 8MB 全文，反而抵消了 V3.0 的省内存改造）。
+    /// </summary>
+    public Task OnNavigatedFromAsync()
+    {
+        UnsubscribeSessionHits();   // 本页离开即被释放，必须退订，否则会订在已死的实例上
+        _report?.TrimSanitizedText(CloudLogPreviewChars);
+        return Task.CompletedTask;
+    }
+
+    /// <summary>
+    /// 本页没有需要跨导航保留的状态：选中的文件、分析结果都能从磁盘与分析器重建，
+    /// 报告本体也留在服务单例里；而控件树里挂着整份日志派生出的证据行，
+    /// 所以离开就释放实例，下次进入由工厂重建（V3.0 / F7）。
+    /// </summary>
+    public bool CanReleaseOnLeave => true;
 
     // ---------------------------------------------------------- 日志来源
 

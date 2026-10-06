@@ -102,7 +102,8 @@ public partial class SearchPage : UserControl, INavigationAware
         var seq = ++_searchSeq;
         var query = QueryBox.Text;
 
-        var all = await AppServices.Problems.SearchAsync(query);
+        // V3.0（C4）：一条都没命中时给出最接近的几条建议，而不是让用户面对空白。
+        var (all, suggestions) = await AppServices.Problems.SearchWithSuggestionsAsync(query);
         if (seq != _searchSeq) return;
 
         var results = string.IsNullOrEmpty(_activeCategory)
@@ -116,6 +117,24 @@ public partial class SearchPage : UserControl, INavigationAware
             : Strings.T("search.hintFound", results.Count);
 
         EmptyText.Visibility = results.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
+
+        // 建议列表只在「没有任何命中」时出现（有命中时再插一段建议纯属噪音）
+        var showSuggestions = results.Count == 0 && suggestions.Count > 0;
+        SuggestionHeading.Visibility = showSuggestions ? Visibility.Visible : Visibility.Collapsed;
+        SuggestionPanel.Visibility = showSuggestions ? Visibility.Visible : Visibility.Collapsed;
+        if (showSuggestions) RenderSuggestions(suggestions);
+    }
+
+    /// <summary>渲染「最接近的几条」建议（V3.0 / C4）：占位卡 + 分类标题，不另开一套卡片组件。</summary>
+    private void RenderSuggestions(List<Problem> suggestions)
+    {
+        SuggestionPanel.Children.Clear();
+        foreach (var p in suggestions)
+        {
+            var card = new ProblemCard();
+            card.Bind(p, _categoryTitles.GetValueOrDefault(p.Category, ""));
+            SuggestionPanel.Children.Add(card);
+        }
     }
 
     private void Render(List<Problem> results)

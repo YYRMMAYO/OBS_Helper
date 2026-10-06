@@ -1,10 +1,16 @@
 # V2.7.0 优化指引（2026-08-24 网络调研）
 
+> ⚠️ **本文是 2026-08-24 的快照**：其中的数字（问题库条数 / 测试项数 / 自检项数 / 版本号）**已过期**，
+> 最新数字见 [`README.md`](../README.md)（当前：知识库 212 条 · 知识库版本 2.2 ·
+> 单测 630 项（V2.9.6 发布基线）· 无界面自检 22 项）。
+> 本文的历史结论**刻意保留原样**，不随版本回填；已被后续版本推翻的段落旁标了
+> 「【已被 V X.Y.Z 推翻，见 …】」，读到时以标注为准。
+
 > 依据：本次网络调研结论——Reddit r/obs 与 r/Twitch、OBS 官方论坛（含 32.x RC 讨论）、
 > GitHub `obsproject/obs-studio` Issue #13360、第三方 2026 年设置指南
 > （tech-insider / dacast / streamguardian / missoutpc 等）、中文社区
 > （obs.cn 教程站、果核剥壳评论区、下载之家 FAQ）。
-> 对照本应用既有能力（V2.5 排障闭环、V2.6 工具箱、问题库 v1.9 共 140 条）去重后形成。
+> 对照本应用既有能力（V2.5 排障闭环、V2.6 工具箱、问题库 v1.9 共 140 条 ← 当时的数字）去重后形成。
 > 本文档是 V2.7.0 的**实施依据与验收标准**。
 
 ---
@@ -61,7 +67,8 @@
 | 9 | `rc-disk-speed` | 录制卡顿但编码正常：磁盘写入速度不足（HDD / 满盘 SSD） | recording |
 
 实现方式：沿用 `scripts/add_problems_v26.py` 模式，脚本 `scripts/add_problems_v27.py`
-一次性追加，版本号 1.9 → 2.0（140 → 149 条）。所有 `related` 引用校验为真实条目 id。
+一次性追加，版本号 1.9 → 2.0（140 → 149 条 ← 当时的数字；当前 version 2.2 / **212 条**）。
+所有 `related` 引用校验为真实条目 id。
 
 ---
 
@@ -134,18 +141,22 @@
 - 不新增一级导航，全部功能挂载在现有「工具箱」（`toolbox`）页：
   上半区追加磁盘写入基准 / 音频采样率体检，下半区按序新增
   色彩体检、编码顾问、节点探测、浏览器源健康检查；
+  【「不新增一级导航」这条**已被 V2.9.4 推翻**（新增「帮助与反馈」一级导航 `Routes.Feedback`）；
+  本版当时把功能挂进工具箱的做法对 V2.7.0 仍然成立】
 - 组合根注册：`ColorCheckService`、`SampleRateCheckService`
   （DiskBenchmark / EncoderAdvisor / IngestPing 为纯静态核心，页面直接调用）；
-- HeadlessTest 路由自检不变（仍覆盖 `toolbox`，实测 18 路由全 PASS）；
+- HeadlessTest 路由自检不变（仍覆盖 `toolbox`，实测 18 路由全 PASS ← 当时的数字，
+  当前为 18 条路由用例 / 共 22 项自检）；
   新增单元测试覆盖 EncoderAdvisor / DiskBenchmark / IngestPing / ColorCheck /
-  SampleRateCheck 核心 + 关键帧自检项 + 新日志规则，全量 241 项测试通过；
+  SampleRateCheck 核心 + 关键帧自检项 + 新日志规则，全量 241 项测试通过 ← 当时的数字，当前 630 项；
 - 版本号：csproj `2.6.0` → `2.7.0`；新增 `RELEASE_NOTES_v2.7.0.md`。
 
 ## 六、验收标准
 
-1. `dotnet build` 零警告零错误；`dotnet test` 全绿（241 项，含新增单测）。✅
+1. `dotnet build` 零警告零错误；`dotnet test` 全绿（241 项，含新增单测 ← 当时的数字）。✅
 2. `OBS_SELFTEST=1` 自检：全部路由 PASS 且无 ReportError。✅
-3. 问题库 JSON 可被 `ProblemService` 正常解析（version=2.0，149 条），
+3. 问题库 JSON 可被 `ProblemService` 正常解析（version=2.0，149 条 ← 当时的数字，
+   当前 version 2.2 / 212 条），
    所有 `related` 引用真实存在。✅
 4. 所有新服务遵循项目铁律：任何探测失败降级为提示而非抛异常；
    绝不修改 OBS 配置文件；磁盘测速临时文件必须清理；
@@ -154,5 +165,7 @@
 ## 七、明确不做（本版边界）
 
 - 不做自动修改 OBS 色彩/采样率设置（保持只读原则，仅给指引）;
+  【**已被 V2.9.3 部分推翻**：一键部署录制环境会写音频采样率 48kHz
+  （`RecordingEnvService`，见 README「V2.9.3 新增」）；色彩设置仍不碰，只给指引】
 - 不做真实推流质量打分（RTT 只是参考维度，避免误导）；
 - 不做内置转写/字幕引擎（维持插件生态推荐路线，见 ROADMAP_PLUGINS.md）。

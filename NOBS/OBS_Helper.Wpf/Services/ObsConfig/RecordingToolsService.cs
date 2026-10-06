@@ -145,6 +145,19 @@ public sealed class RecordingToolsService
         "-y", "-i", input, "-c", "copy", "-movflags", "+faststart", output
     };
 
+    /// <summary>
+    /// 带章节的重封装参数（V3.0 / D3）：额外喂一个 ffmetadata 文件，并用 <c>-map_metadata 1</c>
+    /// 把它写进输出的 MP4 章节里。
+    ///
+    /// 仍然是 <c>-c copy</c>：**不重编码**，所以给一个几十 GB 的录像加章节只要几秒。
+    /// </summary>
+    internal static string[] BuildRemuxArgsWithChapters(string input, string metadataFile, string output) => new[]
+    {
+        "-y", "-i", input, "-i", metadataFile,
+        "-map", "0", "-map_metadata", "1",
+        "-c", "copy", "-movflags", "+faststart", output
+    };
+
     /// <summary>生成与源文件同名的 .mp4 输出路径；已存在时追加时间戳避免覆盖。</summary>
     public static string BuildOutputPath(string inputFile)
     {

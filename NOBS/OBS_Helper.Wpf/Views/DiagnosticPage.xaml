@@ -8,6 +8,30 @@
       <TextBlock Style="{StaticResource MutedText}"
                  Text="{DynamicResource Loc.diagnostic.intro}" />
 
+      <!--
+        开播前体检（V3.0 / D4 后半段）：把黑屏体检 / 编码顾问 / 带宽 / 磁盘测速 / 节点延迟
+        合成**一个结论**。推流参数只给建议；录制档位可一键落地（走既有的备份 + 回滚路径）。
+      -->
+      <Border Style="{StaticResource Card}" Margin="0,14,0,0">
+        <StackPanel>
+          <TextBlock Style="{StaticResource SectionTitle}" Text="{DynamicResource Loc.machine.title}" />
+          <TextBlock Style="{StaticResource MutedText}" Margin="0,0,0,12" TextWrapping="Wrap"
+                     Text="{DynamicResource Loc.machine.desc}" />
+
+          <WrapPanel>
+            <Button x:Name="MachineRunButton" Content="{DynamicResource Loc.machine.run}"
+                    Style="{StaticResource SecondaryButton}" Margin="0,0,8,0" Click="OnRunMachineProfile" />
+            <Button x:Name="MachineApplyButton" Content="{DynamicResource Loc.machine.applyPreset}"
+                    Style="{StaticResource PrimaryButton}" Visibility="Collapsed" Click="OnApplySuggestedPreset" />
+          </WrapPanel>
+
+          <TextBlock x:Name="MachineConclusionText" Style="{StaticResource BodyText}" Margin="0,10,0,0"
+                     TextWrapping="Wrap" Text="{DynamicResource Loc.machine.empty}" />
+
+          <StackPanel x:Name="MachineItemsPanel" Margin="0,8,0,0" />
+        </StackPanel>
+      </Border>
+
       <!-- ============================================ 智能诊断 -->
       <Border Style="{StaticResource Card}" Margin="0,14,0,0">
         <StackPanel>
@@ -115,8 +139,19 @@
 
           <StackPanel x:Name="CheckList" Margin="0,12,0,0" />
 
-          <Button Content="{DynamicResource Loc.diagnostic.checklist.reset}" Style="{StaticResource GhostButton}"
-                  HorizontalAlignment="Left" Margin="0,8,0,0" Click="OnResetChecks" />
+          <!--
+            V3.0（D4）：按本机实测回填。
+            这 8 条里有 6~7 条本机就能判定，此前却全靠用户自己勾（等于把可自动化的排查手工化）。
+          -->
+          <WrapPanel Margin="0,8,0,0">
+            <Button x:Name="AutoFillChecksButton" Content="{DynamicResource Loc.check.auto.button}"
+                    Style="{StaticResource SecondaryButton}" Margin="0,0,8,0" Click="OnAutoFillChecks" />
+            <Button Content="{DynamicResource Loc.diagnostic.checklist.reset}" Style="{StaticResource GhostButton}"
+                    Click="OnResetChecks" />
+          </WrapPanel>
+
+          <TextBlock x:Name="AutoFillNoteText" Style="{StaticResource CaptionText}" Margin="0,8,0,0"
+                     TextWrapping="Wrap" Visibility="Collapsed" />
         </StackPanel>
       </Border>
 

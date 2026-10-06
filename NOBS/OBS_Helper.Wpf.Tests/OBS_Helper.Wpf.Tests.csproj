@@ -18,6 +18,22 @@
   <!-- 直接链接纯逻辑源文件（不引用整个 WPF 项目，避免 RID / UseWPF / SDK 冲突）。
        被链接的类型只依赖 BCL，可在普通 net10.0 测试运行时中编译与执行。 -->
   <ItemGroup>
+    <!--
+      V3.0（E2）：**构建**主工程但**不引用它的输出**。
+      SkipGetTargetFrameworkProperties 让 MSBuild 直接按主工程自己的 TFM 构建，不需要 TFM 兼容协商
+      （测试工程是 net10.0，主工程是 net10.0-windows，协商会失败）。
+
+      为什么要有这一条：测试工程是靠逐个 <Compile Include> 链接源文件的，**不编译主工程** ——
+      于是「1000 项测试全绿，但主工程有一处编译错误」是可能发生的（本轮开发中就真的发生过一次：
+      漏了一个 using）。加上这条之后，`dotnet test` 会先把主工程编一遍，这类盲区不再存在。
+    -->
+    <ProjectReference Include="..\OBS_Helper.Wpf\OBS_Helper.Wpf.csproj"
+                      ReferenceOutputAssembly="false"
+                      SkipGetTargetFrameworkProperties="true"
+                      Private="false" />
+  </ItemGroup>
+
+  <ItemGroup>
     <Compile Include="..\OBS_Helper.Wpf\Services\Obs\ObsAuth.cs" Link="Linked\ObsAuth.cs" />
     <!-- 文案表（V2.9.2）：纯 BCL、零 WPF 依赖，被上面这些「纯逻辑」文件共用 -->
     <Compile Include="..\OBS_Helper.Wpf\Localization\Strings.cs" Link="Linked\Strings.cs" />
@@ -64,9 +80,41 @@
     <Compile Include="..\OBS_Helper.Wpf\Services\ObsConfig\RecordingEnvCore.cs" Link="Linked\ObsConfig\RecordingEnvCore.cs" />
     <!-- V2.9.4 简单录像：预设 / 就绪判定 / 进度估算 + 拉起 OBS 的路径解析，都是纯逻辑 -->
     <Compile Include="..\OBS_Helper.Wpf\Services\ObsConfig\SimpleRecordingCore.cs" Link="Linked\ObsConfig\SimpleRecordingCore.cs" />
+    <Compile Include="..\OBS_Helper.Wpf\Services\ObsConfig\SimpleStreamingCore.cs" Link="Linked\ObsConfig\SimpleStreamingCore.cs" />
+    <Compile Include="..\OBS_Helper.Wpf\Services\Tools\ToolboxSections.cs" Link="Linked\Tools\ToolboxSections.cs" />
+    <Compile Include="..\OBS_Helper.Wpf\Services\Recording\RecordingArchiveCore.cs" Link="Linked\Recording\RecordingArchiveCore.cs" />
+    <Compile Include="..\OBS_Helper.Wpf\Services\Diagnostics\ChecklistAutoFillCore.cs" Link="Linked\Diagnostics\ChecklistAutoFillCore.cs" />
+    <Compile Include="..\OBS_Helper.Wpf\Services\Diagnostics\MachineProfileCore.cs" Link="Linked\Diagnostics\MachineProfileCore.cs" />
+    <Compile Include="..\OBS_Helper.Wpf\Services\Diagnostics\SessionReviewCore.cs" Link="Linked\Diagnostics\SessionReviewCore.cs" />
+    <Compile Include="..\OBS_Helper.Wpf\Services\Search\SearchQueryCore.cs" Link="Linked\Search\SearchQueryCore.cs" />
+    <Compile Include="..\OBS_Helper.Wpf\Services\Plugins\PluginCompatCore.cs" Link="Linked\Plugins\PluginCompatCore.cs" />
+    <Compile Include="..\OBS_Helper.Wpf\Localization\LanguageRegistry.cs" Link="Linked\LanguageRegistry.cs" />
+    <!-- V3.0（E5）：内容资产回退提示（纯逻辑 + 静态登记处） -->
+    <Compile Include="..\OBS_Helper.Wpf\Localization\FallbackNotice.cs" Link="Linked\FallbackNotice.cs" />
+    <Compile Include="..\OBS_Helper.Wpf\Services\Host\SecretCodec.cs" Link="Linked\Host\SecretCodec.cs" />
+    <!-- 检索核心以 Problem 为载体：把模型一并链接进来（Problem.cs 自带 Step/Link，只额外依赖 Strings） -->
+    <Compile Include="..\OBS_Helper.Wpf\Models\Problem.cs" Link="Linked\Models\Problem.cs" />
+    <!-- V3.0（D8）：本地知识库合并 + 回执 Markdown（纯逻辑）+ 分类/数据模型 -->
+    <Compile Include="..\OBS_Helper.Wpf\Services\Knowledge\MyKnowledgeBaseCore.cs" Link="Linked\Knowledge\MyKnowledgeBaseCore.cs" />
+    <Compile Include="..\OBS_Helper.Wpf\Services\Knowledge\ProblemFeedbackCore.cs" Link="Linked\Knowledge\ProblemFeedbackCore.cs" />
+    <!-- 存储目录可注入，因此真实的文件读写也能被覆盖（不再只能测纯逻辑） -->
+    <Compile Include="..\OBS_Helper.Wpf\Services\Knowledge\MyKnowledgeBaseService.cs" Link="Linked\Knowledge\MyKnowledgeBaseService.cs" />
+    <Compile Include="..\OBS_Helper.Wpf\Models\Category.cs" Link="Linked\Models\Category.cs" />
+    <Compile Include="..\OBS_Helper.Wpf\Models\ProblemData.cs" Link="Linked\Models\ProblemData.cs" />
     <Compile Include="..\OBS_Helper.Wpf\Services\ObsConfig\ObsLaunchCore.cs" Link="Linked\ObsConfig\ObsLaunchCore.cs" />
     <Compile Include="..\OBS_Helper.Wpf\Localization\ContentAssets.cs" Link="Linked\ContentAssets.cs" />
     <Compile Include="..\OBS_Helper.Wpf\Services\Tools\VirtualCamCheckCore.cs" Link="Linked\Tools\VirtualCamCheckCore.cs" />
+    <!-- V3.0 Win7 旧协议（obs-websocket 4.x）：鉴权算法 / 请求映射 / 响应归一化 / 事件映射都是纯逻辑 -->
+    <Compile Include="..\OBS_Helper.Wpf\Services\Obs\ObsLegacyV4Core.cs" Link="Linked\Obs\ObsLegacyV4Core.cs" />
+    <!-- V3.0（D7）：滤镜 / 媒体 / 监听 / 演播室模式的取值白名单与模型（纯 BCL） -->
+    <Compile Include="..\OBS_Helper.Wpf\Models\Obs\ObsProtocol.cs" Link="Linked\Obs\ObsProtocol.cs" />
+    <!-- V3.0（D6）：我的模板反向捕获（纯逻辑）+ 模板 schema（JsonObject/JsonArray 依赖 BCL） -->
+    <Compile Include="..\OBS_Helper.Wpf\Services\ObsConfig\SceneTemplateCaptureCore.cs" Link="Linked\ObsConfig\SceneTemplateCaptureCore.cs" />
+    <Compile Include="..\OBS_Helper.Wpf\Models\ObsConfig\SceneTemplate.cs" Link="Linked\ObsConfig\SceneTemplate.cs" />
+    <!-- V3.0 路径护栏与配置文件原子写：ObsSafePath 是纯 BCL + 文案表依赖，SafeIniFile 只依赖它 -->
+    <Compile Include="..\OBS_Helper.Wpf\Services\ObsConfig\ObsSafePath.cs" Link="Linked\ObsConfig\ObsSafePath.cs" />
+    <Compile Include="..\OBS_Helper.Wpf\Services\ObsConfig\SafeIniFile.cs" Link="Linked\ObsConfig\SafeIniFile.cs" />
+    <Compile Include="..\OBS_Helper.Wpf\Services\ObsConfig\FileTx.cs" Link="Linked\ObsConfig\FileTx.cs" />
   </ItemGroup>
 
   <ItemGroup>

@@ -34,6 +34,9 @@ public partial class FeedbackPage : UserControl, INavigationAware
         AuthorText.Text = Strings.T("feedback.about.author", FeedbackLinks.AuthorProfile);
         StatusText.Visibility = Visibility.Collapsed;
 
+        // 共用反馈卡的文案只在构造函数里取过一次（V3.0 / F5）：页面被缓存复用，必须每次刷新
+        FeedbackCardControl.ApplyLanguage();
+
         // 页面实例被导航缓存复用：每次进页面都要让自检结论失效。
         // 不重置的话，之后每一次「复制材料」都会复用第一次算出的旧结论 ——
         // 而这一页的全部价值就是材料准（V2.9.4 审查发现）。
@@ -107,7 +110,7 @@ public partial class FeedbackPage : UserControl, INavigationAware
                 _preflightFail,
                 _preflightWarn);
 
-            if (TrySetClipboard(text))
+            if (await TrySetClipboardAsync(text).ConfigureAwait(true))
                 ShowStatus(Strings.T("feedback.report.copied"), error: false);
             else
                 ShowStatus(Strings.T("feedback.report.copyFailed"), error: true);
@@ -172,10 +175,14 @@ public partial class FeedbackPage : UserControl, INavigationAware
     }
 
     /// <summary>
-    /// 剪贴板可能被别的进程占着（Clipboard 抛 COMException 是常态），
-    /// 重试几次再放弃 —— 一次失败就告诉用户「复制失败」体验很差。
+    /// 剪贴板可能被别的进程占着（Clipboard 抛 COMException 是常态），重试几次再放弃 ——
+    /// 一次失败就告诉用户「复制失败」体验很差。
+    ///
+    /// V3.0（F8）：重试等待由 <c>Thread.Sleep(60)</c> 改为 <c>await Task.Delay</c>。
+    /// 剪贴板是 UI 线程资源（必须在 UI 线程调用），所以不能整体挪到后台线程；
+    /// 但**等待**期间必须让出 UI 线程，否则重试的两百毫秒里界面是卡住的。
     /// </summary>
-    private static bool TrySetClipboard(string text)
+    private static async Task<bool> TrySetClipboardAsync(string text)
     {
         for (var i = 0; i < 3; i++)
         {
@@ -186,7 +193,7 @@ public partial class FeedbackPage : UserControl, INavigationAware
             }
             catch (Exception)
             {
-                Thread.Sleep(60);
+                if (i < 2) await Task.Delay(60).ConfigureAwait(true);
             }
         }
         return false;

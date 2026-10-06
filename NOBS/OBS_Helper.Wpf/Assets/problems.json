@@ -78,6 +78,7 @@
       "id": "bs-display",
       "category": "black-screen",
       "title": "显示器捕获（Display Capture）黑屏",
+    "synonyms": ["黑屏", "没有画面", "屏幕捕获黑屏", "heiping"],
       "platforms": [
         "Windows"
       ],
@@ -136,6 +137,7 @@
       "id": "bs-game",
       "category": "black-screen",
       "title": "游戏捕获（Game Capture）黑屏",
+    "synonyms": ["游戏黑屏", "游戏源黑屏", "游戏捕获失败"],
       "platforms": [
         "Windows"
       ],
@@ -199,6 +201,7 @@
       "id": "bs-window",
       "category": "black-screen",
       "title": "窗口捕获（Window Capture）无法捕获/黑屏",
+    "synonyms": ["窗口黑屏", "捕获不到窗口"],
       "platforms": [
         "Windows",
         "macOS"
@@ -456,6 +459,7 @@
       "id": "enc-cpu",
       "category": "encoding",
       "title": "x264 CPU 占用过高导致掉帧",
+    "synonyms": ["掉帧", "丢帧", "落帧", "CPU 占用高"],
       "platforms": [
         "Windows",
         "macOS",
@@ -512,6 +516,7 @@
       "id": "enc-drop",
       "category": "encoding",
       "title": "输出分辨率/帧率过高导致卡顿",
+    "synonyms": ["卡顿", "很卡", "不流畅", "画面卡"],
       "platforms": [
         "Windows",
         "macOS",
@@ -569,6 +574,7 @@
       "id": "lag-network",
       "category": "lag",
       "title": "直播网络掉帧（Dropped Frames）",
+    "synonyms": ["掉帧", "丢帧", "网络卡", "上行不足"],
       "platforms": [
         "Windows",
         "macOS",
@@ -837,6 +843,7 @@
       "id": "au-mic",
       "category": "audio",
       "title": "麦克风没有声音 / 不被识别",
+    "synonyms": ["没声音", "无声", "话筒不响", "mic 没声音"],
       "platforms": [
         "Windows",
         "macOS",
@@ -3021,6 +3028,7 @@
       "id": "au-mic-noise",
       "category": "audio",
       "title": "麦克风底噪 / 环境噪音（降噪处理）",
+    "synonyms": ["底噪", "电流声", "沙沙声", "杂音"],
       "platforms": [
         "Windows",
         "macOS"

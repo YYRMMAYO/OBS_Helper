@@ -5,6 +5,7 @@ using OBS_Helper.Wpf.Models.Obs;
 using OBS_Helper.Wpf.Services.Host;
 using OBS_Helper.Wpf.Services.Obs;
 using OBS_Helper.Wpf.Services.ObsConfig;
+using OBS_Helper.Wpf.Services.Recording;
 using OBS_Helper.Wpf.Services.Tools;
 
 namespace OBS_Helper.Wpf.Services.Shell;
@@ -128,6 +129,112 @@ public sealed class SimpleRecordingService : IDisposable
     /// <summary>本次录制是否真的产出了文件。</summary>
     public bool LastStopProducedFile { get; private set; }
 
+    // ---------------------------------------------------------------- 打点（V3.0 / D3）
+
+    private readonly List<RecordingMarker> _sessionMarkers = new();
+    private DateTime _sessionStartUtc;
+
+    /// <summary>本次录制的打点（按位置排序）。</summary>
+    public IReadOnlyList<RecordingMarker> SessionMarkers => _sessionMarkers;
+
+    /// <summary>
+    /// 在**当前录制位置**打一个点（热键 / 托盘菜单调用）。返回打点位置；不在录制时返回 null。
+    ///
+    /// 为什么值得做：OBS 官方至今没有「录制中标记精彩瞬间」的能力（issue #13567），
+    /// 用户只能事后靠时间戳回忆。打点之后停止时会把章节写进档案，并可一键带章节转 MP4。
+    ///
+    /// 去重：2 秒内的重复打点会被合并（热键很容易连按两下），见 <see cref="RecordingArchiveCore.AddMarker"/>。
+    /// </summary>
+    public TimeSpan? AddMarker(string? label = null)
+    {
+        if (!IsRecording) return null;
+
+        var at = _obs.RecordElapsed;
+        var before = _sessionMarkers.Count;
+
+        var merged = RecordingArchiveCore.AddMarker(_sessionMarkers, at, label);
+        _sessionMarkers.Clear();
+        _sessionMarkers.AddRange(merged);
+
+        if (_sessionMarkers.Count == before) return null;   // 被当成误触合并掉了
+
+        Notify();
+        return at;
+    }
+
+    /// <summary>本次录制是否打过点。</summary>
+    public bool HasMarkers => _sessionMarkers.Count > 0;
+
+    /// <summary>
+    /// 只落地录制环境、**不开始录制**（V3.0 / D4：供「开播前体检」的一键处方使用）。
+    ///
+    /// 复用与 <see cref="StartAsync"/> 完全相同的落地链路（自检 → 计划 → 备份 → 应用 → 回滚表），
+    /// 只是不发出 <c>StartRecord</c>。返回 (false, 原因) 表示当前条件下不能落地。
+    /// 返回类型用 (bool, string?) 而不是 <see cref="RecordingEnvResult"/>：两条通道各自有自己的结果类型
+    /// （文件通道多带一张回滚表），这里只关心「成没成、为什么没成」。
+    /// </summary>
+    public async Task<(bool Ok, string? Error)> ApplyPresetAsync(
+        SimplePresetId preset, IProgress<string>? progress = null, CancellationToken ct = default)
+    {
+        if (_busy || IsRecording) return (false, Strings.T("simple.error.startFailed", ""));
+
+        _busy = true;
+        try
+        {
+            Preset = preset;   // 档位选择本身会持久化（用户下次进来还是这个档）
+
+            var check = await CheckAsync().ConfigureAwait(true);
+            var legacyLive = _obs.IsConnected && _obs.IsLegacyProtocol;
+
+            _plan = await BuildPlanAsync().ConfigureAwait(true);
+            if (!legacyLive && _plan.BlockedReason is { Length: > 0 } blocked)
+            {
+                LastError = blocked;
+                return (false, blocked);
+            }
+
+            if (legacyLive)
+            {
+                // 旧协议改不了设置：如实说明，不假装落地
+                LastError = Strings.T("simple.legacy.skipApply");
+                return (false, LastError);
+            }
+
+            if (!_plan.ViaWebSocket && ObsProcessRunning)
+            {
+                // 文件通道要求 OBS 没在运行（否则写了会被退出时的 OBS 覆盖）
+                LastError = Strings.T("env.blocked.obsRunning");
+                return (false, LastError);
+            }
+
+            StatusText = Strings.T("simple.state.preparing");
+            Notify();
+
+            if (_plan.ViaWebSocket)
+            {
+                var ws = await ApplyViaWebSocketAsync(_plan, progress, ct).ConfigureAwait(true);
+                if (!ws.Ok) LastError = ws.Error;
+                Notify();
+                return (ws.Ok, ws.Error);
+            }
+
+            var file = await ApplyViaFileAsync(_plan, progress).ConfigureAwait(true);
+            if (!file.Ok) LastError = file.Error;
+            Notify();
+            return (file.Ok, file.Error);
+        }
+        catch (Exception ex)
+        {
+            LastError = ex.Message;
+            FileLogger.Warn("SimpleRecord", $"落地录制档位失败：{ex.Message}");
+            return (false, ex.Message);
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+
     /// <summary>是否需要「重启 OBS 才生效」的提示（文件通道落地过）。</summary>
     public bool PendingObsRestart { get; private set; }
 
@@ -160,8 +267,57 @@ public sealed class SimpleRecordingService : IDisposable
             var elapsed = _obs.RecordElapsed;
             var freeGb = FreeGbOf(CurrentOutputRoot());
             var usedMb = CurrentOutputMb();
-            return SimpleRecordingCore.Estimate(elapsed, freeGb, CurrentPreset.EstimatedBitrateKbps, usedMb);
+            SampleWriteRate(usedMb);
+            return SimpleRecordingCore.Estimate(elapsed, freeGb, CurrentPreset.EstimatedBitrateKbps, usedMb, _measuredKbps);
         }
+    }
+
+    // ---- 实测写入速率（V3.0 / C3）：用文件增长量校正「还能录多久」 ----
+
+    private DateTime _rateAnchorUtc;
+    private double _rateAnchorMb;
+    private double _measuredKbps;
+
+    /// <summary>实测写入速率（kbps）；还没有足够样本时为 0。</summary>
+    public double MeasuredWriteKbps => _measuredKbps;
+
+    /// <summary>
+    /// 用「已写 MB 的增量 ÷ 时间增量」估算真实写入速率。
+    ///
+    /// 采样口径：至少 5 秒样本才认（太短噪声极大）；文件变小（换盘 / 换文件）时重设锚点；
+    /// 结果做一次半衰滑动，避免单次抖动把估算带偏。
+    /// 这个值只用于「剩余可录」的估算与展示，不参与任何写配置的决策。
+    /// </summary>
+    private void SampleWriteRate(double usedMb)
+    {
+        var now = DateTime.UtcNow;
+
+        if (_rateAnchorUtc == default || usedMb < _rateAnchorMb)
+        {
+            _rateAnchorUtc = now;
+            _rateAnchorMb = usedMb;
+            _measuredKbps = 0;
+            return;
+        }
+
+        var seconds = (now - _rateAnchorUtc).TotalSeconds;
+        if (seconds < 5) return;
+
+        var deltaMb = usedMb - _rateAnchorMb;
+        _rateAnchorUtc = now;
+        _rateAnchorMb = usedMb;
+        if (deltaMb <= 0) return;   // 这一轮几乎没写入（暂停 / 静止画面）：保留上一次的估计
+
+        var kbps = deltaMb * 8 * 1024 / seconds;
+        _measuredKbps = _measuredKbps <= 0 ? kbps : (_measuredKbps + kbps) / 2;
+    }
+
+    /// <summary>开始新一轮录制时丢弃旧的速率样本。</summary>
+    private void ResetWriteRateSample()
+    {
+        _rateAnchorUtc = default;
+        _rateAnchorMb = 0;
+        _measuredKbps = 0;
     }
 
     // ---------------------------------------------------------------- 只读检查
@@ -198,15 +354,21 @@ public sealed class SimpleRecordingService : IDisposable
                     : Strings.T("simple.blocked.noProfile");
             }
 
+            // 旧协议（obs-websocket 4.x）：连着就说明「有通道可用」—— 录制开关照常，
+            // 只是不能在线改设置（见 StartAsync 里的取舍说明）。若不这样处理，
+            // 就会被误判成「OBS 在跑但没连上」，把能录的用户挡在门外。
+            var legacyLive = _obs.IsConnected && _obs.IsLegacyProtocol;
+
             _ready = SimpleRecordingCore.Check(
-                viaWebSocket: _plan.ViaWebSocket,
+                viaWebSocket: _plan.ViaWebSocket || legacyLive,
                 canWriteFiles: canWriteFiles,
                 obsProcessRunning: ObsProcessRunning,
                 streaming: _obs.StreamStatus.Active,
                 recording: _obs.RecordStatus.Active,
                 failCount: failCount,
                 warnCount: warnCount,
-                blockedReason: _plan.BlockedReason,
+                // 旧协议下「OBS 在跑」不是阻断（我们本来就不打算在线改配置），把计划里的阻断原因丢掉
+                blockedReason: legacyLive ? null : _plan.BlockedReason,
                 noChannelReason: noChannelReason);
         }
         catch (Exception ex)
@@ -246,7 +408,10 @@ public sealed class SimpleRecordingService : IDisposable
             envPlan.ViaWebSocket,
             envPlan.BlockedReason,
             envPlan.BasicIniPath,
-            items);
+            items)
+        {
+            ConfigDir = envPlan.ConfigDir
+        };
     }
 
     // ---------------------------------------------------------------- 开始 / 停止
@@ -290,7 +455,18 @@ public sealed class SimpleRecordingService : IDisposable
             }
 
             _plan = await BuildPlanAsync().ConfigureAwait(true);
-            if (_plan.BlockedReason is { Length: > 0 } blocked)
+
+            // 旧协议（obs-websocket 4.x，Win7 上 OBS 27 那一代）：连着，但**改不了设置**
+            // （v4 没有 SetProfileParameter），而文件通道又要求 OBS 没在跑。
+            // 取舍：不假装能落地，跳过配置写入，直接开录 —— 录制本身在旧协议下完全可用。
+            //
+            // 审查发现的关键点：必须先算 legacyLive，**再**判 BlockedReason。
+            // 旧协议下 WebSocketAvailable 为 false、而 OBS 正在跑，计划会给出
+            // 「OBS 在跑但没连上（WebSocket 未开或密码不对）」这条阻断 —— 与实际相反，
+            // 且会让下面的 legacyLive 分支永远不可达（本版新增的那条路径形同虚设）。
+            var legacyLive = _obs.IsConnected && _obs.IsLegacyProtocol;
+
+            if (!legacyLive && _plan.BlockedReason is { Length: > 0 } blocked)
             {
                 LastError = blocked;
                 Step = SimpleRecordingStep.Blocked;
@@ -299,9 +475,14 @@ public sealed class SimpleRecordingService : IDisposable
             }
 
             // 文件通道 + OBS 没跑：这时候还不能开录，得先把 OBS 拉起来
-            var needLaunch = !_plan.ViaWebSocket && !ObsProcessRunning;
+            var needLaunch = !legacyLive && !_plan.ViaWebSocket && !ObsProcessRunning;
 
-            if (!needLaunch)
+            if (legacyLive)
+            {
+                StatusText = Strings.T("simple.legacy.skipApply");
+                Notify();
+            }
+            else if (!needLaunch)
             {
                 Step = SimpleRecordingStep.SettingUp;
                 StatusText = Strings.T("simple.state.preparing");
@@ -682,9 +863,8 @@ public sealed class SimpleRecordingService : IDisposable
 
         try
         {
-            // 同目录 .bak：备份 zip 之外的最后一道保险，成本几乎为零
-            File.WriteAllText(path + ".obshelper.bak", iniText, new System.Text.UTF8Encoding(false));
-            File.WriteAllText(path, updated, new System.Text.UTF8Encoding(false));
+            // V3.0：与前两处写 basic.ini 的路径统一 —— 先过路径护栏，再「留 .bak → 临时文件 → 原子替换」
+            SafeIniFile.Write(path, updated, plan.ConfigDir ?? "");
         }
         catch (Exception ex)
         {
@@ -860,6 +1040,9 @@ public sealed class SimpleRecordingService : IDisposable
 
     private void StartTick()
     {
+        ResetWriteRateSample();   // 新一轮录制：丢掉上一次的写入速率样本
+        _sessionMarkers.Clear();  // V3.0（D3）：打点按「本次录制」重新开始
+        _sessionStartUtc = DateTime.UtcNow;
         if (_tick is not null) { _tick.Start(); return; }
         _tick = new DispatcherTimer { Interval = TimeSpan.FromSeconds(1) };
         _tick.Tick += (_, _) => Notify();
@@ -870,6 +1053,15 @@ public sealed class SimpleRecordingService : IDisposable
 
     private void OnObsStateChanged() => Post(() =>
     {
+        // V3.0 审查修正：用户从 OBS 界面 / 热键自己开始录制时，也要重置实测速率采样并起表。
+        // 原先只在「本服务发起的开录」里调 StartTick，于是从外部开录时锚点还停在上一次录制 ——
+        // 采样窗口跨越两次录制，实测速率被严重低估，剩余时间被高估，低空告警不再触发。
+        if (_obs.RecordStatus.Active && Step != SimpleRecordingStep.Recording)
+        {
+            ResetWriteRateSample();
+            StartTick();
+        }
+
         if (!_obs.RecordStatus.Active && Step == SimpleRecordingStep.Recording)
         {
             // 用户自己按了停止（热键 / 托盘 / OBS 界面）：本服务同步到「已停止」并记下文件
@@ -898,10 +1090,49 @@ public sealed class SimpleRecordingService : IDisposable
             LastOutputFile = info.FullName;
             LastOutputMb = info.Length / 1024.0 / 1024.0;
             LastStopProducedFile = info.Length > 0;
+
+            RegisterInArchive(info);
         }
         catch (Exception ex)
         {
             FileLogger.Warn("SimpleRecord", $"读取录制文件信息失败：{ex.Message}");
+        }
+    }
+
+    /// <summary>
+    /// 把本次产物登记进录制档案（V3.0 / D3）。
+    ///
+    /// 放在「停止收尾」里而不是别处：只有这一刻才同时拿得到文件、时长、丢帧与打点。
+    /// 时长优先用 OBS 自报的 timecode（暂停不计入），拿不到时退回本地墙钟。
+    /// </summary>
+    private void RegisterInArchive(FileInfo info)
+    {
+        try
+        {
+            var duration = _obs.RecordElapsed;
+            if (duration <= TimeSpan.Zero && _sessionStartUtc != default)
+            {
+                var delta = DateTime.UtcNow - _sessionStartUtc;
+                if (delta > TimeSpan.Zero) duration = delta;
+            }
+
+            var started = _obs.RecordStartedUtc?.ToLocalTime()
+                          ?? (_sessionStartUtc == default ? DateTime.Now : _sessionStartUtc.ToLocalTime());
+
+            AppServices.Archive.Add(new RecordingArchiveEntry(
+                Path: info.FullName,
+                StartedLocal: started,
+                Duration: duration,
+                Bytes: info.Length,
+                // 录制侧的丢帧口径就是「输出跳过帧占比」（OBS 的 GetRecordStatus 不单列丢帧）
+                DroppedRatio: _obs.Stats.OutputSkipRatio,
+                Segmented: _obs.RecordFileSwitchCount > 0,
+                Markers: _sessionMarkers.ToList()));
+        }
+        catch (Exception ex)
+        {
+            // 档案是辅助信息：登记失败不能影响「停止收尾」本身
+            FileLogger.Warn("SimpleRecord", $"登记录制档案失败：{ex.Message}");
         }
     }
 

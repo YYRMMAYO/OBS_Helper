@@ -30,6 +30,13 @@
       -->
       <ctl:SimpleRecordCard x:Name="SimpleRecord" Margin="0,14,0,0" />
 
+      <!--
+        简单开播（V3.0 / D2）：与简单录像并列放在首页 —— 两者是同一种进入意图
+        （「我要录 / 我要播」），而「按了开始推流没反应」的头号原因是推流服务没填全，
+        这张卡在按之前就把这件事查清楚。
+      -->
+      <ctl:SimpleStreamCard x:Name="SimpleStream" Margin="0,14,0,0" />
+
       <!-- 新手引导：未连 OBS 时显示，连接后由代码隐藏（P1） -->
       <Border x:Name="WelcomeCard" Style="{StaticResource Card}" Margin="0,14,0,0"
               Background="{DynamicResource BrandSoftBrush}"

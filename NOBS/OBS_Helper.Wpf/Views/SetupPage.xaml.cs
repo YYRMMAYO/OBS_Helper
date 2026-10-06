@@ -37,12 +37,14 @@ public partial class SetupPage : UserControl, INavigationAware
         ("bilibili", Strings.T("setup.platform.bilibili"), "📺", "#fb7299", Strings.T("setup.platformKw.bilibili")),
         ("douyin", Strings.T("setup.platform.douyin"), "🎵", "#fe2c55", Strings.T("setup.platformKw.douyin")),
         ("kuaishou", Strings.T("setup.platform.kuaishou"), "⚡", "#ff4906", Strings.T("setup.platformKw.kuaishou")),
-        ("youtube", "YouTube", "▶️", "#ff0000", "YouTube"),
-        ("twitch", "Twitch", "🟣", "#9146ff", "Twitch"),
+        // 品牌名两种语言写法相同，但仍然走文案表（V3.0 / E5）：否则这一行是「程序里写死的展示文案」，
+        // 将来真要本地化（例如某地区需要不同写法）就得改代码 —— 而其它 chip 都已经是文案键了。
+        ("youtube", Strings.T("setup.platform.youtube"), "▶️", "#ff0000", Strings.T("setup.platform.youtube")),
+        ("twitch", Strings.T("setup.platform.twitch"), "🟣", "#9146ff", Strings.T("setup.platform.twitch")),
         ("videoaccount", Strings.T("setup.platform.videoaccount"), "💬", "#07c160", Strings.T("setup.platformKw.videoaccount")),
         ("xhs", Strings.T("setup.platform.xhs"), "📕", "#ff2442", Strings.T("setup.platformKw.xhs")),
         ("vertical", Strings.T("setup.platform.vertical"), "📱", "#1abc9c", Strings.T("setup.platformKw.vertical")),
-        ("mac", "macOS", "🍎", "#555555", "macOS"),
+        ("mac", Strings.T("setup.platform.macos"), "🍎", "#555555", Strings.T("setup.platform.macos")),
     };
 
     private List<Problem> _setupProblems = new();
@@ -70,6 +72,11 @@ public partial class SetupPage : UserControl, INavigationAware
             BuildWizards();
             BuildPlatformChips();
         }
+
+        // 两枚共用控件的文案只在各自构造函数里取过一次（V3.0 / F5）：
+        // 语言切换不会重建它们，必须每次进入都刷一遍，否则整张卡还是旧语言。
+        DownloadCardControl.ApplyLanguage();
+        FeedbackCardControl.ApplyLanguage();
 
         _setupProblems = await AppServices.Problems.GetByCategoryAsync("setup");
 

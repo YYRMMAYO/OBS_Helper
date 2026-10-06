@@ -47,6 +47,24 @@
         </StackPanel>
       </Border>
 
+      <!-- ======================================== 配置回收站（V3.0 / A4） -->
+      <Border Style="{StaticResource Card}" Margin="0,0,0,16">
+        <StackPanel>
+          <TextBlock Text="{DynamicResource Loc.trash.title}" Style="{StaticResource SectionTitle}" />
+          <TextBlock Style="{StaticResource MutedText}" Margin="0,0,0,12" TextWrapping="Wrap"
+                     Text="{DynamicResource Loc.trash.intro}" />
+
+          <Button x:Name="TrashRefreshButton" Content="{DynamicResource Loc.trash.refresh}"
+                  Style="{StaticResource SecondaryButton}" HorizontalAlignment="Left"
+                  Click="OnRefreshTrash" />
+
+          <TextBlock x:Name="TrashHint" Style="{StaticResource CaptionText}" Margin="0,8,0,0"
+                     TextWrapping="Wrap" Visibility="Collapsed" />
+
+          <StackPanel x:Name="TrashList" Margin="0,8,0,0" Visibility="Collapsed" />
+        </StackPanel>
+      </Border>
+
       <!-- ======================================== 导入 -->
       <Border Style="{StaticResource Card}" Margin="0,0,0,16">
         <StackPanel>

@@ -228,7 +228,36 @@
                   Click="OnMiniWindowClick" />
           <Button x:Name="OpenRecordDirButton" Content="{DynamicResource Loc.console.openRecordDir}" Style="{StaticResource GhostButton}"
                   HorizontalAlignment="Left" Margin="10,0,0,0" Click="OnOpenRecordDirClick" />
+          <!-- 节目画面截图（V3.0 / D7）：OBS 自带该能力，「画面还在不在」一键留证 -->
+          <Button x:Name="ScreenshotButton" Content="{DynamicResource Loc.console.screenshot}" Style="{StaticResource GhostButton}"
+                  HorizontalAlignment="Left" Margin="10,0,0,0"
+                  ToolTip="{DynamicResource Loc.console.screenshotTip}"
+                  Click="OnScreenshotClick" />
         </StackPanel>
+
+        <!--
+          演播室模式（V3.0 / D7）：双屏主播的「预览 → 切换」在 OBS 面板上要切窗口去点，
+          这里给一对远程按钮 —— 直播中不切窗口就能完成转场。
+        -->
+        <StackPanel Orientation="Horizontal" Margin="0,14,0,0">
+          <Button x:Name="StudioModeButton" Style="{StaticResource SecondaryButton}"
+                  HorizontalContentAlignment="Left" Click="OnStudioModeClick">
+            <StackPanel Orientation="Horizontal">
+              <Image Width="16" Height="16" Source="{StaticResource IconConnect}"
+                     VerticalAlignment="Center" Margin="0,0,8,0" />
+              <TextBlock x:Name="StudioModeButtonText" Text="{DynamicResource Loc.console.studio.off}"
+                         VerticalAlignment="Center" />
+              <ContentControl x:Name="StudioModePill" Style="{StaticResource StatusPill}" Tag="info"
+                              Content="{DynamicResource Loc.console.studio.offShort}" Margin="10,0,0,0" />
+            </StackPanel>
+          </Button>
+          <Button x:Name="StudioTransitionButton" Content="{DynamicResource Loc.console.studio.transition}"
+                  Style="{StaticResource GhostButton}" Margin="10,0,0,0"
+                  ToolTip="{DynamicResource Loc.console.studio.transitionTip}"
+                  Click="OnStudioTransitionClick" />
+        </StackPanel>
+        <TextBlock x:Name="StudioModeHintText" Style="{StaticResource CaptionText}" Margin="2,6,0,0"
+                   Text="{DynamicResource Loc.console.studio.hint}" TextWrapping="Wrap" />
         <TextBlock x:Name="RecordDirHintText" Style="{StaticResource CaptionText}" Margin="2,6,0,0"
                    Visibility="Collapsed" />
 
@@ -243,6 +272,16 @@
           <TextBlock x:Name="RecordFileText" Style="{StaticResource CaptionText}" Margin="0,3,0,0"
                      TextWrapping="Wrap" />
         </StackPanel>
+
+        <!--
+          最近录制（V3.0 / D3）：原先只有「打开目录 / 转 MP4」两个按钮，而「上一次录成了什么」
+          没有任何界面回答 —— 用户要自己去翻目录、按时间戳猜哪次是空的。
+          这里列出最近 10 次：时间 / 文件名 / 大小 / 时长 / 丢帧 / 打点，并给出一键收尾动作。
+        -->
+        <TextBlock Style="{StaticResource SectionTitle}" Text="{DynamicResource Loc.d3.recent.title}" Margin="0,20,0,10" />
+        <TextBlock x:Name="RecentRecordsHint" Style="{StaticResource MutedText}" Margin="2,0,0,0"
+                   TextWrapping="Wrap" Text="{DynamicResource Loc.d3.recent.empty}" />
+        <StackPanel x:Name="RecentRecordsPanel" />
       </StackPanel>
 
     </StackPanel>

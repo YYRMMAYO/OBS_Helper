@@ -1,4 +1,5 @@
 using System.IO;
+using OBS_Helper.Wpf.Services.Diagnostics;
 using System.Text;
 
 namespace OBS_Helper.Wpf.Services.Shell;
@@ -32,7 +33,40 @@ public sealed class LogTailerService : IDisposable
     private long _offset;
     private int _polling;
 
+    /// <summary>
+    /// 本次会话的命中累计（V3.0 / D5）。
+    ///
+    /// 为什么需要：实时预警只在**首次**命中时弹一条托盘气泡（有 90 秒抑制与每小时限流），
+    /// 于是「今晚一共被提醒了哪些问题、哪一类反复出现」在事后完全无从回答 ——
+    /// 而这两个问题恰恰是主播复盘时最想知道的。
+    /// </summary>
+    private readonly System.Collections.Concurrent.ConcurrentDictionary<string, SessionHit> _hits = new();
+
+    /// <summary>本次会话开始统计的本地时刻。</summary>
+    public DateTime SessionStartedLocal { get; private set; } = DateTime.Now;
+
+    /// <summary>命中累计发生变化（界面可据此刷新；可能在计时器线程触发）。</summary>
+    public event Action? HitsChanged;
+
     public LogTailerService(TrayService tray) => _tray = tray;
+
+    /// <summary>
+    /// 本次会话命中的问题（按次数降序）。只统计**警告及以上**，与实时预警同一口径 ——
+    /// 把 info 级也计进来只会让复盘变成噪音。
+    /// </summary>
+    public IReadOnlyList<SessionHit> SessionHits
+        => _hits.Values.OrderByDescending(h => h.Count).ThenBy(h => h.Code, StringComparer.Ordinal).ToList();
+
+    /// <summary>本次会话命中总次数（同一类问题按实际命中次数累加）。</summary>
+    public int SessionHitTotal => _hits.Values.Sum(h => h.Count);
+
+    /// <summary>开始新的一次会话统计（例如用户点了「结束本次统计」之后）。</summary>
+    public void ResetSession()
+    {
+        _hits.Clear();
+        SessionStartedLocal = DateTime.Now;
+        HitsChanged?.Invoke();
+    }
 
     /// <summary>开关读取自 ShellSettings（与托盘共用一份持久化配置）。</summary>
     public bool Enabled => _tray.Settings.RealtimeLogAlertEnabled;
@@ -77,9 +111,12 @@ public sealed class LogTailerService : IDisposable
     private void PollSafe()
     {
         if (Interlocked.Exchange(ref _polling, 1) == 1) return;
+        var hitsDirty = false;
         try
         {
             Poll();
+            hitsDirty = _hitsDirty;
+            _hitsDirty = false;
         }
         catch (Exception)
         {
@@ -88,8 +125,13 @@ public sealed class LogTailerService : IDisposable
         finally
         {
             Interlocked.Exchange(ref _polling, 0);
+            // 每个轮询周期最多通知一次：一批日志里可能命中几十行，
+            // 逐行触发事件会让界面重建几十次（界面刷新是「看结果」，不需要每行都看一眼）
+            if (hitsDirty) HitsChanged?.Invoke();
         }
     }
+
+    private volatile bool _hitsDirty;
 
     private void Poll()
     {
@@ -208,10 +250,33 @@ public sealed class LogTailerService : IDisposable
                 continue;
             }
 
+            RecordHit(rule.Code, rule.Title, rule.Suggestion);
+
             if (_throttle.ShouldNotify(rule.Code, DateTime.UtcNow))
             {
                 _tray.Notify(Strings.T("logtailer.alertTitle", rule.Title), rule.Suggestion);
             }
+        }
+    }
+
+    /// <summary>
+    /// 累计一次命中（V3.0 / D5）。**每次命中都记**，不受预警节流影响 ——
+    /// 节流是「别打扰用户」，而复盘要的是真实频次；两者目的不同，不能共用一个计数。
+    /// </summary>
+    private void RecordHit(string code, string title, string suggestion)
+    {
+        try
+        {
+            var now = DateTime.Now;
+            _hits.AddOrUpdate(code,
+                _ => new SessionHit(code, title, suggestion, 1, now, now),
+                (_, existing) => existing with { Count = existing.Count + 1, LastLocal = now });
+
+            _hitsDirty = true;   // 由轮询周期统一发一次通知（见 PollSafe）
+        }
+        catch (Exception)
+        {
+            // 统计失败绝不能影响实时预警这条主链路
         }
     }
 }

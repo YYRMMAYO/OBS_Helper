@@ -56,6 +56,24 @@ public class Problem
     /// <summary>相关问题 id 列表</summary>
     public string[] Related { get; set; } = System.Array.Empty<string>();
 
+    /// <summary>
+    /// 检索别名 / 同义词（V3.0 / C4）。例如「掉帧」条目可以补上「落帧」「丢帧率」，
+    /// 让用户真实会打的词也能查到。
+    ///
+    /// 放在**数据侧**（而不是程序里）是有意为之：知识库走独立热更新通道，补别名不需要发版。
+    /// 可选字段，旧数据没有它照常工作（反序列化后为 null，读取处已做兜底）。
+    /// </summary>
+    public string[]? Synonyms { get; set; }
+
     /// <summary>官方文档 / 参考链接</summary>
     public List<Link> Links { get; set; } = new();
+
+    /// <summary>
+    /// 是否来自用户自己的本地知识库（V3.0 / D8，<c>my-problems.json</c>）。
+    ///
+    /// 由加载器在合并时置位，**不随文件序列化**（本地文件里不必写这个字段）：
+    /// 界面据此给条目打「本地」标记，也让用户一眼分清「官方说的」和「我自己记的」。
+    /// </summary>
+    [System.Text.Json.Serialization.JsonIgnore]
+    public bool IsLocal { get; set; }
 }

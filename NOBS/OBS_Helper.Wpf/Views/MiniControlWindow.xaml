@@ -2,7 +2,9 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="{DynamicResource Loc.mini.title}"
-        Width="344" Height="136"
+        Width="344"
+        SizeToContent="Height"
+        MinHeight="136"
         WindowStyle="None"
         AllowsTransparency="True"
         Background="Transparent"
@@ -76,9 +78,17 @@
         </Button>
       </StackPanel>
 
+      <!--
+        实时指标行（V3.0 / C2）：小窗的意义是「全屏游戏里不用切出去」，
+        所以它必须回答的不只是「能不能按」，而是「录/播得怎么样」。
+        内容：录制时长 · 剩余可录 · 推流丢帧/拥塞 —— 数据全部来自已有采样，零新增开销。
+      -->
+      <TextBlock x:Name="MetricsText" Style="{StaticResource CaptionText}" Margin="2,8,0,0"
+                 TextWrapping="Wrap" Text="" />
+
       <!-- 底部提示 -->
       <TextBlock Text="{DynamicResource Loc.mini.footer}"
-                 Style="{StaticResource CaptionText}" Margin="2,8,0,0" />
+                 Style="{StaticResource CaptionText}" Margin="2,4,0,0" />
     </StackPanel>
   </Border>
 </Window>

@@ -47,9 +47,14 @@ public static class ContentAssets
     public static string Extension(string baseName)
         => baseName == Troubleshooting ? ".md" : ".json";
 
-    /// <summary>「基名 + 语言后缀 + 扩展名」的通用拼法，供缓存文件名 / 状态文件等复用。</summary>
+    /// <summary>
+    /// 「基名 + 语言后缀 + 扩展名」的通用拼法，供缓存文件名 / 状态文件等复用。
+    ///
+    /// V3.0（D9）：后缀取自 <see cref="LanguageRegistry"/>，不再是「英文？加 .en-US : 不加」——
+    /// 加一门语言时只需在注册表里填它的后缀，这里不必再改。
+    /// </summary>
     public static string SuffixedFileName(string stem, string extension, string? language)
-        => stem + (IsEnglish(language) ? EnglishSuffix : "") + extension;
+        => stem + LanguageRegistry.ContentSuffixOf(language) + extension;
 
     /// <summary>资产基名 → 带语言后缀的文件名（<c>problems</c> + en-US → <c>problems.en-US.json</c>）。</summary>
     public static string FileName(string baseName, string? language)
@@ -59,8 +64,12 @@ public static class ContentAssets
     public static string ResourceName(string baseName, string? language)
         => ResourcePrefix + FileName(baseName, language);
 
-    /// <summary>给定语言是否为英文（其余一律按中文处理，与 <see cref="Strings.Normalize"/> 同口径）。</summary>
-    public static bool IsEnglish(string? language) => Strings.Normalize(language) == Strings.EnUs;
+    /// <summary>
+    /// 给定语言是否使用英文后缀。保留此 API 是为了兼容既有调用点；
+    /// 新代码请直接用 <see cref="LanguageRegistry.ContentSuffixOf"/>（它支持任意多种语言）。
+    /// </summary>
+    public static bool IsEnglish(string? language)
+        => string.Equals(LanguageRegistry.ContentSuffixOf(language), EnglishSuffix, StringComparison.OrdinalIgnoreCase);
 
     /// <summary>
     /// 读出某个资产的文本。返回 null 表示当前语言与中文内嵌都缺失（调用方据此报错）。
@@ -81,13 +90,25 @@ public static class ContentAssets
 
         var wanted = ResourceName(baseName, language);
         var text = reader(wanted);
-        if (!string.IsNullOrWhiteSpace(text)) return text;
+        if (!string.IsNullOrWhiteSpace(text))
+        {
+            // V3.0 第三轮验证：取到了当前语言的资产 → 撤销可能存在的旧回退登记。
+            // 没有这一步，提示条只增不减：后台补齐资产后界面明明已是英文，提示条仍在说「缺失」。
+            FallbackNotice.Clear(baseName);
+            return text;
+        }
 
         if (!IsEnglish(language)) return null;
 
         // 英文资产缺失：退回中文内嵌，并显式标记，让调用方写日志。
         var zh = reader(ResourceName(baseName, Strings.ZhHans));
-        if (!string.IsNullOrWhiteSpace(zh)) fellBackToChinese = true;
+        if (!string.IsNullOrWhiteSpace(zh))
+        {
+            fellBackToChinese = true;
+            // V3.0（E5）：登记到界面提示条 —— 只写日志的话，英文用户只会觉得「怎么一半是中文」。
+            // 放在这里（唯一的回退出口）而不是各调用点，是为了不可能漏报。
+            FallbackNotice.Report(baseName);
+        }
         return zh;
     }
 

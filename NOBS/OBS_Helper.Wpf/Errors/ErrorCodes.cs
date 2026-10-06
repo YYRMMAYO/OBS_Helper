@@ -60,6 +60,16 @@ public static class ErrorCodes
     public const string ImportRejected = "OBS804";
     public const string ResetFailed = "OBS805";
     public const string TemplateApplyFailed = "OBS806";
+    public const string FileTransactionRollbackFailed = "OBS807";
+
+    // 9xx 更新链路 / 兼容层（V3.0）
+    //
+    // 为什么补这几条：这几类失败原先要么走 Toast、要么直接把异常 Message 显示给用户，
+    // 用户截图求助时给不出一个可检索的编号；而它们恰好都是**最难远程诊断**的类别。
+    public const string UpdateDownloadFailed = "OBS901";
+    public const string UpdateIntegrityFailed = "OBS902";
+    public const string UpdaterBootstrapFailed = "OBS903";
+    public const string ContentUpdateFailed = "OBS904";
 
     /// <summary>
     /// 返回某报错码的用户可读说明（含解决建议）。

@@ -32,6 +32,9 @@ public static class FeedbackLinks
     /// <summary>项目仓库主页（V2.9.4）。</summary>
     public const string RepositoryUrl = "https://github.com/YYRMMAYO/OBS_Helper";
 
+    /// <summary>仓库 slug（owner/name）：用于拼「新建 Issue」链接（V3.0 / D8）。</summary>
+    public const string RepositorySlug = "YYRMMAYO/OBS_Helper";
+
     /// <summary>
     /// 反馈 / 作者 / 仓库入口是否可以放给用户点：必须 https，且落在以下三者之一：
     /// <list type="bullet">

@@ -99,6 +99,11 @@ public sealed class SceneTemplateService
             if (raw is null) { _loadError = Errors.ErrorCodes.ResourceMissing; return new List<SceneTemplate>(); }
             var list = JsonSerializer.Deserialize<List<SceneTemplate>>(raw, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
             if (list is null) { _loadError = Errors.ErrorCodes.DataParseFailed; return new List<SceneTemplate>(); }
+
+            // V3.0（D6）：把用户自己存的「我的模板」并进来（排在最前 —— 用户自己的东西应该最好找）。
+            // 与内置模板同 schema，因此列表、落地、导出三条路径都不需要特殊分支。
+            var mine = ReadMineFiles();
+            if (mine.Count > 0) list.InsertRange(0, mine);
             return list;
         }
         catch (JsonException) { _loadError = Errors.ErrorCodes.DataParseFailed; return new List<SceneTemplate>(); }
@@ -246,7 +251,7 @@ public sealed class SceneTemplateService
 
         var ovName = PickTransitionName(scene.Transition ?? tpl.Transition, transitionNames);
         var ovDur = scene.TransitionDurationMs ?? tpl.TransitionDurationMs;
-        var ovOk = await _obs.RawRequestAsync("SetSceneTransitionOverride", new
+        var ovOk = await _obs.RawRequestAsync("SetSceneSceneTransitionOverride", new
         {
             sceneName = scene.Name,
             transitionName = ovName ?? (object?)null,
@@ -280,7 +285,13 @@ public sealed class SceneTemplateService
             ? await ReuseSharedSourceAsync(sceneName, src, existingInput, ct)
             : await CreateSourceWithFallbackAsync(sceneName, src, available, createdInputs, placeholders, ct);
 
-        if (itemId < 0) return;
+        if (itemId < 0)
+        {
+            // V3.0 第三轮验证：拿不到 sceneItemId 时原先直接 return —— 变换/层级/显隐全部静默跳过，
+            // 结果是「落地成功但画面不对」。现在计入跳过并留一条可读说明。
+            placeholders.Add(Strings.T("scene.apply.itemIdMissing", sceneName, src.Name));
+            return;
+        }
 
         // 变换（带层级）
         if (src.Transform is not null)
@@ -334,6 +345,11 @@ public sealed class SceneTemplateService
             var inputName = cid.TryGetProperty("inputName", out var inn) && inn.ValueKind == JsonValueKind.String ? inn.GetString()! : src.Name;
             var itemId = cid.TryGetProperty("sceneItemId", out var siidn) && siidn.ValueKind == JsonValueKind.Number ? siidn.GetInt32() : -1;
             if (!createdInputs.ContainsKey(src.Name)) createdInputs[src.Name] = inputName;
+
+            // V3.0（D6）：把「我的模板」里带的滤镜一起建回来（降噪 / 色键 / 锐化…）。
+            // 只对**新建的输入**做：复用的输入已经带着自己的滤镜，再建一遍会变成重复滤镜。
+            await ApplyFiltersAsync(inputName, src, placeholders, ct);
+
             return (itemId, inputName);
         }
 
@@ -344,6 +360,50 @@ public sealed class SceneTemplateService
 
         placeholders.Add($"{sceneName} / {src.Name}：{Describe(ci)}");
         throw new InvalidOperationException(Strings.T("scene.apply.createSourceFailed"));
+    }
+
+    /// <summary>
+    /// 把一个来源上的滤镜建回 OBS（V3.0 / D6）。
+    ///
+    /// 失败**不阻断落地**：滤镜种类可能属于某个未安装的插件（例如没有 RNNoise 就没有降噪滤镜），
+    /// 这时应该照常把场景搭起来、把缺失记进占位清单，而不是整个模板落地失败。
+    /// </summary>
+    private async Task ApplyFiltersAsync(string inputName, TemplateSource src, List<string> placeholders, CancellationToken ct)
+    {
+        if (src.Filters is null || src.Filters.Count == 0) return;
+
+        foreach (var f in src.Filters)
+        {
+            if (string.IsNullOrWhiteSpace(f.Kind)) continue;
+
+            var create = await _obs.RawRequestAsync("CreateSourceFilter", new
+            {
+                sourceName = inputName,
+                filterName = f.Name,
+                filterKind = f.Kind,
+            }, ct);
+
+            if (!create.Ok)
+            {
+                // 601/604 常见于「滤镜已存在」与「种类对应插件缺失」，两种情况都不该中断落地
+                placeholders.Add(Strings.T("scene.apply.filterFailed", inputName, f.Name));
+                continue;
+            }
+
+            if (f.Settings is { Count: > 0 })
+            {
+                await _obs.RawRequestAsync("SetSourceFilterSettings", new
+                {
+                    sourceName = inputName,
+                    filterName = f.Name,
+                    filterSettings = f.Settings,
+                }, ct);
+            }
+
+            if (!f.Enabled)
+                await _obs.RawRequestAsync("SetSourceFilterEnabled",
+                    new { sourceName = inputName, filterName = f.Name, filterEnabled = false }, ct);
+        }
     }
 
     /// <summary>应用来源层级：OBS index 0 = 最上，模板 zOrder 0 = 最底，故 index = count-1-zOrder。</summary>
@@ -360,13 +420,10 @@ public sealed class SceneTemplateService
     /// <summary>把变换应用到某个场景元素。boundsType=NONE 时不带 bounds 尺寸；用 bounds 时不带 scale。</summary>
     private async Task ApplyTransformAsync(string sceneName, int itemId, TransformSpec t, CancellationToken ct)
     {
-        var tf = new JsonObject
-        {
-            ["positionX"] = t.PosX ?? 0,
-            ["positionY"] = t.PosY ?? 0,
-            ["alignment"] = t.Alignment ?? 0,
-            ["crop"] = new JsonObject { ["top"] = 0, ["bottom"] = 0, ["left"] = 0, ["right"] = 0 }
-        };
+        // V3.0 第四轮验证修正：v5 的裁剪是**扁平**字段 cropLeft/cropTop/cropRight/cropBottom
+        // （obs-websocket 服务端只读顶层这几个键），写成嵌套 crop{...} 会被**静默忽略**；
+        // 捕获侧同样必须读扁平字段，否则永远是 null —— 上一版两头都写错了，等于裁剪这条白修。
+        var tf = SceneTemplateCaptureCore.BuildV5Transform(t);
 
         var boundsNone = string.Equals(t.BoundsType, "OBS_BOUNDS_NONE", StringComparison.OrdinalIgnoreCase)
                          || string.IsNullOrEmpty(t.BoundsType);
@@ -395,7 +452,7 @@ public sealed class SceneTemplateService
         var tpl = (await LoadAsync()).FirstOrDefault(t => t.Id == templateId);
         if (tpl is null) throw new InvalidOperationException(Strings.T("scene.apply.notFound"));
 
-        var dir = ResolveExportDir(outDir);
+        var dir = await ResolveExportDirAsync(outDir).ConfigureAwait(false);
         Directory.CreateDirectory(dir);
 
         var collectionName = Strings.T("scene.apply.collectionName", tpl.Title);
@@ -411,14 +468,33 @@ public sealed class SceneTemplateService
         for (int n = 2; File.Exists(path); n++)
             path = Path.Combine(dir, $"obshelper_{Slugify(tpl.Id)}_{stamp}_{n}.json");
 
+        // V3.0：落到 OBS 配置目录内部时（未指定导出目录的默认路径）同样要过护栏；
+        // 导出到用户自己选的目录则不受限（那本来就是用户的目录）。
+        var loc = await _paths.LocateAsync().ConfigureAwait(false);
+        if (loc.ConfigDir is { Length: > 0 } cfg && IsUnder(cfg, dir))
+            ObsSafePath.AssertWritable(path, cfg);
+
         await File.WriteAllTextAsync(path, text, new UTF8Encoding(false), ct);
         return path;
     }
 
-    private string ResolveExportDir(string? outDir)
+    private static bool IsUnder(string root, string target)
+    {
+        try
+        {
+            var r = Path.GetFullPath(root).TrimEnd(Path.DirectorySeparatorChar) + Path.DirectorySeparatorChar;
+            return Path.GetFullPath(target).StartsWith(r, StringComparison.OrdinalIgnoreCase);
+        }
+        catch (Exception)
+        {
+            return false;
+        }
+    }
+
+    private async Task<string> ResolveExportDirAsync(string? outDir)
     {
         if (!string.IsNullOrWhiteSpace(outDir) && Directory.Exists(outDir)) return outDir;
-        var loc = _paths.LocateAsync().GetAwaiter().GetResult();
+        var loc = await _paths.LocateAsync().ConfigureAwait(false);
         if (loc.Exists)
         {
             var scenes = Path.Combine(loc.ConfigDir, "basic", "scenes");
@@ -632,16 +708,17 @@ public sealed class SceneTemplateService
             ["source_uuid"] = srcUuid,
             ["visible"] = src.Enabled,
             ["locked"] = false,
-            ["rot"] = 0.0,
+            ["rot"] = t?.Rotation ?? 0.0,
             ["scale_ref"] = new JsonObject { ["x"] = canvasW, ["y"] = canvasH },
             ["align"] = align,
             ["bounds_type"] = boundsNone ? 0 : BoundsTypeToNumber(t!.BoundsType!),
             ["bounds_align"] = 0,
             ["bounds_crop"] = false,
-            ["crop_left"] = 0,
-            ["crop_top"] = 0,
-            ["crop_right"] = 0,
-            ["crop_bottom"] = 0,
+            // 离线导出同样要带真实裁剪（V3.0 第三轮验证）：否则「导出给别人」也会丢裁剪
+            ["crop_left"] = t?.CropLeft ?? 0,
+            ["crop_top"] = t?.CropTop ?? 0,
+            ["crop_right"] = t?.CropRight ?? 0,
+            ["crop_bottom"] = t?.CropBottom ?? 0,
             ["id"] = itemId,
             ["group_item_backup"] = false,
             ["pos"] = new JsonObject { ["x"] = t?.PosX ?? 0, ["y"] = t?.PosY ?? 0 },
@@ -903,6 +980,388 @@ public sealed class SceneTemplateService
 
     private static string Describe(ObsRequestResult r)
         => !string.IsNullOrWhiteSpace(r.Comment) ? r.Comment! : Strings.T("scene.apply.errorCode", r.Code);
+
+    // ------------------------------------------------------------ 我的模板（V3.0 / D6）
+
+    /// <summary>
+    /// 用户模板目录：<c>%LocalAppData%\OBS_Helper\templates</c>（Win7 兼容版自动落到 _Win7 那一份）。
+    ///
+    /// 放用户目录而不是程序目录：程序目录可能没有写权限（Program Files），而用户模板本来就跟人走。
+    /// </summary>
+    public static string MineDirectory => Path.Combine(Services.Host.HostBridge.AppDataDirectory, "templates");
+
+    /// <summary>
+    /// 把**当前场景集合**反向读成一份模板并存盘（D6）。
+    ///
+    /// 读回来的东西与内置模板同 schema，因此「落地」「导出给别人」两条路径都能直接复用 ——
+    /// 这也是这一项不需要新写一套落地器的原因。
+    /// </summary>
+    public async Task<(SceneTemplate? Template, string? Error)> CaptureCurrentAsync(string? title, CancellationToken ct)
+    {
+        if (!_obs.IsConnected) return (null, Strings.T("mytemplate.notConnected"));
+
+        try
+        {
+            var canvas = await ReadCanvasAsync(ct);
+            var collectionName = await ReadCollectionNameAsync(ct);
+            var scenes = await ReadScenesAsync(ct);
+            if (scenes.Count == 0) return (null, Strings.T("mytemplate.noScenes"));
+
+            var captured = new CapturedCollection(collectionName, canvas, scenes);
+            // 冲突集合 = 内存里的 id + **目录里实际存在的文件名**（V3.0 第三轮验证）。
+            // 只看 id 会漏掉「用户按提示手工重命名过」的文件：内容 id 还是旧的，
+            // 下一次捕获算出的后缀正好等于那个文件名 → File.Replace 把用户那份内容整个换掉（不可逆）。
+            var existing = (await LoadAsync()).Select(t => t.Id)
+                .Concat(ReadMineFiles().Select(t => t.Id))
+                .Concat(ExistingMineFileStems());
+            var suffix = SceneTemplateCaptureCore.MakeUniqueSuffix(
+                string.IsNullOrWhiteSpace(title) ? collectionName : title, existing);
+
+            var template = SceneTemplateCaptureCore.Build(captured, title, suffix);
+            // V3.0 第四轮验证：ReadItemTransformAsync 本就把「读不到」与「读到默认值」区分开了（Ok 标志），
+            // 但调用点把标志丢掉了 —— 于是「位置读失败」静默变成「位置全 0」，用户以为模板存对了。
+            // 这里把计数落到模板说明里，用户点开就能看到这一份有多可靠。
+            if (Interlocked.Exchange(ref _unreadableTransforms, 0) is var unreadable && unreadable > 0)
+                template.Notes = string.IsNullOrWhiteSpace(template.Notes)
+                    ? Strings.T("mytemplate.unreadableTransforms", unreadable)
+                    : template.Notes + " " + Strings.T("mytemplate.unreadableTransforms", unreadable);
+            if (!SceneTemplateCaptureCore.IsUsable(template))
+                return (null, Strings.T("mytemplate.empty"));
+
+            SaveMine(template);
+            Reload();   // 下次 LoadAsync 带上这份新模板
+            return (template, null);
+        }
+        catch (Exception ex)
+        {
+            FileLogger.Warn("Templates", $"反向捕获模板失败：{ex.Message}");
+            return (null, Strings.T("mytemplate.failed", ex.Message));
+        }
+    }
+
+    /// <summary>删除一份「我的模板」。id 必须是 <c>mine-</c> 前缀，防止误删其它文件。</summary>
+    public bool DeleteMine(string id)
+    {
+        if (!id.StartsWith(SceneTemplateCaptureCore.MineIdPrefix, StringComparison.Ordinal)) return false;
+        // 路径校验（V3.0 第三轮验证）：id 来自文件内容 / 界面，理论上可能带目录分隔符或 ..，
+        // 直接拼进 File.Delete 会规范化到模板目录之外。
+        if (id.IndexOfAny(new[] { '/', '\\' }) >= 0 || id.Contains("..", StringComparison.Ordinal)) return false;
+
+        try
+        {
+            var path = Path.Combine(MineDirectory, id + ".json");
+            // 再确认一次解析后的父目录就是模板目录（双保险，不依赖字符串检查）
+            var full = Path.GetFullPath(path);
+            if (!string.Equals(Path.GetDirectoryName(full), Path.GetFullPath(MineDirectory), StringComparison.OrdinalIgnoreCase))
+            {
+                FileLogger.Warn("Templates", $"拒绝删除模板目录之外的文件：{full}");
+                return false;
+            }
+            if (!File.Exists(path)) return false;
+            File.Delete(path);
+            Reload();
+            return true;
+        }
+        catch (Exception ex)
+        {
+            FileLogger.Warn("Templates", $"删除我的模板失败：{ex.Message}");
+            return false;
+        }
+    }
+
+    /// <summary>本次捕获里「变换读不到」的来源数（读失败 ≠ 位置是全 0，必须让用户看得见）。</summary>
+    private int _unreadableTransforms;
+
+    /// <summary>模板目录里已存在的文件名（去掉 mine- 前缀与扩展名），用于避免重名覆盖。</summary>
+    private static IEnumerable<string> ExistingMineFileStems()
+    {
+        try
+        {
+            if (!Directory.Exists(MineDirectory)) return Array.Empty<string>();
+            return Directory.GetFiles(MineDirectory, "mine-*.json")
+                .Select(f => Path.GetFileNameWithoutExtension(f))
+                .Select(n => n.StartsWith(SceneTemplateCaptureCore.MineIdPrefix, StringComparison.Ordinal)
+                    ? n[SceneTemplateCaptureCore.MineIdPrefix.Length..] : n)
+                .ToList();
+        }
+        catch (Exception) { return Array.Empty<string>(); }
+    }
+
+    private void SaveMine(SceneTemplate template)
+    {
+        Directory.CreateDirectory(MineDirectory);
+        var path = Path.Combine(MineDirectory, template.Id + ".json");
+
+        // 绝不覆盖：万一碰撞集合还是漏了（并发、手工改名），这里再兜一层 ——
+        // 用户自己存的模板被静默换掉是不可逆的，宁可多存一份。
+        if (File.Exists(path))
+        {
+            var suffix = SceneTemplateCaptureCore.MakeUniqueSuffix(template.Id, ExistingMineFileStems());
+            template.Id = SceneTemplateCaptureCore.MineIdPrefix + suffix;
+            path = Path.Combine(MineDirectory, template.Id + ".json");
+            FileLogger.Warn("Templates", $"目标模板文件已存在，改存为 {template.Id}（不覆盖用户已有文件）");
+        }
+        var json = JsonSerializer.Serialize(template,
+            new JsonSerializerOptions { WriteIndented = true, Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping });
+
+        // 先写临时文件再替换：中途崩溃不会留下半份 JSON（下次读到损坏文件会让整个模板列表少一条）
+        var tmp = path + ".tmp";
+        File.WriteAllText(tmp, json);
+        if (File.Exists(path)) File.Replace(tmp, path, null);
+        else File.Move(tmp, path);
+    }
+
+    /// <summary>读取用户模板目录里的全部文件；单份损坏只跳过它，不影响其它模板。</summary>
+    private List<SceneTemplate> ReadMineFiles()
+    {
+        var list = new List<SceneTemplate>();
+        try
+        {
+            if (!Directory.Exists(MineDirectory)) return list;
+
+            foreach (var file in Directory.GetFiles(MineDirectory, "mine-*.json"))
+            {
+                try
+                {
+                    var t = JsonSerializer.Deserialize<SceneTemplate>(File.ReadAllText(file),
+                        new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                    if (t is null) continue;
+
+                    // id 必须与文件名一致（V3.0 第三轮验证）：用户手改过 id、或从别处拷来一份
+                    // 文件名与 id 不匹配的模板时，删除按钮会永远失败、落地/导出还可能作用到另一份模板。
+                    var stem = Path.GetFileNameWithoutExtension(file);
+                    if (!string.Equals(t.Id, stem, StringComparison.Ordinal))
+                    {
+                        FileLogger.Warn("Templates", $"模板 id 与文件名不一致（{t.Id} vs {stem}），以文件名为准");
+                        t.Id = stem;
+                    }
+                    t.IsMine = true;
+                    list.Add(t);
+                }
+                catch (Exception ex)
+                {
+                    FileLogger.Warn("Templates", $"跳过损坏的我的模板「{Path.GetFileName(file)}」：{ex.Message}");
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            FileLogger.Warn("Templates", $"读取我的模板目录失败：{ex.Message}");
+        }
+        return list;
+    }
+
+    // ---- 反向读取（v5 请求；旧协议不支持的项自动跳过，不阻断捕获）
+
+    private async Task<CapturedCanvas> ReadCanvasAsync(CancellationToken ct)
+    {
+        var r = await _obs.RawRequestAsync("GetVideoSettings", null, ct);
+        int Num(string name, int fallback)
+            => r.Ok && r.Data is JsonElement d && d.TryGetProperty(name, out var v) && v.ValueKind == JsonValueKind.Number
+                ? v.GetInt32() : fallback;
+
+        // fps 是 num/den 两个字段；旧协议下拿不到就按 30/1（模板里也允许用户改）
+        var num = Num("fpsNumerator", 30);
+        var den = Num("fpsDenominator", 1);
+        return new CapturedCanvas(
+            Num("baseWidth", 1920), Num("baseHeight", 1080),
+            Num("outputWidth", 1920), Num("outputHeight", 1080),
+            num <= 0 ? 30 : num, den <= 0 ? 1 : den);
+    }
+
+    private async Task<string> ReadCollectionNameAsync(CancellationToken ct)
+    {
+        var r = await _obs.RawRequestAsync("GetSceneCollectionList", null, ct);
+        if (r.Ok && r.Data is JsonElement d
+            && d.TryGetProperty("currentSceneCollectionName", out var v) && v.ValueKind == JsonValueKind.String)
+            return v.GetString() ?? "";
+        return "";
+    }
+
+    private async Task<List<CapturedScene>> ReadScenesAsync(CancellationToken ct)
+    {
+        var scenes = new List<CapturedScene>();
+
+        var list = await _obs.RawRequestAsync("GetSceneList", null, ct);
+        if (!list.Ok || list.Data is not JsonElement ld
+            || !ld.TryGetProperty("scenes", out var arr) || arr.ValueKind != JsonValueKind.Array)
+            return scenes;
+
+        // 场景顺序（V3.0 第三轮验证）：按 sceneIndex 排序，**不再依赖数组顺序** ——
+        // 官方只承诺「有序列表」不说方向，而两代协议归一化后的方向并不一致。
+        // 拿不到索引时退到「数组顺序倒序」——也就是官方给的有序列表方向（与 v5 文档一致）；这条注释之前写成「退回数组顺序」，与代码不符（第四轮验证）。
+        var raw = new List<(int Index, string Name)>();
+        var fallbackIndex = 0;
+        foreach (var e in arr.EnumerateArray())
+        {
+            if (e.TryGetProperty("sceneName", out var n) && n.ValueKind == JsonValueKind.String)
+            {
+                var name = n.GetString() ?? "";
+                if (name.Length == 0) continue;
+                var index = e.TryGetProperty("sceneIndex", out var ix) && ix.ValueKind == JsonValueKind.Number
+                    ? ix.GetInt32() : fallbackIndex;
+                raw.Add((index, name));
+            }
+            fallbackIndex++;
+        }
+        var names = raw.OrderByDescending(x => x.Index).Select(x => x.Name).ToList();   // 索引大的在面板上面
+
+        foreach (var sceneName in names)
+        {
+            var (transition, duration) = await ReadSceneTransitionAsync(sceneName, ct);
+            var items = await ReadSceneItemsAsync(sceneName, ct);
+            scenes.Add(new CapturedScene(sceneName, transition, duration, items));
+        }
+        return scenes;
+    }
+
+    private async Task<(string? Transition, int? Duration)> ReadSceneTransitionAsync(string sceneName, CancellationToken ct)
+    {
+        var r = await _obs.RawRequestAsync("GetSceneSceneTransitionOverride", new { sceneName }, ct);
+        if (!r.Ok || r.Data is not JsonElement d) return (null, null);
+
+        var name = d.TryGetProperty("transitionName", out var n) && n.ValueKind == JsonValueKind.String ? n.GetString() : null;
+        int? duration = d.TryGetProperty("transitionDuration", out var t) && t.ValueKind == JsonValueKind.Number
+            ? t.GetInt32() : null;
+        return (string.IsNullOrEmpty(name) ? null : name, duration);
+    }
+
+    private async Task<List<CapturedItem>> ReadSceneItemsAsync(string sceneName, CancellationToken ct)
+    {
+        var items = new List<CapturedItem>();
+
+        var r = await _obs.RawRequestAsync("GetSceneItemList", new { sceneName }, ct);
+        if (!r.Ok || r.Data is not JsonElement d
+            || !d.TryGetProperty("sceneItems", out var arr) || arr.ValueKind != JsonValueKind.Array)
+            return items;
+
+        // OBS 的 sceneItemIndex 0 = 最上；模板 zOrder 0 = 最底 → 倒序后重新编号
+        var raw = new List<(int Index, string SourceName, bool Enabled, int ItemId)>();
+        foreach (var e in arr.EnumerateArray())
+        {
+            var sourceName = e.TryGetProperty("sourceName", out var sn) && sn.ValueKind == JsonValueKind.String ? sn.GetString() ?? "" : "";
+            if (sourceName.Length == 0) continue;
+            var index = e.TryGetProperty("sceneItemIndex", out var ix) && ix.ValueKind == JsonValueKind.Number ? ix.GetInt32() : 0;
+            var enabled = !e.TryGetProperty("sceneItemEnabled", out var en) || en.ValueKind != JsonValueKind.False;
+            var itemId = e.TryGetProperty("sceneItemId", out var id) && id.ValueKind == JsonValueKind.Number ? id.GetInt32() : -1;
+            raw.Add((index, sourceName, enabled, itemId));
+        }
+
+        var z = 0;
+        foreach (var (_, sourceName, enabled, itemId) in raw.OrderByDescending(x => x.Index))
+        {
+            var (kind, settings) = await ReadInputAsync(sourceName, ct);
+            var (transform, transformOk) = await ReadItemTransformAsync(sceneName, itemId, ct);
+            if (!transformOk && itemId >= 0) Interlocked.Increment(ref _unreadableTransforms);
+            var filters = await ReadFiltersAsync(sourceName, ct);
+
+            // 分组：v5 里分组本身**不是 input**（GetInputSettings 会失败），子来源要另发
+            // GetGroupSceneItemList 才拿得到。不展开的话分组内所有来源都不进模板，
+            // 而父场景只留一个空 kind 的坏来源 —— 用户以为存下来了，落地才发现少了一大半。
+            if (kind.Length == 0)
+            {
+                var expanded = await TryExpandGroupAsync(sourceName, ct);
+                if (expanded is not null)
+                {
+                    foreach (var child in expanded)
+                    {
+                        items.Add(new CapturedItem(child.SourceName, child.InputKind, child.Enabled,
+                            child.Transform, child.Settings, child.Filters, z++));
+                    }
+                    continue;
+                }
+
+                items.Add(new CapturedItem(sourceName, "", enabled, transform, settings, filters, z++,
+                    // 旧协议下组内来源读不到是**协议限制**（v4.9 没有读分组的请求），不是数据坏了 ——
+                    // 提示必须说清，否则用户会以为模板本身存坏了（第四轮验证分流）。
+                    Strings.T(_obs.IsLegacyProtocol
+                        ? "mytemplate.unsupported.groupLegacy"
+                        : "mytemplate.unsupported.group")));
+                continue;
+            }
+
+            items.Add(new CapturedItem(sourceName, kind, enabled, transform, settings, filters, z++));
+        }
+        return items;
+    }
+
+    /// <summary>
+    /// 尝试把一个分组展开成它的子来源；不是分组 / 展不开返回 null（调用方据此写显式占位）。
+    /// 只展开一层：嵌套分组在 OBS 里不常见，而递归展开会让层级的语义变得更难解释。
+    /// </summary>
+    private async Task<List<CapturedItem>?> TryExpandGroupAsync(string groupName, CancellationToken ct)
+    {
+        var r = await _obs.RawRequestAsync("GetGroupSceneItemList", new { sceneName = groupName }, ct);
+        if (!r.Ok || r.Data is not JsonElement d
+            || !d.TryGetProperty("sceneItems", out var arr) || arr.ValueKind != JsonValueKind.Array)
+            return null;
+
+        var list = new List<CapturedItem>();
+        var index = 0;
+        foreach (var e in arr.EnumerateArray())
+        {
+            var sourceName = e.TryGetProperty("sourceName", out var sn) && sn.ValueKind == JsonValueKind.String ? sn.GetString() ?? "" : "";
+            if (sourceName.Length == 0) continue;
+
+            var enabled = !e.TryGetProperty("sceneItemEnabled", out var en) || en.ValueKind != JsonValueKind.False;
+            var itemId = e.TryGetProperty("sceneItemId", out var id) && id.ValueKind == JsonValueKind.Number ? id.GetInt32() : -1;
+            var (kind, settings) = await ReadInputAsync(sourceName, ct);
+            var (transform, transformOk) = await ReadItemTransformAsync(groupName, itemId, ct);
+            if (!transformOk && itemId >= 0) Interlocked.Increment(ref _unreadableTransforms);
+            var filters = await ReadFiltersAsync(sourceName, ct);
+
+            list.Add(new CapturedItem(sourceName, kind, enabled, transform, settings, filters, index++));
+        }
+        return list.Count > 0 ? list : null;
+    }
+
+    private async Task<(string Kind, JsonObject? Settings)> ReadInputAsync(string inputName, CancellationToken ct)
+    {
+        var r = await _obs.RawRequestAsync("GetInputSettings", new { inputName }, ct);
+        if (!r.Ok || r.Data is not JsonElement d) return ("", null);
+
+        var kind = d.TryGetProperty("inputKind", out var k) && k.ValueKind == JsonValueKind.String ? k.GetString() ?? "" : "";
+        JsonObject? settings = null;
+        if (d.TryGetProperty("inputSettings", out var s) && s.ValueKind == JsonValueKind.Object)
+            settings = JsonNode.Parse(s.GetRawText()) as JsonObject;
+        return (kind, settings);
+    }
+
+    private async Task<(TransformSpec? Transform, bool Ok)> ReadItemTransformAsync(string sceneName, int itemId, CancellationToken ct)
+    {
+        if (itemId < 0) return (null, false);
+        var r = await _obs.RawRequestAsync("GetSceneItemTransform", new { sceneName, sceneItemId = itemId }, ct);
+        if (!r.Ok || r.Data is not JsonElement d
+            || !d.TryGetProperty("sceneItemTransform", out var t) || t.ValueKind != JsonValueKind.Object)
+            return (null, false);
+
+        // V3.0 第四轮验证修正：裁剪在 v5 是**扁平**字段（cropLeft/cropTop/...），
+        // 不是嵌套 crop 对象 —— 读嵌套会永远得到 null，等于「摄像头裁掉黑边」每次捕获都丢。
+        // 字段名统一收敛到纯核心，那里有单测钉住形状。
+        return (SceneTemplateCaptureCore.ReadV5Transform(t), true);
+    }
+
+    private async Task<List<TemplateFilter>> ReadFiltersAsync(string inputName, CancellationToken ct)
+    {
+        var list = new List<TemplateFilter>();
+        foreach (var f in await _obs.GetSourceFiltersAsync(inputName))
+        {
+            // 滤镜设置也走同一套「机器相关键剔除」：滤镜里也可能带设备/文件路径
+            JsonObject? settings = null;
+            var r = await _obs.RawRequestAsync("GetSourceFilter", new { sourceName = inputName, filterName = f.Name }, ct);
+            if (r.Ok && r.Data is JsonElement d && d.TryGetProperty("filterSettings", out var s) && s.ValueKind == JsonValueKind.Object)
+                settings = JsonNode.Parse(s.GetRawText()) as JsonObject;
+
+            list.Add(new TemplateFilter
+            {
+                Name = f.Name,
+                Kind = f.Kind,
+                Enabled = f.Enabled,
+                Settings = SceneTemplateCaptureCore.SanitizeSettings(settings),
+            });
+        }
+        return list;
+    }
 
     internal static string Slugify(string s)
     {

@@ -39,6 +39,14 @@ public sealed class ObsBackupService
         ".json", ".ini", ".txt", ".bak", ".csv", ".lua", ".py", ".effect", ".qss", ".css"
     };
 
+    /// <summary>
+    /// 导入时**永不落盘**的文件名片段（V3.0）。
+    /// `.obshelper.bak` / `.obshelper.tmp` 是本工具自己写 OBS 配置时留的副产物：
+    /// 它们会被打进备份包（`.bak` 在 AllowedExt 里），导入时又会解压回 profile 目录，
+    /// 把陈旧内容带进用户的配置目录（审查发现）。这里明确跳过。
+    /// </summary>
+    private static readonly string[] ImportSkipNameFragments = { ".obshelper." };
+
     private static readonly HashSet<string> ForbiddenExt = new(StringComparer.OrdinalIgnoreCase)
     {
         ".exe", ".dll", ".bat", ".cmd", ".ps1", ".vbs", ".js", ".scr", ".com"
@@ -346,6 +354,8 @@ public sealed class ObsBackupService
                 if (rel is null) continue;                 // slip：扫描阶段已拒绝整包
                 if (rel == "manifest.json") continue;
                 if (!rel.StartsWith("config/", StringComparison.OrdinalIgnoreCase)) continue;
+                // 本工具自己写的副产物（.obshelper.bak / .tmp）不进用户配置目录
+                if (ImportSkipNameFragments.Any(f => rel.Contains(f, StringComparison.OrdinalIgnoreCase))) continue;
 
                 if (rel.StartsWith("config/basic/scenes/", StringComparison.OrdinalIgnoreCase))
                 {
@@ -549,6 +559,7 @@ public sealed class ObsBackupService
         int n = 2;
         while (File.Exists(dest)) dest = Path.Combine(destDir, $"{baseName}_imported_{n++}.json");
 
+        AssertInsideConfig(dest);   // V3.0 纵深防御：与 ExtractProfileFile 同一纪律
         File.WriteAllText(dest, text, new UTF8Encoding(false));
     }
 
@@ -556,6 +567,9 @@ public sealed class ObsBackupService
         Dictionary<string, (string? key, string? bearer)> machineKeys, string profName)
     {
         Directory.CreateDirectory(Path.GetDirectoryName(dest)!);
+        // V3.0 纵深防御：解压目标必须仍在受信任的 OBS 配置目录内（路径虽已由 NormalizeEntryName 约束，
+        // 但「所有写配置目录的入口都过护栏」这条纪律不该有例外 —— 审查指出这两处此前没有）。
+        AssertInsideConfig(dest);
 
         if (Path.GetFileName(dest).Equals("service.json", StringComparison.OrdinalIgnoreCase)
             && !includesKey
@@ -584,6 +598,31 @@ public sealed class ObsBackupService
 
     // ------------------------------------------------------------ 打包辅助
 
+    /// <summary>
+    /// 从「配置目录内的目标路径」反推 OBS 配置根（<c>basic</c> 的父目录）并过一遍写护栏。
+    /// 反推不出来时静默跳过（不改变现有行为）。
+    /// </summary>
+    private static void AssertInsideConfig(string dest)
+    {
+        try
+        {
+            for (var d = new DirectoryInfo(Path.GetDirectoryName(dest) ?? ""); d is not null; d = d.Parent)
+            {
+                if (!string.Equals(d.Name, "basic", StringComparison.OrdinalIgnoreCase)) continue;
+                if (d.Parent is { } root) ObsSafePath.AssertWritable(dest, root.FullName);
+                return;
+            }
+        }
+        catch (ObsSafePathException)
+        {
+            throw;   // 越界：必须让调用方看到
+        }
+        catch (Exception)
+        {
+            // 路径反推失败（异常形态）：保持既有行为，不做额外拦截
+        }
+    }
+
     private static void AddFileRaw(ZipArchive zip, string entryName, string sourcePath)
     {
         try
@@ -601,20 +640,44 @@ public sealed class ObsBackupService
         }
     }
 
-    private static void AddServiceJsonRedacted(ZipArchive zip, string entryName, string sourcePath)
+    /// <summary>
+    /// 打包 service.json（脱敏版）。
+    ///
+    /// V3.0 修掉一条真实的外泄面：原来脱敏失败（JSON 解析失败 / 读取异常）时走
+    /// <c>AddFileRaw</c> **原样打包**，而 manifest 仍写着「不含流密钥、已脱敏」——
+    /// 用户以为可以安全地把它发到群里求助，实际包里带着 <c>key</c> / <c>bearer_token</c>。
+    /// 现在：脱敏失败就退化成**不含任何密钥的占位条目**，宁可少一个文件，也不泄露密钥。
+    /// </summary>
+    /// <returns>true 表示写入了真正的脱敏内容；false 表示退化为占位条目。</returns>
+    private static bool AddServiceJsonRedacted(ZipArchive zip, string entryName, string sourcePath)
     {
         try
         {
             var raw = File.ReadAllText(sourcePath, Encoding.UTF8);
             var redacted = RedactServiceJson(raw);
-            if (redacted is null) { AddFileRaw(zip, entryName, sourcePath); return; }
+            if (redacted is null)
+            {
+                FileLogger.Warn("Backup", $"service.json 脱敏解析返回空，已改为占位条目（不打包原始内容）：{sourcePath}");
+                AddRedactionPlaceholder(zip, entryName, sourcePath);
+                return false;
+            }
             AddTextEntry(zip, entryName, redacted, File.GetLastWriteTime(sourcePath));
+            return true;
         }
-        catch (Exception)
+        catch (Exception ex)
         {
-            // 解析失败：原样兜底
-            AddFileRaw(zip, entryName, sourcePath);
+            FileLogger.Warn("Backup", $"service.json 脱敏失败，已改为占位条目（不打包原始内容）：{ex.Message}");
+            AddRedactionPlaceholder(zip, entryName, sourcePath);
+            return false;
         }
+    }
+
+    /// <summary>脱敏失败时的兜底条目：明确说明「为了不泄露密钥，这个文件没有被打包」。</summary>
+    private static void AddRedactionPlaceholder(ZipArchive zip, string entryName, string sourcePath)
+    {
+        const string placeholder =
+            "{\"_obshelper\":\"redaction-failed\",\"note\":\"This file was omitted: redaction failed, and including the raw file could leak your stream key.\"}";
+        AddTextEntry(zip, entryName, placeholder, File.GetLastWriteTime(sourcePath));
     }
 
     private static void AddTextEntry(ZipArchive zip, string entryName, string text, DateTime lastWrite)

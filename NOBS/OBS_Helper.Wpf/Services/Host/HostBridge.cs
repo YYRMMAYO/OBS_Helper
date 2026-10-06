@@ -84,18 +84,71 @@ public sealed class HostBridge
 
     // ------------------------------------------------------------ 应用数据目录
 
-    /// <summary>应用私有数据目录（%LocalAppData%\OBS_Helper），不存在时自动创建。</summary>
+    /// <summary>
+    /// 应用私有数据目录，不存在时自动创建。
+    ///
+    /// <list type="bullet">
+    ///   <item><b>主构建</b>（net10.0-windows）：<c>%LocalAppData%\OBS_Helper</c>；</item>
+    ///   <item><b>Win7 兼容构建</b>（net6.0-windows，定义了 <c>WIN7_COMPAT</c>）：
+    ///         <c>%LocalAppData%\OBS_Helper_Win7</c>。</item>
+    /// </list>
+    ///
+    /// 为什么兼容构建要单独一套（V3.0）：两代构建面向的系统与 OBS 代次完全不同
+    /// （主构建 OBS 28+ / obs-websocket 5.x，兼容构建 OBS 27 / obs-websocket 4.x），
+    /// 设置、语言、连接端口、知识库缓存、待回滚记录都会不一样。共用一份 <c>prefs.json</c> 的后果是
+    /// 「在 Win7 机器上连过 4444 的配置被带到 Win10 机器上」这种互相打架的状态，
+    /// 而用户往往两台机器都装了同一个软件。分开之后两边互不影响，也能各自安全卸载。
+    ///
+    /// 注意：<b>主构建的目录名 <c>OBS_Helper</c> 一个字都不改</b> —— 存量用户的设置与密钥都在那里。
+    /// </summary>
     public static string AppDataDirectory
     {
         get
         {
-            var dir = Path.Combine(
+            if (_appDataDirectory is not null) return _appDataDirectory;
+
+#if WIN7_COMPAT
+            const string folder = "OBS_Helper_Win7";
+#else
+            const string folder = "OBS_Helper";
+#endif
+            var preferred = Path.Combine(
                 Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-                "OBS_Helper");
-            Directory.CreateDirectory(dir);
-            return dir;
+                folder);
+
+            try
+            {
+                Directory.CreateDirectory(preferred);
+                _appDataDirectory = preferred;
+                return preferred;
+            }
+            catch (Exception ex)
+            {
+                // V3.0（第四轮验证发现）：这里原先让异常冒出去 —— 而第一个碰它的往往是
+                // FileLogger 的**静态构造**，于是「数据目录建不出来」直接变成
+                // 「进程启动即死、界面上一个字都没有」（实测：把该目录设为不可创建后 exe 立即崩溃）。
+                // 对一个排障工具来说这是最糟的失败方式。现在退到临时目录并记下原因，功能降级但能起来。
+                _appDataDirectoryFallbackReason = ex.Message;
+                _appDataDirectory = Path.Combine(Path.GetTempPath(), folder);
+
+                try { Directory.CreateDirectory(_appDataDirectory); }
+                catch (Exception)
+                {
+                    // 临时目录也不可写：仍然返回路径，让上层的各次读写各自失败（宁愿功能降级，也不要崩）
+                }
+                return _appDataDirectory;
+            }
         }
     }
+
+    private static string? _appDataDirectory;
+    private static string? _appDataDirectoryFallbackReason;
+
+    /// <summary>
+    /// 首选数据目录不可用时记下的原因（正常为 null）。
+    /// 界面/日志用它告诉用户「设置这次落在临时目录、重启可能丢」。
+    /// </summary>
+    public static string? AppDataDirectoryFallbackReason => _appDataDirectoryFallbackReason;
 
     private static string SecretsFile => Path.Combine(AppDataDirectory, "secrets.dat");
 
@@ -106,9 +159,8 @@ public sealed class HostBridge
     //   密钥由 PBKDF2-SHA256(MachineGuid + 应用熵) 派生。这样即使 secrets.dat 被离线窃取，
     //   攻击者只有 DPAPI 的口令级保护可破（可离线爆破），却拿不到本机 MachineGuid，第二层无法解开。
     //   存储格式 v2:<nonce>:<tag>:<cipher>（均 Base64）；旧版明文值读取时自动兼容，下次写入自动升级为 v2。
-    private const string SecretV2Prefix = "v2:";
-
-    private static readonly byte[] SecretV2Salt = Encoding.UTF8.GetBytes("OBS_Helper.SecretStore.v2.salt");
+    // V3.0（E2）：值级编解码已拆到 SecretCodec（可单测）；这里只保留转发，避免调用点大面积改动。
+    private const string SecretV2Prefix = SecretCodec.V2Prefix;
 
     // 机器密钥缓存：MachineGuid 在系统生命周期内不变，PBKDF2 每次派生约百毫秒，
     // 而 LoadSecrets 在每次机密读取时都会跑——缓存后全进程只派生一次。
@@ -128,12 +180,8 @@ public sealed class HostBridge
                 var guid = Microsoft.Win32.Registry.GetValue(
                     @"HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Cryptography", "MachineGuid", null) as string;
                 if (string.IsNullOrWhiteSpace(guid)) return null;
-                _machineKeyCache = Rfc2898DeriveBytes.Pbkdf2(
-                    Encoding.UTF8.GetBytes("OBS_Helper.v2:" + guid.Trim()),
-                    SecretV2Salt,
-                    100_000,
-                    HashAlgorithmName.SHA256,
-                    32);
+                // 纯计算交给 SecretCodec（可单测）；本方法只负责「读注册表 + 进程内缓存」
+                _machineKeyCache = SecretCodec.DeriveKey(guid);
                 return _machineKeyCache;
             }
             catch (Exception)
@@ -143,33 +191,11 @@ public sealed class HostBridge
         }
     }
 
-    /// <summary>把明文机密值加密为 v2 存储格式；无机器密钥时原样返回（仅 DPAPI 层）。</summary>
-    private static string EncryptSecretValue(string plain)
-    {
-        var key = TryDeriveMachineKey();
-        if (key is null) return plain;
-
-        var nonce = RandomNumberGenerator.GetBytes(12);
-        var plainBytes = Encoding.UTF8.GetBytes(plain);
-        var cipher = new byte[plainBytes.Length];
-        var tag = new byte[16];
-        try
-        {
-            using (var aes = Services.Compat.Compat.CreateAesGcm(key))
-            {
-                aes.Encrypt(nonce, plainBytes, cipher, tag);
-            }
-            return SecretV2Prefix
-                + Convert.ToBase64String(nonce) + ":"
-                + Convert.ToBase64String(tag) + ":"
-                + Convert.ToBase64String(cipher);
-        }
-        finally
-        {
-            Array.Clear(plainBytes, 0, plainBytes.Length);
-            Array.Clear(cipher, 0, cipher.Length);
-        }
-    }
+    /// <summary>
+    /// 把明文机密值加密为 v2 存储格式；无机器密钥时原样返回（仅 DPAPI 层）。
+    /// V3.0（E2）：实现已搬到 <see cref="SecretCodec"/>（纯计算、可单测），这里只做「取密钥 + 转发」。
+    /// </summary>
+    private static string EncryptSecretValue(string plain) => SecretCodec.Encrypt(plain, TryDeriveMachineKey());
 
     /// <summary>
     /// 解密 v2 存储值。规则：
@@ -180,87 +206,47 @@ public sealed class HostBridge
     ///   <item>格式合法但 GCM 认证失败（密钥不符 / 数据损坏）→ 返回 null，调用方按「不存在」处理（fail-closed）。</item>
     /// </list>
     /// </summary>
-    private static string? DecryptSecretValue(string stored)
-    {
-        if (!stored.StartsWith(SecretV2Prefix, StringComparison.Ordinal))
-            return stored; // 旧版明文值：兼容读取
-
-        byte[] nonce, tag, cipher;
-        try
-        {
-            var parts = stored.Substring(SecretV2Prefix.Length).Split(':');
-            if (parts.Length != 3) return stored;
-            nonce = Convert.FromBase64String(parts[0]);
-            if (nonce.Length != 12) return stored;
-            tag = Convert.FromBase64String(parts[1]);
-            if (tag.Length != 16) return stored;
-            cipher = Convert.FromBase64String(parts[2]);
-            if (cipher.Length == 0) return stored;
-        }
-        catch (FormatException)
-        {
-            return stored; // Base64 解码失败 → 旧版明文，原样返回
-        }
-
-        var key = TryDeriveMachineKey();
-        if (key is null) return null;
-
-        var plain = new byte[cipher.Length];
-        try
-        {
-            using (var aes = Services.Compat.Compat.CreateAesGcm(key))
-            {
-                aes.Decrypt(nonce, cipher, tag, plain);
-            }
-            return Encoding.UTF8.GetString(plain);
-        }
-        catch (Exception)
-        {
-            // 格式合法但认证失败（密钥不符 / 数据损坏）：fail-closed，视为不存在，用户重新输入即可
-            return null;
-        }
-        finally
-        {
-            Array.Clear(plain, 0, plain.Length);
-        }
-    }
-
+    /// <summary>
+    /// 解密 v2 存储值。V3.0（E2）：实现已搬到 <see cref="SecretCodec"/>（纯计算、可单测，
+    /// 旧版明文兼容 / 格式容错 / 认证失败 fail-closed 三个分支都有对应测试），这里只做「取密钥 + 转发」。
+    /// </summary>
+    private static string? DecryptSecretValue(string stored) => SecretCodec.Decrypt(stored, TryDeriveMachineKey());
+    /// <summary>
+    /// 读取机密存储。
+    ///
+    /// <b>只有「文件不存在 / 空文件」才返回空字典</b>；读取或解密失败一律抛异常。
+    /// V3.0 修复：早期实现把任何异常都吞成「空存储」，而调用方（SetSecret / DeleteSecret）会拿这份字典
+    /// **整份覆盖写回** —— 于是「杀软临时占用 secrets.dat」这种瞬时故障，会变成用户改一次 API Key
+    /// 就把 OBS WebSocket 密码与其它密钥一起清掉，而界面还显示「已保存」。
+    /// </summary>
     private static Dictionary<string, string> LoadSecrets()
     {
-        try
+        if (!File.Exists(SecretsFile)) return new Dictionary<string, string>();
+        var encrypted = File.ReadAllBytes(SecretsFile);           // 读失败 → 抛给调用方
+        if (encrypted.Length == 0) return new Dictionary<string, string>();
+
+        var plain = ProtectedData.Unprotect(encrypted, Entropy, DataProtectionScope.CurrentUser);
+        var json = Encoding.UTF8.GetString(plain);
+        Array.Clear(plain, 0, plain.Length);
+
+        var dict = JsonSerializer.Deserialize<Dictionary<string, string>>(json) ?? new Dictionary<string, string>();
+        // 值解密（v2 解密、旧版原样）：内存里始终是明文，文件里才是密文
+        foreach (var k in dict.Keys.ToList())
         {
-            if (!File.Exists(SecretsFile)) return new Dictionary<string, string>();
-            var encrypted = File.ReadAllBytes(SecretsFile);
-            if (encrypted.Length == 0) return new Dictionary<string, string>();
-
-            var plain = ProtectedData.Unprotect(encrypted, Entropy, DataProtectionScope.CurrentUser);
-            var json = Encoding.UTF8.GetString(plain);
-            Array.Clear(plain, 0, plain.Length);
-
-            var dict = JsonSerializer.Deserialize<Dictionary<string, string>>(json) ?? new Dictionary<string, string>();
-            // 值解密（v2 解密、旧版原样）：内存里始终是明文，文件里才是密文
-            foreach (var k in dict.Keys.ToList())
+            var v = dict[k];
+            if (string.IsNullOrEmpty(v)) continue;
+            var decrypted = DecryptSecretValue(v);
+            if (decrypted is null)
             {
-                var v = dict[k];
-                if (string.IsNullOrEmpty(v)) continue;
-                var decrypted = DecryptSecretValue(v);
-                if (decrypted is null)
-                {
-                    // 单条解密失败不拖垮整个存储：移除该条，用户重填
-                    dict.Remove(k);
-                }
-                else
-                {
-                    dict[k] = decrypted;
-                }
+                // 单条解密失败不拖垮整个存储：移除该条，用户重填
+                dict.Remove(k);
             }
-            return dict;
+            else
+            {
+                dict[k] = decrypted;
+            }
         }
-        catch (Exception)
-        {
-            // 文件损坏 / 换了用户账户导致无法解密：当作空存储，用户重新输入即可。
-            return new Dictionary<string, string>();
-        }
+        return dict;
     }
 
     private static void SaveSecrets(Dictionary<string, string> secrets)
@@ -312,23 +298,30 @@ public sealed class HostBridge
         await _secretLock.WaitAsync().ConfigureAwait(false);
         try
         {
-            ValidateSecretKey(key);
-            if (value.Length > MaxSecretLength) throw new ArgumentException(Strings.T("host.secretTooLong"));
+            // V3.0（F8）：DPAPI + AES + JSON 全是同步调用。信号量空闲时上面那个 await **不会让出线程**，
+            // 于是这段会直接在 UI 线程上跑（改一次密钥就卡一下）。统一放进后台线程。
+            return await Task.Run(() =>
+            {
+                ValidateSecretKey(key);
+                if (value.Length > MaxSecretLength) throw new ArgumentException(Strings.T("host.secretTooLong"));
 
-            var s = LoadSecrets();
-            if (value.Length == 0)
-            {
-                if (s.Remove(key)) SaveSecrets(s);
-            }
-            else
-            {
-                s[key] = value;
-                SaveSecrets(s);
-            }
-            return true;
+                var s = LoadSecrets();
+                if (value.Length == 0)
+                {
+                    if (s.Remove(key)) SaveSecrets(s);
+                }
+                else
+                {
+                    s[key] = value;
+                    SaveSecrets(s);
+                }
+                return true;
+            }).ConfigureAwait(false);
         }
-        catch (Exception)
+        catch (Exception ex)
         {
+            // V3.0：失败必须留痕（原来是静默 return false）。最常见的触发是 secrets.dat 被占用 / 换机后无法解密。
+            FileLogger.Warn("Secrets", $"写入机密「{key}」失败，未改动磁盘上的既有内容：{ex.Message}");
             return false;
         }
         finally
@@ -343,12 +336,17 @@ public sealed class HostBridge
         await _secretLock.WaitAsync().ConfigureAwait(false);
         try
         {
-            ValidateSecretKey(key);
-            var s = LoadSecrets();
-            return s.TryGetValue(key, out var v) && !string.IsNullOrEmpty(v) ? v : null;
+            // V3.0（F8）：同上 —— 读机密同样要挪出 UI 线程（进设置页时每次都会走这里）
+            return await Task.Run(() =>
+            {
+                ValidateSecretKey(key);
+                var s = LoadSecrets();
+                return s.TryGetValue(key, out var v) && !string.IsNullOrEmpty(v) ? v : null;
+            }).ConfigureAwait(false);
         }
-        catch (Exception)
+        catch (Exception ex)
         {
+            FileLogger.Warn("Secrets", $"读取机密「{key}」失败：{ex.Message}");
             return null;
         }
         finally
@@ -363,13 +361,18 @@ public sealed class HostBridge
         await _secretLock.WaitAsync().ConfigureAwait(false);
         try
         {
-            ValidateSecretKey(key);
-            var s = LoadSecrets();
-            if (s.Remove(key)) SaveSecrets(s);
-            return true;
+            // V3.0（F8）：同上
+            return await Task.Run(() =>
+            {
+                ValidateSecretKey(key);
+                var s = LoadSecrets();
+                if (s.Remove(key)) SaveSecrets(s);
+                return true;
+            }).ConfigureAwait(false);
         }
-        catch (Exception)
+        catch (Exception ex)
         {
+            FileLogger.Warn("Secrets", $"删除机密「{key}」失败：{ex.Message}");
             return false;
         }
         finally
@@ -382,8 +385,17 @@ public sealed class HostBridge
     private static string SecretGetRaw(string key)
     {
         ValidateSecretKey(key);
-        var s = LoadSecrets();
-        return s.TryGetValue(key, out var v) ? v : "";
+        try
+        {
+            var s = LoadSecrets();
+            return s.TryGetValue(key, out var v) ? v : "";
+        }
+        catch (Exception ex)
+        {
+            // LoadSecrets 现在会把「读失败」抛出（见那里的注释）；这里只是取值，失败当没有即可
+            FileLogger.Warn("Secrets", $"同步读取机密「{key}」失败：{ex.Message}");
+            return "";
+        }
     }
 
     // ------------------------------------------------------------ 日志访问
@@ -492,18 +504,36 @@ public sealed class HostBridge
 
     // ------------------------------------------------------------ 打开外链 / 目录
 
-    /// <summary>用系统默认浏览器打开外链（仅 http/https）。</summary>
+    /// <summary>
+    /// 用系统默认浏览器打开外链。
+    ///
+    /// 策略（V3.0 与出站请求口径统一）：<b>只放行 http/https，且拒绝本机 / 私网 / 保留地址</b>。
+    /// 知识库、插件目录、排障指引都会经热更新通道下发，里面的链接是**外部数据**，
+    /// 不能因为「是用户点的」就当可信 —— 一条 <c>http://127.0.0.1:xxxx/…</c> 或
+    /// <c>http://192.168.x.x/…</c> 的链接足够把用户引到内网设备的管理页面上。
+    /// 公开站点的普通 https 链接照常放行（白名单只用于「下载 / 更新 / 反馈」这类本产品自己发起的跳转）。
+    /// </summary>
     public Task<bool> OpenExternalAsync(string url)
     {
         if (!Uri.TryCreate(url, UriKind.Absolute, out var uri)) return Task.FromResult(false);
-        if (uri.Scheme != Uri.UriSchemeHttp && uri.Scheme != Uri.UriSchemeHttps) return Task.FromResult(false);
+        if (uri.Scheme != Uri.UriSchemeHttp && uri.Scheme != Uri.UriSchemeHttps)
+        {
+            FileLogger.Warn("OpenLink", $"拒绝打开非 http(s) 链接：{url}");
+            return Task.FromResult(false);
+        }
+        if (IsPrivateHost(uri.Host))
+        {
+            FileLogger.Warn("OpenLink", $"拒绝打开指向本机 / 内网的链接：{uri.Host}");
+            return Task.FromResult(false);
+        }
         try
         {
             Process.Start(new ProcessStartInfo(uri.AbsoluteUri) { UseShellExecute = true });
             return Task.FromResult(true);
         }
-        catch (Exception)
+        catch (Exception ex)
         {
+            FileLogger.Warn("OpenLink", $"打开链接失败：{ex.Message}");
             return Task.FromResult(false);
         }
     }
@@ -587,11 +617,21 @@ public sealed class HostBridge
         return client;
     }
 
-    /// <summary>拦截指向本机 / 内网的地址，降低 SSRF 风险。</summary>
+    /// <summary>
+    /// 拦截指向本机 / 内网的地址，降低 SSRF 风险。
+    ///
+    /// V3.0 审查补正：比较前先 <c>TrimEnd('.')</c>。
+    /// <c>http://localhost./</c> 的 <see cref="Uri.Host"/> 是 <c>"localhost."</c> ——
+    /// 既不等于 <c>localhost</c>、也不以 <c>.localhost</c> 结尾，<c>IPAddress.TryParse</c> 同样失败，
+    /// 于是被放行；而 Windows/浏览器会把尾点当 FQDN 处理并解析到 127.0.0.1。
+    /// 通配 DNS（如 <c>127.0.0.1.nip.io</c>）无法用字符串规则拦住 —— 那条边界写在
+    /// <see cref="OpenExternalAsync"/> 的注释里，属于已知残留风险。
+    /// </summary>
     public static bool IsPrivateHost(string host)
     {
         if (string.IsNullOrWhiteSpace(host)) return true;
-        var h = host.Trim().Trim('[', ']').ToLowerInvariant();
+        var h = host.Trim().Trim('[', ']').TrimEnd('.').ToLowerInvariant();
+        if (h.Length == 0) return true;
 
         if (h == "localhost" || h.EndsWith(".localhost", StringComparison.Ordinal)
             || h.EndsWith(".local", StringComparison.Ordinal)
@@ -660,15 +700,17 @@ public sealed class HostBridge
     /// <param name="secretKey">API Key 在机密存储中的键名。</param>
     /// <param name="body">完整的请求体 JSON（不含鉴权信息）。</param>
     /// <returns>响应体原文；失败时抛出异常，异常消息可直接展示给用户。</returns>
-    public Task<string> AiChatAsync(string url, string secretKey, string body)
+    public async Task<string> AiChatAsync(string url, string secretKey, string body)
     {
         var uri = ValidateAiUrl(url, body);
 
+        // V3.0（F8）：原来是 _secretLock.Wait() + 同步读机密 —— 从 UI 线程发起诊断时会先卡在
+        // 「DPAPI + AES + JSON」上。改成异步取锁 + 后台读取（密钥仍然不进 UI 层）。
+        await _secretLock.WaitAsync().ConfigureAwait(false);
         string apiKey;
-        _secretLock.Wait();
         try
         {
-            apiKey = SecretGetRaw(secretKey);
+            apiKey = await Task.Run(() => SecretGetRaw(secretKey)).ConfigureAwait(false);
         }
         finally
         {
@@ -686,7 +728,7 @@ public sealed class HostBridge
         // 不影响请求发送；真正的限制在于 .NET 字符串不可变性——GC 回收之前密钥无法从堆上
         // 擦除，这是托管语言共有的局限。
         apiKey = null!;
-        return AiChatPostAsync(uri, body, auth);
+        return await AiChatPostAsync(uri, body, auth).ConfigureAwait(false);
     }
 
     /// <summary>

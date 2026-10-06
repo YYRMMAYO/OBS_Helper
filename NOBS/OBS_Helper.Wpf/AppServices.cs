@@ -4,7 +4,8 @@ using OBS_Helper.Wpf.Services.Audio;
 using OBS_Helper.Wpf.Services.Host;
 using OBS_Helper.Wpf.Services.Obs;
 using OBS_Helper.Wpf.Services.ObsConfig;
-using OBS_Helper.Wpf.Services.Plugins;
+using OBS_Helper.Wpf.Services.Diagnostics;
+using OBS_Helper.Wpf.Services.Recording;using OBS_Helper.Wpf.Services.Plugins;
 using OBS_Helper.Wpf.Services.Shell;
 using OBS_Helper.Wpf.Services.Tools;
 using OBS_Helper.Wpf.Services.Update;
@@ -14,8 +15,8 @@ namespace OBS_Helper.Wpf;
 /// <summary>
 /// 组合根。全部服务都是单例，用惰性字段手工装配。
 ///
-/// 为什么不引入 DI 容器：服务只有十来个、依赖关系是一棵静态的树，
-/// 手工装配零依赖、启动更快，也让「谁依赖谁」在一屏里看得清清楚楚。
+/// 为什么不引入 DI 容器：依赖关系是一棵静态的树，手工装配零依赖、启动更快，
+/// 也让「谁依赖谁」在一屏里看得清清楚楚（服务数量本身不构成引入容器的理由）。
 /// </summary>
 public static class AppServices
 {
@@ -34,10 +35,19 @@ public static class AppServices
 
     private static readonly Lazy<ObsPathService> _obsPaths = new(() => new ObsPathService(Store));
     private static readonly Lazy<ObsBackupService> _obsBackups = new(() => new ObsBackupService(ObsPaths));
+    private static readonly Lazy<TrashService> _trash = new(() => new TrashService(ObsPaths));
+    // 录制档案与收尾流水线（V3.0 / D3）：登记 / 重命名 / 批量转 MP4 / 打点章节
+    private static readonly Lazy<RecordingArchiveService> _archive = new(() => new RecordingArchiveService(Store));
     private static readonly Lazy<ObsResetService> _obsReset = new(() => new ObsResetService(ObsPaths, ObsBackups, Obs));
     private static readonly Lazy<SceneTemplateService> _templates = new(() => new SceneTemplateService(Obs, ObsPaths));
     // 录前自检（C1，只读）：读 OBS 配置检查录制格式 / 路径 / 编码器 / 音频设置
     private static readonly Lazy<PreflightCheckService> _preflight = new(() => new PreflightCheckService(ObsPaths));
+    // 自检清单按本机实测回填（V3.0 / D4）
+    private static readonly Lazy<ChecklistAutoFillService> _checklistAutoFill =
+        new(() => new ChecklistAutoFillService(Preflight));
+    // 开播前体检 + 一键处方（V3.0 / D4 后半段）
+    private static readonly Lazy<MachineProfileService> _machineProfile =
+        new(() => new MachineProfileService(Preflight, ObsPaths));
     // 录像工具 / 冲突软件扫描 / OBS 新版本情报（V2.6 工具箱）
     private static readonly Lazy<RecordingToolsService> _recTools = new(() => new RecordingToolsService(ObsPaths));
     // 一键部署录制环境（V2.9.3）：按语言无关的推荐值改写录制相关配置，先备份、可回滚
@@ -72,9 +82,18 @@ public static class AppServices
     // 录制守护 / 实时日志尾随预警（V2.8）
     private static readonly Lazy<RecordWatchdogService> _watchdog = new(() => new RecordWatchdogService(Obs, Tray));
     private static readonly Lazy<LogTailerService> _logTailer = new(() => new LogTailerService(Tray));
+    // 会话复盘（V3.0 / D5）：把实时命中累计 + 上次会话摘要变成可导出报告
+    private static readonly Lazy<SessionReviewService> _sessionReview =
+        new(() => new SessionReviewService(LogTailer, Store));
+    // 本地知识库（V3.0 / D8）：用户自己的条目，与热更新文件同目录、同 schema
+    private static readonly Lazy<Services.Knowledge.MyKnowledgeBaseService> _myKnowledge =
+        new(() => new Services.Knowledge.MyKnowledgeBaseService(System.IO.Path.Combine(HostBridge.AppDataDirectory, "data")));
     // 简单录像（V2.9.4）：自检 → 落地 → 拉起 OBS → 开录 → 录中信息 → 停止收尾
     private static readonly Lazy<SimpleRecordingService> _simpleRecord =
         new(() => new SimpleRecordingService(ObsPaths, RecordingEnv, RecordingTools, Obs, Tray, Store));
+    // 简单开播（V3.0 / D2）：检查推流配置 → （可选）同时录制 → 开播 → 确认真的播出去了
+    private static readonly Lazy<SimpleStreamingService> _simpleStream =
+        new(() => new SimpleStreamingService(Obs, SimpleRecord, Store));
 
     private static readonly Lazy<AiSettingsService> _aiSettings = new(() => new AiSettingsService(Store, Host));
     private static readonly Lazy<ObsToolRegistry> _tools = new(() => new ObsToolRegistry(Problems));
@@ -101,6 +120,18 @@ public static class AppServices
 
     public static ObsPathService ObsPaths => _obsPaths.Value;
     public static ObsBackupService ObsBackups => _obsBackups.Value;
+
+    /// <summary>配置回收站（V3.0 / A4）：列出「永不硬删」留下的恢复副本，并可放回原位。</summary>
+    public static TrashService Trash => _trash.Value;
+
+    /// <summary>录制档案（V3.0 / D3）。</summary>
+    public static RecordingArchiveService Archive => _archive.Value;
+
+    /// <summary>自检清单自动回填（V3.0 / D4）。</summary>
+    public static ChecklistAutoFillService ChecklistAutoFill => _checklistAutoFill.Value;
+
+    /// <summary>开播前体检（V3.0 / D4 后半段）：五项检查合成一个结论。</summary>
+    public static MachineProfileService MachineProfile => _machineProfile.Value;
     public static ObsResetService ObsReset => _obsReset.Value;
     public static SceneTemplateService Templates => _templates.Value;
     public static PreflightCheckService Preflight => _preflight.Value;
@@ -141,8 +172,17 @@ public static class AppServices
     // 录制守护 / 实时日志尾随预警（V2.8）
     public static RecordWatchdogService RecordWatchdog => _watchdog.Value;
     public static LogTailerService LogTailer => _logTailer.Value;
+
+    /// <summary>会话复盘（V3.0 / D5）。</summary>
+    public static SessionReviewService SessionReview => _sessionReview.Value;
+
+    /// <summary>本地知识库读写（V3.0 / D8）。</summary>
+    public static Services.Knowledge.MyKnowledgeBaseService MyKnowledge => _myKnowledge.Value;
     /// <summary>简单录像（V2.9.4）：首页卡片、控制台录制行与托盘菜单共用同一个实例。</summary>
     public static SimpleRecordingService SimpleRecord => _simpleRecord.Value;
+
+    /// <summary>简单开播（V3.0 / D2）。</summary>
+    public static SimpleStreamingService SimpleStream => _simpleStream.Value;
     public static DiagnosticOrchestrator Orchestrator => _orchestrator.Value;
 
     /// <summary>导航服务由 MainWindow 在构造时注入，供各页面互相跳转。</summary>
@@ -168,8 +208,27 @@ public static class AppServices
             ObsSettings.LoadAsync(),
             AiSettings.LoadAsync()).ConfigureAwait(false);
 
+        // V3.0：文件事务「回滚没能完全恢复」时的出口。
+        // 副本已经被刻意保留（FileTx.RollbackFailures + .obshelper-retained 标记），
+        // 但如果不告诉用户它在哪，等于没救回来 —— 这里接到日志与全局 Toast 上。
+        FileTx.RollbackFailureReporter = (txDir, count) =>
+        {
+            FileLogger.Error("FileTx", $"回滚未完成：{count} 项未能恢复，恢复副本保留在 {txDir}");
+            // V3.0 审查修正：上报可检索的错误码（原先只有 Toast 文本，用户截图求助时给不出编号，
+            // 而 `err.OBS807` 的双语文案也就永远用不上）
+            try { App.ReportError(Errors.ErrorCodes.FileTransactionRollbackFailed); }
+            catch (Exception) { /* 启动早期 / 无主窗口时忽略 */ }
+            try { Toast?.Show(Strings.T("filetx.rollbackFailed", count, txDir)); }
+            catch (Exception) { /* Toast 还没注入（启动早期）时只留日志 */ }
+        };
+
         // 后台能力：托盘、全局热键、场景自动切换（默认按各自配置启动）
         Tray.LoadSettings();
+
+        // 托盘「打点」需要简单录像服务（V3.0 / D3）；在装配完成后用 provider 注入，
+        // 避免托盘服务内部直接读 Lazy（构造期重入会抛 InvalidOperationException）。
+        Tray.SimpleRecordProvider = () => SimpleRecord;
+
         Hotkeys.Load();
         Hotkeys.Start();
         AutoSwitcher.Load();

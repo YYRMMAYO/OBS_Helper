@@ -14,8 +14,15 @@ namespace OBS_Helper.Wpf.Views;
 /// </summary>
 public partial class GuidePage : UserControl, INavigationAware
 {
-    /// <summary>指引是随包资源、永远不会变，加载一次即可；页面实例被导航复用，用它挡住重复渲染。</summary>
-    private bool _loaded;
+    /// <summary>
+    /// 已经为**哪种语言**渲染过正文（V3.0 / F5）。
+    ///
+    /// 原先这里是一个 <c>bool _loaded</c>：指引是随包资源没错，但它是**分语言的**
+    /// （<c>troubleshooting.md</c> / <c>troubleshooting.en-US.md</c>）——
+    /// 切了语言却因为「加载过一次」而直接早退，页面就会一直显示旧语言。
+    /// 现在记语言：同一语言才跳过重复渲染。
+    /// </summary>
+    private string? _renderedLanguage;
 
     public GuidePage()
     {
@@ -27,7 +34,8 @@ public partial class GuidePage : UserControl, INavigationAware
 
     public async Task OnNavigatedToAsync(object? parameter)
     {
-        if (_loaded) return;
+        // 同一语言不必重渲染（正文是随包资源）；语言变了必须重来
+        if (_renderedLanguage == Strings.Current) return;
 
         try
         {
@@ -43,7 +51,8 @@ public partial class GuidePage : UserControl, INavigationAware
 
             LoadingText.Visibility = Visibility.Collapsed;
             ContentCard.Visibility = Visibility.Visible;
-            _loaded = true;
+            ErrorPanel.Visibility = Visibility.Collapsed;
+            _renderedLanguage = Strings.Current;
         }
         catch (Exception ex)
         {

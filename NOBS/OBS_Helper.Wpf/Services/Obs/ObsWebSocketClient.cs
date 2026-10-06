@@ -1,16 +1,27 @@
 using System.Buffers;
 using System.Collections.Concurrent;
+using System.Globalization;
 using System.IO;
 using System.Net.WebSockets;
 using System.Text;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using OBS_Helper.Wpf.Models.Obs;
 
 namespace OBS_Helper.Wpf.Services.Obs;
 
 /// <summary>
-/// obs-websocket 5.x 低层客户端：只负责「连接 / 握手鉴权 / 请求-响应关联 / 事件分发」，
+/// obs-websocket 低层客户端：只负责「连接 / 握手鉴权 / 请求-响应关联 / 事件分发」，
 /// 不含任何业务语义。上层语义封装见 <see cref="ObsConnectionService"/>。
+///
+/// <b>两代协议</b>（V3.0）：
+/// <list type="bullet">
+///   <item><b>5.x</b>（OBS 28+ 内置，默认端口 4455）：连上后服务端先推 Hello，再走 Identify/Authenticate；</item>
+///   <item><b>4.x</b>（Win7 上 OBS 27 + obs-websocket 4.9 插件，默认端口 4444）：服务端<b>不主动说话</b>，
+///         必须由客户端先发 <c>GetAuthRequired</c>，且消息里没有 <c>op</c> 字段。</item>
+/// </list>
+/// 旧协议只在 Win7 兼容构建里启用（见 <see cref="ObsLegacyV4Core.LegacyEnabled"/>）；
+/// 翻译与归一化都在 <see cref="ObsLegacyV4Core"/> 里完成，因此本类之上的一层完全不知道连的是哪一代。
 ///
 /// 运行环境说明：本类型运行在原生 .NET（WPF 桌面进程）中，<see cref="ClientWebSocket"/> 走
 /// 完整的 System.Net.WebSockets 实现，Proxy / KeepAlive / 请求头等选项均可用。
@@ -35,6 +46,14 @@ public sealed class ObsWebSocketClient : IAsyncDisposable
     private readonly ConcurrentDictionary<string, TaskCompletionSource<ObsRequestResult>> _pending = new();
     private readonly SemaphoreSlim _sendLock = new(1, 1);
     private TaskCompletionSource<bool>? _identifyTcs;
+    private TaskCompletionSource<bool>? _helloTcs;
+    private string? _legacyPassword;
+
+    /// <summary>
+    /// 判定旧协议时愿意等「v5 的 Hello」多久。v5 服务端连上即推 Hello（毫秒级），
+    /// 因此这 0.9 秒只是给「对面其实是 v4」留出的判定窗口。
+    /// </summary>
+    private const int LegacyProbeMs = 900;
 
     /// <summary>收到服务端事件时触发。</summary>
     public event Action<ObsEventMessage>? EventReceived;
@@ -44,10 +63,16 @@ public sealed class ObsWebSocketClient : IAsyncDisposable
 
     public bool IsOpen => _socket?.State == WebSocketState.Open;
 
-    /// <summary>握手协商后的 RPC 版本（v5 目前为 1）。</summary>
+    /// <summary>握手协商后的 RPC 版本（v5 目前为 1；旧协议为 4）。</summary>
     public int NegotiatedRpcVersion { get; private set; }
 
-    /// <summary>服务端是否要求密码。首次 Hello 后可读。</summary>
+    /// <summary>当前连接使用的协议代次（<see cref="ObsLegacyV4Core.ProtocolV5"/> / <see cref="ObsLegacyV4Core.ProtocolV4"/>）。</summary>
+    public string Protocol { get; private set; } = ObsLegacyV4Core.ProtocolV5;
+
+    /// <summary>当前连接是否走旧协议（obs-websocket 4.x）。</summary>
+    public bool IsLegacyProtocol => Protocol == ObsLegacyV4Core.ProtocolV4;
+
+    /// <summary>服务端是否要求密码。首次 Hello（或旧协议的 GetAuthRequired）后可读。</summary>
     public bool AuthRequired { get; private set; }
 
     /// <summary>
@@ -74,9 +99,26 @@ public sealed class ObsWebSocketClient : IAsyncDisposable
 
         _loopCts = CancellationTokenSource.CreateLinkedTokenSource(ct);
         _identifyTcs = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+        _helloTcs = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+        _legacyPassword = password;
+        Protocol = ObsLegacyV4Core.ProtocolV5;
+        NegotiatedRpcVersion = 0;
+        AuthRequired = false;
         _receiveLoop = Task.Run(() => ReceiveLoopAsync(socket, password, subscriptions, _loopCts.Token));
 
-        // 等待 Hello → Identify → Identified 全流程完成
+        // 旧协议判定（仅 Win7 兼容构建）：v5 服务端连上就推 Hello，v4 服务端什么都不说。
+        // 所以先给一个很短的窗口等 Hello；没等到就按 v4 主动发起 GetAuthRequired 握手。
+        if (ObsLegacyV4Core.LegacyEnabled)
+        {
+            var helloSeen = await WaitForHelloAsync(ct).ConfigureAwait(false);
+            if (!helloSeen)
+            {
+                Protocol = ObsLegacyV4Core.ProtocolV4;
+                await StartLegacyHandshakeAsync(ct).ConfigureAwait(false);
+            }
+        }
+
+        // 等待 Hello → Identify → Identified（v5）或 GetAuthRequired → Authenticate（v4）全流程完成
         using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(15));
         using var linked = CancellationTokenSource.CreateLinkedTokenSource(timeout.Token, ct);
         var identified = _identifyTcs.Task;
@@ -89,10 +131,73 @@ public sealed class ObsWebSocketClient : IAsyncDisposable
         await identified; // 传播握手失败异常（如密码错误）
     }
 
+    /// <summary>等 v5 的 Hello；返回 false 表示窗口内没有收到（对面可能是旧协议）。</summary>
+    private async Task<bool> WaitForHelloAsync(CancellationToken ct)
+    {
+        var helloTcs = _helloTcs;
+        if (helloTcs is null) return false;
+
+        using var probe = CancellationTokenSource.CreateLinkedTokenSource(ct);
+        probe.CancelAfter(LegacyProbeMs);
+        var done = await Task.WhenAny(helloTcs.Task, Task.Delay(Timeout.Infinite, probe.Token)).ConfigureAwait(false);
+        return done == helloTcs.Task && helloTcs.Task.IsCompletedSuccessfully;
+    }
+
+    /// <summary>
+    /// 旧协议（obs-websocket 4.x）握手：<c>GetAuthRequired</c> →（需要时）<c>Authenticate</c>。
+    ///
+    /// 鉴权**算式与 v5 相同**（<c>base64(sha256(base64(sha256(password + salt)) + challenge))</c>），
+    /// 区别只在下发通道与请求形状：v5 由服务端 Hello 带出 salt/challenge、用 Identify.authentication；
+    /// v4 要客户端先问 <c>GetAuthRequired</c>、再用 <c>Authenticate.auth</c>。
+    /// </summary>
+    private async Task StartLegacyHandshakeAsync(CancellationToken ct)
+    {
+        var required = await SendLegacyRequestAsync("GetAuthRequired", null, ct).ConfigureAwait(false);
+        if (required is null)
+        {
+            _identifyTcs?.TrySetException(new InvalidOperationException(Strings.T("obs.ws.closed")));
+            return;
+        }
+
+        var needsAuth = required.Value.TryGetProperty("authRequired", out var ar)
+                        && ar.ValueKind == JsonValueKind.True;
+        AuthRequired = needsAuth;
+
+        if (needsAuth)
+        {
+            var salt = required.Value.TryGetProperty("salt", out var s) ? s.GetString() ?? "" : "";
+            var challenge = required.Value.TryGetProperty("challenge", out var c) ? c.GetString() ?? "" : "";
+
+            if (string.IsNullOrEmpty(_legacyPassword))
+            {
+                _identifyTcs?.TrySetException(new UnauthorizedAccessException(Strings.T("obs.ws.needPassword")));
+                return;
+            }
+
+            var auth = ObsLegacyV4Core.BuildAuthResponse(_legacyPassword, salt, challenge);
+            var res = await SendLegacyRequestAsync("Authenticate",
+                new Dictionary<string, object?> { ["auth"] = auth }, ct).ConfigureAwait(false);
+
+            var ok = res is { } r && r.TryGetProperty("status", out var st)
+                     && string.Equals(st.GetString(), "ok", StringComparison.OrdinalIgnoreCase);
+            if (!ok)
+            {
+                _identifyTcs?.TrySetException(new UnauthorizedAccessException(Strings.T("obs.ws.needPassword")));
+                return;
+            }
+        }
+
+        NegotiatedRpcVersion = 4;
+        _identifyTcs?.TrySetResult(true);
+    }
+
     /// <summary>发送一条请求并等待响应。</summary>
     public async Task<ObsRequestResult> RequestAsync(string requestType, object? requestData = null, CancellationToken ct = default)
     {
         if (!IsOpen) return ObsRequestResult.Fail(0, Strings.T("obs.ws.notConnected"));
+
+        if (IsLegacyProtocol)
+            return await LegacyRequestAsync(requestType, requestData, ct).ConfigureAwait(false);
 
         var requestId = Guid.NewGuid().ToString("N");
         var tcs = new TaskCompletionSource<ObsRequestResult>(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -135,6 +240,9 @@ public sealed class ObsWebSocketClient : IAsyncDisposable
     {
         if (requests.Count == 0) return Array.Empty<ObsRequestResult>();
         if (!IsOpen) return requests.Select(_ => ObsRequestResult.Fail(0, Strings.T("obs.ws.notConnected"))).ToArray();
+
+        if (IsLegacyProtocol)
+            return await LegacyBatchAsync(requests, haltOnFailure, ct).ConfigureAwait(false);
 
         var batchId = Guid.NewGuid().ToString("N");
         var items = requests.Select(r => new
@@ -198,9 +306,266 @@ public sealed class ObsWebSocketClient : IAsyncDisposable
         return results;
     }
 
+    // -----------------------------------------------------------------------
+    // 旧协议（obs-websocket 4.x）适配：翻译在 ObsLegacyV4Core 里，这里只负责收发与归一化
+    // -----------------------------------------------------------------------
+
+    /// <summary>发一条 <b>v4 原生</b>请求（不经 v5 名映射），返回原始响应对象；失败返回 null。</summary>
+    private async Task<JsonElement?> SendLegacyRequestAsync(string v4Type, Dictionary<string, object?>? data, CancellationToken ct)
+    {
+        if (!IsOpen) return null;
+
+        var id = Guid.NewGuid().ToString("N");
+        var tcs = new TaskCompletionSource<ObsRequestResult>(TaskCreationOptions.RunContinuationsAsynchronously);
+        _pending[id] = tcs;
+
+        var payload = new Dictionary<string, object?> { ["request-type"] = v4Type, ["message-id"] = id };
+        if (data is not null)
+            foreach (var kv in data) payload[kv.Key] = kv.Value;
+
+        try
+        {
+            await SendJsonAsync(payload, ct).ConfigureAwait(false);
+        }
+        catch (Exception)
+        {
+            _pending.TryRemove(id, out _);
+            return null;
+        }
+
+        var r = await AwaitResponseAsync(tcs, id, v4Type, ct).ConfigureAwait(false);
+        return r.Data;
+    }
+
+    /// <summary>把一条 v5 语义请求落到 v4 上，并把响应归一化回 v5 形状。</summary>
+    private async Task<ObsRequestResult> LegacyRequestAsync(string requestType, object? requestData, CancellationToken ct)
+    {
+        // 「暂停」在 v4 里没有切换请求：先问当前是不是已暂停，再决定调 Pause 还是 Resume。
+        //
+        // 注意这里必须用**低层发送**（SendLegacyRequestAsync）而不是递归调用 LegacyRequestAsync：
+        // PauseRecording / ResumeRecording 是 v4 原生请求名，再走一次 v5 名映射表会落空，
+        // 变成「旧协议不支持该请求」（审查发现的缺陷）。
+        if (requestType == "ToggleRecordPause")
+        {
+            var cur = await LegacyRequestAsync("GetRecordStatus", null, ct).ConfigureAwait(false);
+            var paused = cur.Ok && cur.Data is { } cd
+                         && cd.TryGetProperty("outputPaused", out var p) && p.ValueKind == JsonValueKind.True;
+
+            var rawPause = await SendLegacyRequestAsync(paused ? "ResumeRecording" : "PauseRecording", null, ct)
+                .ConfigureAwait(false);
+            if (rawPause is null) return ObsRequestResult.Fail(0, Strings.T("obs.ws.notConnected"));
+
+            var pauseOk = rawPause.Value.TryGetProperty("status", out var pauseStatus)
+                          && string.Equals(pauseStatus.GetString(), "ok", StringComparison.OrdinalIgnoreCase);
+            var pauseErr = rawPause.Value.TryGetProperty("error", out var pauseError) ? pauseError.GetString() : null;
+            return ToLegacyResult(pauseOk, pauseErr, new JsonObject());
+        }
+
+        var dataEl = requestData is null ? (JsonElement?)null : JsonSerializer.SerializeToElement(requestData, JsonOpts);
+        var mapped = ObsLegacyV4Core.MapRequest(requestType, dataEl);
+        if (mapped is null)
+            return ObsRequestResult.Fail(ObsRequestStatusCode.UnknownRequestType,
+                Strings.T("obs.ws.legacyUnsupported", requestType));
+
+        var raw = await SendLegacyRequestAsync(mapped.Type, mapped.Data, ct).ConfigureAwait(false);
+        if (raw is null)
+            return ObsRequestResult.Fail(0, Strings.T("obs.ws.notConnected"));
+
+        var (ok, err, node) = NormalizeLegacyRaw(requestType, raw.Value);
+
+        // v4 的 GetSceneItemList 不返回可见性：补一次批量查询（上层要拿它画来源开关）
+        if (ok && requestType == "GetSceneItemList")
+            await EnrichLegacySceneItemsAsync(node, ct).ConfigureAwait(false);
+
+        return ToLegacyResult(ok, err, node);
+    }
+
+    /// <summary>把 v4 响应对象（status/error + 扁平字段）变成统一的 <see cref="ObsRequestResult"/>。</summary>
+    private static (bool Ok, string? Error, JsonObject Node) NormalizeLegacyRaw(string v5Type, JsonElement raw)
+    {
+        var ok = raw.TryGetProperty("status", out var st)
+                 && string.Equals(st.GetString(), "ok", StringComparison.OrdinalIgnoreCase);
+        var err = raw.TryGetProperty("error", out var er) ? er.GetString() : null;
+        return (ok, err, ObsLegacyV4Core.NormalizeResponse(v5Type, raw));
+    }
+
+    private static ObsRequestResult ToLegacyResult(bool ok, string? err, JsonObject node) => new()
+    {
+        Ok = ok,
+        Code = ok ? ObsRequestStatusCode.Success : 500,
+        Comment = err,
+        Data = JsonSerializer.SerializeToElement(node)
+    };
+
+    private static ObsRequestResult NormalizeLegacyResult(string v5Type, JsonElement raw)
+    {
+        var (ok, err, node) = NormalizeLegacyRaw(v5Type, raw);
+        return ToLegacyResult(ok, err, node);
+    }
+
+    /// <summary>
+    /// 用 <c>ExecuteBatch</c> 批量补场景条目的可见性 / 锁定状态。
+    ///
+    /// 为什么必须补：v4 的 <c>GetSceneItemList</c> 只给 itemId / sourceName，而控制台页要靠
+    /// <c>sceneItemEnabled</c> 画来源开关 —— 不补的话所有来源都会显示成「已开启」（与 OBS 实际不符）。
+    /// </summary>
+    private async Task EnrichLegacySceneItemsAsync(JsonObject normalized, CancellationToken ct)
+    {
+        if (normalized["sceneItems"] is not JsonArray arr || arr.Count == 0) return;
+
+        var sceneName = normalized["sceneName"]?.GetValue<string>() ?? "";
+        var requests = new JsonArray();
+        foreach (var node in arr)
+        {
+            if (node is not JsonObject o) continue;
+            var id = o["sceneItemId"]?.GetValue<long>() ?? 0;
+            requests.Add(new JsonObject
+            {
+                ["request-type"] = "GetSceneItemProperties",
+                ["message-id"] = id.ToString(CultureInfo.InvariantCulture),
+                ["scene-name"] = sceneName,
+                ["item"] = new JsonObject { ["id"] = id }
+            });
+        }
+        if (requests.Count == 0) return;
+
+        var resp = await SendLegacyRequestAsync("ExecuteBatch",
+            new Dictionary<string, object?> { ["requests"] = requests }, ct).ConfigureAwait(false);
+        if (resp is null || !resp.Value.TryGetProperty("results", out var results) || results.ValueKind != JsonValueKind.Array) return;
+
+        foreach (var r in results.EnumerateArray())
+        {
+            var mid = r.TryGetProperty("message-id", out var m) ? m.GetString() : null;
+            if (mid is null || !int.TryParse(mid, NumberStyles.Integer, CultureInfo.InvariantCulture, out var id)) continue;
+
+            foreach (var node in arr)
+            {
+                if (node is not JsonObject o || (o["sceneItemId"]?.GetValue<long>() ?? -1) != id) continue;
+                if (r.TryGetProperty("visible", out var vis)
+                    && (vis.ValueKind == JsonValueKind.True || vis.ValueKind == JsonValueKind.False))
+                    o["sceneItemEnabled"] = vis.GetBoolean();
+                if (r.TryGetProperty("locked", out var lk)
+                    && (lk.ValueKind == JsonValueKind.True || lk.ValueKind == JsonValueKind.False))
+                    o["sceneItemLocked"] = lk.GetBoolean();
+                break;
+            }
+        }
+    }
+
+    /// <summary>旧协议的批量请求：v4 的 <c>ExecuteBatch</c>（串行执行）→ 逐条归一化成 v5 结果。</summary>
+    private async Task<IReadOnlyList<ObsRequestResult>> LegacyBatchAsync(
+        IReadOnlyList<ObsBatchRequest> requests, bool haltOnFailure, CancellationToken ct)
+    {
+        var results = new ObsRequestResult[requests.Count];
+        var order = new Dictionary<string, int>(StringComparer.Ordinal);
+        var batch = new JsonArray();
+
+        for (var i = 0; i < requests.Count; i++)
+        {
+            var dataEl = requests[i].RequestData is null
+                ? (JsonElement?)null
+                : JsonSerializer.SerializeToElement(requests[i].RequestData, JsonOpts);
+            var mapped = ObsLegacyV4Core.MapRequest(requests[i].RequestType, dataEl);
+            if (mapped is null)
+            {
+                results[i] = ObsRequestResult.Fail(ObsRequestStatusCode.UnknownRequestType,
+                    Strings.T("obs.ws.legacyUnsupported", requests[i].RequestType));
+                continue;
+            }
+
+            var mid = i.ToString(CultureInfo.InvariantCulture);
+            order[mid] = i;
+            var o = new JsonObject { ["request-type"] = mapped.Type, ["message-id"] = mid };
+            foreach (var kv in mapped.Data) o[kv.Key] = ToJsonNode(kv.Value);
+            batch.Add(o);
+        }
+
+        if (batch.Count > 0)
+        {
+            var resp = await SendLegacyRequestAsync("ExecuteBatch", new Dictionary<string, object?>
+            {
+                ["requests"] = batch,
+                ["abortOnFail"] = haltOnFailure
+            }, ct).ConfigureAwait(false);
+
+            if (resp is { } r && r.TryGetProperty("results", out var arr) && arr.ValueKind == JsonValueKind.Array)
+            {
+                foreach (var e in arr.EnumerateArray())
+                {
+                    var mid = e.TryGetProperty("message-id", out var m) ? m.GetString() : null;
+                    if (mid is null || !order.TryGetValue(mid, out var idx)) continue;
+                    results[idx] = NormalizeLegacyResult(requests[idx].RequestType, e);
+                }
+            }
+        }
+
+        for (var i = 0; i < results.Length; i++)
+            results[i] ??= ObsRequestResult.Fail(0, Strings.T("obs.ws.batchMissingResult"));
+
+        return results;
+    }
+
+    /// <summary>处理旧协议消息：v4 没有 <c>op</c> 字段，靠 <c>update-type</c> / <c>message-id</c> 区分事件与响应。</summary>
+    private void HandleLegacyMessage(JsonElement root)
+    {
+        if (root.TryGetProperty("update-type", out _))
+        {
+            if (ObsLegacyV4Core.MapEvent(root) is { } mapped)
+            {
+                EventReceived?.Invoke(new ObsEventMessage
+                {
+                    EventType = mapped.Type,
+                    Data = JsonSerializer.SerializeToElement(mapped.Data)
+                });
+            }
+            return;
+        }
+
+        if (!root.TryGetProperty("message-id", out var mi)) return;
+        var id = mi.GetString() ?? "";
+        if (id.Length == 0 || !_pending.TryRemove(id, out var tcs)) return;
+
+        var ok = root.TryGetProperty("status", out var st)
+                 && string.Equals(st.GetString(), "ok", StringComparison.OrdinalIgnoreCase);
+        var err = root.TryGetProperty("error", out var er) ? er.GetString() : null;
+        tcs.TrySetResult(new ObsRequestResult
+        {
+            Ok = ok,
+            Code = ok ? ObsRequestStatusCode.Success : 500,
+            Comment = err,
+            Data = root.Clone()
+        });
+    }
+
+    /// <summary>
+    /// 把映射表里的值（<c>object?</c> 装箱）转成 <see cref="JsonNode"/>。
+    ///
+    /// 为什么不能直接 <c>JsonValue.Create(obj)</c>：泛型推断会落到 <c>JsonValue.Create&lt;object&gt;</c>，
+    /// 而 <c>JsonValue&lt;object&gt;</c> 在序列化时对装箱值并不安全（审查提出；这里按运行时类型分派，绕开整个问题）。
+    /// </summary>
+    private static JsonNode? ToJsonNode(object? value) => value switch
+    {
+        null => null,
+        string s => JsonValue.Create(s),
+        bool b => JsonValue.Create(b),
+        int i => JsonValue.Create(i),
+        long l => JsonValue.Create(l),
+        double d => JsonValue.Create(d),
+        float f => JsonValue.Create(f),
+        // 嵌套对象（例如摊平后的 sceneItemTransform）需要递归转成 JsonObject
+        Dictionary<string, object?> map => ToJsonObject(map),
+        _ => JsonValue.Create(value.ToString()),
+    };
+
+    private static JsonObject ToJsonObject(Dictionary<string, object?> map)
+    {
+        var o = new JsonObject();
+        foreach (var kv in map) o[kv.Key] = ToJsonNode(kv.Value);
+        return o;
+    }
+
     /// <summary>等待某请求的响应，统一处理超时与取消语义。</summary>
-    private async Task<ObsRequestResult> AwaitResponseAsync(
-        TaskCompletionSource<ObsRequestResult> tcs, string requestId, string requestType, CancellationToken ct)
+    private async Task<ObsRequestResult> AwaitResponseAsync(TaskCompletionSource<ObsRequestResult> tcs, string requestId, string requestType, CancellationToken ct)
     {
         using var timeout = new CancellationTokenSource(RequestTimeout);
         using var linked = CancellationTokenSource.CreateLinkedTokenSource(timeout.Token, ct);
@@ -317,7 +682,14 @@ public sealed class ObsWebSocketClient : IAsyncDisposable
     {
         using var doc = await JsonDocument.ParseAsync(json, cancellationToken: ct);
         var root = doc.RootElement;
-        if (!root.TryGetProperty("op", out var opEl)) return;
+
+        // 旧协议的消息没有 op 字段：事件靠 update-type，响应靠 message-id（见 ObsLegacyV4Core）
+        if (!root.TryGetProperty("op", out var opEl))
+        {
+            HandleLegacyMessage(root);
+            return;
+        }
+
         var op = opEl.GetInt32();
         if (!root.TryGetProperty("d", out var d)) return;
 
@@ -355,6 +727,9 @@ public sealed class ObsWebSocketClient : IAsyncDisposable
 
     private async Task HandleHelloAsync(JsonElement d, string? password, ObsEventSubscription subs, CancellationToken ct)
     {
+        // 收到 Hello 说明对面是 v5：唤醒「协议判定」，让 ConnectAsync 不再走旧协议分支
+        _helloTcs?.TrySetResult(true);
+
         string? authResponse = null;
 
         if (d.TryGetProperty("authentication", out var auth) && auth.ValueKind == JsonValueKind.Object)
@@ -424,8 +799,11 @@ public sealed class ObsWebSocketClient : IAsyncDisposable
 
         _socket?.Dispose();
         _socket = null;
-        _loopCts?.Dispose();
-        _loopCts = null;
+
+        // V3.0 修复：这里原来写的是 `_loopCts?.Dispose()`，而上一行早已把 _loopCts 置空 ——
+        // 等于每次重连都泄漏一个 CancellationTokenSource（还是 CreateLinkedTokenSource 出来的，
+        // 父 token 上会留注册项）。要释放的是局部变量 oldLoopCts。
+        try { oldLoopCts?.Dispose(); } catch (Exception) { /* 已释放，忽略 */ }
     }
 
     public async ValueTask DisposeAsync()

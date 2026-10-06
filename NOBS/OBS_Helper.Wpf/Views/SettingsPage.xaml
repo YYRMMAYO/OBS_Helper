@@ -32,6 +32,28 @@
                          Style="{StaticResource SegmentButton}" Checked="OnModeChecked" />
           </StackPanel>
 
+          <!--
+            V3.0（B3）：数据出站明示。
+            免费 / 云端 AI 会把「问题描述 + 脱敏后的状态摘要（+ 日志片段）」发到第三方服务 ——
+            这件事必须在**开启之前**就摆在这里说清楚，而不是藏在隐私政策或某条小字里；
+            本地引擎则明确写「不发送任何内容」。最后一行按当前模式动态说明「此刻会发生什么」。
+          -->
+          <Border Margin="0,12,0,0" Padding="12,10"
+                  Background="{DynamicResource SurfaceBrush}"
+                  BorderBrush="{DynamicResource LineBrush}" BorderThickness="1"
+                  CornerRadius="{DynamicResource CornerRadiusMd}">
+            <StackPanel>
+              <TextBlock Text="{DynamicResource Loc.settings.ai.egress.title}" FontWeight="SemiBold"
+                         Foreground="{DynamicResource TextBrush}" />
+              <TextBlock Style="{StaticResource CaptionText}" Margin="0,6,0,0" TextWrapping="Wrap"
+                         Text="{DynamicResource Loc.settings.ai.egress.sent}" />
+              <TextBlock Style="{StaticResource CaptionText}" Margin="0,4,0,0" TextWrapping="Wrap"
+                         Text="{DynamicResource Loc.settings.ai.egress.never}" />
+              <TextBlock x:Name="AiEgressNowText" Style="{StaticResource CaptionText}" Margin="0,6,0,0"
+                         TextWrapping="Wrap" Foreground="{DynamicResource WarnBrush}" />
+            </StackPanel>
+          </Border>
+
           <!-- 免费内置 AI：无需任何配置，选中即用；只展示模型名与本地限额 -->
           <StackPanel x:Name="FreePanel" Visibility="Collapsed" Margin="0,4,0,0">
             <TextBlock Style="{StaticResource CaptionText}" Margin="2,8,0,0"
@@ -186,26 +208,46 @@
                          Style="{StaticResource SegmentButton}" Checked="OnBgModeChecked" />
           </WrapPanel>
 
+
           <!-- 纯色预设色板 -->
           <WrapPanel x:Name="BgColorPanel" Margin="0,10,0,0" Visibility="Collapsed">
+              <!--
+            色板样式（V3.0 / E4）：色块是**键盘用户也需要能用**的选项。
+            它们原先只是带 MouseLeftButtonUp 的 Border —— 不可聚焦、不可 Tab、不可回车，
+            键盘用户根本换不了背景色。这里统一补：可聚焦 + 有可见焦点框 + 回车/空格激活。
+          -->
+          <WrapPanel.Resources>
+            <Style x:Key="SwatchButton" TargetType="Border">
+              <Setter Property="Focusable" Value="True" />
+              <Setter Property="KeyboardNavigation.IsTabStop" Value="True" />
+              <Setter Property="BorderThickness" Value="1" />
+              <Style.Triggers>
+                <Trigger Property="IsKeyboardFocused" Value="True">
+                  <Setter Property="BorderBrush" Value="{DynamicResource BrandBrush}" />
+                  <Setter Property="BorderThickness" Value="2" />
+                </Trigger>
+              </Style.Triggers>
+            </Style>
+          </WrapPanel.Resources>
+
             <Border x:Name="BgSwatchLight" Width="30" Height="30" CornerRadius="8" Margin="0,0,8,8"
                     Background="#f4f4fb" BorderBrush="{DynamicResource LineBrush}" BorderThickness="1"
-                    Cursor="Hand" ToolTip="{DynamicResource Loc.settings.bg.swatch.gray}" MouseLeftButtonUp="OnBgSwatchClick" Tag="#f4f4fb" />
+                    Style="{StaticResource SwatchButton}" Focusable="True" KeyboardNavigation.IsTabStop="True" Cursor="Hand" AutomationProperties.Name="{DynamicResource Loc.settings.bg.swatch.gray}" ToolTip="{DynamicResource Loc.settings.bg.swatch.gray}" KeyDown="OnBgSwatchKeyDown" MouseLeftButtonUp="OnBgSwatchClick" Tag="#f4f4fb" />
             <Border x:Name="BgSwatchBlue" Width="30" Height="30" CornerRadius="8" Margin="0,0,8,8"
                     Background="#e8f0fe" BorderBrush="{DynamicResource LineBrush}" BorderThickness="1"
-                    Cursor="Hand" ToolTip="{DynamicResource Loc.settings.bg.swatch.blue}" MouseLeftButtonUp="OnBgSwatchClick" Tag="#e8f0fe" />
+                    Style="{StaticResource SwatchButton}" Focusable="True" KeyboardNavigation.IsTabStop="True" Cursor="Hand" AutomationProperties.Name="{DynamicResource Loc.settings.bg.swatch.blue}" ToolTip="{DynamicResource Loc.settings.bg.swatch.blue}" KeyDown="OnBgSwatchKeyDown" MouseLeftButtonUp="OnBgSwatchClick" Tag="#e8f0fe" />
             <Border x:Name="BgSwatchGreen" Width="30" Height="30" CornerRadius="8" Margin="0,0,8,8"
                     Background="#e7f6ee" BorderBrush="{DynamicResource LineBrush}" BorderThickness="1"
-                    Cursor="Hand" ToolTip="{DynamicResource Loc.settings.bg.swatch.green}" MouseLeftButtonUp="OnBgSwatchClick" Tag="#e7f6ee" />
+                    Style="{StaticResource SwatchButton}" Focusable="True" KeyboardNavigation.IsTabStop="True" Cursor="Hand" AutomationProperties.Name="{DynamicResource Loc.settings.bg.swatch.green}" ToolTip="{DynamicResource Loc.settings.bg.swatch.green}" KeyDown="OnBgSwatchKeyDown" MouseLeftButtonUp="OnBgSwatchClick" Tag="#e7f6ee" />
             <Border x:Name="BgSwatchWarm" Width="30" Height="30" CornerRadius="8" Margin="0,0,8,8"
                     Background="#fef4e6" BorderBrush="{DynamicResource LineBrush}" BorderThickness="1"
-                    Cursor="Hand" ToolTip="{DynamicResource Loc.settings.bg.swatch.beige}" MouseLeftButtonUp="OnBgSwatchClick" Tag="#fef4e6" />
+                    Style="{StaticResource SwatchButton}" Focusable="True" KeyboardNavigation.IsTabStop="True" Cursor="Hand" AutomationProperties.Name="{DynamicResource Loc.settings.bg.swatch.beige}" ToolTip="{DynamicResource Loc.settings.bg.swatch.beige}" KeyDown="OnBgSwatchKeyDown" MouseLeftButtonUp="OnBgSwatchClick" Tag="#fef4e6" />
             <Border x:Name="BgSwatchPink" Width="30" Height="30" CornerRadius="8" Margin="0,0,8,8"
                     Background="#fdeceb" BorderBrush="{DynamicResource LineBrush}" BorderThickness="1"
-                    Cursor="Hand" ToolTip="{DynamicResource Loc.settings.bg.swatch.pink}" MouseLeftButtonUp="OnBgSwatchClick" Tag="#fdeceb" />
+                    Style="{StaticResource SwatchButton}" Focusable="True" KeyboardNavigation.IsTabStop="True" Cursor="Hand" AutomationProperties.Name="{DynamicResource Loc.settings.bg.swatch.pink}" ToolTip="{DynamicResource Loc.settings.bg.swatch.pink}" KeyDown="OnBgSwatchKeyDown" MouseLeftButtonUp="OnBgSwatchClick" Tag="#fdeceb" />
             <Border x:Name="BgSwatchDark" Width="30" Height="30" CornerRadius="8" Margin="0,0,8,8"
                     Background="#14151d" BorderBrush="{DynamicResource LineBrush}" BorderThickness="1"
-                    Cursor="Hand" ToolTip="{DynamicResource Loc.settings.bg.swatch.ink}" MouseLeftButtonUp="OnBgSwatchClick" Tag="#14151d" />
+                    Style="{StaticResource SwatchButton}" Focusable="True" KeyboardNavigation.IsTabStop="True" Cursor="Hand" AutomationProperties.Name="{DynamicResource Loc.settings.bg.swatch.ink}" ToolTip="{DynamicResource Loc.settings.bg.swatch.ink}" KeyDown="OnBgSwatchKeyDown" MouseLeftButtonUp="OnBgSwatchClick" Tag="#14151d" />
             <TextBlock x:Name="BgColorHint" Style="{StaticResource CaptionText}"
                        VerticalAlignment="Center" Margin="2,0,0,8" />
           </WrapPanel>
@@ -353,6 +395,64 @@
               <TextBox x:Name="VcamHotkeyKey" Grid.Column="6" Style="{StaticResource AppTextBox}"
                        MaxLength="4" TextChanged="OnHotkeyChanged" />
               <TextBlock x:Name="VcamHotkeyDisplay" Grid.Column="7" VerticalAlignment="Center"
+                         Style="{StaticResource CaptionText}" Margin="10,0,0,0" />
+            </Grid>
+            <!-- 存片（回放缓存，V3.0）：直播中把「刚才那段」留下，热键比托盘菜单顺手得多 -->
+            <Grid Margin="0,0,0,8">
+              <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="86" />
+                <ColumnDefinition Width="46" />
+                <ColumnDefinition Width="44" />
+                <ColumnDefinition Width="44" />
+                <ColumnDefinition Width="48" />
+                <ColumnDefinition Width="48" />
+                <ColumnDefinition Width="56" />
+                <ColumnDefinition Width="*" />
+              </Grid.ColumnDefinitions>
+              <TextBlock Grid.Column="0" Text="{DynamicResource Loc.hotkey.saveReplay}" VerticalAlignment="Center"
+                         Foreground="{DynamicResource TextBrush}" FontSize="{DynamicResource FontSizeSm}" />
+              <CheckBox x:Name="ReplayHotkeyEnabled" Grid.Column="1" VerticalAlignment="Center"
+                        ToolTip="{DynamicResource Loc.settings.hotkey.enableTip}" Checked="OnHotkeyToggled" Unchecked="OnHotkeyToggled" />
+              <CheckBox x:Name="ReplayHotkeyCtrl" Grid.Column="2" Content="Ctrl" VerticalAlignment="Center"
+                        Checked="OnHotkeyToggled" Unchecked="OnHotkeyToggled" />
+              <CheckBox x:Name="ReplayHotkeyAlt" Grid.Column="3" Content="Alt" VerticalAlignment="Center"
+                        Checked="OnHotkeyToggled" Unchecked="OnHotkeyToggled" />
+              <CheckBox x:Name="ReplayHotkeyShift" Grid.Column="4" Content="Shift" VerticalAlignment="Center"
+                        Checked="OnHotkeyToggled" Unchecked="OnHotkeyToggled" />
+              <CheckBox x:Name="ReplayHotkeyWin" Grid.Column="5" Content="Win" VerticalAlignment="Center"
+                        Checked="OnHotkeyToggled" Unchecked="OnHotkeyToggled" />
+              <TextBox x:Name="ReplayHotkeyKey" Grid.Column="6" Style="{StaticResource AppTextBox}"
+                       MaxLength="4" TextChanged="OnHotkeyChanged" />
+              <TextBlock x:Name="ReplayHotkeyDisplay" Grid.Column="7" VerticalAlignment="Center"
+                         Style="{StaticResource CaptionText}" Margin="10,0,0,0" />
+            </Grid>
+            <!-- 录制打点（V3.0 / D3）：录制中标出精彩瞬间，停止后可导出成章节 -->
+            <Grid Margin="0,0,0,8">
+              <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="86" />
+                <ColumnDefinition Width="46" />
+                <ColumnDefinition Width="44" />
+                <ColumnDefinition Width="44" />
+                <ColumnDefinition Width="48" />
+                <ColumnDefinition Width="48" />
+                <ColumnDefinition Width="56" />
+                <ColumnDefinition Width="*" />
+              </Grid.ColumnDefinitions>
+              <TextBlock Grid.Column="0" Text="{DynamicResource Loc.hotkey.markRecording}" VerticalAlignment="Center"
+                         Foreground="{DynamicResource TextBrush}" FontSize="{DynamicResource FontSizeSm}" />
+              <CheckBox x:Name="MarkHotkeyEnabled" Grid.Column="1" VerticalAlignment="Center"
+                        ToolTip="{DynamicResource Loc.settings.hotkey.enableTip}" Checked="OnHotkeyToggled" Unchecked="OnHotkeyToggled" />
+              <CheckBox x:Name="MarkHotkeyCtrl" Grid.Column="2" Content="Ctrl" VerticalAlignment="Center"
+                        Checked="OnHotkeyToggled" Unchecked="OnHotkeyToggled" />
+              <CheckBox x:Name="MarkHotkeyAlt" Grid.Column="3" Content="Alt" VerticalAlignment="Center"
+                        Checked="OnHotkeyToggled" Unchecked="OnHotkeyToggled" />
+              <CheckBox x:Name="MarkHotkeyShift" Grid.Column="4" Content="Shift" VerticalAlignment="Center"
+                        Checked="OnHotkeyToggled" Unchecked="OnHotkeyToggled" />
+              <CheckBox x:Name="MarkHotkeyWin" Grid.Column="5" Content="Win" VerticalAlignment="Center"
+                        Checked="OnHotkeyToggled" Unchecked="OnHotkeyToggled" />
+              <TextBox x:Name="MarkHotkeyKey" Grid.Column="6" Style="{StaticResource AppTextBox}"
+                       MaxLength="4" TextChanged="OnHotkeyChanged" />
+              <TextBlock x:Name="MarkHotkeyDisplay" Grid.Column="7" VerticalAlignment="Center"
                          Style="{StaticResource CaptionText}" Margin="10,0,0,0" />
             </Grid>
             <!-- 小窗控制 -->

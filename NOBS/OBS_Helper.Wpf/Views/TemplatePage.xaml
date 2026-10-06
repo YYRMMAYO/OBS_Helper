@@ -7,6 +7,20 @@
       <TextBlock Style="{StaticResource MutedText}" Margin="0,0,0,16"
                  Text="{DynamicResource Loc.template.intro}" />
 
+      <!--
+        我的模板（V3.0 / D6）：把当前 OBS 场景集合反向存成一份模板。
+        模板能力此前是单向的（官方模板 → 落地），用户自己调好的一套只能靠整包配置备份。
+      -->
+      <StackPanel Orientation="Horizontal" Margin="0,0,0,16">
+        <Button x:Name="CaptureButton" Content="{DynamicResource Loc.mytemplate.capture}"
+                Style="{StaticResource SecondaryButton}"
+                ToolTip="{DynamicResource Loc.mytemplate.captureTip}"
+                Click="OnCaptureClick" />
+        <Button x:Name="OpenMineDirButton" Content="{DynamicResource Loc.console.openRecordDir}"
+                Style="{StaticResource GhostButton}" Margin="10,0,0,0" Visibility="Collapsed"
+                Click="OnOpenMineDirClick" />
+      </StackPanel>
+
       <!-- 状态条：矢量状态图标（info / ok / warn / danger 由 Tag 切换），替代 emoji -->
       <Border x:Name="StatusBar" Margin="0,0,0,14" Visibility="Collapsed"
               Background="{DynamicResource Surface2Brush}"

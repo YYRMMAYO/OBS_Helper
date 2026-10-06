@@ -51,6 +51,14 @@
                    Style="{StaticResource MutedText}"
                    HorizontalAlignment="Center" Margin="0,40,0,0"
                    Visibility="Collapsed" />
+
+        <!--
+          无结果时的建议（V3.0 / C4）：一片空白等于把用户丢回原点，给几条最接近的条目至少能继续点。
+        -->
+        <TextBlock x:Name="SuggestionHeading" Text="{DynamicResource Loc.search.suggestionsHeading}"
+                   Style="{StaticResource MutedText}" Margin="2,24,0,8" TextWrapping="Wrap"
+                   Visibility="Collapsed" />
+        <StackPanel x:Name="SuggestionPanel" Visibility="Collapsed" />
       </StackPanel>
     </ScrollViewer>
   </Grid>

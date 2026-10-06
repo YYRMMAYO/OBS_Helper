@@ -9,8 +9,11 @@ namespace OBS_Helper.Wpf.Views;
 /// <summary>
 /// 首页：两个快捷入口 + 数据驱动的分类卡 + 我的收藏。
 ///
-/// 页面实例被导航服务缓存复用，所以数据装配放在 <see cref="OnNavigatedToAsync"/> 而不是构造函数，
+/// 页面实例由导航服务缓存复用，所以数据装配放在 <see cref="OnNavigatedToAsync"/> 而不是构造函数，
 /// 每次回到首页都会按最新的收藏状态重建列表。
+///
+/// V3.0（F7）：缓存现在有 LRU 上限，页面实例随时可能被逐出后重建，
+/// 因此凡是订阅单例事件的地方都必须**成对**（进入订阅 / 离开退订），不能像以前那样赌「实例常驻」。
 /// </summary>
 public partial class HomePage : UserControl, INavigationAware
 {
@@ -28,20 +31,21 @@ public partial class HomePage : UserControl, INavigationAware
         public string CountText { get; init; } = "";
     }
 
+    /// <summary>
+    /// 是否已经订阅了单例事件。订阅拆到导航回调后必须有这个标记：
+    /// 同路由原地重放（切语言）会连着走一次 from / to，缺了它就会重复订阅。
+    /// </summary>
+    private bool _eventsAttached;
+
     public HomePage()
     {
         InitializeComponent();
-
-        // 收藏可能在详情页 / 搜索页被改动。页面实例常驻，这里订阅后不再退订，
-        // 生命周期与应用一致，不会泄漏。
-        AppServices.Bookmarks.BookmarksChanged += OnBookmarksChanged;
-
-        // 连接状态变化时同步引导卡显隐（从控制台连接成功返回首页，引导卡自动消失）
-        AppServices.Obs.StateChanged += RefreshWelcome;
     }
 
     public async Task OnNavigatedToAsync(object? parameter)
-    {        try
+    {
+        AttachEvents();
+        try
         {
             var categories = await AppServices.Problems.GetCategoriesAsync();
             var counts = await AppServices.Problems.GetCategoryCountsAsync();
@@ -65,6 +69,9 @@ public partial class HomePage : UserControl, INavigationAware
 
             // 简单录像卡（V2.9.4）：每次回到首页重读一次现状（配置可能在别处被改过）
             await SimpleRecord.RefreshAsync();
+
+            // 简单开播卡（V3.0 / D2）：同理，回来就重查一次推流服务是否填全
+            await SimpleStream.RefreshAsync();
         }
         catch (Exception ex)
         {
@@ -73,13 +80,37 @@ public partial class HomePage : UserControl, INavigationAware
     }
 
     /// <summary>
-    /// 离开首页时退订简单录像卡的服务事件（V2.9.4）：页面实例被导航缓存复用，
-    /// 不退订就等于「只要进过一次首页，服务每秒钟的进度通知都会打到一张看不见的卡上」。
+    /// 离开首页：退订简单录像卡的服务事件（V2.9.4），并退掉首页自己订的两个单例事件（V3.0 / F7）。
+    /// 后者原来是故意不退订的（注释说「页面实例常驻、生命周期与应用一致」）——LRU 逐出上线后
+    /// 这个前提不再成立：不退订就会在实例重建后越订越多，同一个收藏变更把刷新跑到好几个死实例上。
     /// </summary>
     public Task OnNavigatedFromAsync()
     {
         SimpleRecord.Detach();
+        SimpleStream.Detach();
+        DetachEvents();
         return Task.CompletedTask;
+    }
+
+    /// <summary>收藏可能在详情页 / 搜索页被改动，连接状态会在控制台 / 托盘变化：进页面时订阅（幂等）。</summary>
+    private void AttachEvents()
+    {
+        if (_eventsAttached) return;
+        _eventsAttached = true;
+
+        AppServices.Bookmarks.BookmarksChanged += OnBookmarksChanged;
+        // 连接状态变化时同步引导卡显隐（从控制台连接成功返回首页，引导卡自动消失）
+        AppServices.Obs.StateChanged += RefreshWelcome;
+    }
+
+    /// <summary>与 <see cref="AttachEvents"/> 严格配对；幂等，重复调用不会误退别人的订阅。</summary>
+    private void DetachEvents()
+    {
+        if (!_eventsAttached) return;
+        _eventsAttached = false;
+
+        AppServices.Bookmarks.BookmarksChanged -= OnBookmarksChanged;
+        AppServices.Obs.StateChanged -= RefreshWelcome;
     }
 
     /// <summary>新手引导卡：未连 OBS 时展示，连接后隐藏（StateChanged 可能来自 WebSocket 线程，需切回 UI 线程）。</summary>

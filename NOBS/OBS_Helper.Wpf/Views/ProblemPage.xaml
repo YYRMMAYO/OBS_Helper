@@ -97,6 +97,44 @@
           <StackPanel x:Name="RelatedList" />
         </StackPanel>
 
+        <!--
+          知识库回执（V3.0 / D8）：知识库此前只能被动接收热更新，用户端没有回写路径 ——
+          「这条不解决问题」这个最有价值的信息根本传不回来。
+          回执**不自动上传**：本地生成 Markdown，由用户自己贴到 Issue / 邮件。
+        -->
+        <Border x:Name="FeedbackBlock" Style="{StaticResource Card}" Margin="0,12,0,0">
+          <StackPanel>
+            <TextBlock Text="{DynamicResource Loc.kb.feedback.heading}" Style="{StaticResource SectionTitle}" />
+            <TextBlock Text="{DynamicResource Loc.kb.feedback.desc}" Style="{StaticResource MutedText}"
+                       TextWrapping="Wrap" Margin="0,0,0,10" />
+
+            <!--
+              补充说明框（V3.0 第三轮验证修正）：原先误用了 AppCodeBox —— 那个样式是**只读**的
+              （给日志/代码展示用），用户根本打不了字；而且占位文案被写进 Text，
+              于是「没写任何东西」时回执里塞的是软件自己的占位句。
+              正确做法：可编辑样式 + 占位符走 Tag（模板的 Placeholder 绑的就是 Tag，全仓约定）。
+            -->
+            <TextBox x:Name="FeedbackNoteBox" Style="{StaticResource AppTextArea}"
+                     MinHeight="60" MaxHeight="140" AcceptsReturn="True" TextWrapping="Wrap"
+                     VerticalScrollBarVisibility="Auto"
+                     Tag="{DynamicResource Loc.kb.feedback.notePlaceholder}" />
+
+            <WrapPanel Margin="0,10,0,0">
+              <Button x:Name="SolvedButton" Content="{DynamicResource Loc.kb.feedback.solved}"
+                      Style="{StaticResource PrimaryButton}" Margin="0,0,8,8" Click="OnSolvedClick" />
+              <Button x:Name="UnsolvedButton" Content="{DynamicResource Loc.kb.feedback.unsolved}"
+                      Style="{StaticResource SecondaryButton}" Margin="0,0,8,8" Click="OnUnsolvedClick" />
+              <Button x:Name="MineFileButton" Content="{DynamicResource Loc.kb.mine.createFile}"
+                      Style="{StaticResource GhostButton}" Margin="0,0,0,8"
+                      ToolTip="{DynamicResource Loc.kb.mine.createFileTip}"
+                      Click="OnCreateMineFileClick" />
+            </WrapPanel>
+
+            <TextBlock x:Name="FeedbackStatusText" Style="{StaticResource CaptionText}"
+                       TextWrapping="Wrap" Visibility="Collapsed" />
+          </StackPanel>
+        </Border>
+
       </StackPanel>
     </StackPanel>
   </ScrollViewer>

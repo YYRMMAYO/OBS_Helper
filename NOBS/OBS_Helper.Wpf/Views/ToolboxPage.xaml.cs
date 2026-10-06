@@ -3,6 +3,8 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using Microsoft.Win32;
+using OBS_Helper.Wpf.Navigation;
+using OBS_Helper.Wpf.Services;
 using OBS_Helper.Wpf.Services.ObsConfig;
 using OBS_Helper.Wpf.Services.Tools;
 
@@ -12,7 +14,7 @@ namespace OBS_Helper.Wpf.Views;
 /// 工具箱（V2.6）：录屏与直播的实用工具合集。
 /// 所有操作均为只读探测或独立进程调用，不修改 OBS 配置；失败一律降级为提示。
 /// </summary>
-public partial class ToolboxPage : UserControl
+public partial class ToolboxPage : UserControl, INavigationAware
 {
     /// <summary>场景化参数处方（静态内置数据）。</summary>
     /// <summary>
@@ -37,7 +39,43 @@ public partial class ToolboxPage : UserControl
             PresetCombo.Items.Add(name);
         PresetCombo.SelectedIndex = 0;
 
+        BuildSectionNav();
+
         Loaded += OnLoadedAsync;
+    }
+
+    // ------------------------------------------------------------ 分节导航（V3.0 / C6）
+
+    /// <summary>
+    /// 生成跳转按钮。顺序与页面自上而下一致，因此它同时是「这页有什么」的目录。
+    ///
+    /// 元素通过 <see cref="ToolboxSections.ElementNameOf"/> 的命名约定查找（而不是在页面里
+    /// 再抄一份「元素 → 键」的表）：这样「分节清单」只有一个真源，单测可以拿它校验 XAML。
+    /// </summary>
+    private void BuildSectionNav()
+    {
+        foreach (var key in ToolboxSections.Keys)
+        {
+            var target = FindName(ToolboxSections.ElementNameOf(key)) as FrameworkElement;
+            if (target is null) continue;   // 名字对不上就跳过（宁可少一个入口，也不要让整页崩掉）
+
+            var button = new Button
+            {
+                Content = Strings.T(key),
+                Style = TryFindResource("GhostButton") as Style,
+                Margin = new Thickness(0, 0, 8, 6),
+                Padding = new Thickness(10, 4, 10, 4),
+                Tag = target
+            };
+            button.Click += (_, _) =>
+            {
+                if (button.Tag is not FrameworkElement el) return;
+                // 只滚动，不抢焦点：焦点留在导航按钮上，用户想连跳几节不必一路 Tab 回来；
+                // 而小节标题本身不可聚焦，把焦点丢过去反而会让读屏失去落点。
+                el.BringIntoView();
+            };
+            SectionNav.Children.Add(button);
+        }
     }
 
     private async void OnLoadedAsync(object sender, RoutedEventArgs e)
@@ -48,6 +86,45 @@ public partial class ToolboxPage : UserControl
         FfmpegText.Text = ffmpeg is null
             ? Strings.T("toolbox.remux.noFfmpeg")
             : Strings.T("toolbox.remux.ffmpegFound", ffmpeg);
+    }
+
+    /// <summary>
+    /// 语言切换后重建「构造期取过文案」的部分（V3.0 / F5）。
+    ///
+    /// 本页在构造函数里做了三件与语言有关的事：填处方下拉框、生成分节导航按钮、装载两枚共用控件
+    /// （它们的文案也在各自构造函数里取）。页面实例被导航缓存复用，所以语言一变就必须重建这些，
+    /// 否则整页看起来只有一半跟着切。
+    /// </summary>
+    public Task OnNavigatedToAsync(object? parameter)
+    {
+        RefreshLanguage();
+        return Task.CompletedTask;
+    }
+
+    private string? _builtLanguage;
+
+    private void RefreshLanguage()
+    {
+        var language = Strings.Current;
+        if (string.Equals(_builtLanguage, language, StringComparison.Ordinal))
+        {
+            // 语言没变也刷一遍两枚共用控件：它们在别的页面被切换语言后可能已经过时
+            DownloadCardControl.ApplyLanguage();
+            FeedbackCardControl.ApplyLanguage();
+            return;
+        }
+
+        _builtLanguage = language;
+
+        var selected = PresetCombo.SelectedIndex;
+        PresetCombo.Items.Clear();
+        foreach (var (name, _) in Presets) PresetCombo.Items.Add(name);
+        PresetCombo.SelectedIndex = selected >= 0 && selected < PresetCombo.Items.Count ? selected : 0;
+
+        BuildSectionNav();
+
+        DownloadCardControl.ApplyLanguage();
+        FeedbackCardControl.ApplyLanguage();
     }
 
     // ------------------------------------------------------------ 录像工具
@@ -153,13 +230,15 @@ public partial class ToolboxPage : UserControl
 
     // ------------------------------------------------------------ 冲突扫描
 
-    private void OnScanConflicts(object sender, RoutedEventArgs e)
+    private async void OnScanConflicts(object sender, RoutedEventArgs e)
     {
         try
         {
-            var names = Process.GetProcesses()
+            // V3.0（F8）：枚举全机进程并逐个取名字/路径是同步系统调用，进程多时会在 UI 线程上顿一下
+            var names = await Task.Run(() => Process.GetProcesses()
                 .Select(p => { using var _ = p; return SafeProcessName(p); })
-                .Where(n => n.Length > 0);
+                .Where(n => n.Length > 0)
+                .ToList()).ConfigureAwait(true);
 
             var hits = ConflictScannerCore.Scan(names);
 
@@ -198,6 +277,21 @@ public partial class ToolboxPage : UserControl
         var uploadRaw = TryParseDouble(UploadInput.Text);
         RecommendText.Text = BandwidthAdvisorCore.Recommend(uploadRaw).Advice
             + ClampedNote(uploadRaw, BandwidthAdvisorCore.MaxUploadMbps, "Mbps");
+
+        // V3.0（D4）：把用户填写的上行速度记下来，供诊断页的清单自动回填使用。
+        // 这是**用户填写值**而不是本机实测值，界面上也如实这么写（见 check.auto.bitrate.*）。
+        if (!double.IsNaN(uploadRaw) && uploadRaw > 0)
+        {
+            try
+            {
+                AppServices.Store.SetItem("bandwidth_upload_mbps",
+                    uploadRaw.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture));
+            }
+            catch (Exception ex)
+            {
+                FileLogger.Warn("Toolbox", $"保存上行速度失败：{ex.Message}");
+            }
+        }
 
         if (!double.IsNaN(uploadRaw))
         {
@@ -432,47 +526,16 @@ public partial class ToolboxPage : UserControl
         }
     }
 
-    /// <summary>向目录顺序写入临时文件并返回 MB/s，结束后立即删除。任何失败抛出由调用方降级。</summary>
-    internal static double MeasureSequentialWrite(string dir)
-    {
-        var file = System.IO.Path.Combine(dir, $"obs_helper_disk_test_{Guid.NewGuid():N}.tmp");
-        try
-        {
-            var buffer = new byte[4 * 1024 * 1024];
-            var totalBytes = Math.Min(DiskBenchmarkCore.DefaultTestBytes,
-                Math.Max(64L * 1024 * 1024, FreeBytesOf(dir) / 4)); // 盘面紧张时至少写 64MB
-
-            using (var fs = new System.IO.FileStream(file, System.IO.FileMode.Create,
-                       System.IO.FileAccess.Write, System.IO.FileShare.None, buffer.Length,
-                       System.IO.FileOptions.WriteThrough))
-            {
-                var sw = Stopwatch.StartNew();
-                for (long written = 0; written < totalBytes; written += buffer.Length)
-                {
-                    fs.Write(buffer, 0, buffer.Length);
-                }
-                fs.Flush();
-                sw.Stop();
-
-                var mbps = totalBytes / 1024.0 / 1024.0 / sw.Elapsed.TotalSeconds;
-                return mbps > 0 ? mbps : 0;
-            }
-        }
-        finally
-        {
-            try { if (System.IO.File.Exists(file)) System.IO.File.Delete(file); }
-            catch (Exception) { }
-        }
-    }
+    /// <summary>
+    /// 向目录顺序写入临时文件并返回 MB/s（V3.0 起实现搬到 <see cref="DiskBenchmarkService"/>：
+    /// 「开播前体检」也要用它，服务层共用一份实现，口径不会漂移）。
+    /// </summary>
+    internal static double MeasureSequentialWrite(string dir) => DiskBenchmarkService.MeasureSequentialWrite(dir);
 
     private static long FreeBytesOf(string dir)
     {
-        try
-        {
-            var root = System.IO.Path.GetPathRoot(System.IO.Path.GetFullPath(dir)) ?? dir;
-            return new System.IO.DriveInfo(root).AvailableFreeSpace;
-        }
-        catch (Exception) { return long.MaxValue; }
+        var free = DiskBenchmarkService.FreeBytesOf(dir);
+        return free > 0 ? free : long.MaxValue;
     }
 
     // ------------------------------------------------------------ 编码顾问（V2.7）

@@ -64,8 +64,15 @@ public sealed class RecordingEnvService
         _recTools = recTools;
     }
 
-    /// <summary>当前是否已经连上 OBS（决定走哪条通道）。</summary>
-    public bool WebSocketAvailable => _obs.IsConnected && !_obs.RecordStatus.Active && !_obs.StreamStatus.Active;
+    /// <summary>
+    /// 走 obs-websocket 落地是否可用。
+    ///
+    /// V3.0：旧协议（obs-websocket 4.x）<b>没有 <c>SetProfileParameter</c></b>，因此即便连着也改走文件通道 ——
+    /// 文件通道本来就有整备份 / 写后读回 / 可回滚，功能不打折，只是要重启 OBS 才生效。
+    /// 这正是「向下部分兼容」的取舍：不假装支持不存在的请求。
+    /// </summary>
+    public bool WebSocketAvailable => _obs.IsConnected && !_obs.IsLegacyProtocol
+        && !_obs.RecordStatus.Active && !_obs.StreamStatus.Active;
 
     /// <summary>OBS 进程是否在跑（文件通道要求它没跑）。</summary>
     public bool ObsProcessRunning => _paths.IsObsRunning();
@@ -85,9 +92,22 @@ public sealed class RecordingEnvService
         {
             var globalIni = TryRead(Path.Combine(loc.ConfigDir, "global.ini"));
             var ini = PreflightCheckCore.ParseIni(globalIni ?? "");
-            ini.TryGetValue("basic.profiledir", out var profileDir);
-            if (!string.IsNullOrWhiteSpace(profileDir))
-                basicIniPath = Path.Combine(loc.ConfigDir, "basic", "profiles", profileDir!, "basic.ini");
+            ini.TryGetValue("basic.profiledir", out var rawProfileDir);
+            // V3.0：净化后再拼接（同 ResolveBasicIniPath 的理由，见那里的注释）
+            var profileDir = ObsSafePath.SafeProfileDir(rawProfileDir);
+            if (profileDir is not null)
+            {
+                var candidate = Path.Combine(loc.ConfigDir, "basic", "profiles", profileDir, "basic.ini");
+                try
+                {
+                    ObsSafePath.AssertWritable(candidate, loc.ConfigDir);
+                    basicIniPath = candidate;
+                }
+                catch (ObsSafePathException ex)
+                {
+                    FileLogger.Warn("RecordingEnv", "配置集路径未通过护栏，按「未配置」处理：" + ex.Message);
+                }
+            }
 
             if (basicIniPath is not null) iniText = TryRead(basicIniPath) ?? "";
             snapshot = ReadSnapshot(iniText);
@@ -157,9 +177,14 @@ public sealed class RecordingEnvService
         try
         {
             var ini = PreflightCheckCore.ParseIni(TryRead(Path.Combine(configDir, "global.ini")) ?? "");
-            if (!ini.TryGetValue("basic.profiledir", out var profileDir) || string.IsNullOrWhiteSpace(profileDir))
-                return null;
-            var path = Path.Combine(configDir, "basic", "profiles", profileDir!, "basic.ini");
+            if (!ini.TryGetValue("basic.profiledir", out var rawProfileDir)) return null;
+            // V3.0：profile 目录名来自本机 global.ini（而「导入备份包」可以整份改写它），
+            // 必须先净化再拼接 —— 否则根化路径会丢弃前缀、`..` 会逃出配置目录。
+            var profileDir = ObsSafePath.SafeProfileDir(rawProfileDir);
+            if (profileDir is null) return null;
+            var path = Path.Combine(configDir, "basic", "profiles", profileDir, "basic.ini");
+            // 解析后再确认一次仍在配置目录之内（双保险，防净化被绕过）
+            ObsSafePath.AssertWritable(path, configDir);
             return File.Exists(path) ? path : null;
         }
         catch (Exception)
@@ -280,9 +305,9 @@ public sealed class RecordingEnvService
 
         try
         {
-            // 先落一个同目录 .bak（Inno / 备份 zip 之外的最后一道保险，成本几乎为零）
-            File.WriteAllText(path + ".obshelper.bak", iniText, new UTF8Encoding(false));
-            File.WriteAllText(path, updated, new UTF8Encoding(false));
+            // V3.0：先过路径护栏（ObsSafePath），再「留 .bak → 临时文件 → 原子替换」。
+            // 原来这里是无护栏的两次 File.WriteAllText：既可能写到配置目录之外，也可能留下半截 ini。
+            SafeIniFile.Write(path, updated, plan.ConfigDir ?? "");
         }
         catch (Exception ex)
         {
@@ -361,13 +386,31 @@ public sealed class RecordingEnvService
         var ini = await ResolveBasicIniPathAsync(loc.ConfigDir).ConfigureAwait(false);
         if (ini is null) return Fail(Strings.T("env.blocked.noProfile"));
 
+        // V3.0（原 V2.9.4 审校 S2/M2）：回滚同样要先整备份 —— 它是唯一「无备份、无读回校验」的写盘路径，
+        // 而回滚恰恰是用户配置已经出问题时才点的按钮，写坏了没有第二次机会。
+        //
+        // 但备份是**尽力而为**：备份目录在 %LocalAppData%（系统盘），而 OBS 配置可能在别的盘上。
+        // 系统盘满/只读时若因「备份失败」拒绝回滚，等于把用户最后的救命按钮锁上了（审查意见），
+        // 因此这里失败只记日志并继续 —— SafeIniFile 仍会在同目录留一份 .obshelper.bak。
+        progress?.Report(Strings.T("env.progress.backup"));
+        try
+        {
+            await _backups.CreateBackupAsync(
+                Strings.T("backup.reason.preRollback"), includeKey: false, includePluginConfig: false, null)
+                .ConfigureAwait(false);
+        }
+        catch (Exception ex)
+        {
+            FileLogger.Warn("RecordingEnv", $"回滚前的整备份失败（继续回滚，同目录 .obshelper.bak 仍在）：{ex.Message}");
+        }
+
         var text = TryRead(ini) ?? "";
         foreach (var e in entries)
             text = RecordingEnvCore.PatchIni(text, e.Category, e.Parameter, e.OldValue);
 
         try
         {
-            File.WriteAllText(ini, text, new UTF8Encoding(false));
+            SafeIniFile.Write(ini, text, loc.ConfigDir);
         }
         catch (Exception ex)
         {
@@ -375,8 +418,26 @@ public sealed class RecordingEnvService
                 Array.Empty<RecordingRollbackEntry>(), Strings.T("env.writeFailed", ex.Message), null);
         }
 
-        return new RecordingEnvResult(true, null, Array.Empty<RecordingEnvStepResult>(),
-            Array.Empty<RecordingRollbackEntry>(), Strings.T("env.rollback.ok"), null);
+        // 写盘后读回逐项校验：回滚「以为写回去了」而实际没写，等于没回滚
+        var readBack = TryRead(ini) ?? "";
+        var rbSteps = new List<RecordingEnvStepResult>();
+        var rbOk = true;
+        foreach (var e in entries)
+        {
+            var got = RecordingEnvCore.ReadIni(readBack, e.Category, e.Parameter);
+            if (string.Equals(got, e.OldValue, StringComparison.OrdinalIgnoreCase))
+                rbSteps.Add(new RecordingEnvStepResult(e.Parameter, true, null));
+            else
+            {
+                rbOk = false;
+                rbSteps.Add(new RecordingEnvStepResult(e.Parameter, false,
+                    Strings.T("env.readBackMismatch", e.Category + "." + e.Parameter, e.OldValue, got)));
+            }
+        }
+
+        return new RecordingEnvResult(rbOk, null, rbSteps,
+            Array.Empty<RecordingRollbackEntry>(),
+            rbOk ? Strings.T("env.rollback.ok") : Strings.T("env.applied.partial"), null);
     }
 
     // ------------------------------------------------------------ 辅助

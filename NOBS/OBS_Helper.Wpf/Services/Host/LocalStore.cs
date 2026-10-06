@@ -42,11 +42,40 @@ public sealed class LocalStore
             if (!File.Exists(file)) return new Dictionary<string, string>();
             var json = File.ReadAllText(file, Encoding.UTF8);
             if (string.IsNullOrWhiteSpace(json)) return new Dictionary<string, string>();
-            return JsonSerializer.Deserialize<Dictionary<string, string>>(json) ?? new Dictionary<string, string>();
+            var data = JsonSerializer.Deserialize<Dictionary<string, string>>(json);
+            if (data is null)
+            {
+                PreserveCorrupt(file, "反序列化结果为 null");
+                return new Dictionary<string, string>();
+            }
+            return data;
         }
-        catch (Exception)
+        catch (Exception ex)
         {
+            PreserveCorrupt(file, ex.Message);
             return new Dictionary<string, string>();
+        }
+    }
+
+    /// <summary>
+    /// 读取失败时先把损坏文件另存一份再重置（V3.0）。
+    ///
+    /// 原来这里是「静默重置为空」：下一次任意一次 <see cref="SetItem"/> 就会用空字典**整份覆盖** prefs.json，
+    /// 用户的设置、书签、以及「文件通道改过 basic.ini，重启后可回滚」的待办记录一起没了，
+    /// 而日志里一个字的线索都没有。现在至少留下一份可人工恢复的副本 + 一条日志。
+    /// </summary>
+    private static void PreserveCorrupt(string file, string reason)
+    {
+        try
+        {
+            // 带时间戳：同一天里连续两次损坏不会互相覆盖（审查建议），多留几代成本很低
+            var corrupt = $"{file}.corrupt-{DateTime.Now:yyyyMMddHHmmss}";
+            File.Copy(file, corrupt, overwrite: false);
+            FileLogger.Warn("Store", $"prefs.json 读取失败（{reason}），已另存为 {corrupt}，本次会话以空设置启动");
+        }
+        catch (Exception ex)
+        {
+            FileLogger.Warn("Store", $"prefs.json 读取失败（{reason}），且另存副本也失败：{ex.Message}");
         }
     }
 
@@ -70,11 +99,13 @@ public sealed class LocalStore
                 throw; // 本次 Flush 失败，内存值仍然有效，下次写入会重试
             }
         }
-        catch (Exception)
+        catch (Exception ex)
         {
             // 磁盘满 / 只读目录：本次会话内的内存值仍然生效。
             // 注意：由于上方 throw 已重新抛出 File.Replace/Move 异常，
             // 此 catch 主要捕获序列化 / 临时文件写入阶段的异常。
+            // V3.0：写入失败不再完全静默 —— 否则「设置看起来改了、重启后又变回去」无从追查。
+            FileLogger.Warn("Store", $"prefs.json 写入失败，本次改动只保留在内存中：{ex.Message}");
         }
     }
 

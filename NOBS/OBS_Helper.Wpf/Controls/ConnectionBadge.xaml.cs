@@ -33,6 +33,17 @@ public partial class ConnectionBadge : UserControl
     public void Refresh()
     {
         var obs = AppServices.Obs;
+
+        // V3.0：「连接失败」与「从未连接」在界面上必须能分开。
+        //
+        // 原来通用失败分支把状态置成 Disconnected（不是 Failed），而徽章只在 Failed 时才把原因放进
+        // ToolTip —— 于是全产品最高频的任务（连不上 OBS）失败后，首页 / 诊断页 / 托盘全无提示，
+        // 文案表里写好的三条排查也永远不露面。现在：只要还带着失败原因，就用红色 +「连接失败」。
+        //
+        // V3.0 审查修正：判据从「LastError 非空」改成 `LastErrorIsFailure` ——
+        // 正常关闭 OBS 也会写一条原因（「OBS 正在退出」），旧判据会把正常关闭渲染成故障。
+        var hasFailure = obs.LastErrorIsFailure && !string.IsNullOrEmpty(obs.LastError);
+
         var (text, brushKey) = obs.State switch
         {
             ObsConnectionState.Connected => (Strings.T("badge.connected"), "OkBrush"),
@@ -42,16 +53,38 @@ public partial class ConnectionBadge : UserControl
                 ? Strings.T("badge.reconnectIn", obs.ReconnectInSeconds)
                 : Strings.T("badge.reconnecting"), "WarnBrush"),
             ObsConnectionState.Failed => (Strings.T("badge.failed"), "DangerBrush"),
+            ObsConnectionState.Disconnected when hasFailure => (Strings.T("badge.connectFailed"), "DangerBrush"),
             _ => (Strings.T("badge.disconnected"), "MutedBrush")
         };
 
         Label.Text = text;
         Dot.Fill = TryFindResource(brushKey) as Brush ?? Brushes.Gray;
-        Root.ToolTip = obs.State == ObsConnectionState.Failed && !string.IsNullOrEmpty(obs.LastError)
-            ? obs.LastError
-            : Strings.T("badge.tipDisconnected");
+
+        // 提示里仍可显示「非失败」的原因（例如「OBS 正在退出」），它是有用的上下文
+        var tip = !string.IsNullOrEmpty(obs.LastError) ? obs.LastError : Strings.T("badge.tipDisconnected");
+
+        // V3.0：旧协议用户/支持人员需要知道当前走的是哪一代协议（部分能力不可用就来自这里）
+        if (obs.State == ObsConnectionState.Connected && obs.IsLegacyProtocol)
+            tip = Strings.T("badge.legacyTip") + "\n" + tip;
+        Root.ToolTip = tip;
+
+        // V3.0（E4）：可访问名称带**状态**（「已连接 OBS」/「连接失败」），
+        // 否则读屏用户只知道「有个徽章」，不知道现在连没连上 —— 而这是本产品最高频的状态。
+        System.Windows.Automation.AutomationProperties.SetName(Root, text);
+        System.Windows.Automation.AutomationProperties.SetHelpText(Root, tip);
     }
 
     private void OnClick(object sender, MouseButtonEventArgs e)
         => AppServices.Navigation?.Navigate(Routes.Console);
+
+    /// <summary>
+    /// 键盘激活（V3.0 / E4）：Border 不是控件，不响应空格/回车，必须自己接。
+    /// 键盘用户此前只能走侧栏导航进控制台 —— 功能不丢，但徽章本身不可操作。
+    /// </summary>
+    private void OnKeyDown(object sender, KeyEventArgs e)
+    {
+        if (e.Key is not (Key.Enter or Key.Space)) return;
+        e.Handled = true;
+        AppServices.Navigation?.Navigate(Routes.Console);
+    }
 }

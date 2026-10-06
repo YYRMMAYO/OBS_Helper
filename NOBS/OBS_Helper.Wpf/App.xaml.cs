@@ -186,7 +186,10 @@ public partial class App : Application
         var text = ErrorCodes.Format(code, detail);
 
         // 先写日志：任何异常都可追溯（弹窗被节流 / Headless 下不弹也不丢记录）
-        FileLogger.Error("ReportError", $"{code} {detail}");
+        // V3.0：有异常对象时按对象记（带类型 / 堆栈 / InnerException），只记 Message 会把根因丢掉。
+        // 注意不要把 code 塞进一个包装异常的 Message 里 —— 那只会多出一条堆栈无用的日志（审查建议）。
+        if (ex is null) FileLogger.Error("ReportError", code);
+        else FileLogger.Error($"ReportError/{code}", ex);
 
         if (HeadlessTest)
         {
@@ -261,6 +264,9 @@ public partial class App : Application
                 FileLogger.Error("AppDomain", ex);
                 ReportError(ErrorCodes.Unknown, ex);
             }
+            // V3.0：致命异常（IsTerminating）下进程随即终止，而 FileLogger 是异步队列 ——
+            // 不 Flush 的话，最需要那一行（崩溃原因）恰恰不在日志文件里。
+            FileLogger.Flush();
         };
         TaskScheduler.UnobservedTaskException += (_, args) =>
         {
@@ -278,6 +284,23 @@ public partial class App : Application
 #endif
 
         base.OnStartup(e);
+
+        // 启动横幅（V3.0）：先落一行「版本 / 构建 / 系统 / PID / 数据目录」，
+        // 线上拿到日志才判断得出这份记录属于哪个构建、哪次运行。
+#if WIN7_COMPAT
+        const string buildFlavor = "win7-compat";
+#else
+        const string buildFlavor = "modern";
+#endif
+        FileLogger.LogStartupBanner(
+            typeof(App).Assembly.GetName().Version?.ToString() ?? "unknown", buildFlavor);
+
+        // 数据目录退到临时目录时必须留痕（V3.0 第四轮验证）：否则「设置怎么一重启就没了」
+        // 在日志里看不出来，而这是用户最可能报的那类问题。
+        if (Services.Host.HostBridge.AppDataDirectoryFallbackReason is { } fallbackReason)
+        {
+            FileLogger.Warn("App", $"首选数据目录不可用，已退到临时目录（下次启动可能丢设置）：{fallbackReason}");
+        }
 
         // 外观必须在主窗体创建前套用，否则会先闪一帧默认浅色
         AppServices.Appearance.Initialize();
@@ -313,6 +336,9 @@ public partial class App : Application
     {
         FileLogger.Error("Dispatcher", e.Exception);
         ReportError(ErrorCodes.Unknown, e.Exception);
+        // V3.0：只**排空**队列，绝不关闭它 —— 下面 e.Handled = true 意味着进程继续运行，
+        // 一旦在这里 Flush（TryComplete），本次会话之后的日志会全部被静默丢弃。
+        FileLogger.Drain();
         e.Handled = true;
     }
 }

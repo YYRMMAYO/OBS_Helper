@@ -158,10 +158,19 @@ public partial class UpdateDialog : Window
                 }
             });
 
-            var path = await AppServices.Updates.DownloadReleaseAssetAsync(info.SetupAssetUrl!, progress);
+            // V3.0：带上 GitHub 提供的 SHA-256 摘要 —— 下载后校验，挡住「MZ 头合法但内容被换过」的情况
+            var path = await AppServices.Updates.DownloadReleaseAssetAsync(
+                info.SetupAssetUrl!, progress, expectedSha256: info.Digest);
             if (path is null)
             {
-                SetGithubStatus(Strings.T("update.downloadFailed"));
+                // V3.0：有具体原因（例如完整性校验没过）就如实显示，比笼统的「下载失败」有用得多；
+                // 完整性失败额外上报可检索的错误码（OBS902），方便用户截图求助。
+                if (AppServices.Updates.LastDownloadWasIntegrityFailure)
+                    App.ReportError(Errors.ErrorCodes.UpdateIntegrityFailed);
+                else
+                    App.ReportError(Errors.ErrorCodes.UpdateDownloadFailed);
+
+                SetGithubStatus(AppServices.Updates.LastDownloadError ?? Strings.T("update.downloadFailed"));
                 SetDownloading(false);
                 return;
             }
@@ -242,9 +251,16 @@ public partial class UpdateDialog : Window
                 }
             });
 
-            var (manifest, error) = await AppServices.Delta.PrepareDeltaAsync(info.AssetUrl!, progress);
+            // V3.0：带上 GitHub 摘要做整包校验（清单内的逐文件 SHA-256 没有独立锚点）
+            var (manifest, error) = await AppServices.Delta.PrepareDeltaAsync(
+                info.AssetUrl!, progress, expectedSha256: info.Digest);
             if (manifest is null)
             {
+                // 完整性失败单独给码：这类失败最需要用户截图 + 我们能据此区分「网络问题」还是「包被动过」。
+                // 判据用结构化标志，不用本地化文案（审查指出 Contains("SHA-256") 改一次措辞就会静默失效）。
+                App.ReportError(AppServices.Delta.LastFailureWasIntegrity
+                    ? Errors.ErrorCodes.UpdateIntegrityFailed
+                    : Errors.ErrorCodes.UpdateDownloadFailed);
                 SetDeltaStatus(error ?? Strings.T("update.deltaPrepFailed"));
                 SetDownloading(false);
                 return;
@@ -253,6 +269,8 @@ public partial class UpdateDialog : Window
             var (launched, launchError) = AppServices.Delta.LaunchBootstrap(manifest);
             if (!launched)
             {
+                App.ReportError(Errors.ErrorCodes.UpdaterBootstrapFailed);
+                FileLogger.Error("Update", $"自举失败：{launchError}");
                 SetDeltaStatus(launchError ?? Strings.T("update.deltaLaunchFailed"));
                 IncrementalUpdateService.ClearPending();
                 SetDownloading(false);

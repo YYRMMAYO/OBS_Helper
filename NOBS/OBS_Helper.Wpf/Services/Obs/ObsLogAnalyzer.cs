@@ -84,8 +84,51 @@ public sealed class ObsLogReport
     public DateTime AnalyzedAt { get; set; } = DateTime.Now;
     public ObsLogSummary Summary { get; set; } = new();
     public List<LogFinding> Findings { get; set; } = new();
-    /// <summary>脱敏后的日志全文，可安全复制或发给云端 AI。</summary>
-    public string SanitizedText { get; set; } = "";
+
+    /// <summary>
+    /// 脱敏后的日志全文，可安全复制或发给云端 AI。
+    ///
+    /// V3.0.0（F4）由「分析时就拼好」改为<b>懒构造</b>：整份脱敏全文和原文一样有好几 MB，
+    /// 而真正会读它的只有「复制脱敏日志」与「云端诊断附日志」两条路径；先拼好再常驻，
+    /// 等于分析完还白白多留一份内存。现在只登记原文，首次读取时才逐行脱敏拼出来并缓存。
+    /// 赋值方（例如日志页离开时要收缩内存，见 <see cref="TrimSanitizedText"/>）写入什么就是什么，
+    /// 不会再回落到原文，因此这里只缓存、不重置。用 <see cref="Lazy{T}"/> 的默认
+    /// ExecutionAndPublication 语义：并发首次读取只有一个线程真正构造，构造过程不回调本对象，
+    /// 不存在重入或死锁。
+    /// </summary>
+    public string SanitizedText
+    {
+        get => _sanitizedText.Value;
+        set => _sanitizedText = new Lazy<string>(() => value);
+    }
+
+    private Lazy<string> _sanitizedText = new(() => "");
+
+    /// <summary>登记「脱敏全文」的数据来源：真正去读 <see cref="SanitizedText"/> 时才会逐行脱敏。</summary>
+    internal void SetSanitizedSource(string rawText)
+        => _sanitizedText = new Lazy<string>(() => LogSanitizer.Sanitize(rawText));
+
+    /// <summary>
+    /// 收缩脱敏全文（V3.0.0 F4 × F7）：日志页离开时用来把这份大字符串降成一段前缀。
+    ///
+    /// 与直接写 <see cref="SanitizedText"/> 的区别是：<b>还没被读过就不去读</b> ——
+    /// 直接取 <c>SanitizedText.Length</c> 判断要不要截断，会先触发一次全文脱敏，
+    /// 为了「省内存」反而先把整份文本拼出来，白花一次 CPU 与一份内存。
+    /// 没读过时这里连原文引用一起丢掉，读过则截断成前缀（不保留原文，避免再次回落）。
+    /// </summary>
+    internal void TrimSanitizedText(int keepPrefix)
+    {
+        var current = _sanitizedText;
+        if (!current.IsValueCreated)
+        {
+            _sanitizedText = new Lazy<string>(() => "");
+            return;
+        }
+
+        var text = current.Value;
+        if (text.Length > keepPrefix)
+            _sanitizedText = new Lazy<string>(() => text[..keepPrefix]);
+    }
 
     public bool HasIssues => Findings.Count > 0;
 
@@ -131,7 +174,12 @@ public sealed class ObsLogAnalyzer
 {
     private const int MaxEvidenceLength = 240;
     private const int MaxFindings = 60;
-    private const RegexOptions Opts = RegexOptions.IgnoreCase | RegexOptions.CultureInvariant;
+
+    /// <summary>
+    /// 环境解析与规则表共用的匹配选项。V3.0.0（F4）加 <see cref="RegexOptions.Compiled"/>：
+    /// 这里的正则全是静态字段，编译成本只付一次，换来的是每行日志、每条规则各少一轮解释执行。
+    /// </summary>
+    private const RegexOptions Opts = RegexOptions.IgnoreCase | RegexOptions.CultureInvariant | RegexOptions.Compiled;
 
     // ------------------------------------------------------------ 环境信息解析
 
@@ -447,15 +495,18 @@ public sealed class ObsLogAnalyzer
             return report;
         }
 
+        // V3.0.0（F4）：脱敏全文交给 report 懒构造，这里不再顺手攒一份逐行结果列表 ——
+        // 扫描过程只用得到当前行，扫完把原文交给报告即可。常驻内存从
+        // 「原文 + 行列表 + 拼好的全文」三份降到一份，分析结论一字不变。
+        report.SetSanitizedSource(rawText);
+
         var found = new Dictionary<string, LogFinding>(StringComparer.Ordinal);
-        var sanitizedLines = new List<string>(1024);
         int lineNo = 0;
 
         foreach (var rawLine in LogSanitizer.SplitLines(rawText))
         {
             lineNo++;
             var line = LogSanitizer.SanitizeLine(rawLine);
-            sanitizedLines.Add(line);
             if (line.Length == 0) continue;
 
             // 逐行解析环境信息与错误统计
@@ -471,7 +522,6 @@ public sealed class ObsLogAnalyzer
         }
 
         report.Summary.TotalLines = lineNo;
-        report.SanitizedText = string.Join('\n', sanitizedLines);
 
         AppendQuantitativeFindings(report, found);
         AppendDropTriage(report, found);          // B2：掉帧三分类主因判定
@@ -631,8 +681,12 @@ public sealed class ObsLogAnalyzer
     {
         var s = raw.Trim().Trim('"').Trim();
         // 只剥「名字最末尾」的一层 "(数字)"：Intel(R) UHD Graphics 630 这类合法名字不受影响。
-        return Regex.Replace(s, @"\s*\(\d+\)\s*$", "").Trim();
+        return ReAdapterIndexSuffix.Replace(s, "").Trim();
     }
+
+    /// <summary>适配器名末尾的驱动序号括号（"… (0)"）。独立成静态字段而不是内联 Regex.Replace：
+    /// V3.0.0（F4）让这条同样吃编译缓存，不必每次走 BCL 的解释版静态缓存。</summary>
+    private static readonly Regex ReAdapterIndexSuffix = new(@"\s*\(\d+\)\s*$", Opts);
 
     /// <summary>把适配器并入清单：去重（大小写不敏感）、忽略空值、上限 8 个。</summary>
     private static void AddAdapter(List<string> adapters, string name)
@@ -709,8 +763,14 @@ public sealed class ObsLogAnalyzer
 
     // --------------------------------------- B1/B2/B3/A1：分诊与联动（V2.5）
 
-    /// <summary>丢帧三分类 → 对应知识库条目。</summary>
-    private static readonly (string Code, string Label, string ProblemId, string Fix)[] DropKinds =
+    /// <summary>
+    /// 丢帧三分类 → 对应知识库条目。
+    ///
+    /// V3.0（F5）：由 <c>static readonly</c> 数组改为**按需构造** ——
+    /// 静态字段在类型初始化时就把文案冻住了，切语言后这里仍是旧语言（三处文案一起错）。
+    /// 只有三条，每次判定重建的代价可以忽略。
+    /// </summary>
+    private static (string Code, string Label, string ProblemId, string Fix)[] DropKinds() => new[]
     {
         ("LOG-STAT-RENDER",  Localization.Strings.T("log.drop.kind.render"), "lag-skip",
             Localization.Strings.T("log.drop.kind.render.fix")),
@@ -741,7 +801,7 @@ public sealed class ObsLogAnalyzer
     private static void AppendDropTriage(ObsLogReport report, Dictionary<string, LogFinding> found)
     {
         var s = report.Summary;
-        var meaningful = DropKinds
+        var meaningful = DropKinds()
             .Select(k => (Kind: k, Ratio: RatioOf(s, k.Code)))
             .Where(x => x.Ratio > 0.005)
             .ToList();

@@ -2,7 +2,8 @@
 
 <img src="assets/banner.svg" alt="OBS Helper — 面向直播新手的 OBS 排障工具" width="100%"/>
 
-**当前版本：V2.9.6** —— 更名为 **OBS帮助助手**（功能不变）· 应用图标与仓库图标统一 · 文档同步。
+**当前版本：V3.0.0** —— 数据安全修复 · 无障碍适配 · **Win7 兼容构建支持旧协议 obs-websocket 4.x** ·
+回放缓存一键存片 · 日志脱敏与性能优化。详见 [`RELEASE_NOTES_v3.0.0.md`](NOBS/RELEASE_NOTES_v3.0.0.md)。
 
 [![CI](https://github.com/YYRMMAYO/OBS_Helper/actions/workflows/ci.yml/badge.svg)](https://github.com/YYRMMAYO/OBS_Helper/actions/workflows/ci.yml)
 [![平台](https://img.shields.io/badge/Platform-Windows_7_SP1%2B-0078D6.svg)]()
@@ -132,7 +133,7 @@
 ## V2.9.2 亮点：中英双语与即时切换 · 安装包语言选择（默认中文）
 
 - **中文 / English 即时切换（默认中文）**：界面、托盘菜单与通知、报错提示、日志分析规则与结论、
-  各类体检结论、诊断报告与导出内容全部双语，共 **1670 条文案键**，切换与换主题一样即时生效、不用重启。
+  各类体检结论、诊断报告与导出内容全部双语，**截至 V3.0.0 为 2239 条**文案键，切换与换主题一样即时生效、不用重启。
 - **安装包语言选择页（默认中文）**：向导提供简体中文与英文，**默认中文且不跟随系统语言探测**；
   选定结果写进安装目录下的 `language.ini` 作为首启默认值，判定次序是「应用内选过 > 安装向导选过 > 中文」，
   重装 / 升级不会覆盖用户的选择。

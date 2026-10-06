@@ -65,6 +65,43 @@ public sealed class PluginEntry
     /// 「活跃且无说明」是所有条目的常态，逐张卡片重复一遍只是噪音，不展示。
     /// </summary>
     public bool HasMaintenanceInfo => IsMaintenanceSlow || MaintainNote.Length > 0;
+
+    // ---------------------------------------------------------------- 与本机 OBS 的兼容性（V3.0 / D9）
+
+    /// <summary>
+    /// 与本机 OBS 的兼容性声明（可选字段，走热更新通道）。语法见
+    /// <see cref="PluginCompatCore"/>：<c>30+</c> / <c>28-32</c> / <c>!33</c> / 逗号组合。
+    /// 空值 = 未声明（不做任何提示）。
+    /// </summary>
+    public string ObsCompat { get; set; } = "";
+
+    /// <summary>本机 OBS 版本（由插件页在渲染前注入；为空则不做兼容性判定）。</summary>
+    public string LocalObsVersion { get; set; } = "";
+
+    /// <summary>兼容性结论。</summary>
+    public PluginCompatStatus CompatStatus => PluginCompatCore.Evaluate(ObsCompat, LocalObsVersion);
+
+    /// <summary>是否需要在卡片上提示兼容性问题。</summary>
+    public bool HasCompatWarning => PluginCompatCore.NeedsWarning(CompatStatus);
+
+    /// <summary>
+    /// 兼容性提示文案（含本机版本与插件要求），例如
+    /// 「与本机 OBS 31.0.2 不匹配（该插件要求 30+）：升级 OBS 后再装」。
+    /// </summary>
+    public string CompatText
+    {
+        get
+        {
+            var requirement = PluginCompatCore.DescribeRequirement(ObsCompat);
+            return CompatStatus switch
+            {
+                PluginCompatStatus.TooOld => Strings.T("plugin.compat.tooOld", LocalObsVersion, requirement),
+                PluginCompatStatus.TooNew => Strings.T("plugin.compat.tooNew", LocalObsVersion, requirement),
+                PluginCompatStatus.Broken => Strings.T("plugin.compat.broken", LocalObsVersion, requirement),
+                _ => ""
+            };
+        }
+    }
 }
 
 /// <summary>plugins.json 的根对象。</summary>

@@ -8,8 +8,22 @@
       <TextBlock Style="{StaticResource MutedText}"
                  Text="{DynamicResource Loc.toolbox.intro}" />
 
+      <!--
+        分节导航（V3.0 / C6）：本页很长（17 个小节），顶部给一排「跳到小节」按钮。
+        按钮内容由代码按 ToolboxSections 生成（见 BuildSectionNav），XAML 里只放容器 ——
+        这样「分节清单」只有一份真源，单测可以拿它校验 XAML 里的 x:Name 是否存在。
+      -->
+      <Border Style="{StaticResource Card}" Margin="0,14,0,0" Padding="12,10">
+        <StackPanel>
+          <TextBlock Text="{DynamicResource Loc.toolbox.nav.title}" FontWeight="SemiBold"
+                     FontSize="{DynamicResource FontSizeSm}"
+                     Foreground="{DynamicResource TextBrush}" />
+          <WrapPanel x:Name="SectionNav" Margin="0,8,0,0" />
+        </StackPanel>
+      </Border>
+
       <!-- ================================================== 录像工具 -->
-      <TextBlock Style="{StaticResource SectionTitle}" Text="{DynamicResource Loc.toolbox.recordingTools}" Margin="0,16,0,10" />
+      <TextBlock x:Name="Sec_toolbox_recordingTools" Style="{StaticResource SectionTitle}" Text="{DynamicResource Loc.toolbox.recordingTools}" Margin="0,16,0,10" />
       <Border Style="{StaticResource Card}" Padding="14">
         <StackPanel>
           <StackPanel Orientation="Horizontal">
@@ -27,7 +41,7 @@
       </Border>
 
       <!-- ================================================== 参数处方 -->
-      <TextBlock Style="{StaticResource SectionTitle}" Text="{DynamicResource Loc.toolbox.prescription}" Margin="0,20,0,10" />
+      <TextBlock x:Name="Sec_toolbox_prescription" Style="{StaticResource SectionTitle}" Text="{DynamicResource Loc.toolbox.prescription}" Margin="0,20,0,10" />
       <Border Style="{StaticResource Card}" Padding="14">
         <StackPanel>
           <Grid>
@@ -49,7 +63,7 @@
       </Border>
 
       <!-- ================================================== 隐私模式清单 -->
-      <TextBlock Style="{StaticResource SectionTitle}" Text="{DynamicResource Loc.toolbox.privacy}" Margin="0,20,0,10" />
+      <TextBlock x:Name="Sec_toolbox_privacy" Style="{StaticResource SectionTitle}" Text="{DynamicResource Loc.toolbox.privacy}" Margin="0,20,0,10" />
       <Border Style="{StaticResource Card}" Padding="14">
         <StackPanel>
           <TextBlock Style="{StaticResource MutedText}" TextWrapping="Wrap"
@@ -65,7 +79,7 @@
       </Border>
 
       <!-- ================================================== 冲突软件扫描 -->
-      <TextBlock Style="{StaticResource SectionTitle}" Text="{DynamicResource Loc.toolbox.conflicts}" Margin="0,20,0,10" />
+      <TextBlock x:Name="Sec_toolbox_conflicts" Style="{StaticResource SectionTitle}" Text="{DynamicResource Loc.toolbox.conflicts}" Margin="0,20,0,10" />
       <Border Style="{StaticResource Card}" Padding="14">
         <StackPanel>
           <StackPanel Orientation="Horizontal">
@@ -109,7 +123,7 @@
       </Border>
 
       <!-- ================================================== 带宽计算器 -->
-      <TextBlock Style="{StaticResource SectionTitle}" Text="{DynamicResource Loc.toolbox.bandwidth}" Margin="0,20,0,10" />
+      <TextBlock x:Name="Sec_toolbox_bandwidth" Style="{StaticResource SectionTitle}" Text="{DynamicResource Loc.toolbox.bandwidth}" Margin="0,20,0,10" />
       <Border Style="{StaticResource Card}" Padding="14">
         <StackPanel>
           <StackPanel Orientation="Horizontal">
@@ -145,7 +159,7 @@
       </Border>
 
       <!-- ================================================== 色彩体检（V2.7） -->
-      <TextBlock Style="{StaticResource SectionTitle}" Text="{DynamicResource Loc.toolbox.colorCheck}" Margin="0,20,0,10" />
+      <TextBlock x:Name="Sec_toolbox_colorCheck" Style="{StaticResource SectionTitle}" Text="{DynamicResource Loc.toolbox.colorCheck}" Margin="0,20,0,10" />
       <Border Style="{StaticResource Card}" Padding="14">
         <StackPanel>
           <StackPanel Orientation="Horizontal">
@@ -170,7 +184,7 @@
       </Border>
 
       <!-- ================================================== 音频采样率体检（V2.7） -->
-      <TextBlock Style="{StaticResource SectionTitle}" Text="{DynamicResource Loc.toolbox.sampleRate}" Margin="0,20,0,10" />
+      <TextBlock x:Name="Sec_toolbox_sampleRate" Style="{StaticResource SectionTitle}" Text="{DynamicResource Loc.toolbox.sampleRate}" Margin="0,20,0,10" />
       <Border Style="{StaticResource Card}" Padding="14">
         <StackPanel>
           <StackPanel Orientation="Horizontal">
@@ -185,7 +199,7 @@
       </Border>
 
       <!-- ================================================== 黑屏专项体检（V2.8） -->
-      <TextBlock Style="{StaticResource SectionTitle}" Text="{DynamicResource Loc.toolbox.graphics}" Margin="0,20,0,10" />
+      <TextBlock x:Name="Sec_toolbox_graphics" Style="{StaticResource SectionTitle}" Text="{DynamicResource Loc.toolbox.graphics}" Margin="0,20,0,10" />
       <Border Style="{StaticResource Card}" Padding="14">
         <StackPanel>
           <StackPanel Orientation="Horizontal">
@@ -213,7 +227,7 @@
       </Border>
 
       <!-- ================================================== 音频设备深度体检（V2.8） -->
-      <TextBlock Style="{StaticResource SectionTitle}" Text="{DynamicResource Loc.toolbox.audioHealth}" Margin="0,20,0,10" />
+      <TextBlock x:Name="Sec_toolbox_audioHealth" Style="{StaticResource SectionTitle}" Text="{DynamicResource Loc.toolbox.audioHealth}" Margin="0,20,0,10" />
       <Border Style="{StaticResource Card}" Padding="14">
         <StackPanel>
           <StackPanel Orientation="Horizontal">
@@ -241,7 +255,7 @@
       </Border>
 
       <!-- ================================================== 虚拟摄像头体检（V2.8） -->
-      <TextBlock Style="{StaticResource SectionTitle}" Text="{DynamicResource Loc.toolbox.vcam}" Margin="0,20,0,10" />
+      <TextBlock x:Name="Sec_toolbox_vcam" Style="{StaticResource SectionTitle}" Text="{DynamicResource Loc.toolbox.vcam}" Margin="0,20,0,10" />
       <Border Style="{StaticResource Card}" Padding="14">
         <StackPanel>
           <StackPanel Orientation="Horizontal">
@@ -269,7 +283,7 @@
       </Border>
 
       <!-- ================================================== 磁盘写入基准（V2.7） -->
-      <TextBlock Style="{StaticResource SectionTitle}" Text="{DynamicResource Loc.toolbox.disk}" Margin="0,20,0,10" />
+      <TextBlock x:Name="Sec_toolbox_disk" Style="{StaticResource SectionTitle}" Text="{DynamicResource Loc.toolbox.disk}" Margin="0,20,0,10" />
       <Border Style="{StaticResource Card}" Padding="14">
         <StackPanel>
           <StackPanel Orientation="Horizontal">
@@ -287,7 +301,7 @@
       </Border>
 
       <!-- ================================================== 编码顾问（V2.7） -->
-      <TextBlock Style="{StaticResource SectionTitle}" Text="{DynamicResource Loc.toolbox.encoder}" Margin="0,20,0,10" />
+      <TextBlock x:Name="Sec_toolbox_encoder" Style="{StaticResource SectionTitle}" Text="{DynamicResource Loc.toolbox.encoder}" Margin="0,20,0,10" />
       <Border Style="{StaticResource Card}" Padding="14">
         <StackPanel>
           <StackPanel Orientation="Horizontal">
@@ -302,7 +316,7 @@
       </Border>
 
       <!-- ================================================== 推流节点探测（V2.7） -->
-      <TextBlock Style="{StaticResource SectionTitle}" Text="{DynamicResource Loc.toolbox.ingest}" Margin="0,20,0,10" />
+      <TextBlock x:Name="Sec_toolbox_ingest" Style="{StaticResource SectionTitle}" Text="{DynamicResource Loc.toolbox.ingest}" Margin="0,20,0,10" />
       <Border Style="{StaticResource Card}" Padding="14">
         <StackPanel>
           <StackPanel Orientation="Horizontal">
@@ -331,7 +345,7 @@
       </Border>
 
       <!-- ================================================== 浏览器源健康检查（V2.7） -->
-      <TextBlock Style="{StaticResource SectionTitle}" Text="{DynamicResource Loc.toolbox.browserSource}" Margin="0,20,0,10" />
+      <TextBlock x:Name="Sec_toolbox_browserSource" Style="{StaticResource SectionTitle}" Text="{DynamicResource Loc.toolbox.browserSource}" Margin="0,20,0,10" />
       <Border Style="{StaticResource Card}" Padding="14">
         <StackPanel>
           <TextBlock Style="{StaticResource BodyText}" TextWrapping="Wrap"
@@ -343,7 +357,7 @@
       </Border>
 
       <!-- ================================================== OBS 新版本情报 -->
-      <TextBlock Style="{StaticResource SectionTitle}" Text="{DynamicResource Loc.toolbox.release}" Margin="0,20,0,10" />
+      <TextBlock x:Name="Sec_toolbox_release" Style="{StaticResource SectionTitle}" Text="{DynamicResource Loc.toolbox.release}" Margin="0,20,0,10" />
       <Border Style="{StaticResource Card}" Padding="14">
         <StackPanel>
           <StackPanel Orientation="Horizontal">
@@ -357,14 +371,14 @@
       </Border>
 
       <!-- ================================================== 获取官方 OBS（V2.9.1） -->
-      <TextBlock Style="{StaticResource SectionTitle}" Text="{DynamicResource Loc.setup.officialObs}" Margin="0,20,0,10" />
-      <ctl:ObsDownloadCard />
+      <TextBlock x:Name="Sec_setup_officialObs" Style="{StaticResource SectionTitle}" Text="{DynamicResource Loc.setup.officialObs}" Margin="0,20,0,10" />
+      <ctl:ObsDownloadCard x:Name="DownloadCardControl" />
 
       <!-- ================================================== BUG 反馈（V2.9.3） -->
-      <ctl:FeedbackCard Margin="0,16,0,0" />
+      <ctl:FeedbackCard x:Name="FeedbackCardControl" Margin="0,16,0,0" />
 
       <!-- ================================================== 快捷键速查 -->
-      <TextBlock Style="{StaticResource SectionTitle}" Text="{DynamicResource Loc.toolbox.shortcuts}" Margin="0,20,0,10" />
+      <TextBlock x:Name="Sec_toolbox_shortcuts" Style="{StaticResource SectionTitle}" Text="{DynamicResource Loc.toolbox.shortcuts}" Margin="0,20,0,10" />
       <Border Style="{StaticResource Card}" Padding="14">
         <Grid>
           <Grid.ColumnDefinitions>

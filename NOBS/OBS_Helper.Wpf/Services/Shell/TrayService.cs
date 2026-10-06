@@ -1,9 +1,12 @@
 using System.Drawing;
+using System.IO;
 using System.Reflection;
 using System.Windows.Forms;
+using OBS_Helper.Wpf.Models.Obs;
 using OBS_Helper.Wpf.Models.Shell;
 using OBS_Helper.Wpf.Services.Host;
 using OBS_Helper.Wpf.Services.Obs;
+using OBS_Helper.Wpf.Services.Recording;
 using OBS_Helper.Wpf.Services.ObsConfig;
 
 namespace OBS_Helper.Wpf.Services.Shell;
@@ -43,6 +46,17 @@ public sealed class TrayService : IDisposable
     private ToolStripMenuItem? _recordItem;
     private ToolStripMenuItem? _streamItem;
     private ToolStripMenuItem? _virtualCamItem;
+    // V3.0 回放缓存（Replay Buffer）：直播中「存刚才那段」的入口
+    private ToolStripMenuItem? _replaySaveItem;
+    private ToolStripMenuItem? _replayToggleItem;
+    private ToolStripMenuItem? _markItem;
+
+    /// <summary>
+    /// 简单录像服务（打点用）。由组合根在装配完成后注入，而不是直接读 <c>AppServices.SimpleRecord</c> ——
+    /// 后者在托盘服务**构造期**被访问会触发 Lazy 重入（SimpleRecord 依赖 Tray 本身），
+    /// 而托盘菜单的刷新路径随时可能跑到。
+    /// </summary>
+    public Func<SimpleRecordingService>? SimpleRecordProvider { get; set; }
     private SynchronizationContext? _traySync;
     private System.Threading.Timer? _diskWarnTimer;
 
@@ -94,6 +108,8 @@ public sealed class TrayService : IDisposable
             if (_thread is { IsAlive: true }) return;
 
             _obs.StateChanged += OnObsStateChanged;
+            // V3.0：存片成功后立刻告诉用户「存到哪了」—— 存完没反馈是这类功能最常见的槽点
+            _obs.ReplaySaved += OnReplaySaved;
 
             _thread = new Thread(TrayThreadMain)
             {
@@ -143,6 +159,58 @@ public sealed class TrayService : IDisposable
         Post(() => _icon?.ShowBalloonTip(5000, title, text, ToolTipIcon.Info));
     }
 
+    /// <summary>存片：先确认回放缓存开着，再发请求；结果用托盘气泡如实反馈（含失败原因）。</summary>
+    private void SaveReplay() => FireAndForget(SaveReplayAsync);
+
+    /// <summary>
+    /// 托盘「打点」（V3.0 / D3）。返回 Task 而不是 void，是为了能用 <see cref="FireAndForget"/> 统一兜异常。
+    /// 打点在服务层完成，这里只负责把结果告诉用户（气泡通知）。
+    /// </summary>
+    private Task<ObsRequestResult> AddMarkerAsync()
+    {
+        var record = SimpleRecordProvider?.Invoke();
+        if (record is null)
+            return Task.FromResult(ObsRequestResult.Fail(0, Strings.T("tray.markerNotRecording")));
+
+        var at = record.AddMarker();
+        if (at is null)
+        {
+            // null 有两种含义：不在录制，或 2 秒内的误触被合并 —— 分别给不同文案
+            Notify(Strings.T("tray.markTitle"),
+                _obs.RecordStatus.Active ? Strings.T("tray.markerTooSoon") : Strings.T("tray.markerNotRecording"));
+            return Task.FromResult(ObsRequestResult.Fail(0, Strings.T("tray.markerNotRecording")));
+        }
+
+        Notify(Strings.T("tray.markTitle"),
+            Strings.T("tray.markerAdded", RecordingArchiveCore.FormatDuration(at.Value)));
+        return Task.FromResult(new ObsRequestResult { Ok = true });
+    }
+
+    private async Task<ObsRequestResult> SaveReplayAsync()
+    {
+        if (!_obs.ReplayBufferStatus.Active)
+        {
+            Notify(Strings.T("tray.saveReplayFailedTitle"), Strings.T("tray.replayNotActive"));
+            return ObsRequestResult.Fail(0, Strings.T("tray.replayNotActive"));
+        }
+
+        var r = await _obs.SaveReplayBufferAsync();
+        if (!r.Ok)
+            Notify(Strings.T("tray.saveReplayFailedTitle"), r.Comment ?? Strings.T("tray.replaySaveFailed"));
+        // 成功不在这里提示：路径要等 ReplayBufferSaved 事件回来（见 OnReplaySaved）
+        return r;
+    }
+
+    /// <summary>存片落盘成功：托盘气泡给出文件名（路径太长，ToolTip 里给全路径）。</summary>
+    private void OnReplaySaved(string path)
+    {
+        var name = string.IsNullOrEmpty(path) ? "" : Path.GetFileName(path);
+        Post(() => _icon?.ShowBalloonTip(6000,
+            Strings.T("tray.replaySavedTitle"),
+            name.Length > 0 ? name : Strings.T("tray.replaySavedNoPath"),
+            ToolTipIcon.Info));
+    }
+
     /// <summary>Obs 状态变化（任意线程触发）→ 刷新托盘。</summary>
     private void OnObsStateChanged() => RefreshState();
 
@@ -171,6 +239,28 @@ public sealed class TrayService : IDisposable
             {
                 _virtualCamItem.Text = vcam ? Strings.T("tray.disableVirtualCam") : Strings.T("tray.enableVirtualCam");
                 _virtualCamItem.Enabled = _obs.IsConnected;
+            }
+
+            // V3.0 回放缓存：没在缓存时「存片」按钮不可点（点了只会报错），
+            // 开关项文案随状态变化，用户不必去 OBS 里看。
+            var replay = _obs.ReplayBufferStatus.Active;
+            if (_replayToggleItem is not null)
+            {
+                _replayToggleItem.Text = replay ? Strings.T("tray.stopReplayBuffer") : Strings.T("tray.startReplayBuffer");
+                _replayToggleItem.Enabled = _obs.IsConnected;
+            }
+            if (_replaySaveItem is not null)
+            {
+                _replaySaveItem.Enabled = _obs.IsConnected && replay;
+            }
+
+            // V3.0（D3）打点：只在录制中可用（其余时候打点没有意义），并可显示已打几个点
+            if (_markItem is not null)
+            {
+                _markItem.Enabled = _obs.IsConnected && rec;
+                _markItem.Text = SimpleRecordProvider?.Invoke() is { HasMarkers: true } record
+                    ? Strings.T("tray.markWithCount", record.SessionMarkers.Count)
+                    : Strings.T("tray.mark");
             }
 
             var tip = Strings.T("tray.tooltip");
@@ -232,6 +322,7 @@ public sealed class TrayService : IDisposable
             StopDiskWarning();
 
             _obs.StateChanged -= OnObsStateChanged;
+            _obs.ReplaySaved -= OnReplaySaved;
             Post(() =>
             {
                 try
@@ -306,6 +397,17 @@ public sealed class TrayService : IDisposable
         _virtualCamItem = new ToolStripMenuItem(Strings.T("tray.enableVirtualCam"));
         _virtualCamItem.Click += (_, _) => FireAndForget(_obs.ToggleVirtualCamAsync);
 
+        // V3.0 回放缓存：存片是直播中最常用的动作（精彩片段随手留），所以给它独立菜单项而不是塞进子菜单
+        _replaySaveItem = new ToolStripMenuItem(Strings.T("tray.saveReplay"));
+        _replaySaveItem.Click += (_, _) => SaveReplay();
+
+        _replayToggleItem = new ToolStripMenuItem(Strings.T("tray.startReplayBuffer"));
+        _replayToggleItem.Click += (_, _) => FireAndForget(_obs.ToggleReplayBufferAsync);
+
+        // V3.0（D3）打点：录制中标记精彩瞬间（OBS 官方没有这个能力）
+        _markItem = new ToolStripMenuItem(Strings.T("tray.mark"));
+        _markItem.Click += (_, _) => FireAndForget(AddMarkerAsync);
+
         var miniItem = new ToolStripMenuItem(Strings.T("tray.miniWindow"));
         miniItem.Click += (_, _) => MiniWindowRequested?.Invoke();
 
@@ -320,6 +422,10 @@ public sealed class TrayService : IDisposable
         menu.Items.Add(_recordItem);
         menu.Items.Add(_streamItem);
         menu.Items.Add(_virtualCamItem);
+        menu.Items.Add(new ToolStripSeparator());
+        menu.Items.Add(_replaySaveItem);
+        menu.Items.Add(_replayToggleItem);
+        menu.Items.Add(_markItem);
         menu.Items.Add(new ToolStripSeparator());
         menu.Items.Add(miniItem);
         menu.Items.Add(openDirItem);

@@ -26,13 +26,13 @@
     <ApplicationIcon>Assets\appicon.ico</ApplicationIcon>
     <ApplicationManifest>app.manifest</ApplicationManifest>
 
-    <!-- 名称（V2.9.6）：软件名从「OBS帮助助手」改为「OBS帮助助手」。
+    <!-- 名称（V2.9.6）：软件名从「OBS 排障助手」改为「OBS帮助助手」。
          程序集名 / exe 名（AssemblyName=OBS_Helper）与数据目录刻意**不变**：
          增量更新、安装目录识别、%LocalAppData%\OBS_Helper 下的用户数据都依赖它，
          改名等于让老用户的数据和升级链路一起断掉。 -->
-    <Version>2.9.6</Version>
-    <FileVersion>2.9.6.0</FileVersion>
-    <AssemblyVersion>2.9.6.0</AssemblyVersion>
+    <Version>3.0.0</Version>
+    <FileVersion>3.0.0.0</FileVersion>
+    <AssemblyVersion>3.0.0.0</AssemblyVersion>
     <AssemblyTitle>OBS帮助助手</AssemblyTitle>
     <Product>OBS帮助助手</Product>
     <Company>OBS Helper</Company>
@@ -56,6 +56,16 @@
     <GenerateDocumentationFile>false</GenerateDocumentationFile>
   </PropertyGroup>
 
+  <!--
+    兼容构建的编译期标记（V3.0）：
+      · 启用旧协议 obs-websocket 4.x 支持（Win7 上只能跑 OBS 27，配的是 4.9 插件，默认端口 4444）；
+      · 把数据目录切到该构建专属的一套，避免与主构建的 prefs.json / secrets.dat / 缓存互相覆盖。
+    只在 net6.0-windows（Win7 兼容构建）上定义；主构建面向 OBS 28+，不需要这一层。
+  -->
+  <PropertyGroup Condition="'$(TargetFramework)' == 'net6.0-windows'">
+    <DefineConstants>$(DefineConstants);WIN7_COMPAT</DefineConstants>
+  </PropertyGroup>
+
   <ItemGroup>
     <!-- UseWindowsForms 会隐式加入 System.Drawing / System.Windows.Forms 全局 using，
          与 WPF 的 System.Windows.Controls 等类型大量撞名；这里移除，仅保留显式 using（托盘服务里）。 -->
@@ -69,15 +79,21 @@
   <ItemGroup>
     <!-- 离线知识库与排障指引：内嵌进程序集，单文件发布也能读到 -->
     <!-- 中文文件名刻意保持不变：raw 热更新地址 / Release 资产名 / 用户已下载的缓存都依赖它。
-         英文资产是 V2.9.3 新增的并列文件（后缀 .en-US），由 Localization/ContentAssets 按语言选。 -->
+         英文资产是 V2.9.3 新增的并列文件（后缀 .en-US），由 Localization/ContentAssets 按语言选。
+
+         ⚠️ WithCulture="false" 不能删（V3.0 / F5 修复）：文件名里的 .en-US 会被 MSBuild 当成
+         **区域性后缀**，默认把这几条资源编进**卫星程序集**（en-US\OBS_Helper.resources.dll），
+         主程序集里根本没有它们 —— 而 ContentAssets.ReadEmbedded 只查主程序集，于是英文界面下
+         知识库 / 插件目录 / 场景模板 / 排障指引**全部静默回退成中文**，只在日志里留一条 WARN。
+         WithCulture="false" 强制它们留在主程序集。这条有单测守护（EmbeddedAssetCultureTests）。 -->
     <EmbeddedResource Include="Assets\problems.json" LogicalName="OBS_Helper.Wpf.Assets.problems.json" />
     <EmbeddedResource Include="Assets\plugins.json" LogicalName="OBS_Helper.Wpf.Assets.plugins.json" />
     <EmbeddedResource Include="Assets\troubleshooting.md" LogicalName="OBS_Helper.Wpf.Assets.troubleshooting.md" />
     <EmbeddedResource Include="Assets\scene_templates.json" LogicalName="OBS_Helper.Wpf.Assets.scene_templates.json" />
-    <EmbeddedResource Include="Assets\problems.en-US.json" LogicalName="OBS_Helper.Wpf.Assets.problems.en-US.json" />
-    <EmbeddedResource Include="Assets\plugins.en-US.json" LogicalName="OBS_Helper.Wpf.Assets.plugins.en-US.json" />
-    <EmbeddedResource Include="Assets\troubleshooting.en-US.md" LogicalName="OBS_Helper.Wpf.Assets.troubleshooting.en-US.md" />
-    <EmbeddedResource Include="Assets\scene_templates.en-US.json" LogicalName="OBS_Helper.Wpf.Assets.scene_templates.en-US.json" />
+    <EmbeddedResource Include="Assets\problems.en-US.json" LogicalName="OBS_Helper.Wpf.Assets.problems.en-US.json" WithCulture="false" />
+    <EmbeddedResource Include="Assets\plugins.en-US.json" LogicalName="OBS_Helper.Wpf.Assets.plugins.en-US.json" WithCulture="false" />
+    <EmbeddedResource Include="Assets\troubleshooting.en-US.md" LogicalName="OBS_Helper.Wpf.Assets.troubleshooting.en-US.md" WithCulture="false" />
+    <EmbeddedResource Include="Assets\scene_templates.en-US.json" LogicalName="OBS_Helper.Wpf.Assets.scene_templates.en-US.json" WithCulture="false" />
     <!-- 托盘图标：运行时以 Stream 读取（WinForms Icon 需要流，不能直接用 WPF 资源） -->
     <EmbeddedResource Include="Assets\appicon.ico" LogicalName="OBS_Helper.Wpf.Assets.appicon.ico" />
     <!-- BUG 反馈二维码（V2.9.3）：离线可扫，不依赖任何在线二维码服务 -->

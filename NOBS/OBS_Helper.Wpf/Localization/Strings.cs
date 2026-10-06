@@ -27,8 +27,8 @@ public static class Strings
     /// <summary>英语（V2.9.2 新增）。</summary>
     public const string EnUs = "en-US";
 
-    /// <summary>支持的语言（顺序即界面上的展示顺序，第一项为默认）。</summary>
-    public static readonly string[] Supported = { ZhHans, EnUs };
+    /// <summary>支持的语言（顺序即界面上的展示顺序，第一项为默认）。由语言注册表驱动。</summary>
+    public static readonly string[] Supported = LanguageRegistry.Codes.ToArray();
 
     /// <summary>XAML 资源键前缀：<c>nav.home</c> 在 XAML 里写作 <c>{DynamicResource Loc.nav.home}</c>。</summary>
     public const string ResourceKeyPrefix = "Loc.";
@@ -60,28 +60,13 @@ public static class Strings
     }
 
     /// <summary>
-    /// 把任意输入归一化为受支持的语言标识：识别 <c>zh</c>/<c>zh-CN</c>/<c>zh-Hans</c>/
-    /// <c>chinese</c> 与 <c>en</c>/<c>en-US</c>/<c>english</c>，其余一律回退中文。
+    /// 把任意输入归一化为受支持的语言标识。
+    ///
+    /// V3.0（D9）起**由 <see cref="LanguageRegistry"/> 的别名表驱动**，不再是「zh 或 en 二选一」——
+    /// 加一门语言只需要注册它并写好别名，这里不需要再改一行判断。
+    /// 认不出来的一律回退默认语言（简体中文）。
     /// </summary>
-    public static string Normalize(string? language)
-    {
-        var s = (language ?? "").Trim();
-        if (s.Length == 0) return ZhHans;
-
-        // 取主语言标签（zh-Hans → zh）比较，容忍 zh-CN / en-GB 这类变体
-        var primary = s.Split('-', '_', ' ', '.')[0];
-
-        if (primary.Equals("zh", StringComparison.OrdinalIgnoreCase)
-            || primary.Equals("chinese", StringComparison.OrdinalIgnoreCase)
-            || primary.Equals("chinesesimplified", StringComparison.OrdinalIgnoreCase))
-            return ZhHans;
-
-        if (primary.Equals("en", StringComparison.OrdinalIgnoreCase)
-            || primary.Equals("english", StringComparison.OrdinalIgnoreCase))
-            return EnUs;
-
-        return ZhHans;
-    }
+    public static string Normalize(string? language) => LanguageRegistry.Resolve(language).Code;
 
     /// <summary>
     /// 切换当前语言。返回是否发生实际变化（同语言重复设置返回 false）。
@@ -101,9 +86,9 @@ public static class Strings
         return true;
     }
 
-    /// <summary>按 <paramref name="language"/> 取文案表（未支持的语言回退中文）。</summary>
+    /// <summary>按 <paramref name="language"/> 取文案表（未支持的语言回退默认语言）。</summary>
     public static IReadOnlyDictionary<string, string> Table(string? language)
-        => Normalize(language) == EnUs ? StringTableEnUs.Table : StringTableZhHans.Table;
+        => LanguageRegistry.Resolve(language).Table;
 
     /// <summary>当前语言的文案表。</summary>
     public static IReadOnlyDictionary<string, string> Table() => Table(Current);
@@ -159,7 +144,6 @@ public static class Strings
     /// <summary>XAML 资源键：<c>nav.home</c> → <c>Loc.nav.home</c>。</summary>
     public static string ResourceKey(string key) => ResourceKeyPrefix + key;
 
-    /// <summary>语言的展示名（各语言用各自的语言书写：简体中文 / English）。</summary>
-    public static string DisplayName(string? language)
-        => Normalize(language) == EnUs ? "English" : "简体中文";
+    /// <summary>语言的展示名（各语言用各自的语言书写：简体中文 / English）。由注册表提供。</summary>
+    public static string DisplayName(string? language) => LanguageRegistry.Resolve(language).DisplayName;
 }

@@ -1,8 +1,11 @@
+using System.Text;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
+using System.Windows.Threading;
 using OBS_Helper.Wpf.Navigation;
+using OBS_Helper.Wpf.Services;
 using OBS_Helper.Wpf.Services.Plugins;
 using OBS_Helper.Wpf.Services.Shell;
 
@@ -20,11 +23,20 @@ namespace OBS_Helper.Wpf.Views;
 ///   <item>「关注」插件启动静默查新（P2-1，仅 Toast）；</item>
 ///   <item>路由参数定位：日志分析 / 模板页可带插件 id 跳转高亮（P0-2 / P2-2）。</item>
 /// </list>
+///
+/// V3.0（F6）重做本页的输入与网络路径：57 条目录不能再用「每次输入全量重建卡片 + 每张卡都打一次
+/// GitHub API」这套做法（匿名限额 60 次/小时）。现在搜索走防抖、卡片按 id 常驻复用、
+/// 角标只查当前筛选结果的前若干张并按视口懒补。
 /// </summary>
 public partial class PluginsPage : UserControl, INavigationAware
 {
-    /// <summary>官方 / 社区入口，放在分类列表之前（量小且稳定，保留在代码内）。</summary>
-    private static readonly (string Label, string Desc, string Url)[] Entries =
+    /// <summary>
+    /// 官方 / 社区入口，放在分类列表之前（量小且稳定，保留在代码内）。
+    ///
+    /// V3.0（F5）：由 <c>static readonly</c> 改为**按需构造** —— 静态字段在类型初始化时就把文案冻住了，
+    /// 切语言后这一块仍是旧语言。只有 3 条，重建代价可以忽略。
+    /// </summary>
+    private static (string Label, string Desc, string Url)[] Entries() => new[]
     {
         (Strings.T("plugin.link.forum.title"), Strings.T("plugin.link.forum.desc"), "https://obsproject.com/forum/plugins/"),
         (Strings.T("plugin.link.exeldro.title"), Strings.T("plugin.link.exeldro.desc"), "https://github.com/exeldro"),
@@ -34,8 +46,9 @@ public partial class PluginsPage : UserControl, INavigationAware
     /// <summary>
     /// StreamFX 迁移矩阵（B4）：常用功能 → 广场内的替代插件 id。
     /// 替代品均为维护活跃的单一职责插件，id 必须与 plugins.json 保持一致。
+    /// V3.0（F5）：同样改为按需构造（文案不能冻在首次加载）。
     /// </summary>
-    private static readonly (string Usage, string PluginId)[] StreamFxMigrations =
+    private static (string Usage, string PluginId)[] StreamFxMigrations() => new[]
     {
         (Strings.T("plugin.migrate.blur"), "composite-blur"),
         (Strings.T("plugin.migrate.masks"), "advanced-masks"),
@@ -45,10 +58,41 @@ public partial class PluginsPage : UserControl, INavigationAware
     };
 
     private PluginCatalogData _catalog = new();
+
+    /// <summary>
+    /// 把本机 OBS 版本注入目录条目（V3.0 / D9）。
+    ///
+    /// 兼容性结论是**条目 + 本机版本**的联合判定，所以本机版本要在渲染前写进条目；
+    /// 未连接 OBS 时为空串，判定结果一律「未知」——不显示任何兼容性提示。
+    /// </summary>
+    private void InjectLocalObsVersion()
+    {
+        try
+        {
+            var local = AppServices.Obs.Profile.ObsVersion ?? "";
+            foreach (var p in _catalog.Plugins) p.LocalObsVersion = local;
+        }
+        catch (Exception ex)
+        {
+            FileLogger.Warn("Plugins", $"注入本机 OBS 版本失败（兼容性提示将不显示）：{ex.Message}");
+        }
+    }
     private string _builtVersion = "";
     /// <summary>静态区块是在哪种语言下搭起来的：换语言后要整块重建（V2.9.2）。</summary>
     private string _builtLang = "";
     private string _activeCategory = "all";
+
+    /// <summary>搜索防抖（F6）：停止输入 300ms 后才重排列表，逐击不再重建 57 张卡。</summary>
+    private readonly Debouncer _searchDebouncer = new(TimeSpan.FromMilliseconds(300));
+
+    /// <summary>
+    /// 一次渲染里立即查询角标的卡片数（F6）：只查当前筛选结果的前 N 张，其余保持「未查询」，
+    /// 滚动到可视区附近再补（见 <see cref="RevealBadgesInViewport"/>）。
+    /// </summary>
+    private const int EagerBadgeCount = 12;
+
+    /// <summary>按视口补查角标时的预取余量（像素）：卡片进入视口下方这一段就先查，滚到时角标已经在了。</summary>
+    private const double BadgePrefetchPx = 400;
 
     // ---- 本机体检状态
     private LocalPluginScanResult? _scan;
@@ -65,6 +109,10 @@ public partial class PluginsPage : UserControl, INavigationAware
     public PluginsPage()
     {
         InitializeComponent();
+
+        // 角标按视口懒查：滚动事件在这里接（XAML 里没有可挂的事件名），
+        // 事件源是本页自己的 ScrollViewer，实例被逐出时随之消失，不需要退订。
+        PageScroller.ScrollChanged += OnPageScrolled;
     }
 
     public async Task OnNavigatedToAsync(object? parameter)
@@ -74,11 +122,20 @@ public partial class PluginsPage : UserControl, INavigationAware
             || !string.Equals(_builtLang, Strings.Current, StringComparison.Ordinal);
         _catalog = data;
 
+        // 兼容性判定需要本机 OBS 版本（V3.0 / D9）：未连接时为空 → 判定为「未知」，
+        // 界面不会因此误报不兼容（宁可不说，也不要说错）。
+        InjectLocalObsVersion();
+
         if (versionChanged)
         {
             ResourceHost.Children.Clear();
             CategoryPanel.Children.Clear();
             ListHost.Children.Clear();
+            // 目录换版 / 换语言：卡片池整批作废（条目内容与文案都变了），下次渲染按新目录重建
+            _cardPool.Clear();
+            _sectionTitles.Clear();
+            _displayed.Clear();
+            _renderedSignature = "";
             BuildResourceCards();
             BuildMigrationPanel();
             BuildCategoryChips();
@@ -103,11 +160,48 @@ public partial class PluginsPage : UserControl, INavigationAware
             }
         }
 
-        _aiBudgetHint = ComputeAiBudgetHint();
+        _aiBudgetHint = ComputeAiBudgetHint(AppServices.SystemMonitor.Latest);
+
+        // 重新进入时把角标查询标记清掉：上一次可能整批撞上限流（失败缓存 5~10 分钟就过期），
+        // 再进一次才有机会重试；命中成功缓存或失败冷却时都不会真的打网络，代价很低。
+        foreach (var slot in _cardPool.Values) slot.BadgeRequested = false;
 
         RenderList();
 
         await EnsureScanAsync(force: false);
+
+        // V3.0：只读缓存拿不到时，后台取**一次**快照再刷新提示 ——
+        // 绝不 Start() 常驻采样（那会让 1 秒计时器活到进程退出，用户只是看了一眼插件列表）。
+        await RefreshAiBudgetHintAsync();
+    }
+
+    /// <summary>
+    /// 离开页面：取消尚未执行的防抖重排（F7 之后本页也可能被缓存逐出，
+    /// 但即便留在缓存里，也没必要在用户已经看不见的时候重排一次列表）。
+    /// </summary>
+    public Task OnNavigatedFromAsync()
+    {
+        _searchDebouncer.Cancel();
+        return Task.CompletedTask;
+    }
+
+    private async Task RefreshAiBudgetHintAsync()
+    {
+        if (AppServices.SystemMonitor.Latest is not null) return;
+        try
+        {
+            var s = await Task.Run(() => AppServices.SystemMonitor.SampleOnce()).ConfigureAwait(true);
+            var hint = ComputeAiBudgetHint(s);
+            if (!string.Equals(hint, _aiBudgetHint, StringComparison.Ordinal))
+            {
+                _aiBudgetHint = hint;
+                RefreshCardDynamicState();
+            }
+        }
+        catch (Exception)
+        {
+            // 提示是锦上添花：取不到就不显示，不影响插件列表
+        }
     }
 
     // ---------------------------------------------------------- 目录元信息（V2.9）
@@ -144,7 +238,7 @@ public partial class PluginsPage : UserControl, INavigationAware
 
     private void BuildResourceCards()
     {
-        foreach (var (label, desc, url) in Entries)
+        foreach (var (label, desc, url) in Entries())
         {
             var titleText = new TextBlock
             {
@@ -205,7 +299,7 @@ public partial class PluginsPage : UserControl, INavigationAware
         MigrationList.Children.Clear();
 
         var rows = 0;
-        foreach (var (usage, pluginId) in StreamFxMigrations)
+        foreach (var (usage, pluginId) in StreamFxMigrations())
         {
             var entry = PluginCatalogCore.FindById(_catalog, pluginId);
             if (entry is null) continue;
@@ -304,7 +398,11 @@ public partial class PluginsPage : UserControl, INavigationAware
         RenderList();
     }
 
-    private void OnSearchTextChanged(object sender, TextChangedEventArgs e) => RenderList();
+    /// <summary>
+    /// 边打边筛（F6）：走 300ms 防抖，连续输入只在停顿后重排一次。
+    /// 原来每次击键都同步全量重建 57 张卡，并把同一批角标请求重发一遍。
+    /// </summary>
+    private void OnSearchTextChanged(object sender, TextChangedEventArgs e) => _searchDebouncer.Debounce(RenderList);
 
     // ---------------------------------------------------------- 本机体检（P0-1）
 
@@ -329,7 +427,9 @@ public partial class PluginsPage : UserControl, INavigationAware
             }
 
             RenderHealth();
-            RenderList(); // 卡片上的「已安装」标记跟着刷新
+            // 卡片上的「已安装」标记跟着刷新。这里只更新徽标与开销行，
+            // 不再整表重排（F6 卡片复用后没有重建的必要，重排还会把滚动位置顶回顶部）
+            RefreshCardDynamicState();
         }
         catch (Exception)
         {
@@ -549,38 +649,163 @@ public partial class PluginsPage : UserControl, INavigationAware
         }
     }
 
-    /// <summary>渲染时记录 id → 卡片元素，供路由参数定位高亮。</summary>
-    private readonly Dictionary<string, FrameworkElement> _cardsById = new(StringComparer.OrdinalIgnoreCase);
+    // ---------------------------------------------------------- 卡片池（F6）
+
+    /// <summary>
+    /// 一张插件卡的常驻外壳。卡片与插件 id 一一对应，建一次就一直用：
+    /// 筛选 / 搜索只改变 ListHost 里子元素的组成与顺序，不再逐条重建控件树。
+    ///
+    /// 这样做换来三件事：击键路径上的开销从「重建 57 张卡（每张十来个元素 + 一堆资源引用）」
+    /// 降为「一次子元素重排」；角标不会因为重建而重打一遍网络请求；滚动位置也不会被无谓的重排顶回顶部。
+    /// </summary>
+    private sealed class PluginCardSlot
+    {
+        /// <summary>卡片对应的目录条目：动态部分（已安装版本、AI 开销）刷新时要用它取静态数据。</summary>
+        public PluginEntry Entry { get; init; } = new();
+
+        /// <summary>参与高亮动画的外层（卡片按钮的样式会吃掉 Opacity 动画目标，见 <see cref="CreateCardSlot"/>）。</summary>
+        public Border Root { get; init; } = null!;
+
+        /// <summary>「已安装」徽标：始终建好、靠 Visibility 切换，体检结果异步回来时只改文本。</summary>
+        public Border InstalledBadge { get; init; } = null!;
+        public TextBlock InstalledText { get; init; } = null!;
+
+        /// <summary>关注按钮：关注状态可能在别处被改，刷新时同步文案。</summary>
+        public Button WatchButton { get; init; } = null!;
+
+        /// <summary>最新版本角标。</summary>
+        public TextBlock LatestBadge { get; init; } = null!;
+
+        /// <summary>AI 开销行（非 AI 插件为 null）：性能预算提示变化时只改这一行。</summary>
+        public TextBlock? CostText { get; init; }
+
+        /// <summary>本卡是否已发起过角标查询（含失败或命中缓存）：避免滚动 / 重排时反复请求。</summary>
+        public bool BadgeRequested { get; set; }
+    }
+
+    private readonly Dictionary<string, PluginCardSlot> _cardPool = new(StringComparer.OrdinalIgnoreCase);
+    private readonly Dictionary<string, TextBlock> _sectionTitles = new(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>当前展示中的卡片（按可视顺序），供路由高亮与滚动补查角标使用。</summary>
+    private readonly List<PluginCardSlot> _displayed = new();
+
+    /// <summary>上一轮渲染的内容指纹：相同就整段跳过重排，避免无谓的布局与滚动位置复位。</summary>
+    private string _renderedSignature = "";
+
+    private bool _badgeScanQueued;
+    private bool _revealScheduled;
+
+    private PluginCardSlot GetCardSlot(PluginEntry plugin)
+    {
+        if (_cardPool.TryGetValue(plugin.Id, out var slot)) return slot;
+
+        slot = CreateCardSlot(plugin);
+        _cardPool[plugin.Id] = slot;
+        return slot;
+    }
+
+    /// <summary>分类小标题也复用：它在每次重排里都会被用到，顺序与分类定义一一对应。</summary>
+    private TextBlock GetSectionTitle(PluginCategoryDef category)
+    {
+        if (_sectionTitles.TryGetValue(category.Key, out var title))
+        {
+            // 分类标签可能随热更新目录变化：文字跟着同步，元素继续复用
+            title.Text = category.Label;
+            return title;
+        }
+
+        title = new TextBlock
+        {
+            Text = category.Label,
+            Style = (Style)FindResource("SectionTitle"),
+            Margin = new Thickness(2, 14, 0, 8)
+        };
+        _sectionTitles[category.Key] = title;
+        return title;
+    }
 
     private void RenderList()
     {
-        ListHost.Children.Clear();
-        _cardsById.Clear();
+        var groups = VisibleCategories().ToList();
 
-        var any = false;
-        foreach (var (category, items) in VisibleCategories())
+        // 内容指纹：同一批卡片（含顺序）就不动可视树。体检完成、预算提示回来都会走到这里，
+        // 若每次都 Clear + 重排，用户的滚动位置会被反复顶回顶部（而这些刷新本身不改列表内容）。
+        var signature = new StringBuilder();
+        foreach (var (category, items) in groups)
         {
-            any = true;
+            signature.Append(category.Key).Append('|');
+            foreach (var plugin in items) signature.Append(plugin.Id).Append(',');
+            signature.Append(';');
+        }
 
-            var sectionTitle = new TextBlock
-            {
-                Text = category.Label,
-                Style = (Style)FindResource("SectionTitle"),
-                Margin = new Thickness(2, 14, 0, 8)
-            };
-            ListHost.Children.Add(sectionTitle);
+        if (!string.Equals(signature.ToString(), _renderedSignature, StringComparison.Ordinal))
+        {
+            _renderedSignature = signature.ToString();
+            ListHost.Children.Clear();
+            _displayed.Clear();
 
-            foreach (var plugin in items)
+            foreach (var (category, items) in groups)
             {
-                var card = BuildPluginCard(plugin);
-                _cardsById[plugin.Id] = card;
-                ListHost.Children.Add(card);
+                ListHost.Children.Add(GetSectionTitle(category));
+                foreach (var plugin in items)
+                {
+                    var slot = GetCardSlot(plugin);
+                    _displayed.Add(slot);
+                    ListHost.Children.Add(slot.Root);
+                }
             }
         }
 
-        EmptyText.Visibility = any ? Visibility.Collapsed : Visibility.Visible;
+        EmptyText.Visibility = groups.Count > 0 ? Visibility.Collapsed : Visibility.Visible;
 
+        // 动态部分统一在这里刷一遍（新建的卡也走这条路）：无论刚才有没有重排，
+        // 卡片上的「已安装 / 关注 / AI 开销」都是最新的，且每个条目每轮只算一次
+        RefreshCardDynamicState();
+        RefreshBadgeTargets();
         HighlightTargetCard();
+    }
+
+    /// <summary>体检结果 / 预算提示变化后刷新卡片的动态部分（不动静态结构，也不重排）。</summary>
+    private void RefreshCardDynamicState()
+    {
+        foreach (var slot in _cardPool.Values)
+        {
+            ApplyInstalledState(slot);
+            ApplyAiHint(slot);
+            RefreshWatchVisual(slot);
+        }
+    }
+
+    /// <summary>刷新「已安装」徽标：扫描（含重扫）结果变化时只动这一处。</summary>
+    private void ApplyInstalledState(PluginCardSlot slot)
+    {
+        var installed = FindInstalled(slot.Entry);
+        if (installed is null)
+        {
+            slot.InstalledBadge.Visibility = Visibility.Collapsed;
+            return;
+        }
+
+        slot.InstalledText.Text = string.IsNullOrWhiteSpace(installed.FileVersion)
+            ? Strings.T("plugin.installed")
+            : Strings.T("plugin.installedVersion", installed.FileVersion);
+        slot.InstalledBadge.Visibility = Visibility.Visible;
+    }
+
+    /// <summary>刷新 AI 开销行（含当前性能预算提示）：卡片复用后，提示变化只改这一行文字与颜色。</summary>
+    private void ApplyAiHint(PluginCardSlot slot)
+    {
+        var costText = slot.CostText;
+        if (costText is null) return;
+
+        var plugin = slot.Entry;
+        var costs = new[] { plugin.AiCostCpu, plugin.AiCostMem }.Where(s => !string.IsNullOrWhiteSpace(s));
+        var line = Strings.T("plugin.costs", string.Join(" · ", costs));
+        if (!string.IsNullOrEmpty(_aiBudgetHint)) line += $"\n{_aiBudgetHint}";
+
+        costText.Text = line;
+        costText.SetResourceReference(TextBlock.ForegroundProperty,
+            string.IsNullOrEmpty(_aiBudgetHint) ? "MutedBrush" : "WarnBrush");
     }
 
     private void HighlightTargetCard()
@@ -589,10 +814,12 @@ public partial class PluginsPage : UserControl, INavigationAware
         var id = _highlightId;
         _highlightId = null;
 
-        if (!_cardsById.TryGetValue(id, out var card)) return;
+        // 只有真的挂在可视树上的卡片才谈得上滚动定位（池子里可能有被筛掉的卡片）
+        if (!_cardPool.TryGetValue(id, out var slot) || slot.Root.Parent is null) return;
+        var card = slot.Root;
 
         // 布局还没跑完时 BringIntoView 可能无效，推迟到渲染完成后执行
-        Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Loaded, new Action(() =>
+        Dispatcher.BeginInvoke(DispatcherPriority.Loaded, new Action(() =>
         {
             try { card.BringIntoView(); } catch (Exception) { }
         }));
@@ -615,6 +842,82 @@ public partial class PluginsPage : UserControl, INavigationAware
         }
     }
 
+    // ---------------------------------------------------------- 角标查询调度（F6）
+
+    /// <summary>
+    /// 只查「看得见的那批」：当前筛选结果的前 <see cref="EagerBadgeCount"/> 张立即发请求，
+    /// 其余保持「未查询」，由布局完成与滚动事件按视口补 —— 一次进页面最多十几个请求，而不是 57 个。
+    /// </summary>
+    private void RefreshBadgeTargets()
+    {
+        for (var i = 0; i < _displayed.Count && i < EagerBadgeCount; i++)
+            RequestBadge(_displayed[i]);
+
+        ScheduleRevealScan();
+    }
+
+    /// <summary>发起一张卡的角标查询。成功缓存 / 失败冷却都命中时，这里只是把已知结果填回卡片，不打网络。</summary>
+    private void RequestBadge(PluginCardSlot slot)
+    {
+        if (slot.BadgeRequested || slot.Entry.Repo.Length == 0) return;
+        slot.BadgeRequested = true;
+        _ = UpdateLatestBadgeAsync(slot);
+    }
+
+    /// <summary>把「按视口补查」推迟到布局完成之后跑一次：首屏真正能看到的卡片宁多勿少。</summary>
+    private void ScheduleRevealScan()
+    {
+        if (_revealScheduled) return;
+        _revealScheduled = true;
+        Dispatcher.BeginInvoke(DispatcherPriority.Loaded, new Action(() =>
+        {
+            _revealScheduled = false;
+            RevealBadgesInViewport();
+        }));
+    }
+
+    /// <summary>
+    /// 滚到哪查到哪：只对靠近视口的卡片发起查询，已查过的直接跳过，
+    /// 遇到第一张「还在视口下方一大截」的卡片就停 —— 每次滚动最多量一两张卡片的位置。
+    /// 视口上方的未查卡片也一并补上（快速滚动可能直接跳过它们），总量有 57 的上限兜着。
+    /// </summary>
+    private void RevealBadgesInViewport()
+    {
+        var viewport = PageScroller.ViewportHeight;
+        if (viewport <= 0) return; // 布局还没跑出来：等下一次滚动 / 渲染再补
+
+        foreach (var slot in _displayed)
+        {
+            if (slot.BadgeRequested) continue;
+
+            double top;
+            try
+            {
+                top = slot.Root.TransformToAncestor(PageScroller).Transform(new Point(0, 0)).Y;
+            }
+            catch (Exception)
+            {
+                // 元素暂时不在可视树里（正在重排）：这一轮放弃，下一轮再补
+                return;
+            }
+
+            if (top > viewport + BadgePrefetchPx) return; // 更靠下的卡只会更远
+            RequestBadge(slot);
+        }
+    }
+
+    /// <summary>滚动事件：一次滚动会连发很多个，合并成每帧一次扫描。</summary>
+    private void OnPageScrolled(object sender, ScrollChangedEventArgs e)
+    {
+        if (_badgeScanQueued) return;
+        _badgeScanQueued = true;
+        Dispatcher.BeginInvoke(DispatcherPriority.Background, new Action(() =>
+        {
+            _badgeScanQueued = false;
+            RevealBadgesInViewport();
+        }));
+    }
+
     /// <summary>已安装标记查找：stem → 已装版本文本。</summary>
     private InstalledPluginFile? FindInstalled(PluginEntry entry)
     {
@@ -631,7 +934,12 @@ public partial class PluginsPage : UserControl, INavigationAware
         return null;
     }
 
-    private Border BuildPluginCard(PluginEntry plugin)
+    /// <summary>
+    /// 建一张插件卡（每个目录条目只建一次，之后一直复用）。
+    /// 卡片里凡是会变的东西（已安装徽标、AI 开销行、关注文案、角标）都先建好、留出引用，
+    /// 由 <see cref="ApplyInstalledState"/> 等方法就地更新 —— 这是卡片能复用的前提。
+    /// </summary>
+    private PluginCardSlot CreateCardSlot(PluginEntry plugin)
     {
         var nameText = new TextBlock
         {
@@ -649,15 +957,26 @@ public partial class PluginsPage : UserControl, INavigationAware
         if (!string.IsNullOrEmpty(plugin.Badge))
             headRow.Children.Add(BuildBadge(plugin.Badge, DataValues.IsHotBadge(plugin.Badge) ? "WarnBrush" : "BrandBrush"));
 
-        // 已安装标记（P0-1 联动）
-        var installed = FindInstalled(plugin);
-        if (installed is not null)
+        // 已安装标记（P0-1 联动）：先建好隐藏着，体检结果回来时只改文字与显隐（F6 卡片复用）
+        var installedText = new TextBlock
         {
-            var installedLabel = string.IsNullOrWhiteSpace(installed.FileVersion)
-                ? Strings.T("plugin.installed")
-                : Strings.T("plugin.installedVersion", installed.FileVersion);
-            headRow.Children.Add(BuildBadge(installedLabel, "OkBrush"));
-        }
+            Text = "",
+            FontWeight = FontWeights.SemiBold,
+            Padding = new Thickness(7, 1, 7, 2)
+        };
+        installedText.SetResourceReference(TextBlock.FontSizeProperty, "FontSizeXs");
+        installedText.SetResourceReference(TextBlock.ForegroundProperty, "PillForegroundBrush");
+
+        var installedBadge = new Border
+        {
+            CornerRadius = new CornerRadius(8),
+            Margin = new Thickness(8, 0, 0, 0),
+            VerticalAlignment = VerticalAlignment.Center,
+            Visibility = Visibility.Collapsed,
+            Child = installedText
+        };
+        installedBadge.SetResourceReference(Border.BackgroundProperty, "OkBrush");
+        headRow.Children.Add(installedBadge);
 
         var urlHost = new TextBlock
         {
@@ -691,22 +1010,18 @@ public partial class PluginsPage : UserControl, INavigationAware
         descText.SetResourceReference(TextBlock.ForegroundProperty, "MutedBrush");
         body.Children.Add(descText);
 
-        // AI 插件：公开开销说明 + 实时性能预算提示（P1-2）
+        // AI 插件：公开开销说明 + 实时性能预算提示（P1-2）。
+        // 文案与颜色交给 ApplyAiHint：预算提示可能在页面停留期间才拿到，届时只改这一行文字。
+        TextBlock? costText = null;
         if (plugin.HasAiCost)
         {
-            var costs = new[] { plugin.AiCostCpu, plugin.AiCostMem }.Where(s => !string.IsNullOrWhiteSpace(s));
-            var costLine = Strings.T("plugin.costs", string.Join(" · ", costs));
-            if (!string.IsNullOrEmpty(_aiBudgetHint)) costLine += $"\n{_aiBudgetHint}";
-
-            var costText = new TextBlock
+            costText = new TextBlock
             {
-                Text = costLine,
+                Text = "",
                 Margin = new Thickness(0, 6, 0, 0),
                 TextWrapping = TextWrapping.Wrap
             };
             costText.SetResourceReference(TextBlock.FontSizeProperty, "FontSizeXs");
-            costText.SetResourceReference(TextBlock.ForegroundProperty,
-                string.IsNullOrEmpty(_aiBudgetHint) ? "MutedBrush" : "WarnBrush");
             body.Children.Add(costText);
         }
 
@@ -727,6 +1042,23 @@ public partial class PluginsPage : UserControl, INavigationAware
             maintainText.SetResourceReference(TextBlock.ForegroundProperty,
                 plugin.IsMaintenanceSlow ? "WarnBrush" : "MutedBrush");
             body.Children.Add(maintainText);
+        }
+
+        // 与本机 OBS 的兼容性（V3.0 / D9）：OBS 每次大版本都会让一批插件悄悄失效
+        // （面板不显示、捕获源消失），而用户完全不知道原因。目录声明了兼容范围就在这里提前说清楚；
+        // 未声明（旧目录）与匹配时不显示 —— 不给正常条目刷屏。
+        if (plugin.HasCompatWarning)
+        {
+            var compatText = new TextBlock
+            {
+                Text = plugin.CompatText,
+                Margin = new Thickness(0, 6, 0, 0),
+                TextWrapping = TextWrapping.Wrap
+            };
+            compatText.SetResourceReference(TextBlock.FontSizeProperty, "FontSizeXs");
+            compatText.SetResourceReference(TextBlock.ForegroundProperty,
+                plugin.CompatStatus == PluginCompatStatus.Broken ? "DangerBrush" : "WarnBrush");
+            body.Children.Add(compatText);
         }
 
         // 动作行：下载 + 最新版本角标 + 关注（P1-1 / P2-1）
@@ -769,7 +1101,6 @@ public partial class PluginsPage : UserControl, INavigationAware
             Tag = plugin.Id,
             ToolTip = Strings.T("plugin.watchTip")
         };
-        RefreshWatchVisual(watchBtn, plugin.Id);
         watchBtn.Click += OnWatchToggleClick;
         actions.Children.Add(watchBtn);
 
@@ -791,15 +1122,18 @@ public partial class PluginsPage : UserControl, INavigationAware
             Child = button,
             Tag = $"card:{plugin.Id}"
         };
-        _latestBadgeTargets[plugin.Id] = latestBadge;
 
-        if (!string.IsNullOrEmpty(downloadUrl) && !string.IsNullOrEmpty(plugin.Repo))
-            _ = UpdateLatestBadgeAsync(plugin.Id, plugin.Repo, latestBadge);
-
-        return cardBorder;
+        return new PluginCardSlot
+        {
+            Entry = plugin,
+            Root = cardBorder,
+            InstalledBadge = installedBadge,
+            InstalledText = installedText,
+            WatchButton = watchBtn,
+            LatestBadge = latestBadge,
+            CostText = costText
+        };
     }
-
-    private readonly Dictionary<string, TextBlock> _latestBadgeTargets = new(StringComparer.OrdinalIgnoreCase);
 
     private static FrameworkElement BuildBadge(string text, string brushKey)
     {
@@ -826,22 +1160,21 @@ public partial class PluginsPage : UserControl, INavigationAware
 
     // ---------------------------------------------------------- 最新版本角标（P1-1）
 
-    private async Task UpdateLatestBadgeAsync(string pluginId, string repo, TextBlock badge)
+    private async Task UpdateLatestBadgeAsync(PluginCardSlot slot)
     {
         try
         {
-            var info = await AppServices.PluginReleases.GetLatestAsync(repo).ConfigureAwait(true);
+            var info = await AppServices.PluginReleases.GetLatestAsync(slot.Entry.Repo).ConfigureAwait(true);
             if (info is null) return;
 
-            // 页面可能在等待期间被重建：只有仍在展示中的角标才更新
-            if (!_latestBadgeTargets.TryGetValue(pluginId, out var current) ||
-                !ReferenceEquals(current, badge))
+            // 页面可能在等待期间被重建（目录换版 / LRU 逐出）：只有仍属于当前卡片池的角标才更新
+            if (!_cardPool.TryGetValue(slot.Entry.Id, out var current) || !ReferenceEquals(current, slot))
             {
                 return;
             }
 
-            badge.Text = Strings.T("plugin.latest", ShortTag(info.Tag));
-            badge.Visibility = Visibility.Visible;
+            slot.LatestBadge.Text = Strings.T("plugin.latest", ShortTag(info.Tag));
+            slot.LatestBadge.Visibility = Visibility.Visible;
         }
         catch (Exception)
         {
@@ -866,6 +1199,9 @@ public partial class PluginsPage : UserControl, INavigationAware
         watchBtn.Content = watched ? Strings.T("plugin.watched") : Strings.T("plugin.watch");
     }
 
+    /// <summary>卡片复用版的关注文案刷新：关注状态可能在别处被改，重排 / 重进页面时同步一次。</summary>
+    private void RefreshWatchVisual(PluginCardSlot slot) => RefreshWatchVisual(slot.WatchButton, slot.Entry.Id);
+
     private void OnWatchToggleClick(object sender, RoutedEventArgs e)
     {
         // 同「下载」按钮：阻止 Click 冒泡到外层卡片（避免顺手打开项目主页）
@@ -880,23 +1216,22 @@ public partial class PluginsPage : UserControl, INavigationAware
     // ---------------------------------------------------------- 性能预算（P1-2）
 
     /// <summary>
-    /// 结合监控服务的实时采样给 AI 类卡片一句个性化预算提示；
-    /// 数据不足（监控刚起步）返回 null，不硬凑文案。
+    /// 结合监控采样给 AI 类卡片一句个性化预算提示；数据不足返回 null，不硬凑文案。
+    ///
+    /// V3.0：<b>只读传入的采样</b>，绝不调用 <c>SystemMonitor.Start()</c> ——
+    /// 原来那行 `Start()` 会让 1 秒采样的计时器常驻到进程退出（全仓只有监控页会 Stop）。
     /// </summary>
-    private static string? ComputeAiBudgetHint()
+    private static string? ComputeAiBudgetHint(SystemSample? s)
     {
         try
         {
-            var monitor = AppServices.SystemMonitor;
-            if (!monitor.IsRunning) monitor.Start();
-            var s = monitor.Latest;
             if (s is null) return null;
 
             var freeMb = s.MemTotalMb - s.MemUsedMb;
             if (s.MemTotalMb > 0 && freeMb < 500)
-                return Strings.T("plugin.aiMemoryHint", freeMb);
+                return Strings.T("plugin.aiMemoryHint", freeMb.ToString("0", System.Globalization.CultureInfo.InvariantCulture));
             if (s.CpuPercent >= 80)
-                return Strings.T("plugin.aiCpuHint", s.CpuPercent);
+                return Strings.T("plugin.aiCpuHint", s.CpuPercent.ToString("0", System.Globalization.CultureInfo.InvariantCulture));
             return null;
         }
         catch (Exception)

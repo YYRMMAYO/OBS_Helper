@@ -50,4 +50,38 @@ public static class DataValues
 
     /// <summary>插件卡片的角标是否为「热门」（数据里的 badge 文案，中英各一套）。</summary>
     public static bool IsHotBadge(string? badge) => Matches(badge, "热门", "Popular");
+
+    /// <summary>
+    /// 把 OBS 的滤镜**种类 id** 翻成界面文案（V3.0 / D7）。
+    ///
+    /// OBS 返回的是 <c>noise_suppress_filter</c> 这类内部 id，直接显示给用户没有意义；
+    /// 用「包含关键词」而不是精确匹配，是因为同一类滤镜在 v4 / v5 / 不同 OBS 版本里
+    /// 出现过 <c>chroma_key_filter</c> / <c>chroma_key_filter_v2</c> 这类后缀差异 ——
+    /// 精确匹配会让新版本一升级就全部退回显示 id。认不出来时原样显示，至少信息没丢。
+    /// </summary>
+    public static string FilterKindLabel(string? kind)
+    {
+        if (string.IsNullOrWhiteSpace(kind)) return "";
+        var k = kind.Trim().ToLowerInvariant();
+
+        if (k.Contains("noise_suppress") || k.Contains("noise_suppression")) return Strings.T("filterkind.noise");
+        if (k.Contains("noise_gate")) return Strings.T("filterkind.noiseGate");
+        if (k.Contains("chroma_key")) return Strings.T("filterkind.chromaKey");
+        if (k.Contains("color_key")) return Strings.T("filterkind.colorKey");
+        if (k.Contains("luma_key")) return Strings.T("filterkind.lumaKey");
+        if (k.Contains("color_correction") || k.Contains("color_filter")) return Strings.T("filterkind.colorCorrection");
+        if (k.Contains("sharpen")) return Strings.T("filterkind.sharpen");
+        if (k.Contains("scale")) return Strings.T("filterkind.scale");
+        if (k.Contains("crop")) return Strings.T("filterkind.crop");
+        if (k.Contains("scroll")) return Strings.T("filterkind.scroll");
+        if (k.Contains("async_delay") || k.Contains("delay")) return Strings.T("filterkind.delay");
+        if (k.Contains("compressor")) return Strings.T("filterkind.compressor");
+        if (k.Contains("limiter")) return Strings.T("filterkind.limiter");
+        if (k.Contains("expander")) return Strings.T("filterkind.expander");
+        if (k.Contains("gain")) return Strings.T("filterkind.gain");
+        if (k.Contains("vst")) return Strings.T("filterkind.vst");
+        if (k.Contains("eq")) return Strings.T("filterkind.eq");
+
+        return kind.Trim();   // 未知种类：原样显示，别把信息藏起来
+    }
 }

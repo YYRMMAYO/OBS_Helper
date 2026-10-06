@@ -1,7 +1,13 @@
 # OBS 用户常见问题 × 现有功能 对照与开发指引（2026-08）
 
+> ⚠️ **本文是 2026-08 的快照**：其中的数字（知识库条数 / 测试项数 / 自检项数 / 缺口状态）**已过期**，
+> 最新数字见 [`README.md`](../README.md)（当前：知识库 212 条 · 知识库版本 2.2 ·
+> 单测 630 项（V2.9.6 发布基线）· 无界面自检 22 项 · 插件目录 57 条）。
+> 本文的历史结论**刻意保留原样**，不随版本回填；已被后续版本实现的段落旁标了
+> 「【已被 V X.Y.Z 实现，见 …】」，读到时以标注为准。
+
 > 方法：网络检索 OBS Studio 高频故障（中文社区/CSDN/obsproject 论坛/KB/GitHub Issues，2023–2026 资料为主），
-> 与本仓库已实现功能及 `problems.json`（149 条知识库）逐一对照去重。
+> 与本仓库已实现功能及 `problems.json`（149 条知识库 ← 当时的数字）逐一对照去重。
 > 结论分三档：**A 已覆盖（不开发）** / **B 已覆盖但可增强（低优先级）** / **C 缺口（本次开发清单）**。
 
 ---
@@ -27,9 +33,10 @@
 
 按优先级排序。所有实现遵循项目既定约束：
 零第三方 NuGet 包（纯 BCL）、对用户系统**只读探测优先**、写入类操作必须显式确认、
-纯逻辑放 `*Core.cs` 便于 xUnit 单测（现有 241 项测试模式）。
+纯逻辑放 `*Core.cs` 便于 xUnit 单测（现有 241 项测试模式 ← 当时的数字，当前 630 项）。
 
 ### GAP-1 录制守护（Recording Watchdog）★ 最高价值
+> 【已被 **V2.8.0** 实现，见 `Services/Shell/RecordWatchdogCore.cs` / `RecordWatchdogService.cs`】
 - **问题证据**：OBS 故障的本质是"静默失败"——全屏游戏中录制中断/崩溃/卡在 Stopping Recording，
   用户毫不知情直到录完发现空文件（obsproject 论坛高频帖；GitHub #8362；商业工具 Mynofi 专门做这件事且收费 $4.99）。
 - **现状差距**：现有 `ControlTimerService` 只做"定时主动停止"；`RecordStateChanged` 事件已订阅但未用于异常检测。
@@ -44,6 +51,7 @@
 - **验收**：模拟杀掉 obs64.exe 进程 / 手动停录 / 断网三种场景均能在 ≤5s 内收到提醒；单测覆盖状态机判定逻辑（Core 化）。
 
 ### GAP-2 黑屏专项体检（系统图形环境探测）
+> 【已被 **V2.8.0** 实现，见 `Services/SystemCheck/GraphicsEnvCheckCore.cs` / `GraphicsEnvCheckService.cs`】
 - **问题证据**：黑屏是检索中提及率第一的问题；社区标准排查链 = 管理员权限 → GPU 偏好 → HAGS → HDR → Game DVR → 驱动版本。
   其中多数是**注册表/系统状态可程序化检测**的，目前只有知识库文章，没有自动化体检。
 - **现状差距**：`PreflightCheckCore` 只读 OBS 自身配置；`ColorCheckCore` 只读 Profile ini；系统侧图形环境无检测。
@@ -60,6 +68,7 @@
 - **验收**：每项检测在干净 Win10/Win11 上有确定性输出；Core 层全量单测（注入假注册表数据源）。
 
 ### GAP-3 音频设备深度体检
+> 【已被 **V2.8.0** 实现，见 `Services/Audio/AudioDeviceHealthCore.cs` / `AudioDeviceHealthService.cs`】
 - **问题证据**："OBS 没声音/麦克风无声"类检索量长期居前；根因常在系统侧：隐私权限未授权、
   设备独占模式抢占、通信 Ducking 把音乐压小、默认设备漂移——这些知识库有文字但无自动检测。
 - **现状差距**：`SampleRateCheckCore` 已建立 MMDevices 注册表只读枚举模式，可直接扩展。
@@ -72,6 +81,7 @@
 - **验收**：同上 Core 单测模式；与预检页整合。
 
 ### GAP-4 实时日志尾随预警（事中监控）
+> 【已被 **V2.8.0** 实现，见 `Services/Shell/LogTailerService.cs` / `LogAlertThrottle.cs`】
 - **问题证据**：掉帧/过载/断流的社区排查全部依赖事后看日志；直播进行中主播看不到 OBS 窗口。
 - **现状差距**：`ObsLogAnalyzer` 是会话后整文件解析；`SystemMonitorService` 只有 CPU/内存/磁盘，不含 OBS 内部指标。
 - **方案指引**：
@@ -83,6 +93,8 @@
 - **验收**：手工向日志追加测试行触发提醒；节流逻辑单测。
 
 ### GAP-5 虚拟摄像头体检与一键启动
+> 【已被 **V2.8.0** 实现，见 `Services/Tools/VirtualCamCheckCore.cs` / `VirtualCamCheckService.cs`；
+> 「一键启动」入口在控制台页】
 - **问题证据**：虚拟摄像头用于腾讯会议/GitHub 认证等场景检索量大；典型故障 = 会议软件列表里找不到 "OBS Virtual Camera"、启动无效。
 - **现状差距**：virtualcam 知识库仅 1 条；websocket 已订阅 `VirtualcamStateChanged` 但 UI 无入口。
 - **方案指引**：
@@ -92,6 +104,8 @@
 - **验收**：驱动未注册/已注册两种环境下的判定正确；按钮调用有连接态校验（沿用现有护栏风格）。
 
 ### GAP-6 已知问题插件标注
+> 【已被 **V2.8.0** 实现：`plugins.json` 的 `riskNote` 字段 + `PluginCatalog.RiskNote` /
+> `HasRiskNote`，界面在插件广场条目上打黄标（`Views/PluginsPage.xaml.cs`）】
 - **问题证据**："Stopping Recording 卡死"相当比例由第三方插件引起（如 obs-source-record Issue #99 长期 Open）；StreamFX 停更迁移事故。
 - **现状差距**：`PluginScannerCore` 能扫出本机插件、`plugins.json` 有广场目录，但没有"风险插件"维度。
 - **方案指引**：在 `plugins.json` schema 增加可选字段 `riskNote`（风险等级+一句话说明+建议动作），外置热更新通道天然支持免发版更新名单；
@@ -99,6 +113,8 @@
 - **验收**：新旧 schema 解析回归测试；热更新覆盖生效路径验证。
 
 ### GAP-7 音画同步偏移校准助手（B 档增强，可延后）
+> ⏳ **仍未实现（截至 V2.9.6）**：全仓 `SyncOffset` 零命中，控制台只有静音 + 音量。
+> 2026-10 优化清单把它接在 `SetInputAudioSyncOffset` 上（清单 D7）。
 - **问题证据**：avsync 社区解法高度模板化（拍手/闪光对齐 → 手调 sync offset），但手动试错繁琐。
 - **现状差距**：知识库有方法论；无工具化。
 - **方案指引**：内置测试信号发生器（屏幕黑白闪块 + 同时 beep，可用 `System.Media.SoundPlayer` 与 WPF 动画实现，无需 ffmpeg），
@@ -107,6 +123,7 @@
 - **验收**：偏移写入前后 GetInputSettings 值正确。
 
 ### GAP-8 电源计划与供电检测（小件，可并入 GAP-2）
+> 【已被 **V2.8.0** 实现并并入黑屏体检：`GraphicsEnvCheckCore` 的电源计划与供电判定】
 - **问题证据**：笔记本省电模式/未插电导致编码欠载、Stuck on Stopping，多份教程列为标准检查项。
 - **方案指引**：`PowerProfileProbe`：`powercfg /getactivescheme` 解析 + `SystemInformation.PowerStatus.BatteryChargeStatus` 判断是否使用电池；
   高性能计划缺失或电池供电 → 预检黄色警告。约半天工作量。

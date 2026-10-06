@@ -188,6 +188,8 @@ public partial class PerformancePage : UserControl, INavigationAware
             ObsFpsText.Text = "—";
             ObsRenderSkipText.Text = "—";
             ObsOutputSkipText.Text = "—";
+            ObsVideoText.Text = "";
+            ObsOutputHealthText.Text = "";
             return;
         }
 
@@ -199,6 +201,30 @@ public partial class PerformancePage : UserControl, INavigationAware
         // 丢帧率状态色：<1% 正常、<5% 警告、其余危险（P2）
         SetMetricColor(ObsRenderSkipText, "skip", obs.Stats.RenderSkipRatio * 100);
         SetMetricColor(ObsOutputSkipText, "skip", obs.Stats.OutputSkipRatio * 100);
+
+        // V3.0（C1）：画布 → 输出 + 帧率。所有「统一画布与输出分辨率」的建议都以它为前提。
+        var p = obs.Profile;
+        ObsVideoText.Text = p.BaseWidth > 0
+            ? Strings.T("perf.videoLine", $"{p.BaseWidth}×{p.BaseHeight}", $"{p.OutputWidth}×{p.OutputHeight}", p.Fps.ToString("0.##", Inv))
+            : "";
+
+        // V3.0（C1）：推流健康度（丢帧 / 拥塞 / 重连）+ 录制时长。原先这三项只有 AI 能看到。
+        var parts = new List<string>();
+        if (obs.RecordStatus.Active)
+        {
+            var elapsed = obs.RecordElapsed;
+            parts.Add(Strings.T("perf.recordingLine", elapsed.TotalHours >= 1
+                ? $"{(int)elapsed.TotalHours}:{elapsed.Minutes:00}:{elapsed.Seconds:00}"
+                : $"{elapsed.Minutes:00}:{elapsed.Seconds:00}"));
+        }
+        if (obs.StreamStatus.Active)
+        {
+            parts.Add(Strings.T("perf.streamLine", (obs.StreamStatus.DroppedRatio * 100).ToString("0.##", Inv)));
+            if (obs.StreamStatus.Congestion > 0.05)
+                parts.Add(Strings.T("perf.congestionLine", (obs.StreamStatus.Congestion * 100).ToString("0", Inv)));
+            if (obs.StreamStatus.Reconnecting) parts.Add(Strings.T("perf.reconnectingLine"));
+        }
+        ObsOutputHealthText.Text = string.Join(" · ", parts);
     }
 
     /// <summary>按指标类型与当前值设置语义状态色（正常/警告/危险）。</summary>

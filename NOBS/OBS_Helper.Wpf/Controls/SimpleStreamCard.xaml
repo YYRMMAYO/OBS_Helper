@@ -1,0 +1,42 @@
+<UserControl x:Class="OBS_Helper.Wpf.Controls.SimpleStreamCard"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+  <!--
+    简单开播（V3.0 / D2）。
+
+    这里只组织交互：看一句「现在能不能播」→ 点开始（服务层负责检查推流配置、
+    按需同时起录制、发开播命令、并**确认 OBS 真的开始输出**）。
+    本卡片不做任何配置写入：推流参数与平台强相关，猜错比不猜更糟。
+  -->
+  <Border Style="{StaticResource Card}" Padding="14">
+    <StackPanel>
+
+      <TextBlock Text="{DynamicResource Loc.simple.stream.home.title}" FontWeight="SemiBold"
+                 FontSize="{DynamicResource FontSizeMd}"
+                 Foreground="{DynamicResource TextBrush}" />
+      <TextBlock Text="{DynamicResource Loc.simple.stream.home.desc}" Style="{StaticResource MutedText}"
+                 Margin="0,6,0,0" TextWrapping="Wrap" />
+
+      <!-- 「现在能不能播」的一句话结论 + 提醒 + 实时指标 -->
+      <Border Style="{StaticResource SoftPanel}" Margin="0,10,0,0" Padding="10,8,10,8">
+        <StackPanel>
+          <TextBlock x:Name="CheckText" Style="{StaticResource BodyText}" TextWrapping="Wrap" />
+          <TextBlock x:Name="WarnText" Style="{StaticResource CaptionText}" Margin="0,4,0,0"
+                     TextWrapping="Wrap" Visibility="Collapsed" />
+          <TextBlock x:Name="MetricText" Style="{StaticResource CaptionText}" Margin="0,4,0,0"
+                     TextWrapping="Wrap" Visibility="Collapsed" />
+        </StackPanel>
+      </Border>
+
+      <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
+        <Button x:Name="GoButton" Style="{StaticResource PrimaryButton}" MinWidth="130"
+                HorizontalContentAlignment="Center" Click="OnGoClick" />
+        <CheckBox x:Name="AlsoRecordCheck" Style="{StaticResource AppCheckBox}" Margin="14,0,0,0"
+                  VerticalAlignment="Center"
+                  Content="{DynamicResource Loc.simple.stream.alsoRecord}"
+                  Checked="OnAlsoRecordChanged" Unchecked="OnAlsoRecordChanged" />
+      </StackPanel>
+
+    </StackPanel>
+  </Border>
+</UserControl>

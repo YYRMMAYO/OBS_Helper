@@ -1,4 +1,5 @@
 using OBS_Helper.Wpf.Models;
+using OBS_Helper.Wpf.Services.Search;
 
 namespace OBS_Helper.Wpf.Services;
 
@@ -36,66 +37,26 @@ public class AssistantService
     public async Task<List<AssistantMatch>> AskAsync(string query)
     {
         var data = await _problemService.GetDataAsync();
-        var catTitles = data.Categories.ToDictionary(c => c.Id, c => c.Title);
-        var q = Normalize(query);
+        var q = SearchQueryCore.Normalize(query);
         if (string.IsNullOrWhiteSpace(q)) return new();
 
-        var tokens = Tokenize(q);
-        var results = new List<AssistantMatch>();
+        // V3.0.0（C4）：与搜索页共用同一套检索核心 —— 分词、同义词、拼音首字母（`hp` → 黑屏）、
+        // 字段加权（标题 > 症状 > 原因 > 步骤 > 提示）。过去这里只做「包含即得分」，
+        // 于是拼音首字母与近义词一律零结果，同一句话在搜索页与助手里的结果还可能不一致。
+        var searchable = _problemService.GetSearchableProblems(data);
+        var hits = SearchQueryCore.Rank(searchable, q, 8);
 
-        foreach (var p in data.Problems)
+        // 一条都没命中时给最接近的几条（提案改法 ④）：助手不该只回一句「没有找到」，
+        // 那等于把用户丢回原点；给几条相关条目至少能继续点下去。
+        if (hits.Count == 0)
         {
-            var text = Normalize(ProblemService.BuildText(p, catTitles.GetValueOrDefault(p.Category, "")));
-            int score = 0;
-            var hits = new List<string>();
-            foreach (var t in tokens)
-            {
-                if (t.Length < 2) continue;
-                if (text.Contains(t, StringComparison.OrdinalIgnoreCase))
-                {
-                    score += t.Length >= 4 ? 3 : 2;
-                    hits.Add(t);
-                }
-            }
-            if (Normalize(p.Title).Contains(q)) score += 5;
-            if (score > 0)
-                results.Add(new AssistantMatch { Problem = p, Score = score, Reason = string.Join("、", hits.Take(4)) });
+            hits = SearchQueryCore.Suggest(searchable, q, 3)
+                .Select(h => h with { Reason = Strings.T("search.reason.suggestion") })
+                .ToList();
         }
 
-        results.Sort((a, b) => b.Score.CompareTo(a.Score));
-        return results.Take(8).ToList();
-    }
-
-    private static string Normalize(string s) => s.ToLowerInvariant();
-
-    private static List<string> Tokenize(string s)
-    {
-        var tokens = new List<string>();
-        var sb = new System.Text.StringBuilder();
-        foreach (var c in s)
-        {
-            if (char.IsWhiteSpace(c) || char.IsPunctuation(c))
-            {
-                if (sb.Length > 0) { tokens.Add(sb.ToString()); sb.Clear(); }
-            }
-            else sb.Append(c);
-        }
-        if (sb.Length > 0) tokens.Add(sb.ToString());
-
-        foreach (var t in tokens.ToList())
-        {
-            if (t.Length > 2 && IsCjk(t))
-            {
-                for (var i = 0; i < t.Length - 1; i++) tokens.Add(t.Substring(i, 2));
-            }
-        }
-        return tokens;
-    }
-
-    private static bool IsCjk(string s)
-    {
-        foreach (var c in s)
-            if (c is >= '\u4e00' and <= '\u9fff') return true;
-        return false;
+        return hits
+            .Select(h => new AssistantMatch { Problem = h.Problem, Score = h.Score, Reason = h.Reason })
+            .ToList();
     }
 }

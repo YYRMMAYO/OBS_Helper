@@ -9,7 +9,13 @@ namespace OBS_Helper.Wpf.Services.Obs;
 public sealed class ObsConnectionSettings
 {
     public string Host { get; set; } = "127.0.0.1";
-    public int Port { get; set; } = 4455;
+
+    /// <summary>
+    /// 连接端口。默认值按构建区分（V3.0）：
+    /// 主构建是 obs-websocket 5.x 的 <b>4455</b>；Win7 兼容构建是 4.x 插件的 <b>4444</b> ——
+    /// 兼容构建面向的 OBS 27 只能配 4.x 插件，默认端口就是 4444，填默认值即可连上。
+    /// </summary>
+    public int Port { get; set; } = ObsLegacyV4Core.DefaultPort;
 
     /// <summary>应用启动时自动尝试连接。</summary>
     public bool AutoConnect { get; set; }
@@ -91,22 +97,29 @@ public sealed class ObsSettingsService
 
     /// <summary>
     /// 设置密码。<paramref name="remember"/> 为 true 时 DPAPI 加密落盘，否则仅保存在内存中。
+    ///
+    /// V3.0 修复（审查发现的缺陷）：原先忽略 <c>SetSecretAsync</c> 的返回值并强制
+    /// <c>RememberPassword = true</c> —— 当 <c>secrets.dat</c> 损坏 / 换了用户 / 被占用时，
+    /// 密码**永远存不上**，而界面一直显示「已记住」，只有下次重启才发现要重填。
+    /// 现在按实际结果写回标志，并把失败原因返回给调用方去提示。
     /// </summary>
-    public async Task SetPasswordAsync(string? password, bool remember)
+    /// <returns>true = 已按用户意愿处理（记住并落盘成功，或用户本就不要求记住）。</returns>
+    public async Task<bool> SetPasswordAsync(string? password, bool remember)
     {
         _sessionPassword = password;
 
         if (remember && !string.IsNullOrEmpty(password))
         {
-            await _host.SetSecretAsync(PasswordSecretKey, password).ConfigureAwait(false);
-            Current.RememberPassword = true;
+            var stored = await _host.SetSecretAsync(PasswordSecretKey, password).ConfigureAwait(false);
+            Current.RememberPassword = stored;
+            await SaveAsync(Current).ConfigureAwait(false);
+            return stored;
         }
-        else
-        {
-            await _host.DeleteSecretAsync(PasswordSecretKey).ConfigureAwait(false);
-            Current.RememberPassword = false;
-        }
+
+        await _host.DeleteSecretAsync(PasswordSecretKey).ConfigureAwait(false);
+        Current.RememberPassword = false;
         await SaveAsync(Current).ConfigureAwait(false);
+        return true;
     }
 
     /// <summary>清空已保存的密码（含加密存储与内存）。</summary>

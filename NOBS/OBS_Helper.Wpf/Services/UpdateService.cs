@@ -1,4 +1,5 @@
 using OBS_Helper.Wpf.Localization;
+using OBS_Helper.Wpf.Services.Update;
 using System.IO;
 using System.Net.Http;
 using System.Reflection;
@@ -256,12 +257,18 @@ public sealed class UpdateService
     public sealed record GitHubReleaseInfo(string? Tag, string? SetupAssetUrl, string? Error)
     {
         public bool IsOk => Error is null && !string.IsNullOrEmpty(SetupAssetUrl);
+
+        /// <summary>GitHub 给出的安装包 SHA-256（形如 <c>sha256:abc…</c>）；拿不到时为空。</summary>
+        public string? Digest { get; init; }
     }
 
     /// <summary>GitHub Release 上某个命名资产的信息（tag + 下载地址）。失败时 Error 非空。</summary>
     public sealed record GitHubAssetInfo(string? Tag, string? AssetUrl, string? Error)
     {
         public bool IsOk => Error is null && !string.IsNullOrEmpty(AssetUrl);
+
+        /// <summary>GitHub 给出的资产 SHA-256；拿不到时为空（V3.0 用于下载后校验）。</summary>
+        public string? Digest { get; init; }
     }
 
     /// <summary>
@@ -286,7 +293,7 @@ public sealed class UpdateService
             if (best is null)
                 return new GitHubReleaseInfo(null, null, Strings.T("update.noSetupRelease"));
 
-            return new GitHubReleaseInfo(best.Tag, best.AssetUrl, null);
+            return new GitHubReleaseInfo(best.Tag, best.AssetUrl, null) { Digest = best.Digest };
         }
         catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException or JsonException)
         {
@@ -294,7 +301,7 @@ public sealed class UpdateService
         }
     }
 
-    private sealed record ReleaseCandidate(string Tag, string AssetUrl);
+    private sealed record ReleaseCandidate(string Tag, string AssetUrl, string? Digest);
 
     /// <summary>遍历全部 Release，取「版本号最高且确实带安装包资产」的一条；找不到返回 null。</summary>
     private static ReleaseCandidate? FindBestRelease(JsonElement root)
@@ -302,6 +309,7 @@ public sealed class UpdateService
         Version? best = null;
         string? bestTag = null;
         string? bestAssetUrl = null;
+        string? bestDigest = null;
 
         foreach (var rel in root.EnumerateArray())
         {
@@ -310,19 +318,22 @@ public sealed class UpdateService
             var v = ParseVersion(tag);
             if (v is null) continue; // 跳过无法解析出版本号的 Release
 
-            var assetUrl = FindSetupAssetUrl(rel);
-            if (string.IsNullOrEmpty(assetUrl)) continue; // 该版本没带安装包资产，跳过（例如纯说明性质的 Release）
+            var asset = FindAsset(rel, name =>
+                name.StartsWith("OBS_Helper_Setup_", StringComparison.OrdinalIgnoreCase)
+                && name.EndsWith(".exe", StringComparison.OrdinalIgnoreCase));
+            if (asset is null) continue; // 该版本没带安装包资产，跳过（例如纯说明性质的 Release）
 
             if (best is null || v > best)
             {
                 best = v;
                 bestTag = tag;
-                bestAssetUrl = assetUrl;
+                bestAssetUrl = asset.Url;
+                bestDigest = asset.Digest;
             }
         }
 
         if (bestTag is null || string.IsNullOrEmpty(bestAssetUrl)) return null;
-        return new ReleaseCandidate(bestTag, bestAssetUrl);
+        return new ReleaseCandidate(bestTag, bestAssetUrl, bestDigest);
     }
 
     /// <summary>在 Release 的 assets 里找安装包（OBS_Helper_Setup_*.exe）的下载地址。</summary>
@@ -335,6 +346,19 @@ public sealed class UpdateService
 
     /// <summary>在 Release 的 assets 里找第一个匹配命名规则的资产下载地址。</summary>
     private static string? FindAssetUrl(JsonElement release, Func<string, bool> match)
+        => FindAsset(release, match)?.Url;
+
+    /// <summary>Release 资产：下载地址 + GitHub 提供的 SHA-256 摘要（可能为空）。</summary>
+    private sealed record ReleaseAsset(string Url, string? Digest);
+
+    /// <summary>
+    /// 在 Release 的 assets 里找第一个匹配命名规则的资产，连同它的 <c>digest</c> 一起取出。
+    ///
+    /// <c>digest</c> 是 GitHub 在 API 里给出的资产 SHA-256（形如 <c>sha256:abc…</c>，2025 年起对上传资产提供）。
+    /// 它由**托管方**计算，而不是上传者随包附带的清单文件 —— 因此这是在没有代码签名证书的前提下，
+    /// 客户端唯一能拿到的**独立于包体**的完整性锚点（V3.0）。
+    /// </summary>
+    private static ReleaseAsset? FindAsset(JsonElement release, Func<string, bool> match)
     {
         if (!release.TryGetProperty("assets", out var assets) || assets.ValueKind != JsonValueKind.Array) return null;
 
@@ -347,7 +371,9 @@ public sealed class UpdateService
             if (asset.TryGetProperty("browser_download_url", out var u))
             {
                 var url = u.GetString();
-                if (!string.IsNullOrEmpty(url)) return url;
+                if (string.IsNullOrEmpty(url)) continue;
+                var digest = asset.TryGetProperty("digest", out var dg) ? dg.GetString() : null;
+                return new ReleaseAsset(url, digest);
             }
         }
         return null;
@@ -424,6 +450,7 @@ public sealed class UpdateService
             Version? best = null;
             string? bestTag = null;
             string? bestUrl = null;
+            string? bestDigest = null;
 
             foreach (var rel in doc.RootElement.EnumerateArray())
             {
@@ -432,21 +459,22 @@ public sealed class UpdateService
                 var v = ParseVersion(tag);
                 if (v is null) continue;
 
-                var url = FindAssetUrl(rel, match);
-                if (string.IsNullOrEmpty(url)) continue;
+                var asset = FindAsset(rel, match);
+                if (asset is null) continue;
 
                 if (best is null || v > best)
                 {
                     best = v;
                     bestTag = tag;
-                    bestUrl = url;
+                    bestUrl = asset.Url;
+                    bestDigest = asset.Digest;
                 }
             }
 
             if (bestTag is null || string.IsNullOrEmpty(bestUrl))
                 return new GitHubAssetInfo(null, null, notFoundMessage);
 
-            return new GitHubAssetInfo(bestTag, bestUrl, null);
+            return new GitHubAssetInfo(bestTag, bestUrl, null) { Digest = bestDigest };
         }
         catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException or JsonException)
         {
@@ -464,7 +492,8 @@ public sealed class UpdateService
         string assetUrl,
         IProgress<(long Received, long? Total)>? progress = null,
         CancellationToken ct = default,
-        string tempFilePrefix = "OBS_Helper_Setup_")
+        string tempFilePrefix = "OBS_Helper_Setup_",
+        string? expectedSha256 = null)
     {
         try
         {
@@ -492,12 +521,62 @@ public sealed class UpdateService
                 return null;
             }
 
+            // V3.0：SHA-256 校验（有摘要时才做）。
+            // 摘要来自 GitHub API 的 assets[].digest，由托管方计算 —— 它独立于包体，
+            // 因此能挡住「下载链路被替换成另一个合法 PE」这类攻击（MZ 头校验挡不住）。
+            if (!string.IsNullOrWhiteSpace(expectedSha256))
+            {
+                var actual = FileHasher.Sha256(tmp);
+                var want = NormalizeDigest(expectedSha256);
+                if (!string.Equals(actual, want, StringComparison.OrdinalIgnoreCase))
+                {
+                    LastDownloadError = Strings.T("update.hashMismatch", want, actual);
+                    LastDownloadWasIntegrityFailure = true;
+                    try { File.Delete(tmp); } catch { /* 清理失败无妨 */ }
+                    return null;
+                }
+                LastDownloadError = null;
+            }
+            else
+            {
+                // 没有摘要不是错误（老资产可能没有），但要如实告诉用户「这次只做了 PE 头校验」
+                LastDownloadError = null;
+                LastDownloadVerified = false;
+                return tmp;
+            }
+            LastDownloadVerified = true;
+
             return tmp;
         }
-        catch (Exception)
+        catch (Exception ex)
         {
+            LastDownloadError = ex.Message;
             return null;
         }
+    }
+
+    /// <summary>
+    /// 最近一次下载失败的原因（V3.0）；成功时为 null。
+    ///
+    /// 为什么用属性而不是日志：本类被单测工程**直接链接编译**，不能依赖 <c>FileLogger</c>
+    /// （它经 <c>HostBridge</c> 牵扯到 DPAPI / 应用数据目录）。界面读这个属性给出「是完整性校验没过」
+    /// 这类具体原因，比笼统的「下载失败」有用得多。
+    /// </summary>
+    public string? LastDownloadError { get; private set; }
+
+    /// <summary>最近一次下载是否做过 SHA-256 校验（false = 对面没给摘要，只校验了 PE 头）。</summary>
+    public bool LastDownloadVerified { get; private set; }
+
+    /// <summary>最近一次下载失败是否为**完整性校验未通过**（用于上报 <c>OBS902</c>）。</summary>
+    public bool LastDownloadWasIntegrityFailure { get; private set; }
+
+    /// <summary>把 GitHub 的 <c>sha256:abc…</c> 摘要规范成裸小写十六进制。</summary>
+    internal static string NormalizeDigest(string digest)
+    {
+        var d = digest.Trim();
+        var colon = d.IndexOf(':');
+        if (colon >= 0) d = d[(colon + 1)..];
+        return d.ToLowerInvariant();
     }
 
     /// <summary>把响应体流式写入临时文件；超过体积上限时中止并返回 false（句柄已关闭，可安全清理）。</summary>

@@ -179,17 +179,80 @@ public sealed class AppearanceService : IDisposable
         Apply();
     }
 
+    /// <summary>
+    /// 实际生效的高对比（V3.0 无障碍）= 应用内开关 <b>或</b> Windows 的「高对比主题」。
+    ///
+    /// 为什么要读系统设置：以前只认应用内开关，系统级高对比用户在深色应用里得不到应有的配色 ——
+    /// 而高对比是低视力用户最主要的辅助手段。这里只在系统确实开启时才改变配色，
+    /// 且不改写用户自己的设置（关闭系统高对比后自动恢复原样）。
+    /// </summary>
+    public bool HighContrastEffective => Settings.HighContrast || IsSystemHighContrast;
+
+    /// <summary>系统级「高对比」是否开启（取不到时按未开启处理）。</summary>
+    public static bool IsSystemHighContrast
+    {
+        get
+        {
+            try { return SystemParameters.HighContrast; }
+            catch (Exception) { return false; }
+        }
+    }
+
+    /// <summary>
+    /// Windows「辅助功能 → 文本大小」的缩放系数（1.0 = 100%）。
+    ///
+    /// WPF 不直接暴露这个值，只能读注册表：
+    /// <c>HKCU\Software\Microsoft\Accessibility\TextScaleFactor</c>（DWORD，100 即 100%）。
+    /// 读不到按 1.0 处理；钳到 1.0~2.0，避免极端值把界面撑破。
+    /// </summary>
+    public static double SystemTextScaleFactor
+    {
+        get
+        {
+            try
+            {
+                using var k = Registry.CurrentUser.OpenSubKey(@"Software\Microsoft\Accessibility");
+                if (k?.GetValue("TextScaleFactor") is int v && v > 0)
+                    return Math.Clamp(v / 100.0, 1.0, 2.0);
+            }
+            catch (Exception)
+            {
+                // 读不到就当没有系统缩放
+            }
+            return 1.0;
+        }
+    }
+
     /// <summary>系统在浅色/深色切换时会广播 UserPreferenceChanged(General)。</summary>
     private void OnUserPreferenceChanged(object sender, UserPreferenceChangedEventArgs e)
     {
         if (e.Category != UserPreferenceCategory.General) return;
-        if (Theme != AppTheme.System) return;
+
+        // V3.0：高对比开关也走这条事件。无论用户选的是哪种主题，系统高对比一变都要重刷配色。
+        if (Theme != AppTheme.System)
+        {
+            if (!Settings.HighContrast && (IsSystemHighContrast || _lastSystemHighContrast))
+            {
+                _lastSystemHighContrast = IsSystemHighContrast;
+                Application.Current?.Dispatcher.BeginInvoke(new Action(() =>
+                {
+                    Apply();
+                    Changed?.Invoke();
+                }));
+            }
+            return;
+        }
+
+        _lastSystemHighContrast = IsSystemHighContrast;
         Application.Current?.Dispatcher.BeginInvoke(new Action(() =>
         {
             Apply();
             Changed?.Invoke();
         }));
     }
+
+    /// <summary>上一次观察到的系统高对比状态（用于判断「系统高对比刚变化」）。</summary>
+    private bool _lastSystemHighContrast;
 
     /// <summary>退出时摘掉系统事件挂钩（SystemEvents 是静态事件，不解绑会拖住对象）。</summary>
     public void Dispose()
@@ -330,7 +393,9 @@ public sealed class AppearanceService : IDisposable
 
         var res = app.Resources;
         var dark = IsDarkEffective;
-        var hc = Settings.HighContrast;
+        // V3.0：高对比 = 应用内开关 OR 系统高对比主题（见 HighContrastEffective 的注释）
+        var hc = HighContrastEffective;
+        _lastSystemHighContrast = IsSystemHighContrast;
 
         // ---- 品牌色（v2.7.1 强调色体系）：由用户在设置页选择，浅 / 深色各一套色阶。
         // BrandBrush 既作主按钮背景（配 BrandForegroundBrush 反衬文字），也大量用作
@@ -408,6 +473,10 @@ public sealed class AppearanceService : IDisposable
         res["CornerRadiusSm"] = new CornerRadius(4);
 
         // ---- 字号档位
+        //
+        // V3.0 无障碍：再乘一次 Windows「辅助功能 → 文本大小」的缩放系数。
+        // 应用内档位最大 1.28×，对低视力用户常常不够；系统那个滑块是他们已经习惯的入口，
+        // 这里跟随它（钳到 1.0~2.0，避免极端值把界面撑破），用户仍可用应用内档位微调。
         var f = FontScale switch
         {
             AppFontScale.Sm => 0.92,
@@ -415,6 +484,7 @@ public sealed class AppearanceService : IDisposable
             AppFontScale.Xl => 1.28,
             _ => 1.0
         };
+        f *= SystemTextScaleFactor;
         res["FontScaleFactor"] = f;
         res["FontSizeXs"] = Math.Round(11 * f, 1);
         res["FontSizeSm"] = Math.Round(12.5 * f, 1);

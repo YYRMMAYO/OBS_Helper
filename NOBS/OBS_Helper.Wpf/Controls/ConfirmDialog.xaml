@@ -29,8 +29,7 @@
 
       <TextBlock x:Name="MessageText" TextWrapping="Wrap"
                  FontSize="{DynamicResource FontSizeBase}"
-                 Foreground="{DynamicResource MutedBrush}"
-                 LineHeight="21" />
+                 Foreground="{DynamicResource MutedBrush}" />
 
       <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,20,0,0">
         <Button x:Name="CancelButton" Style="{StaticResource SecondaryButton}"

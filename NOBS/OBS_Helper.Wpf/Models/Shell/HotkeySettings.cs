@@ -4,7 +4,7 @@ namespace OBS_Helper.Wpf.Models.Shell;
 
 /// <summary>
 /// 全局热键配置。全部存 <c>prefs.json</c>（非敏感：只是键位组合，不含任何凭据）。
-/// 默认启用 5 组快捷键：录制 / 推流 / 虚拟摄像头 / 小窗 / 显示隐藏窗口。
+/// 默认启用 6 组快捷键：录制 / 推流 / 虚拟摄像头 / 存片 / 小窗 / 显示隐藏窗口。
 /// </summary>
 public sealed class HotkeySettings
 {
@@ -16,6 +16,17 @@ public sealed class HotkeySettings
 
     [JsonPropertyName("virtualCam")] public HotkeyBinding VirtualCam { get; set; } = new("C");
     [JsonPropertyName("virtualCamEnabled")] public bool VirtualCamEnabled { get; set; } = true;
+
+    /// <summary>回放缓存存片（V3.0）：直播中「把刚才那段留下」最常用的入口。</summary>
+    [JsonPropertyName("saveReplay")] public HotkeyBinding SaveReplay { get; set; } = new("V");
+    [JsonPropertyName("saveReplayEnabled")] public bool SaveReplayEnabled { get; set; } = true;
+
+    /// <summary>
+    /// 录制中打点（V3.0 / D3）：把当前时间点标出来，停止后导出成章节。
+    /// OBS 官方至今没有这个能力（issue #13567），默认 <c>Ctrl+Alt+K</c>（Marker）。
+    /// </summary>
+    [JsonPropertyName("markRecording")] public HotkeyBinding MarkRecording { get; set; } = new("K");
+    [JsonPropertyName("markRecordingEnabled")] public bool MarkRecordingEnabled { get; set; } = true;
 
     [JsonPropertyName("miniWindow")] public HotkeyBinding MiniWindow { get; set; } = new("M");
     [JsonPropertyName("miniWindowEnabled")] public bool MiniWindowEnabled { get; set; } = true;

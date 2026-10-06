@@ -203,11 +203,16 @@ jobs:
         run: |
           # 为什么条件传参：只有真拿到基准便携包时才指定 -DeltaBaseVersion，
           # 否则 build.ps1 会对不存在的清单发「找不到指定基准清单」的警告（拿不到基准时它自己会跳过）。
-          $buildArgs = @('-Configuration', 'Release', '-Runtime', 'win-x64')
+          #
+          # 必须用**哈希表** splat（键=参数名）。V3.0 发版时这里写成了数组 splat：
+          # 数组 splat 是**按位置**传参的，'-Configuration' 本身会被当成第一个位置参数的值，
+          # 于是 $Configuration='-Configuration'、$Runtime='Release' → dotnet publish -r Release
+          # → NETSDK1083，整条打包流水线在 CI 上直接失败（本地具名传参测不出来）。
+          $buildArgs = @{ Configuration = 'Release'; Runtime = 'win-x64' }
           if ($env:OBS_DELTA_BASE_READY -eq '1' -and $env:OBS_DELTA_BASE_VERSION) {
-              $buildArgs += @('-DeltaBaseVersion', $env:OBS_DELTA_BASE_VERSION)
+              $buildArgs['DeltaBaseVersion'] = $env:OBS_DELTA_BASE_VERSION
           }
-          Write-Host "build.ps1 $($buildArgs -join ' ')"
+          Write-Host ('build.ps1 ' + (($buildArgs.GetEnumerator() | Sort-Object Key | ForEach-Object { "-$($_.Key) $($_.Value)" }) -join ' '))
           & ./NOBS/build.ps1 @buildArgs
           if ($LASTEXITCODE -ne 0) { throw "build.ps1 失败（退出码 $LASTEXITCODE）" }
 

@@ -6,7 +6,7 @@
 回放缓存一键存片 · 日志脱敏与性能优化。详见 [`RELEASE_NOTES_v3.0.0.md`](NOBS/RELEASE_NOTES_v3.0.0.md)。
 
 [![CI](https://github.com/YYRMMAYO/OBS_Helper/actions/workflows/ci.yml/badge.svg)](https://github.com/YYRMMAYO/OBS_Helper/actions/workflows/ci.yml)
-[![平台](https://img.shields.io/badge/Platform-Windows_7_SP1%2B-0078D6.svg)]()
+[![平台](https://img.shields.io/badge/Platform-Windows_7_SP1%2B_%2F_10_%2F_11-0078D6.svg)]()
 [![.NET](https://img.shields.io/badge/.NET-10_%2F_6-512BD4.svg)]()
 [![技术栈](https://img.shields.io/badge/Stack-WPF_%2F_C%23-239120.svg)]()
 [![版本](https://img.shields.io/badge/Release-3.0.0-38bdf8.svg)](https://github.com/YYRMMAYO/OBS_Helper/releases)

@@ -33,7 +33,8 @@
 - **DEV 专属**内容（`01`、`02` … 编号说明、未发布特性、DEV 发布说明、实验记录）只放 `dev`；
 - 两条分支的 README **共享模块保持一致**（导航、功能、安装、更新、捐赠、许可），dev 只多「DEV 测试通道 / DEV 0X 新增」段落；
 - 改共享章节时**先改 master，再同步 dev**，不要在 dev 单独改写后不回流；
-- 完整归属表、检查清单与同步命令见 [`docs/BRANCH_AND_DOC_RULES.md`](docs/BRANCH_AND_DOC_RULES.md)。
+- 完整归属表、检查清单与同步命令见 [`docs/BRANCH_AND_DOC_RULES.md`](docs/BRANCH_AND_DOC_RULES.md)；
+- **每个 Release 必须写清「新增了什么 / 修复了什么」**，结构与验收见 [`docs/RELEASE_RULES.md`](docs/RELEASE_RULES.md)。
 
 ## 2. 代码组织：纯逻辑放 `*Core.cs`
 
@@ -221,7 +222,8 @@ The project is released under the [MIT License](LICENSE); your contribution is l
 - Shared README modules (navigation, features, install, updates, donate, license) stay **identical on both branches**;
   dev only adds the "DEV channel / DEV 0X" sections;
 - Change shared sections on **master first, then sync to dev** — never rewrite them on dev without merging back;
-- The full ownership table, checklist and sync commands are in [`docs/BRANCH_AND_DOC_RULES.md`](docs/BRANCH_AND_DOC_RULES.md) (Chinese).
+- The full ownership table, checklist and sync commands are in [`docs/BRANCH_AND_DOC_RULES.md`](docs/BRANCH_AND_DOC_RULES.md) (Chinese);
+- **Every release must state what was added or fixed** — see [`docs/RELEASE_RULES.md`](docs/RELEASE_RULES.md) (Chinese).
 
 ## 2. Code organization: pure logic goes in `*Core.cs`
 

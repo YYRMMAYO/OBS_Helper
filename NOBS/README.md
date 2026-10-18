@@ -641,6 +641,7 @@ XAML 一律用 `DynamicResource`（主题键直接用、文案键写作 `Loc.<�
 
 - 仓库首页（精简导航）→ [`../README.md`](../README.md)
 - **分支与文档分工规则（正式版文档放 master，DEV 文档放 dev）→ [`../docs/BRANCH_AND_DOC_RULES.md`](../docs/BRANCH_AND_DOC_RULES.md)**
+- **发版内容规则（每个 Release 必须写清新增 / 修复）→ [`../docs/RELEASE_RULES.md`](../docs/RELEASE_RULES.md)**
 - English（完整文档）→ [`README.en.md`](README.en.md)
 - DEV 测试通道（dev tag 编号规则 / 更新逻辑 / 当前限制）→ [`docs/DEV_CHANNEL.md`](docs/DEV_CHANNEL.md)
 - English → [`../README.en.md`](../README.en.md)

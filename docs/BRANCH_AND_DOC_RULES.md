@@ -29,6 +29,7 @@
 | DEV 版本说明（`01` / `02` / `03` …） | **只放 dev** | 文件名建议 `RELEASE_NOTES_DEV_0X.md`；不得混进 master |
 | `NOBS/docs/DEV_CHANNEL.md` | **master + dev 都放** | 它描述「两条通道的编号与更新机制」，是机制文档，不是 DEV 版本说明，两条分支都需要 |
 | 根 `docs/BRANCH_AND_DOC_RULES.md`（本文件） | **master + dev 都放** | 规则本身要跟着两条分支走，内容保持一致 |
+| 根 `docs/RELEASE_RULES.md`（发版内容规则） | **master + dev 都放** | 规定每个 Release 必须写清新增 / 修复内容；CI 按它校验发布说明 |
 | 用户文档（功能、安装、隐私、FAQ、架构、代码清单…） | **master** | 面向所有用户/贡献者；写完后再同步到 dev |
 | dev 专属设计稿、实验记录、未发布特性的说明 | **dev** | 例如 `NOBS/docs/DEV_*_DESIGN.md`；功能转正时把必要内容整理进 master 的用户文档，原稿可以留在 dev |
 | 安全策略 / 行为准则 / 贡献指南 / 许可 | **master**（dev 同步） | 社区文件属于正式仓库门面 |
@@ -70,7 +71,8 @@
 1. **改代码 + 单元测试**：纯逻辑进 `*Core.cs`，同步补测试。
 2. **升版本号**：`NOBS/OBS_Helper.Wpf/OBS_Helper.Wpf.csproj` 的 `Version` / `FileVersion` / `AssemblyVersion`，
    以及 `NOBS/OBS_Helper.Wpf/OBS_Helper_Setup.iss` 的 `MyAppVersion`。
-3. **写发布说明**：`NOBS/RELEASE_NOTES_vX.Y.Z.md`（新功能、修复、兼容性、已知边界、下载清单）。
+3. **写发布说明**：`NOBS/RELEASE_NOTES_vX.Y.Z.md`，必须写清**新增 / 修复**（结构见 [`docs/RELEASE_RULES.md`](RELEASE_RULES.md)）；
+   CI 会用它作为 Release 正文，缺失或过短会直接让发版 job 失败。
 4. **更新 README**：根 README / `NOBS/README.md` 的版本号、徽章、功能段、发布说明链接；英文两份同步。
 5. **验证**：`dotnet test` 至少 3 轮 + 双目标构建 + `OBS_SELFTEST=1` 自检 +
    `scripts/check_accessibility.py` / `check_docs.py` / `check_resources.py`。

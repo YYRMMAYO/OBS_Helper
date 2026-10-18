@@ -23,8 +23,12 @@
     <Grid x:Name="ContentRoot" ClipToBounds="True">
       <ScrollViewer x:Name="Scroller" VerticalScrollBarVisibility="Hidden"
                     HorizontalScrollBarVisibility="Disabled"
-                    Focusable="False" PanningMode="VerticalOnly"
-                    PreviewMouseWheel="OnContentWheel">
+                    Focusable="True" PanningMode="VerticalOnly"
+                    Cursor="SizeNS"
+                    PreviewMouseWheel="OnContentWheel"
+                    PreviewMouseLeftButtonDown="OnContentMouseLeftButtonDown"
+                    PreviewMouseMove="OnContentMouseMove"
+                    PreviewMouseLeftButtonUp="OnContentMouseLeftButtonUp">
         <TextBlock x:Name="ScriptText" TextWrapping="Wrap" Foreground="#ffffff"
                    FontSize="42" LineHeight="61" Margin="80,40,80,220" />
       </ScrollViewer>
@@ -36,10 +40,11 @@
 
     <!-- 顶部工具条：拖动区域 + 播放 / 速度 / 字号 / 镜像 / 穿透 / 倒计时 / 编辑 / 关闭 -->
     <Border x:Name="TopBar" VerticalAlignment="Top" Background="#66000000"
-            CornerRadius="10,10,0,0" Padding="8,6">
+            CornerRadius="10,10,0,0" Padding="8,6"
+            MouseLeftButtonDown="OnDragAreaMouseDown">
       <DockPanel LastChildFill="True">
         <Border DockPanel.Dock="Left" x:Name="DragArea" Background="Transparent"
-                Padding="4,2,14,2" Cursor="SizeAll" MouseLeftButtonDown="OnDragAreaMouseDown">
+                Padding="4,2,14,2" Cursor="SizeAll">
           <TextBlock Text="{DynamicResource Loc.teleprompter.title}" Foreground="#ffffff"
                      FontSize="12" VerticalAlignment="Center" />
         </Border>
@@ -111,6 +116,22 @@
                 Width="34" Height="26" Click="OnPlayPauseClick"
                 AutomationProperties.Name="{DynamicResource Loc.teleprompter.play}"
                 ToolTip="{DynamicResource Loc.teleprompter.play}" Content="▶" Foreground="#ffffff" />
+
+        <!-- V3.1.1：手动上下移动（不依赖键盘焦点） -->
+        <Button x:Name="ScrollDownButton" DockPanel.Dock="Right" Style="{StaticResource IconButton}"
+                Width="30" Height="26" Margin="4,0,0,0" Click="OnScrollDownClick"
+                AutomationProperties.Name="{DynamicResource Loc.teleprompter.scrollDown}"
+                ToolTip="{DynamicResource Loc.teleprompter.scrollDown}" Content="▼" Foreground="#ffffff" />
+
+        <Button x:Name="ScrollUpButton" DockPanel.Dock="Right" Style="{StaticResource IconButton}"
+                Width="30" Height="26" Margin="4,0,0,0" Click="OnScrollUpClick"
+                AutomationProperties.Name="{DynamicResource Loc.teleprompter.scrollUp}"
+                ToolTip="{DynamicResource Loc.teleprompter.scrollUp}" Content="▲" Foreground="#ffffff" />
+
+        <Button x:Name="ScrollTopButton" DockPanel.Dock="Right" Style="{StaticResource IconButton}"
+                Width="30" Height="26" Margin="4,0,0,0" Click="OnScrollTopClick"
+                AutomationProperties.Name="{DynamicResource Loc.teleprompter.scrollTop}"
+                ToolTip="{DynamicResource Loc.teleprompter.scrollTop}" Content="⤒" Foreground="#ffffff" />
 
         <TextBlock x:Name="HintText" Foreground="#cccccc" FontSize="11" VerticalAlignment="Center"
                    Margin="10,0,0,0" TextTrimming="CharacterEllipsis" />

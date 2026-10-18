@@ -108,15 +108,71 @@ public static class TeleprompterCore
         return Math.Min(offset, maxOffset);
     }
 
+    /// <summary>
+    /// 滚动终点（V3.1.1）：让「最后一行」停在阅读参考线上，而不是一路滚到只剩底部留白。
+    /// <paramref name="textHeight"/> 为 TextBlock 的实际高度（不含上下留白），
+    /// <paramref name="topMargin"/> / <paramref name="guideY"/> 为内容顶部留白与参考线位置。
+    /// 文本很短（不需要滚动）时返回 0；结果始终不超过 <paramref name="maxOffset"/>。
+    /// </summary>
+    public static double ScrollEnd(double maxOffset, double textHeight, double topMargin, double guideY)
+    {
+        var bottom = (double.IsNaN(textHeight) || textHeight < 0 ? 0 : textHeight)
+                     + (double.IsNaN(topMargin) || topMargin < 0 ? 0 : topMargin);
+        var guide = double.IsNaN(guideY) || guideY < 0 ? 0 : guideY;
+        var end = bottom - guide;
+        if (double.IsNaN(end) || end < 0) end = 0;
+        return ClampOffset(end, maxOffset);
+    }
+
+    /// <summary>
+    /// 鼠标拖动滚动：按住文字上下拖动多少像素，就反向移动多少（像拖动纸张）。
+    /// 结果同样夹在 [0, maxOffset]。
+    /// </summary>
+    public static double PanOffset(double startOffset, double dragDeltaY, double maxOffset)
+    {
+        if (double.IsNaN(dragDeltaY) || double.IsInfinity(dragDeltaY)) dragDeltaY = 0;
+        return ClampOffset(startOffset - dragDeltaY, maxOffset);
+    }
+
+    /// <summary>
+    /// 计算窗口移动后的左上角，并保证窗口不会被拖出虚拟屏幕（V3.1.1：Ctrl+方向键微调位置）。
+    /// 参数全部是设备无关像素；<paramref name="screenWidth"/> / <paramref name="screenHeight"/>
+    /// 是虚拟屏幕尺寸，<paramref name="windowWidth"/> / <paramref name="windowHeight"/> 是窗口尺寸。
+    /// </summary>
+    public static (double Left, double Top) MoveWindow(
+        double left, double top, double deltaX, double deltaY,
+        double screenLeft, double screenTop, double screenWidth, double screenHeight,
+        double windowWidth, double windowHeight)
+    {
+        if (double.IsNaN(deltaX) || double.IsInfinity(deltaX)) deltaX = 0;
+        if (double.IsNaN(deltaY) || double.IsInfinity(deltaY)) deltaY = 0;
+
+        var x = ClampToScreen(left + deltaX, screenLeft, screenWidth, windowWidth);
+        var y = ClampToScreen(top + deltaY, screenTop, screenHeight, windowHeight);
+        return (x, y);
+    }
+
+    private static double ClampToScreen(double value, double origin, double length, double size)
+    {
+        if (double.IsNaN(value) || double.IsInfinity(value)) return origin;
+        if (double.IsNaN(length) || length <= 0) return value;
+        var max = origin + Math.Max(0, length - Math.Max(0, size));
+        return Math.Clamp(value, origin, max);
+    }
+
     /// <summary>镜像变换的缩放系数（-1 表示翻转）。</summary>
     public static (double ScaleX, double ScaleY) MirrorScale(bool horizontal, bool vertical)
         => (horizontal ? -1 : 1, vertical ? -1 : 1);
 
-    /// <summary>归一化脚本：统一换行、去掉 BOM、限制长度；空内容回退默认说明。</summary>
+    /// <summary>
+    /// 归一化脚本：统一换行、去掉 BOM 与首尾空白（V3.1.1：末尾空行会让滚动终点只剩空白）、
+    /// 限制长度；空内容回退默认说明。
+    /// </summary>
     public static string NormalizeScript(string? text)
     {
         if (string.IsNullOrWhiteSpace(text)) return DefaultScript;
-        var normalized = text.Replace("\r\n", "\n").Replace('\r', '\n').TrimStart('\uFEFF');
+        var normalized = text.Replace("\r\n", "\n").Replace('\r', '\n').TrimStart('\uFEFF').Trim();
+        if (normalized.Length == 0) return DefaultScript;
         if (normalized.Length > MaxScriptChars)
             normalized = normalized[..MaxScriptChars];
         return normalized;

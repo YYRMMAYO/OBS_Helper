@@ -85,6 +85,53 @@ public class TeleprompterCoreTests
         Assert.Equal(30, TeleprompterCore.ClampOffset(30, 100));
     }
 
+    // ------------------------------------------------------------ 手动上下移动（V3.1.1）
+
+    [Fact]
+    public void ScrollEndStopsWhenLastLineReachesGuide()
+    {
+        // 文本高 609 + 顶部留白 40 = 649；参考线 128 → 最后一行正好停在参考线
+        Assert.Equal(521, TeleprompterCore.ScrollEnd(549, 609, 40, 128), 3);
+        // 不会超过 ScrollableHeight
+        Assert.Equal(200, TeleprompterCore.ScrollEnd(200, 609, 40, 128), 3);
+        // 短文本：不需要滚动
+        Assert.Equal(0, TeleprompterCore.ScrollEnd(0, 120, 40, 128), 3);
+        Assert.Equal(0, TeleprompterCore.ScrollEnd(100, double.NaN, double.NaN, double.NaN), 3);
+    }
+
+    [Fact]
+    public void PanOffsetMovesWithDragAndClamps()
+    {
+        // 往下拖 40px → 内容跟着往下，偏移减少
+        Assert.Equal(60, TeleprompterCore.PanOffset(100, 40, 500), 3);
+        // 往上拖 → 偏移增加
+        Assert.Equal(140, TeleprompterCore.PanOffset(100, -40, 500), 3);
+        Assert.Equal(0, TeleprompterCore.PanOffset(10, 40, 500), 3);
+        Assert.Equal(500, TeleprompterCore.PanOffset(490, -40, 500), 3);
+        Assert.Equal(100, TeleprompterCore.PanOffset(100, double.NaN, 500), 3);
+    }
+
+    [Fact]
+    public void MoveWindowClampsToVirtualScreen()
+    {
+        // 1920x1080 屏幕、900x320 窗口：左下 1020 / 上界 760
+        var (l, t) = TeleprompterCore.MoveWindow(510, 380, 0, 100, 0, 0, 1920, 1080, 900, 320);
+        Assert.Equal(510, l, 3);
+        Assert.Equal(480, t, 3);
+
+        var (l2, t2) = TeleprompterCore.MoveWindow(510, 380, -9999, -9999, 0, 0, 1920, 1080, 900, 320);
+        Assert.Equal(0, l2, 3);
+        Assert.Equal(0, t2, 3);
+
+        var (l3, t3) = TeleprompterCore.MoveWindow(510, 380, 9999, 9999, 0, 0, 1920, 1080, 900, 320);
+        Assert.Equal(1020, l3, 3);
+        Assert.Equal(760, t3, 3);
+
+        // 负坐标虚拟屏（副屏在左边）也能正确夹取
+        var (l4, _) = TeleprompterCore.MoveWindow(-1500, 0, -9999, 0, -1920, 0, 3840, 1080, 900, 320);
+        Assert.Equal(-1920, l4, 3);
+    }
+
     // ------------------------------------------------------------ 镜像 / 显示器
 
     [Fact]
@@ -137,6 +184,14 @@ public class TeleprompterCoreTests
     {
         var huge = new string('x', TeleprompterCore.MaxScriptChars + 100);
         Assert.Equal(TeleprompterCore.MaxScriptChars, TeleprompterCore.NormalizeScript(huge).Length);
+    }
+
+    [Fact]
+    public void NormalizeScriptTrimsTrailingBlankLines()
+    {
+        // V3.1.1：末尾空行会让「滚到底」只剩空白
+        Assert.Equal("a\nb", TeleprompterCore.NormalizeScript("a\nb\n\n\n"));
+        Assert.Equal("a\nb", TeleprompterCore.NormalizeScript("  \n a\nb \n"));
     }
 
     [Fact]

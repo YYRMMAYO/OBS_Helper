@@ -151,7 +151,7 @@ SceneTemplateService 场景模板：在线落地（建专属配置集合 → 逐
 |---|---|---|
 | 壁纸 | `Services/Appearance/WallpaperCore` / `WallpaperStore` / `WallpaperService`、`Controls/WallpaperLayer` | 纯逻辑（校验 / 归一化 / 轮播顺序 / 迁移）与文件库分离；WPF 侧负责解码缓存、轮播计时器与资源写入。文件复制进 `%LocalAppData%\OBS_Helper\wallpapers\`，不再依赖原路径；高对比强制回退默认底。 |
 | 一键录制 | `ObsConnectionService.EnsureConnectedAsync` + `Services/Shell/SimpleRecordingService` | 单飞、超时、取消、主动连接；首次同意后不再每次弹窗；OBS 未启动时可拉起，已启动未连接时自动连接；失败分类映射到可执行出口。v4 旧协议保持「跳过设置、直接开录」。 |
-| 提词器 | `Services/Shell/TeleprompterCore` / `TeleprompterService`、`Views/TeleprompterWindow`、`Services/Compat/WindowCaptureExclusion` | 独立置顶窗口；纯逻辑负责 clamp / 滚动 / 镜像 / 分段与场景匹配；捕获排除只用 `SetWindowDisplayAffinity`，不承诺 100%；点击穿透依赖全局热键退出。 |
+| 提词器 | `Services/Shell/TeleprompterCore` / `TeleprompterService`、`Views/TeleprompterWindow`、`Services/Compat/WindowCaptureExclusion` | 独立置顶窗口；纯逻辑负责 clamp / 滚动（含 V3.1.1 的滚动终点、拖动与窗口移动）/ 镜像 / 分段与场景匹配；捕获排除只用 `SetWindowDisplayAffinity`，不承诺 100%；点击穿透依赖全局热键退出。 |
 | 录像命名 | `Services/Recording/RecordingNamingCore` | 停止后按模板重命名；非法字符净化、同名加序号、失败保留原文件；不写 OBS `FilenameFormatting`。 |
 | 静音提醒 | `Services/Audio/AudioAlertCore` / `AudioAlertService` | 只在录制 / 推流中生效；阈值 + 持续时间 + 防重复；只提醒，不自动改音频状态。 |
 

@@ -35,6 +35,10 @@ public partial class TeleprompterWindow : Window
     private bool _editing;
     private bool _applying;
     private bool _clickThrough;
+    private bool _dragging;
+    private Point _dragOrigin;
+    private double _dragStartOffset;
+    private readonly DispatcherTimer _boundsSaveTimer;
 
     public TeleprompterWindow(TeleprompterService service)
     {
@@ -47,6 +51,9 @@ public partial class TeleprompterWindow : Window
         InitializeComponent();
         _applying = false;
 
+        // 捕获意外丢失（例如 Alt+Tab）时结束拖动，避免自动滚动一直停着
+        Scroller.LostMouseCapture += (_, _) => EndDrag();
+
         _timer = new DispatcherTimer(DispatcherPriority.Render) { Interval = TimeSpan.FromMilliseconds(16) };
         _timer.Tick += OnTick;
 
@@ -56,9 +63,14 @@ public partial class TeleprompterWindow : Window
         _toastTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(2.6) };
         _toastTimer.Tick += (_, _) => { _toastTimer.Stop(); ToastBorder.Visibility = Visibility.Collapsed; };
 
+        // V3.1.1：窗口位置 / 尺寸变化后延迟落盘，避免拖动过程中反复写 prefs.json
+        _boundsSaveTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(600) };
+        _boundsSaveTimer.Tick += (_, _) => { _boundsSaveTimer.Stop(); SaveSettings(includeBounds: true); };
+
         Loaded += OnLoaded;
         SourceInitialized += OnSourceInitialized;
         SizeChanged += OnSizeChanged;
+        LocationChanged += OnLocationChanged;
         IsVisibleChanged += OnVisibleChanged;
         PreviewKeyDown += OnPreviewKeyDown;
         Deactivated += (_, _) => { /* ShowActivated=false：不要因为失焦而打断滚动 */ };
@@ -80,8 +92,7 @@ public partial class TeleprompterWindow : Window
         UpdateToolbarText();
         UpdateCaptureHint();
         SetPlaying(false);
-        _offset = 0;
-        Scroller.ScrollToVerticalOffset(0);
+        ScrollTo(0);
         _lastTick = DateTime.UtcNow;
         _timer.Start();
     }
@@ -97,9 +108,18 @@ public partial class TeleprompterWindow : Window
     private void OnSizeChanged(object sender, SizeChangedEventArgs e)
     {
         if (GuideLine is null) return;
-        GuideLine.Margin = new Thickness(0, Math.Max(40, ActualHeight * 0.4), 0, 0);
-        if (_offset > Scroller.ScrollableHeight)
-            _offset = TeleprompterCore.ClampOffset(_offset, Scroller.ScrollableHeight);
+        GuideLine.Margin = new Thickness(0, GuideLineY, 0, 0);
+        _offset = TeleprompterCore.ClampOffset(_offset, MaxScrollOffset);
+        QueueBoundsSave();
+    }
+
+    private void OnLocationChanged(object? sender, EventArgs e) => QueueBoundsSave();
+
+    private void QueueBoundsSave()
+    {
+        if (_applying || !IsLoaded) return;
+        _boundsSaveTimer.Stop();
+        _boundsSaveTimer.Start();
     }
 
     private void OnVisibleChanged(object sender, DependencyPropertyChangedEventArgs e)
@@ -113,6 +133,7 @@ public partial class TeleprompterWindow : Window
         else
         {
             _timer.Stop();
+            EndDrag();
         }
     }
 
@@ -121,6 +142,7 @@ public partial class TeleprompterWindow : Window
         _timer.Stop();
         _autosaveTimer.Stop();
         _toastTimer.Stop();
+        _boundsSaveTimer.Stop();
         if (_editing)
         {
             try { _service.SaveScript(EditorBox.Text); }
@@ -152,7 +174,7 @@ public partial class TeleprompterWindow : Window
 
             Topmost = _settings.Topmost;
             GuideLine.Visibility = _settings.ShowGuide ? Visibility.Visible : Visibility.Collapsed;
-            GuideLine.Margin = new Thickness(0, Math.Max(40, ActualHeight * 0.4), 0, 0);
+            GuideLine.Margin = new Thickness(0, GuideLineY, 0, 0);
 
             var (sx, sy) = TeleprompterCore.MirrorScale(_settings.MirrorHorizontal, _settings.MirrorVertical);
             ContentRoot.LayoutTransform = new ScaleTransform(sx, sy);
@@ -245,20 +267,38 @@ public partial class TeleprompterWindow : Window
 
     // ------------------------------------------------------------ 播放 / 滚动
 
+    /// <summary>阅读参考线的纵坐标（默认窗口高度的 40%）。</summary>
+    private double GuideLineY => Math.Max(40, ActualHeight * 0.4);
+
+    /// <summary>
+    /// 可滚动到的最大偏移（V3.1.1）：滚到「最后一行正好停在参考线」为止。
+    /// 直接用 <c>ScrollableHeight</c> 会把底部留白也滚进来，最后只剩一片黑。
+    /// </summary>
+    private double MaxScrollOffset => TeleprompterCore.ScrollEnd(
+        Scroller.ScrollableHeight, ScriptText.ActualHeight, ScriptText.Margin.Top, GuideLineY);
+
     private void OnTick(object? sender, EventArgs e)
     {
         var now = DateTime.UtcNow;
         var seconds = (now - _lastTick).TotalSeconds;
         _lastTick = now;
 
-        if (!_playing || _editing) return;
+        // 拖动文字时暂停自动滚动，否则手指和计时器会互相抢偏移
+        if (!_playing || _editing || _dragging) return;
 
-        var max = Scroller.ScrollableHeight;
+        var max = MaxScrollOffset;
         _offset = TeleprompterCore.Advance(_offset, max, _settings.Speed, seconds, paused: false);
         Scroller.ScrollToVerticalOffset(_offset);
 
         if (max > 0 && _offset >= max)
             SetPlaying(false);
+    }
+
+    /// <summary>把滚动偏移写回 ScrollViewer（统一夹到有效范围）。</summary>
+    private void ScrollTo(double offset)
+    {
+        _offset = TeleprompterCore.ClampOffset(offset, MaxScrollOffset);
+        Scroller.ScrollToVerticalOffset(_offset);
     }
 
     private void SetPlaying(bool playing)
@@ -298,13 +338,66 @@ public partial class TeleprompterWindow : Window
         SaveSettings();
     }
 
+    // ------------------------------------------------------------ 手动上下移动
+
+    private void OnScrollUpClick(object sender, RoutedEventArgs e) => ScrollBy(-LineStep);
+
+    private void OnScrollDownClick(object sender, RoutedEventArgs e) => ScrollBy(+LineStep);
+
+    private void OnScrollTopClick(object sender, RoutedEventArgs e) => ScrollTo(0);
+
+    /// <summary>一次手动滚动的距离：一行文字。</summary>
+    private double LineStep => Math.Max(24, ScriptText.LineHeight > 0 ? ScriptText.LineHeight : 60);
+
     private void OnContentWheel(object sender, MouseWheelEventArgs e)
     {
         if (_editing) return;
         e.Handled = true;
-        var max = Scroller.ScrollableHeight;
-        _offset = TeleprompterCore.ClampOffset(_offset - e.Delta * 0.6, max);
-        Scroller.ScrollToVerticalOffset(_offset);
+        ScrollBy(-e.Delta * 0.6);
+    }
+
+    /// <summary>按住文字上下拖动：像拖动纸张一样移动内容，不依赖键盘焦点。</summary>
+    private void OnContentMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+    {
+        if (_editing) return;
+
+        // 点击即激活：否则 ShowActivated=False 的窗口永远收不到键盘事件，
+        // 用户按空格 / 方向键会「没有反应」。
+        try
+        {
+            Activate();
+            Scroller.Focus();
+        }
+        catch (Exception) { /* 激活失败不影响拖动 */ }
+
+        _dragging = true;
+        _dragOrigin = e.GetPosition(Scroller);
+        _dragStartOffset = _offset;
+        Scroller.CaptureMouse();
+        e.Handled = true;
+    }
+
+    private void OnContentMouseMove(object sender, MouseEventArgs e)
+    {
+        if (!_dragging) return;
+        if (e.LeftButton != MouseButtonState.Pressed)
+        {
+            EndDrag();
+            return;
+        }
+
+        var delta = e.GetPosition(Scroller).Y - _dragOrigin.Y;
+        ScrollTo(TeleprompterCore.PanOffset(_dragStartOffset, delta, MaxScrollOffset));
+    }
+
+    private void OnContentMouseLeftButtonUp(object sender, MouseButtonEventArgs e) => EndDrag();
+
+    private void EndDrag()
+    {
+        if (!_dragging) return;
+        _dragging = false;
+        Scroller.ReleaseMouseCapture();
+        _lastTick = DateTime.UtcNow;
     }
 
     private void OnPreviewKeyDown(object sender, KeyEventArgs e)
@@ -319,6 +412,19 @@ public partial class TeleprompterWindow : Window
             return;
         }
 
+        // Ctrl + 方向键：移动窗口本身（V3.1.1），与方向键滚动文字区分开
+        var ctrl = (Keyboard.Modifiers & ModifierKeys.Control) != 0;
+        if (ctrl)
+        {
+            switch (e.Key)
+            {
+                case Key.Left: e.Handled = true; MoveWindowBy(-WindowMoveStep, 0); return;
+                case Key.Right: e.Handled = true; MoveWindowBy(+WindowMoveStep, 0); return;
+                case Key.Up: e.Handled = true; MoveWindowBy(0, -WindowMoveStep); return;
+                case Key.Down: e.Handled = true; MoveWindowBy(0, +WindowMoveStep); return;
+            }
+        }
+
         switch (e.Key)
         {
             case Key.Space:
@@ -327,16 +433,27 @@ public partial class TeleprompterWindow : Window
                 break;
             case Key.Home:
                 e.Handled = true;
-                _offset = 0;
-                Scroller.ScrollToVerticalOffset(0);
+                ScrollTo(0);
+                break;
+            case Key.End:
+                e.Handled = true;
+                ScrollTo(MaxScrollOffset);
                 break;
             case Key.Up:
                 e.Handled = true;
-                ScrollBy(-40);
+                ScrollBy(-LineStep);
                 break;
             case Key.Down:
                 e.Handled = true;
-                ScrollBy(40);
+                ScrollBy(+LineStep);
+                break;
+            case Key.PageUp:
+                e.Handled = true;
+                ScrollBy(-Math.Max(LineStep, Scroller.ViewportHeight * 0.8));
+                break;
+            case Key.PageDown:
+                e.Handled = true;
+                ScrollBy(+Math.Max(LineStep, Scroller.ViewportHeight * 0.8));
                 break;
             case Key.Escape:
                 e.Handled = true;
@@ -345,11 +462,21 @@ public partial class TeleprompterWindow : Window
         }
     }
 
-    private void ScrollBy(double delta)
+    private void ScrollBy(double delta) => ScrollTo(_offset + delta);
+
+    private const double WindowMoveStep = 10;
+
+    /// <summary>移动窗口（Ctrl+方向键），并夹在虚拟屏幕内；位置会在 600ms 后自动保存。</summary>
+    private void MoveWindowBy(double deltaX, double deltaY)
     {
-        var max = Scroller.ScrollableHeight;
-        _offset = TeleprompterCore.ClampOffset(_offset + delta, max);
-        Scroller.ScrollToVerticalOffset(_offset);
+        var (left, top) = TeleprompterCore.MoveWindow(
+            Left, Top, deltaX, deltaY,
+            SystemParameters.VirtualScreenLeft, SystemParameters.VirtualScreenTop,
+            SystemParameters.VirtualScreenWidth, SystemParameters.VirtualScreenHeight,
+            ActualWidth, ActualHeight);
+        Left = left;
+        Top = top;
+        QueueBoundsSave();
     }
 
     // ------------------------------------------------------------ 镜像 / 穿透 / 捕获
@@ -450,8 +577,7 @@ public partial class TeleprompterWindow : Window
         ScriptText.Text = _script;
         _editing = false;
         EditorPanel.Visibility = Visibility.Collapsed;
-        _offset = 0;
-        Scroller.ScrollToVerticalOffset(0);
+        ScrollTo(0);
     }
 
     private void OnEditorTextChanged(object sender, System.Windows.Controls.TextChangedEventArgs e)
@@ -516,8 +642,7 @@ public partial class TeleprompterWindow : Window
         _script = TeleprompterCore.NormalizeScript(text);
         ScriptText.Text = _script;
         if (_editing) EditorBox.Text = _script;
-        _offset = 0;
-        Scroller.ScrollToVerticalOffset(0);
+        ScrollTo(0);
     }
 
     // ------------------------------------------------------------ 场景联动
@@ -539,9 +664,7 @@ public partial class TeleprompterWindow : Window
         var before = _script[..Math.Min(section.StartIndex, _script.Length)];
         var lines = before.Count(c => c == '\n');
         var linePx = TeleprompterCore.LineHeightPixels(_settings.FontSize, _settings.LineHeight);
-        var max = Scroller.ScrollableHeight;
-        _offset = TeleprompterCore.ClampOffset(lines * linePx + 40, max);
-        Scroller.ScrollToVerticalOffset(_offset);
+        ScrollTo(lines * linePx + 40);
         ShowToast(Strings.T("teleprompter.sceneLink", sceneName));
     }
 

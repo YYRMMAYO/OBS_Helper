@@ -110,7 +110,7 @@ NOBS/
 | `Services/Appearance/WallpaperCore.cs` | **壁纸纯逻辑**（V3.1.0）：格式 / 大小 / 尺寸校验、哈希文件名、fit/dim/blur 归一化、轮播顺序、旧设置迁移决策、manifest 容错。 |
 | `Services/Appearance/WallpaperStore.cs` | **壁纸库文件层**（V3.1.0）：按 SHA-256 去重导入、manifest 原子写、损坏扫描重建、删除与孤儿清理；不依赖 WPF。 |
 | `Services/Appearance/WallpaperService.cs` | **壁纸服务**（V3.1.0）：解码 / 缓存 / 轮播计时器 / 主题联动 / 旧路径迁移 / 资源写入；导入与解码不阻塞 UI。 |
-| `Services/Shell/TeleprompterCore.cs` | **提词器纯逻辑**（V3.1.0）：速度 / 字号 / 行高 / 透明度 clamp、滚动步进、镜像、脚本分段与场景匹配、显示器与窗口位置计算。 |
+| `Services/Shell/TeleprompterCore.cs` | **提词器纯逻辑**（V3.1.0；V3.1.1 补手动上下移动）：速度 / 字号 / 行高 / 透明度 clamp、滚动步进与滚动终点、拖动位移、窗口移动夹取、镜像、脚本分段与场景匹配、显示器与窗口位置计算。 |
 | `Services/Shell/TeleprompterService.cs` | **提词器服务**（V3.1.0）：单实例窗口生命周期、脚本 / 设置持久化、热键入口、场景联动、脚本原子保存。 |
 | `Services/Audio/AudioAlertCore.cs` | **静音 / 音量过低提醒判定纯逻辑**（V3.1.0）：阈值、持续时间、防重复；只提醒，不自动改音频状态。 |
 | `Services/Audio/AudioAlertService.cs` | **静音 / 音量过低提醒服务**（V3.1.0）：录制 / 推流中读取 OBS 音频状态，托盘提醒，一次会话每输入只提醒一次。 |
@@ -241,7 +241,7 @@ NOBS/
 | `Views/TemplatePage.xaml(.cs)` | 场景模板页（在线落地 / 离线导出）。 |
 | `Views/SettingsPage.xaml(.cs)` | 设置页（AI、连接、热键、外观、**新手引导重播**、更新等全部设置）。 |
 | `Views/SetupPage.xaml(.cs)` | 新手搭建流程六步引导 + 竖屏 / 多平台进阶向导（V2.2）。 |
-| `Views/TeleprompterWindow.xaml(.cs)` | **提词器窗口**（V3.1.0）：置顶 / 无边框 / 可拖动缩放、自动滚动、速度 / 字号 / 行高 / 透明度 / 镜像、点击穿透、3-2-1 倒计时、脚本编辑与导入、阅读参考线、捕获排除提示。 |
+| `Views/TeleprompterWindow.xaml(.cs)` | **提词器窗口**（V3.1.0；V3.1.1 补手动上下移动）：置顶 / 无边框 / 可拖动缩放、自动滚动、工具栏 ↑↓ / 拖动文字 / 滚轮 / 键盘手动滚动、Ctrl+方向键移动窗口、速度 / 字号 / 行高 / 透明度 / 镜像、点击穿透、3-2-1 倒计时、脚本编辑与导入、阅读参考线、捕获排除提示。 |
 | `Views/PluginsPage.xaml(.cs)` | 插件广场：目录热更新 + 目录版本/复核日期 + 维护状态标注（V2.9）+ 本机体检 + 下载角标 + AI 预算提示 + 关注（V2.2）。 |
 | `Views/ToolboxPage.xaml(.cs)` | 工具箱（V2.6）：录像工具 / 参数处方 / 隐私清单 / 冲突扫描 / 带宽计算 / 版本情报 / 快捷键速查。 |
 | `Views/SetupWizardWindow.xaml(.cs)` | 分步向导窗口（竖屏双画布 / 多平台推流，V2.2）。 |
@@ -298,8 +298,8 @@ NOBS/
 | 文件 | 职责 |
 |---|---|
 | `Localization/Strings.cs` | 文案表入口（纯 BCL、零 WPF）：当前语言、`T(key)` / `T(key, args)`、键集、语言标识归一化、缺键回退次序。 |
-| `Localization/StringTableZhHans.cs` | 简体中文文案（默认语言，**2390 条键**，按模块分段）。 |
-| `Localization/StringTableEnUs.cs` | English 文案（**2390 条键**，键集必须与中文表完全一致，有单测钉死）。 |
+| `Localization/StringTableZhHans.cs` | 简体中文文案（默认语言，**2393 条键**，按模块分段）。 |
+| `Localization/StringTableEnUs.cs` | English 文案（**2393 条键**，键集必须与中文表完全一致，有单测钉死）。 |
 | `Localization/ContentAssets.cs` | 随包离线内容的**按语言取资产**统一入口（V2.9.3）：外部缓存 → 当前语言内嵌 → 中文内嵌（最后一级兜底必写 WARN，否则英文用户会「安静地看到中文内容」）。 |
 | `Localization/DataValues.cs` | 数据驱动展示值的**跨语言**判定（severity / level / badge：中文「常见」与英文 `Common` 都认）。 |
 | `Services/LocalizationService.cs` | 语言服务：读 / 写偏好（`prefs.json` 的 `obshelper.language`）、解析首启语言（用户选择 > 安装向导 `language.ini` > 中文）、把整表写进 `Application.Resources`、广播 `Changed`。 |

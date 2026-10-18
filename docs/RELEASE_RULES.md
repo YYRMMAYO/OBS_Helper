@@ -41,7 +41,10 @@
 | 正式版 `V3.1.1` | `NOBS/RELEASE_NOTES_v3.1.1.md` | `master`（不得只写在 dev） |
 | DEV 版 `01` | `NOBS/RELEASE_NOTES_DEV_01.md` | `dev` |
 
-- 文件名必须与 tag **完全对应**：tag `V3.1.1` → `RELEASE_NOTES_v3.1.1.md`；tag `01` → `RELEASE_NOTES_DEV_01.md`；
+- 文件名与 tag 的对应关系（CI 会**去掉 tag 开头的 `V`** 再找文件）：
+  tag `V3.1.1` → 先找 `NOBS/RELEASE_NOTES_DEV_3.1.1.md`，再找 **`NOBS/RELEASE_NOTES_v3.1.1.md`**，
+  最后兼容 `NOBS/RELEASE_NOTES_3.1.1.md`；tag `01` → `NOBS/RELEASE_NOTES_DEV_01.md`；
+- 为避免歧义，正式版统一用 **`RELEASE_NOTES_v<版本>.md`**（小写 v），DEV 用 `RELEASE_NOTES_DEV_<编号>.md`；
 - 正式版发布说明只放 `master`；DEV 发布说明只放 `dev`（见 [`BRANCH_AND_DOC_RULES.md`](BRANCH_AND_DOC_RULES.md)）。
 
 ## 4. 发版流程（与内容有关的部分）

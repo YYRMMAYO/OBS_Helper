@@ -426,7 +426,7 @@ jobs:
           path: NOBS/PAKE/windows
 
       # 为什么：Release 只有文件名，没有哈希就没法核对下载到的包是否被改过 / 传坏。
-      - name: 计算资产 SHA-256（日志 + job summary + SHA256SUMS.txt）
+      - name: 计算资产 SHA-256 + 组装 Release 正文（日志 + job summary + SHA256SUMS.txt）
         shell: pwsh
         run: |
           $ErrorActionPreference = 'Stop'
@@ -456,9 +456,20 @@ jobs:
           $md = @("## 发版资产 SHA-256（$env:GITHUB_REF_NAME）", '') + $table + @('', '完整的 SHA256SUMS.txt 也作为 Release 资产上传，可用 sha256sum -c SHA256SUMS.txt 校验。')
           Add-Content -Path $env:GITHUB_STEP_SUMMARY -Value ($md -join "`n")
 
-          # Release 说明也用同一张表，便于下载后直接核对
-          $notes = @("OBS 帮助助手 $env:GITHUB_REF_NAME", '', '### 资产 SHA-256', '') + $table
+          # Release 正文 = 仓库里的发布说明（必须写清新增 / 修复），末尾再追加 SHA-256 表。
+          # 规则见 docs/RELEASE_RULES.md：不允许只发标题 + 哈希表，也不允许空说明发版。
+          $tag = $env:GITHUB_REF_NAME
+          $notesSource = Join-Path $ws "NOBS/RELEASE_NOTES_$tag.md"
+          if (-not (Test-Path -LiteralPath $notesSource)) {
+              throw "缺少发布说明：NOBS/RELEASE_NOTES_$tag.md。每个 Release 必须写明新增 / 修复内容（见 docs/RELEASE_RULES.md）。"
+          }
+          $notesBody = (Get-Content -LiteralPath $notesSource -Raw).Trim()
+          if ($notesBody.Length -lt 120) {
+              throw "发布说明过短（$($notesBody.Length) 字符）：NOBS/RELEASE_NOTES_$tag.md。请写清新增 / 修复内容（见 docs/RELEASE_RULES.md）。"
+          }
+          $notes = @($notesBody, '', '---', '', '### 资产 SHA-256', '') + $table + @('', '完整的 `SHA256SUMS.txt` 也作为 Release 资产上传，可用 `sha256sum -c SHA256SUMS.txt` 校验。')
           [System.IO.File]::WriteAllLines((Join-Path $ws 'NOBS/PAKE/release_notes.md'), [string[]]$notes, (New-Object System.Text.UTF8Encoding($false)))
+          Write-Host "Release 正文：$notesSource（$($notesBody.Length) 字符）+ 资产 SHA-256 表"
 
       - name: 创建/更新 Release 并上传资产
         shell: pwsh

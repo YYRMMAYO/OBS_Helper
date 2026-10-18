@@ -2,9 +2,10 @@
 
 <img src="../assets/banner.svg" alt="OBS Helper — 面向直播新手的 OBS 排障工具" width="100%"/>
 
-**当前版本：V3.1.0** —— 个性化壁纸库与轮播 · 一键启动 OBS 并自动连接开录（首次同意后不再打断）·
-提词器（独立窗口 / 捕获排除 / 场景联动 / 点击穿透）· 倒计时与录像命名模板 · 静音提醒 · UI 令牌与彩蛋。
-详见 [`RELEASE_NOTES_v3.1.0.md`](RELEASE_NOTES_v3.1.0.md)。
+**本分支：`dev`（DEV 测试通道，编号 `01`、`02`、`03` …）· 正式版：V3.1.1** ——
+这一版主线是提词器手动上下移动（工具栏 / 拖动文字 / 滚轮 / 键盘）与窗口位置微调，
+并修掉「自动滚到末尾只剩空白」；同时包含 V3.1.0 的壁纸库与轮播、一键录制、场景联动 / 点击穿透等。
+正式版发布说明见 [V3.1.1 发布说明](https://github.com/YYRMMAYO/OBS_Helper/blob/master/NOBS/RELEASE_NOTES_v3.1.1.md)（`master` 分支）。
 
 > **本文档是 Windows 原生 WPF 版的完整文档，随源码一起放在 `NOBS/`**（仓库根只留精简首页）。
 > **当前维护的源码在本目录的 [`OBS_Helper.Wpf/`](OBS_Helper.Wpf/)**；macOS 壳与旧版共享前端仅存档。
@@ -13,18 +14,18 @@
 [![平台](https://img.shields.io/badge/Platform-Windows_7_SP1%2B_%2F_10_%2F_11-0078D6.svg)]()
 [![.NET](https://img.shields.io/badge/.NET-10_%2F_6-512BD4.svg)]()
 [![技术栈](https://img.shields.io/badge/Stack-WPF_%2F_C%23-239120.svg)]()
-[![版本](https://img.shields.io/badge/Release-3.1.0-38bdf8.svg)](https://github.com/YYRMMAYO/OBS_Helper/releases)
+[![版本](https://img.shields.io/badge/Release-3.1.1-38bdf8.svg)](https://github.com/YYRMMAYO/OBS_Helper/releases)
 [![OBS](https://img.shields.io/badge/OBS-32.2.2-302E31.svg)](https://github.com/obsproject/obs-studio/releases)
 [![离线可用](https://img.shields.io/badge/offline--first-2ea44f.svg)]()
 [![增量更新](https://img.shields.io/badge/Incremental%20Update-1.9MB-7dd3fc.svg)]()
-[![测试](https://img.shields.io/badge/Tests-1378%20passed-2ea44f.svg)]()
+[![测试](https://img.shields.io/badge/Tests-1345%20passed-2ea44f.svg)]()
 [![许可](https://img.shields.io/badge/License-MIT-green.svg)](../LICENSE)
 
 [English](README.en.md) · **简体中文**
 
 </div>
 
-> **本仓库当前检出的分支是 `dev`（DEV 测试通道）**：这里的功能比正式版**更超前**，**可能包含不稳定功能**、
+> **当前检出的分支是 `dev`（DEV 测试通道）**：这里的功能比正式版**更超前**，**可能包含不稳定功能**、
 > 行为变更与已知缺陷。DEV 版编号是 `01`、`02`、`03`…（**不带字母 V**），只从 **dev Release 页**检查更新；
 > 想要稳定请用正式版（`master` 分支 / 正式 Release）。
 
@@ -38,7 +39,7 @@
 
 ---
 
-**目录**：[版本通道](#版本通道正式版与-dev-测试版) · [宣传视频](#宣传视频) · [V3.1.0 新增](#v310-新增) · [更早版本](#v300-新增) · [亮点](#亮点) · [功能](#功能) · [智能诊断](#智能诊断) · [隐私与安全](#隐私与安全) · [安装与更新](#安装与更新) · [构建](#构建) · [工程结构](#工程结构) · [质量基线](#质量基线) · [已知边界](#已知边界) · [文档](#文档) · [捐赠支持](#捐赠支持) · [许可](#许可)
+**目录**：[版本通道](#版本通道正式版与-dev-测试版) · [宣传视频](#宣传视频) · [V3.1.1 新增](#v311-新增) · [V3.1.0 新增](#v310-新增) · [更早版本](#v300-新增) · [亮点](#亮点) · [功能](#功能) · [智能诊断](#智能诊断) · [隐私与安全](#隐私与安全) · [安装与更新](#安装与更新) · [构建](#构建) · [工程结构](#工程结构) · [质量基线](#质量基线) · [已知边界](#已知边界) · [文档](#文档) · [捐赠支持](#捐赠支持) · [许可](#许可)
 
 ---
 
@@ -46,12 +47,12 @@
 
 | 通道 | 版本号样式 | 定位 | 更新来源 |
 | --- | --- | --- | --- |
-| **正式版**（`master`） | `V3.1.0` | **稳定优先**：功能收敛、经过完整回归与发布验证，适合日常直播 / 录制 | 正式 Release 页 · 蓝奏云 · 应用内增量更新 |
-| **DEV 测试版**（`dev`，本分支） | `01`、`02`、`03` …（**不带字母 V**） | **更超前**：开发中的功能先落到这里，**可能包含不稳定功能**、行为变更与已知缺陷 | **只**从 **dev Release 页** 检查更新 |
+| **正式版**（`master`） | `V3.1.1` | **稳定优先**：功能收敛、经过完整回归与发布验证，适合日常直播 / 录制 | 正式 Release 页 · 蓝奏云 · 应用内增量更新 |
+| **DEV 测试版**（`dev`，**本分支**） | `01`、`02`、`03` …（**不带字母 V**，当前 `DEV 01`） | **更超前**：开发中的功能先落到这里，**可能包含不稳定功能**、行为变更与已知缺陷 | **只**从 **dev Release 页** 检查更新 |
 
 - **DEV 为什么单独走一条通道**：DEV 的编号是自增的**构建序号**（`UpdateChannel.DevBuildNumber`，每出一个 dev 构建 +1），
   和正式版的 `V主.次.修` 没有可比性。因此 DEV 构建**只认 `01` 这类纯数字 tag**、
-  正式版**只认 `V3.1.0` 这类 tag** —— 两类 tag 挂在同一个仓库里，也不会互相被当成新版本；
+  正式版**只认 `V3.1.1` 这类 tag** —— 两类 tag 挂在同一个仓库里，也不会互相被当成新版本；
 - **DEV 版目前不出安装包、不走蓝奏云**：更新提示只把你引导到 dev Release 页（`/releases/tag/0X`）；
   正式版的增量更新、蓝奏云镜像与安装包全部按原样服务正式版用户；
 - **选哪条**：想要稳就用正式版；愿意帮忙试新功能、并且能接受「这个版本可能坏」再装 DEV 版。
@@ -76,6 +77,34 @@
 </div>
 
 ---
+
+## V3.1.1 新增
+
+> 这一版只做一件事：把提词器的「上下移动」补全 —— 工具栏、鼠标拖动、滚轮、键盘四条路都能用，
+> 窗口本身也能用 `Ctrl + 方向键` 微调位置；顺带修掉「自动滚到末尾只剩一片空白」。
+> 其余功能、数据格式与升级链路与 V3.1.0 完全一致，可直接增量升级。
+
+**提词器手动上下移动（P0）**
+
+- 工具栏新增 `⤒`（回到开头）/ `▲`（上移一行）/ `▼`（下移一行）：点一下就能动，**不依赖键盘焦点**；
+- **拖动文字**：在正文按住鼠标上下拖，内容跟着手走（像拖动纸张）；拖动期间自动滚动临时暂停；
+- **键盘**：`↑` / `↓` 一行、`PgUp` / `PgDn` 一屏、`Home` / `End` 首尾、空格暂停 / 继续；
+  点一下正文即可激活窗口，之后按键立即生效（以前刚呼出时按键没有任何反应）；
+- **滚轮**：鼠标停在正文上一格约 72 px，用于细调；
+- **窗口位置**：`Ctrl + ↑ / ↓ / ← / →` 以 10 px 步长移动，并始终夹在虚拟屏幕内；
+- 位置 / 尺寸在拖动或移动后 600 ms 自动保存（以前只在关闭时保存），下次呼出原地恢复；
+- 顶栏整条背景都可按住拖动窗口（以前只有左上角「提词器」几个字能拖）。
+
+**滚动终点修正（P1）**
+
+- 以前滚动上限取 `ScrollableHeight`，会把正文底部 220 px 留白也滚进来：最后一行滑出画面后屏幕只剩黑色；
+- 现在按「**最后一行正好停在阅读参考线**」计算终点（`TeleprompterCore.ScrollEnd`），自动与手动滚动都停在这里；
+- 脚本末尾多余的空行 / 空格在保存与读取时自动裁掉，避免最后一个「空行」占用滚动终点。
+
+**测试**
+
+- 新增 6 项单元测试：滚动终点、拖动位移、窗口移动夹取、脚本末尾空行；
+- 全量 1345 项单元测试连续 3 轮通过，双构建（net10.0-windows / net6.0-windows）+ 自检 + 静态检查全绿。
 
 ## V3.1.0 新增
 
@@ -303,7 +332,7 @@
 
 - **国际化：中文 / English 即时切换（默认中文）**。界面、托盘菜单与通知、报错提示、
   日志分析规则与结论、各类体检结论、诊断报告与导出内容全部双语，
-  **截至 V3.1.0 为 2390 条**文案键（V2.9.2 时为 1670 条，此后每版都在加；
+  **截至 V3.1.1 为 2393 条**文案键（V2.9.2 时为 1670 条，此后每版都在加；
   可用 `python scripts/check_docs.py` 实测当前值）。
   切换沿用换肤那套已经跑熟的机制（文案整体写进 `Application.Resources`，XAML 用
   `{DynamicResource Loc.*}` 引用），因此**与换主题一样即时生效、不用重启**；
@@ -447,8 +476,8 @@
 ## 安装与更新
 
 - **GitHub Releases** — 从 [Releases 页面](https://github.com/YYRMMAYO/OBS_Helper/releases) 下载安装包或便携版；便携版免安装、自带 .NET 运行时。**安装向导会先让你选语言**（简体中文 / English），默认中文，选定结果作为应用首次启动的默认语言
-  - `OBS_Helper_Setup_3.1.0.exe` / `OBS_Helper_Portable_3.1.0.zip` — **主构建**，面向 **Windows 10 / 11**
-  - `OBS_Helper_Setup_3.1.0_win7.exe` / `OBS_Helper_Portable_3.1.0_win7.zip` — **Win7 兼容构建**，面向 **Windows 7 SP1 及以上**（.NET 6，已停止安全更新；新机器请用主构建）
+  - `OBS_Helper_Setup_3.1.1.exe` / `OBS_Helper_Portable_3.1.1.zip` — **主构建**，面向 **Windows 10 / 11**
+  - `OBS_Helper_Setup_3.1.1_win7.exe` / `OBS_Helper_Portable_3.1.1_win7.zip` — **Win7 兼容构建**，面向 **Windows 7 SP1 及以上**（.NET 6，已停止安全更新；新机器请用主构建）
   - 两个构建共用同一个 AppId，从兼容构建换到主构建会被识别成升级而不是装两份
 - **蓝奏云（国内镜像）** — 提取码 `YYKWY`（详见应用内更新弹窗）
 - **应用内更新（推荐）** — 「检查更新」对比 GitHub 最新版本后，可任选：
@@ -457,8 +486,8 @@
   - **完整安装包**：蓝奏云 / 应用内下载整包覆盖安装
 
 > **主构建**支持 Windows 10 / 11；**兼容构建**支持 Windows 7 SP1 及以上。均无需 WebView2、无需另装 .NET 运行时。
-> 已装 3.0.0 的用户可直接走应用内「增量更新」升到 3.1.0；本版只加功能，`AppId` / 安装目录 / 数据目录
-> 都没变，所以增量升级与覆盖安装都照旧。停留在 2.1.x ~ 3.1.0 的用户增量包基准不一定对得上，
+> 已装 3.0.0 / 3.1.0 的用户可直接走应用内「增量更新」升到 3.1.1；本版只加功能，`AppId` / 安装目录 / 数据目录
+> 都没变，所以增量升级与覆盖安装都照旧。停留在 2.1.x ~ 3.1.1 的用户增量包基准不一定对得上，
 > 用安装包或便携包覆盖升级即可。
 > **语言与升级**：安装时选的语言只决定首次启动的默认值；之后在应用内改过语言，重装 / 升级都不会覆盖你的选择。
 > 还没装 OBS？应用内「搭建」页 / 「工具箱」/ 首页欢迎卡都提供**官方**下载入口
@@ -496,7 +525,7 @@ dotnet run --project OBS_Helper.Wpf
 .\build.ps1 -DeltaBaseVersion 2.0.0
 
 # 发布后校验增量包可完整升级（模拟升级 + 全文件 SHA-256 比对）
-python scripts\verify_delta.py --old PAKE\windows\OBS_Helper_Portable_3.0.0.zip --delta PAKE\windows\OBS_Helper_Update_3.1.0.zip --publish OBS_Helper.Wpf\bin\Release\net10.0-windows\win-x64\publish
+python scripts\verify_delta.py --old PAKE\windows\OBS_Helper_Portable_3.0.0.zip --delta PAKE\windows\OBS_Helper_Update_3.1.1.zip --publish OBS_Helper.Wpf\bin\Release\net10.0-windows\win-x64\publish
 
 # 全量单测（含中英内容对等 / 资产按语言装载 / INI 打补丁 / 版本判据等）
 dotnet test OBS_Helper.Wpf.Tests\OBS_Helper.Wpf.Tests.csproj -c Release
@@ -504,13 +533,13 @@ dotnet test OBS_Helper.Wpf.Tests\OBS_Helper.Wpf.Tests.csproj -c Release
 
 产物落在 `NOBS\PAKE\windows\`（即本目录下的 `PAKE\windows\`）：
 
-- `OBS_Helper_Setup_3.1.0.exe` — 安装包（主构建，MinVersion 10.0，向导含语言选择页）
-- `OBS_Helper_Setup_3.1.0_win7.exe` — 安装包（Win7 兼容构建，MinVersion 6.1sp1）
-- `OBS_Helper_Portable_3.1.0.zip` / `…_win7.zip` — 解压即用
-- `OBS_Helper_Update_3.1.0.zip` — 增量更新包（含 `update_manifest.json`，应用内增量更新用）
-- `OBS_Helper_Portable_3.1.0.exe` — 单文件（需 `-SingleFile`）
-- `OBS_Helper_Knowledge_3.1.0.json` / `…3.1.0.en-US.json` — 问题库热更新资产（中英各一份）
-- `OBS_Helper_Plugins_3.1.0.json` / `…3.1.0.en-US.json` — 插件广场目录热更新资产（中英各一份）
+- `OBS_Helper_Setup_3.1.1.exe` — 安装包（主构建，MinVersion 10.0，向导含语言选择页）
+- `OBS_Helper_Setup_3.1.1_win7.exe` — 安装包（Win7 兼容构建，MinVersion 6.1sp1）
+- `OBS_Helper_Portable_3.1.1.zip` / `…_win7.zip` — 解压即用
+- `OBS_Helper_Update_3.1.1.zip` — 增量更新包（含 `update_manifest.json`，应用内增量更新用）
+- `OBS_Helper_Portable_3.1.1.exe` — 单文件（需 `-SingleFile`）
+- `OBS_Helper_Knowledge_3.1.1.json` / `…3.1.1.en-US.json` — 问题库热更新资产（中英各一份）
+- `OBS_Helper_Plugins_3.1.1.json` / `…3.1.1.en-US.json` — 插件广场目录热更新资产（中英各一份）
 - `manifests/manifest_<ver>.json` — 各版本完整文件清单（SHA-256，增量包 diff 基准；不随 Release 发布）
 
 ## 工程结构
@@ -612,10 +641,12 @@ XAML 一律用 `DynamicResource`（主题键直接用、文案键写作 `Loc.<�
 ## 文档
 
 - 仓库首页（精简导航）→ [`../README.md`](../README.md)
+- **分支与文档分工规则（正式版文档放 master，DEV 文档放 dev）→ [`../docs/BRANCH_AND_DOC_RULES.md`](../docs/BRANCH_AND_DOC_RULES.md)**
 - English（完整文档）→ [`README.en.md`](README.en.md)
 - DEV 测试通道（dev tag 编号规则 / 更新逻辑 / 当前限制）→ [`docs/DEV_CHANNEL.md`](docs/DEV_CHANNEL.md)
 - English → [`../README.en.md`](../README.en.md)
-- 本版发布说明（V3.1.0，含新功能、行为变更与未交付项）→ [`RELEASE_NOTES_v3.1.0.md`](RELEASE_NOTES_v3.1.0.md)
+- 正式版发布说明（V3.1.1，含新功能、行为变更与未交付项）→ [master 分支上的 RELEASE_NOTES_v3.1.1.md](https://github.com/YYRMMAYO/OBS_Helper/blob/master/NOBS/RELEASE_NOTES_v3.1.1.md)
+- 上一版发布说明（V3.1.0）→ [`RELEASE_NOTES_v3.1.0.md`](RELEASE_NOTES_v3.1.0.md)
 - 上一版发布说明（V3.0.0）→ [`RELEASE_NOTES_v3.0.0.md`](RELEASE_NOTES_v3.0.0.md)
 - 三轮审校记录（V2.9.3，含证据边界） → [`docs/reviews/REVIEW_2026-10-05-v2.9.3.md`](docs/reviews/REVIEW_2026-10-05-v2.9.3.md)
 - 英文内容落地方案（V2.9.3 的作业规范）→ [`docs/I18N_EN_CONTENT_PLAN.md`](docs/I18N_EN_CONTENT_PLAN.md)

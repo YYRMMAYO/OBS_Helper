@@ -4,9 +4,9 @@
 
 # OBS Helper · OBS帮助助手
 
-**Current release: V3.1.0** — managed wallpaper library with slideshow · launch OBS, connect and record in one click ·
-teleprompter · countdown and recording-name templates · mic-quiet alerts · UI tokens and an easter egg.
-See [RELEASE_NOTES_v3.1.0.md](RELEASE_NOTES_v3.1.0.md) (Chinese).
+**This branch: `dev`** (DEV test channel, builds `01`, `02`, `03`…) · **Stable release: V3.1.1** —
+manual up/down movement for the teleprompter (toolbar, drag, wheel, keyboard) plus window nudging, and a fix for
+auto-scroll ending on a blank screen. See the [V3.1.1 release notes on master](https://github.com/YYRMMAYO/OBS_Helper/blob/master/NOBS/RELEASE_NOTES_v3.1.1.md) (Chinese).
 
 > **This is the full documentation for the Windows native WPF version and it lives inside `NOBS/`** (the repository
 > root only keeps a short landing page). The maintained source code is [`OBS_Helper.Wpf/`](OBS_Helper.Wpf/) in this
@@ -18,10 +18,10 @@ See [RELEASE_NOTES_v3.1.0.md](RELEASE_NOTES_v3.1.0.md) (Chinese).
 [![Platform](https://img.shields.io/badge/Platform-Windows_7_SP1%2B-0078D6.svg)]()
 [![.NET](https://img.shields.io/badge/.NET-10_%2F_6-512BD4.svg)]()
 [![Stack](https://img.shields.io/badge/Stack-WPF_%2F_C%23-239120.svg)]()
-[![Release](https://img.shields.io/badge/Release-3.1.0-38bdf8.svg)](https://github.com/YYRMMAYO/OBS_Helper/releases)
+[![Release](https://img.shields.io/badge/Release-3.1.1-38bdf8.svg)](https://github.com/YYRMMAYO/OBS_Helper/releases)
 [![OBS](https://img.shields.io/badge/OBS-32.2.2-302E31.svg)](https://github.com/obsproject/obs-studio/releases)
 [![Offline](https://img.shields.io/badge/offline--first-2ea44f.svg)]()
-[![Tests](https://img.shields.io/badge/Tests-1378%20passed-2ea44f.svg)]()
+[![Tests](https://img.shields.io/badge/Tests-1345%20passed-2ea44f.svg)]()
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](../LICENSE)
 
 **English** · [简体中文](README.md)
@@ -56,12 +56,43 @@ There are two channels for the same app — pick the one that matches how much "
 
 | Channel | Version style | What it is | Where updates come from |
 | --- | --- | --- | --- |
-| **Stable** | `V3.1.0` | **Stable first**: settled features, full regression and release verification — the right choice for everyday streaming / recording | The regular Releases page · the Lanzou mirror · in-app incremental updates |
-| **DEV (test)** | `01`, `02`, `03` … (**no leading V**) | **Further ahead**: work in progress lands here first and **may include unstable features**, behaviour changes and known bugs | **Only** the **dev Releases page** |
+| **Stable** | `V3.1.1` | **Stable first**: settled features, full regression and release verification — the right choice for everyday streaming / recording | The regular Releases page · the Lanzou mirror · in-app incremental updates |
+| **DEV (test)** (this branch) | `01`, `02`, `03` … (**no leading V**, currently `DEV 01`) | **Further ahead**: work in progress lands here first and **may include unstable features**, behaviour changes and known bugs | **Only** the **dev Releases page** |
 
-- **Why DEV has its own channel**: DEV builds are numbered by an auto-incrementing **build number**, which is not comparable to the stable `Vmajor.minor.patch` scheme. A DEV build therefore **only recognises plain-number tags (`01`)**, and a stable build **only recognises `V3.1.0`-style tags** — even though both kinds of tag live in the same repository, neither channel mistakes the other for a newer version.
+- **Why DEV has its own channel**: DEV builds are numbered by an auto-incrementing **build number**, which is not comparable to the stable `Vmajor.minor.patch` scheme. A DEV build therefore **only recognises plain-number tags (`01`)**, and a stable build **only recognises `V3.1.1`-style tags** — even though both kinds of tag live in the same repository, neither channel mistakes the other for a newer version.
 - **DEV builds are not packaged and do not use the Lanzou mirror yet**: the update prompt only points you at the dev Releases page (`/releases/tag/0X`). Incremental updates, the Lanzou mirror and installers keep serving stable users exactly as before.
 - **Which one should you pick?** Use stable for day-to-day work; take DEV if you want early features and can live with the occasional broken build. Please report DEV issues through *Help & feedback* and put `DEV 0X` (e.g. `DEV 03`) in the description.
+
+## V3.1.1 highlights
+
+> A focused patch: the teleprompter finally has **manual up/down movement** through four independent routes —
+> toolbar buttons, dragging the text, the mouse wheel and the keyboard — and the window itself can be nudged with
+> `Ctrl + arrow keys`. Auto-scroll no longer ends on a blank screen. Data formats and the upgrade path are
+> identical to V3.1.0, so incremental updates just work.
+
+**Teleprompter: manual up/down movement (P0)**
+
+- New toolbar buttons `⤒` (back to start), `▲` (one line up) and `▼` (one line down) — one click, **no keyboard focus needed**;
+- **Drag the text**: hold and drag vertically in the body and the content follows your hand; auto-scroll pauses while dragging;
+- **Keyboard**: `↑` / `↓` one line, `PgUp` / `PgDn` one screen, `Home` / `End`, space to pause/resume;
+  clicking the body now activates the window so the keys work immediately (they were ignored right after opening before);
+- **Wheel**: about 72 px per notch for fine adjustments;
+- **Window position**: `Ctrl + ↑ / ↓ / ← / →` moves the window by 10 px, always clamped to the virtual screen;
+- Position and size are saved automatically 600 ms after a drag or nudge (previously only on close);
+- The whole top bar can be used to drag the window (previously only the tiny title label worked).
+
+**Scroll end fixed (P1)**
+
+- The old limit used `ScrollableHeight`, which included the 220 px bottom padding: once the last line left the
+  viewport the window showed nothing but black;
+- The end is now computed so that **the last line stops exactly at the reading guide**
+  (`TeleprompterCore.ScrollEnd`), for both auto and manual scrolling;
+- Trailing blank lines / spaces in the script are trimmed on save and load so an empty last line cannot eat the scroll range.
+
+**Tests**
+
+- 6 new unit tests: scroll end, drag offset, window-move clamping and script trailing blank lines;
+- The full suite of 1345 unit tests passed three rounds in a row, plus both TFMs, the headless self-test and static checks.
 
 ## V3.1.0 highlights
 

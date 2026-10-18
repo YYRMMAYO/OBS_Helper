@@ -6,13 +6,13 @@
 
 **The offline-first troubleshooting companion for [OBS Studio](https://obsproject.com/) — built for streamers who are just getting started.**
 
-**Current release: V3.1.0** (stable) · DEV test builds: `01`, `02`, `03` …
+**Stable release: V3.1.1** · **This branch: `dev`** (DEV test channel, builds `01`, `02`, `03`…, no leading V)
 
 [![CI](https://github.com/YYRMMAYO/OBS_Helper/actions/workflows/ci.yml/badge.svg)](https://github.com/YYRMMAYO/OBS_Helper/actions/workflows/ci.yml)
 [![Platform](https://img.shields.io/badge/Platform-Windows_7_SP1%2B-0078D6.svg)]()
 [![.NET](https://img.shields.io/badge/.NET-10_%2F_6-512BD4.svg)]()
-[![Release](https://img.shields.io/badge/Release-3.1.0-38bdf8.svg)](https://github.com/YYRMMAYO/OBS_Helper/releases)
-[![Tests](https://img.shields.io/badge/Tests-1378%20passed-2ea44f.svg)]()
+[![Release](https://img.shields.io/badge/Release-3.1.1-38bdf8.svg)](https://github.com/YYRMMAYO/OBS_Helper/releases)
+[![Tests](https://img.shields.io/badge/Tests-1345%20passed-2ea44f.svg)]()
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
 **English** · [简体中文](README.md)
@@ -37,21 +37,44 @@ OBS Helper is a native **Windows (WPF)** desktop app for people who are getting 
 | Download an installer / portable ZIP, read release notes | [Releases](https://github.com/YYRMMAYO/OBS_Helper/releases) |
 | Full documentation (features · privacy · install · build · history) | [`NOBS/README.en.md`](NOBS/README.en.md) |
 | 中文完整文档 | [`NOBS/README.md`](NOBS/README.md) |
-| What changed in this release | [`NOBS/RELEASE_NOTES_v3.1.0.md`](NOBS/RELEASE_NOTES_v3.1.0.md) (Chinese) |
+| What changed in the stable release | [V3.1.1 release notes on master](https://github.com/YYRMMAYO/OBS_Helper/blob/master/NOBS/RELEASE_NOTES_v3.1.1.md) (Chinese) |
 | DEV channel numbering and update rules | [`NOBS/docs/DEV_CHANNEL.md`](NOBS/docs/DEV_CHANNEL.md) (Chinese) |
+| Which branch a document belongs to (read before editing docs) | [`docs/BRANCH_AND_DOC_RULES.md`](docs/BRANCH_AND_DOC_RULES.md) (Chinese) |
 | Report a bug / disclose a vulnerability | [Issues](https://github.com/YYRMMAYO/OBS_Helper/issues) · [SECURITY.md](SECURITY.md) |
 | License | [LICENSE](LICENSE) (MIT) |
+
+## V3.1.1: the teleprompter can now be moved up and down
+
+> The focus of this patch is the teleprompter's vertical movement: toolbar, drag, wheel and keyboard all work,
+> the window itself can be nudged with `Ctrl + arrow keys`, and auto-scroll no longer ends on a blank screen.
+
+- **New toolbar buttons `⤒` / `▲` / `▼`**: back to start, one line up, one line down — no keyboard focus needed;
+- **Drag the text**: hold and drag vertically in the body, the content follows your hand; auto-scroll pauses while dragging;
+- **Keyboard & wheel**: `↑` / `↓` one line, `PgUp` / `PgDn` one screen, `Home` / `End`, wheel for fine steps;
+  clicking the body activates the window so the keys work immediately (they used to be ignored right after opening);
+- **Window position**: `Ctrl + ↑ / ↓ / ← / →` moves the window by 10 px, clamped to the virtual screen;
+  position and size are saved automatically after a drag;
+- **Scroll end**: the last line stops at the reading guide instead of scrolling into the bottom padding;
+  trailing blank lines in the script are trimmed.
+
+Everything else — data formats and the upgrade path — is unchanged from V3.1.0, so incremental updates just work.
+See the [V3.1.1 release notes on master](https://github.com/YYRMMAYO/OBS_Helper/blob/master/NOBS/RELEASE_NOTES_v3.1.1.md) (Chinese).
 
 ## Release channels: stable vs DEV
 
 | Channel | Version style | What it is | Where updates come from |
 | --- | --- | --- | --- |
-| **Stable** | `V3.1.0` | **Stable first**: settled features, full regression and release verification — the right choice for everyday streaming / recording | The regular Releases page · the Lanzou mirror · in-app incremental updates |
-| **DEV (test)** | `01`, `02`, `03` … (**no leading V**) | **Further ahead**: work in progress lands here first and **may include unstable features**, behaviour changes and known bugs | **Only** the **dev Releases page** |
+| **Stable** (`master`) | `V3.1.1` | **Stable first**: settled features, full regression and release verification — the right choice for everyday streaming / recording | The regular Releases page · the Lanzou mirror · in-app incremental updates |
+| **DEV (test)** (`dev`, **this branch**) | `01`, `02`, `03` … (**no leading V**, currently `DEV 01`) | **Further ahead**: work in progress lands here first and **may include unstable features**, behaviour changes and known bugs | **Only** the **dev Releases page** |
 
-- DEV builds are numbered by an auto-incrementing **build number**, which is not comparable to the stable `Vmajor.minor.patch` scheme. A DEV build therefore **only recognises plain-number tags (`01`)**, and a stable build **only recognises `V3.1.0`-style tags** — even though both kinds of tag live in the same repository, neither channel mistakes the other for a newer version.
-- **DEV builds are not packaged and do not use the Lanzou mirror yet**: the update prompt only points you at the dev Releases page. Incremental updates, the Lanzou mirror and installers keep serving stable users exactly as before.
-- **Which one should you pick?** Use stable for day-to-day work; take DEV if you want early features and can live with the occasional broken build. Please put `DEV 0X` (e.g. `DEV 03`) in any DEV issue you file.
+- DEV builds are numbered by an auto-incrementing **build number**, which is not comparable to the stable
+  `Vmajor.minor.patch` scheme. A DEV build therefore **only recognises plain-number tags (`01`)**, and a stable
+  build **only recognises `V3.1.1`-style tags** — even though both kinds of tag live in the same repository,
+  neither channel mistakes the other for a newer version.
+- **DEV builds are not packaged and do not use the Lanzou mirror yet**: the update prompt only points you at the
+  dev Releases page. Incremental updates, the Lanzou mirror and installers keep serving stable users as before.
+- **Which one should you pick?** Use stable for day-to-day work; take DEV if you want early features and can live
+  with the occasional broken build. Please put `DEV 0X` (e.g. `DEV 03`) in any DEV issue you file.
 
 ## Promo video
 
@@ -81,4 +104,4 @@ If the app saved you some troubleshooting time, you can buy the author a coffee 
 
 ## License
 
-[MIT](LICENSE)
+MIT — see [LICENSE](LICENSE).

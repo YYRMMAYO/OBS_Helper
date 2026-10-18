@@ -439,7 +439,7 @@ def main() -> int:
                        pattern=r"(\d+)\s*条\s*路由[；;]",
                        actual=len(routes), source=routes_src)
     expect_doc_numbers(label="自检路由用例数", doc=nobs_readme,
-                       pattern=r"[（(](\d+)\s*条路由\s*\+",
+                       pattern=r"[（(](\d+)\s*条路由用例",
                        actual=len(cases), source=cases_src)
     expect_doc_numbers(label="自检路由用例数", doc=arch,
                        pattern=r"(\d+)\s*条路由用例",

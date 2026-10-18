@@ -9,6 +9,7 @@ using OBS_Helper.Wpf.Navigation;
 using OBS_Helper.Wpf.Services;
 using OBS_Helper.Wpf.Services.Ai;
 using OBS_Helper.Wpf.Services.ObsConfig;
+using OBS_Helper.Wpf.Services.Recording;
 using OBS_Helper.Wpf.Services.Shell;
 
 namespace OBS_Helper.Wpf.Views;
@@ -93,6 +94,7 @@ public partial class SettingsPage : UserControl, INavigationAware
 
             HighContrastSwitch.IsChecked = ap.Settings.HighContrast;
             ReduceMotionSwitch.IsChecked = ap.Settings.ReduceMotion;
+            EasterEggSwitch.IsChecked = ap.Settings.EasterEggEnabled;
 
             BuildAccentSwatches();
             BuildLanguageSwitcher();
@@ -178,6 +180,7 @@ public partial class SettingsPage : UserControl, INavigationAware
             NotifyStateSwitch.IsChecked = tray.NotifyStateChange;
             RecordWatchdogSwitch.IsChecked = tray.RecordWatchdogEnabled;
             RealtimeLogAlertSwitch.IsChecked = tray.RealtimeLogAlertEnabled;
+            AudioAlertSwitch.IsChecked = tray.AudioMuteAlertEnabled;
 
             var h = AppServices.Hotkeys.Settings;
             RecHotkeyEnabled.IsChecked = h.RecordEnabled;
@@ -256,11 +259,13 @@ public partial class SettingsPage : UserControl, INavigationAware
         var tailerBefore = AppServices.LogTailer.Enabled;
         s.RecordWatchdogEnabled = RecordWatchdogSwitch.IsChecked == true;
         s.RealtimeLogAlertEnabled = RealtimeLogAlertSwitch.IsChecked == true;
+        s.AudioMuteAlertEnabled = AudioAlertSwitch.IsChecked == true;
         AppServices.Tray.SaveSettings();
 
         // V2.8 守护开关即时生效
         if (AppServices.RecordWatchdog.Enabled != watchdogBefore) AppServices.RecordWatchdog.ApplyEnabled();
         if (AppServices.LogTailer.Enabled != tailerBefore) AppServices.LogTailer.ApplyEnabled();
+        AppServices.AudioAlert.ApplyEnabled();
     }
 
     // ------------------------------------------------------------ 简单录像（V2.9.4）
@@ -286,6 +291,49 @@ public partial class SettingsPage : UserControl, INavigationAware
         SimplePresetBox.SelectedIndex = index;
 
         SimpleAutoLaunchSwitch.IsChecked = AppServices.Tray.Settings.SimpleRecordAutoLaunch;
+
+        // V3.1.0：首次拉起 OBS 的同意状态 + 倒计时
+        SimpleConsentBox.Items.Clear();
+        foreach (var consent in new[]
+                 {
+                     SimpleRecordLaunchConsent.Allow,
+                     SimpleRecordLaunchConsent.Ask,
+                     SimpleRecordLaunchConsent.Deny
+                 })
+        {
+            SimpleConsentBox.Items.Add(new ComboBoxItem
+            {
+                Content = Strings.T("settings.record.consent." + SimpleRecordingCore.ConsentKey(consent)),
+                Tag = consent
+            });
+        }
+        var currentConsent = svc.LaunchConsent;
+        SimpleConsentBox.SelectedIndex = currentConsent switch
+        {
+            SimpleRecordLaunchConsent.Allow => 0,
+            SimpleRecordLaunchConsent.Deny => 2,
+            _ => 1
+        };
+
+        SimpleCountdownBox.Items.Clear();
+        foreach (var seconds in new[] { 0, 3, 5, 10 })
+        {
+            SimpleCountdownBox.Items.Add(new ComboBoxItem
+            {
+                Content = Strings.T(seconds == 0 ? "settings.record.countdown.off" : "settings.record.countdown.seconds", seconds),
+                Tag = seconds
+            });
+        }
+        SimpleCountdownBox.SelectedIndex = svc.CountdownSeconds switch
+        {
+            3 => 1,
+            5 => 2,
+            10 => 3,
+            _ => 0
+        };
+
+        NamingTemplateBox.Text = AppServices.Tray.Settings.RecordingNamingTemplate;
+        UpdateNamingPreview();
     }
 
     private void OnSimplePresetChanged(object sender, SelectionChangedEventArgs e)
@@ -302,6 +350,58 @@ public partial class SettingsPage : UserControl, INavigationAware
         if (_syncing) return;
         AppServices.Tray.Settings.SimpleRecordAutoLaunch = SimpleAutoLaunchSwitch.IsChecked == true;
         AppServices.Tray.SaveSettings();
+    }
+
+    private void OnSimpleConsentChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (_syncing) return;
+        if (SimpleConsentBox.SelectedItem is not ComboBoxItem { Tag: SimpleRecordLaunchConsent consent }) return;
+        AppServices.SimpleRecord.SetLaunchConsent(consent);
+    }
+
+    private void OnSimpleCountdownChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (_syncing) return;
+        if (SimpleCountdownBox.SelectedItem is not ComboBoxItem { Tag: int seconds }) return;
+        AppServices.Tray.Settings.SimpleRecordCountdownSeconds =
+            SimpleRecordingCore.NormalizeCountdownSeconds(seconds);
+        AppServices.Tray.SaveSettings();
+    }
+
+    private void OnNamingTemplateChanged(object sender, TextChangedEventArgs e)
+    {
+        if (_syncing) return;
+        UpdateNamingPreview();
+    }
+
+    private void OnNamingTemplateLostFocus(object sender, RoutedEventArgs e)
+    {
+        if (_syncing) return;
+        AppServices.Tray.Settings.RecordingNamingTemplate = (NamingTemplateBox.Text ?? "").Trim();
+        AppServices.Tray.SaveSettings();
+        UpdateNamingPreview();
+    }
+
+    private void UpdateNamingPreview()
+    {
+        var template = (NamingTemplateBox.Text ?? "").Trim();
+        if (template.Length == 0)
+        {
+            NamingPreviewText.Text = Strings.T("settings.record.naming.off");
+            return;
+        }
+
+        var unknown = RecordingNamingCore.UnknownVariables(template);
+        if (unknown.Count > 0)
+        {
+            NamingPreviewText.Text = Strings.T("settings.record.naming.unknown", string.Join(" ", unknown));
+            return;
+        }
+
+        var preview = RecordingNamingCore.Preview(template);
+        NamingPreviewText.Text = preview.Length == 0
+            ? Strings.T("settings.record.naming.off")
+            : Strings.T("settings.record.naming.preview", preview);
     }
 
     /// <summary>热键任一修饰键 / 主键 / 启用勾选变化：只刷新预览文本，注册在「保存」时统一做。</summary>
@@ -751,13 +851,21 @@ public partial class SettingsPage : UserControl, INavigationAware
         AppServices.Appearance.SetReduceMotion(ReduceMotionSwitch.IsChecked == true);
     }
 
+    private void OnEasterEggToggled(object sender, RoutedEventArgs e)
+    {
+        if (_syncing) return;
+        AppServices.Appearance.SetEasterEggEnabled(EasterEggSwitch.IsChecked == true);
+        if (EasterEggSwitch.IsChecked == true)
+            AppServices.Toast.Show(Strings.T("settings.appearance.easterEgg.on"), "ok");
+    }
+
     // ------------------------------------------------------------ 主题色（v2.7.1 强调色）
 
     /// <summary>按 AccentScheme.Catalog 生成色板圆点，并回填当前选中描边。</summary>
     private void BuildAccentSwatches()
     {
         AccentPanel.Children.Clear();
-        foreach (var scheme in AccentScheme.Catalog)
+        foreach (var scheme in AppServices.Appearance.VisibleAccents)
         {
             var swatch = new Border
             {
@@ -846,12 +954,23 @@ public partial class SettingsPage : UserControl, INavigationAware
     private void OnBgModeChecked(object sender, RoutedEventArgs e)
     {
         if (_syncing) return;
-        AppServices.Appearance.SetBackgroundMode(
-            ReferenceEquals(sender, BgColor) ? "color" :
-            ReferenceEquals(sender, BgImage) ? "image" :
-            "default");
+        var mode = ReferenceEquals(sender, BgColor) ? "color"
+                 : ReferenceEquals(sender, BgImage) ? "image"
+                 : "default";
+
+        AppServices.Appearance.SetBackgroundMode(mode);
+
+        // 切到图片模式但还没有选中项时，自动选壁纸库第一张（空库则保持默认底并显示空态）
+        if (mode == "image")
+        {
+            var wallpapers = AppServices.Wallpapers;
+            if (wallpapers.CurrentItem is null && wallpapers.Library.Count > 0)
+                wallpapers.Select(wallpapers.Library[0].Id);
+        }
+
         BgColorPanel.Visibility = ReferenceEquals(sender, BgColor) ? Visibility.Visible : Visibility.Collapsed;
         BgImagePanel.Visibility = ReferenceEquals(sender, BgImage) ? Visibility.Visible : Visibility.Collapsed;
+        if (ReferenceEquals(sender, BgImage)) SyncBgImageState();
     }
 
     private void OnBgSwatchClick(object sender, MouseButtonEventArgs e)
@@ -895,36 +1014,363 @@ public partial class SettingsPage : UserControl, INavigationAware
             : Strings.T("settings.bg.current", cur);
     }
 
-    private void OnPickBgImage(object sender, RoutedEventArgs e)
+    private void OnPickBgImage(object sender, RoutedEventArgs e) => OnImportBgImages(sender, e);
+
+    // ------------------------------------------------------------ 壁纸库（V3.1.0）
+
+    /// <summary>导入一张或多张图片；失败不改变当前壁纸。</summary>
+    private async void OnImportBgImages(object? sender, RoutedEventArgs e)
     {
         var dlg = new Microsoft.Win32.OpenFileDialog
         {
             Title = Strings.T("settings.bg.pickTitle"),
             Filter = Strings.T("settings.bg.pickFilter"),
-            CheckFileExists = true
+            CheckFileExists = true,
+            Multiselect = true
         };
-        if (dlg.ShowDialog() == true)
-        {
-            AppServices.Appearance.SetBackgroundImage(dlg.FileName);
-            SyncBgImageState();
-        }
+        if (dlg.ShowDialog() != true) return;
+        await ImportWallpaperFilesAsync(dlg.FileNames).ConfigureAwait(true);
     }
 
-    private void OnClearBgImage(object sender, RoutedEventArgs e)
+    private async Task ImportWallpaperFilesAsync(IEnumerable<string> files)
     {
-        AppServices.Appearance.SetBackgroundImage(null);
+        var wallpapers = AppServices.Wallpapers;
+        var imported = 0;
+        var reused = 0;
+        string? error = null;
+
+        foreach (var file in files)
+        {
+            if (string.IsNullOrWhiteSpace(file)) continue;
+            var result = await wallpapers.ImportAsync(file).ConfigureAwait(true);
+            if (result.Ok)
+            {
+                if (result.Reused) reused++;
+                else imported++;
+            }
+            else
+            {
+                error = ImportErrorText(result.Error);
+            }
+        }
+
+        _syncing = true;
+        try { SyncBgImageState(); }
+        finally { _syncing = false; }
+
+        if (imported > 0)
+            AppServices.Toast.Show(Strings.T("settings.bg.import.ok", imported), "ok");
+        else if (reused > 0)
+            AppServices.Toast.Show(Strings.T("settings.bg.import.duplicate"), "ok");
+        else if (error is not null)
+            AppServices.Toast.Show(error, "error");
+    }
+
+    private static string ImportErrorText(Services.Appearance.WallpaperImportError error) => error switch
+    {
+        Services.Appearance.WallpaperImportError.Missing => Strings.T("settings.bg.import.missing"),
+        Services.Appearance.WallpaperImportError.Unsupported => Strings.T("settings.bg.import.unsupported"),
+        Services.Appearance.WallpaperImportError.TooLarge => Strings.T("settings.bg.import.tooLarge"),
+        Services.Appearance.WallpaperImportError.TooManyPixels => Strings.T("settings.bg.import.tooLarge"),
+        Services.Appearance.WallpaperImportError.Corrupt => Strings.T("settings.bg.import.corrupt"),
+        Services.Appearance.WallpaperImportError.WriteFailed => Strings.T("settings.bg.import.failed"),
+        _ => Strings.T("settings.bg.import.failed")
+    };
+
+    private void OnBgLibraryDragOver(object sender, DragEventArgs e)
+    {
+        e.Effects = e.Data.GetDataPresent(DataFormats.FileDrop)
+            ? DragDropEffects.Copy
+            : DragDropEffects.None;
+        e.Handled = true;
+    }
+
+    private async void OnBgLibraryDrop(object sender, DragEventArgs e)
+    {
+        if (e.Data.GetData(DataFormats.FileDrop) is not string[] files) return;
+        e.Handled = true;
+        await ImportWallpaperFilesAsync(files).ConfigureAwait(true);
+    }
+
+    private void OnBgTileClick(object sender, MouseButtonEventArgs e)
+    {
+        if (_syncing || sender is not Border { Tag: string id }) return;
+        AppServices.Wallpapers.Select(id);
         SyncBgImageState();
     }
 
-    /// <summary>回填图片路径与「清除」按钮显隐。</summary>
+    /// <summary>缩略图的键盘选中（Border 不是控件，回车 / 空格不会自动触发点击）。</summary>
+    private void OnBgTileKeyDown(object sender, KeyEventArgs e)
+    {
+        if (e.Key is not (Key.Enter or Key.Space)) return;
+        if (_syncing || sender is not Border { Tag: string id }) return;
+        e.Handled = true;
+        AppServices.Wallpapers.Select(id);
+        SyncBgImageState();
+    }
+
+    private void OnDeleteBgImage(object sender, RoutedEventArgs e)
+    {
+        if (sender is not Button { Tag: string id }) return;
+        var item = Services.Appearance.WallpaperCore.Find(AppServices.Wallpapers.Library, id);
+        if (item is null) return;
+
+        if (!ConfirmDialog.Show(
+                Strings.T("settings.bg.delete"),
+                Strings.T("settings.bg.delete.confirm"),
+                Strings.T("common.confirm"),
+                Strings.T("common.cancel"),
+                danger: true,
+                icon: "🖼"))
+        {
+            return;
+        }
+
+        var wasCurrent = string.Equals(AppServices.Wallpapers.CurrentId, id, StringComparison.OrdinalIgnoreCase);
+        var ok = AppServices.Wallpapers.Delete(id);
+        SyncBgImageState();
+
+        if (!ok)
+            AppServices.Toast.Show(Strings.T("settings.bg.import.failed"), "error");
+        else if (wasCurrent)
+            AppServices.Toast.Show(AppServices.Wallpapers.Library.Count > 0
+                ? Strings.T("settings.bg.delete.current")
+                : Strings.T("settings.bg.deleted"), "ok");
+        else
+            AppServices.Toast.Show(Strings.T("settings.bg.deleted"), "ok");
+    }
+
+    private void OnRestoreBgDefault(object sender, RoutedEventArgs e)
+    {
+        AppServices.Wallpapers.RestoreDefault();
+        _syncing = true;
+        try { SyncBgImageState(); } finally { _syncing = false; }
+    }
+
+    private void OnBgFitChecked(object sender, RoutedEventArgs e)
+    {
+        if (_syncing) return;
+        if (sender is not RadioButton { Tag: string key }) return;
+        AppServices.Wallpapers.SetFit(Services.Appearance.WallpaperCore.NormalizeFit(key));
+    }
+
+    private void OnBgDimChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
+    {
+        BgDimValue.Text = Strings.T("settings.bg.dim.value", Math.Round(e.NewValue));
+        BgDimWarn.Visibility = e.NewValue < 10 ? Visibility.Visible : Visibility.Collapsed;
+        if (_syncing) return;
+        AppServices.Wallpapers.SetDim(e.NewValue / 100.0);
+    }
+
+    private void OnBgDimAuto(object sender, RoutedEventArgs e)
+    {
+        AppServices.Wallpapers.SetDim(-1);
+        _syncing = true;
+        try { SyncBgDimState(); } finally { _syncing = false; }
+    }
+
+    private void OnBgBlurChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
+    {
+        BgBlurValue.Text = Math.Round(e.NewValue) + " px";
+        if (_syncing) return;
+        AppServices.Wallpapers.SetBlur(e.NewValue);
+    }
+
+    private void OnBgSlideshowToggled(object sender, RoutedEventArgs e)
+    {
+        if (_syncing) return;
+        CommitSlideshow();
+    }
+
+    private void OnBgIntervalChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (_syncing) return;
+        CommitSlideshow();
+    }
+
+    private void CommitSlideshow()
+    {
+        var seconds = BgIntervalCombo.SelectedItem is ComboBoxItem { Tag: int s }
+            ? s
+            : Services.Appearance.WallpaperCore.DefaultSlideshowSeconds;
+        AppServices.Wallpapers.SetSlideshow(
+            BgSlideshowSwitch.IsChecked == true,
+            seconds,
+            BgShuffleSwitch.IsChecked == true);
+        BgSlideshowWarn.Visibility = BgSlideshowSwitch.IsChecked == true
+                                     && AppServices.Wallpapers.Library.Count < 2
+            ? Visibility.Visible
+            : Visibility.Collapsed;
+    }
+
+    /// <summary>回填壁纸库、显示方式、压暗、模糊与轮播控件。</summary>
     private void SyncBgImageState()
     {
-        var path = AppServices.Appearance.Settings.BackgroundImage;
-        var has = !string.IsNullOrWhiteSpace(path);
-        BgClearImageButton.Visibility = has ? Visibility.Visible : Visibility.Collapsed;
-        BgImagePathText.Text = has
-            ? Strings.T("settings.bg.currentImage", path)
-            : Strings.T("settings.bg.noImage");
+        var wallpapers = AppServices.Wallpapers;
+        var items = wallpapers.Library;
+
+        BgLibraryCount.Text = Strings.T("settings.bg.library.count", items.Count);
+        BgLibraryEmpty.Visibility = items.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
+        BgLibraryPanel.Children.Clear();
+
+        foreach (var item in items)
+        {
+            BgLibraryPanel.Children.Add(BuildBgTile(item,
+                string.Equals(item.Id, wallpapers.CurrentId, StringComparison.OrdinalIgnoreCase)));
+        }
+
+        SyncBgFitState();
+        SyncBgDimState();
+        SyncBgBlurState();
+        SyncBgSlideshowState(items.Count);
+    }
+
+    private FrameworkElement BuildBgTile(Services.Appearance.WallpaperItem item, bool selected)
+    {
+        var grid = new Grid { Width = 132, Margin = new Thickness(0, 0, 8, 8) };
+
+        var thumbnail = new Image
+        {
+            Width = 128,
+            Height = 80,
+            Stretch = Stretch.UniformToFill,
+            Source = AppServices.Wallpapers.GetThumbnail(item)
+        };
+        RenderOptions.SetBitmapScalingMode(thumbnail, BitmapScalingMode.HighQuality);
+
+        var imageFrame = new Border
+        {
+            Width = 128,
+            Height = 80,
+            CornerRadius = new CornerRadius(6),
+            ClipToBounds = true,
+            Background = (Brush)Application.Current.Resources["Surface3Brush"],
+            Child = thumbnail
+        };
+
+        var name = new TextBlock
+        {
+            Text = item.DisplayName,
+            FontSize = (double)Application.Current.Resources["FontSizeXs"],
+            TextTrimming = TextTrimming.CharacterEllipsis,
+            Margin = new Thickness(2, 4, 2, 0)
+        };
+        name.SetResourceReference(TextBlock.ForegroundProperty, selected ? "TextBrush" : "MutedBrush");
+
+        var content = new StackPanel();
+        content.Children.Add(imageFrame);
+        content.Children.Add(name);
+
+        var tile = new Border
+        {
+            CornerRadius = new CornerRadius(8),
+            Padding = new Thickness(2),
+            Tag = item.Id,
+            Focusable = true,
+            Cursor = Cursors.Hand,
+            Background = Brushes.Transparent,
+            BorderThickness = new Thickness(selected ? 2 : 1),
+            Child = content,
+            ToolTip = item.DisplayName,
+            Margin = new Thickness(0)
+        };
+        tile.SetResourceReference(Border.BorderBrushProperty, selected ? "BrandBrush" : "LineBrush");
+        tile.MouseLeftButtonUp += OnBgTileClick;
+        tile.KeyDown += OnBgTileKeyDown;
+        System.Windows.Automation.AutomationProperties.SetName(tile,
+            item.DisplayName + (selected ? " ✓" : ""));
+        System.Windows.Automation.AutomationProperties.SetHelpText(tile,
+            Strings.T("settings.bg.library.title"));
+
+        var delete = new Button
+        {
+            Content = "✕",
+            Width = 22,
+            Height = 22,
+            Padding = new Thickness(0),
+            FontSize = 10,
+            HorizontalAlignment = HorizontalAlignment.Right,
+            VerticalAlignment = VerticalAlignment.Top,
+            Margin = new Thickness(0, 4, 4, 0),
+            Tag = item.Id,
+            ToolTip = Strings.T("settings.bg.delete"),
+            Style = (Style)FindResource("GhostButton")
+        };
+        System.Windows.Automation.AutomationProperties.SetName(delete,
+            Strings.T("settings.bg.delete") + " " + item.DisplayName);
+        delete.Click += OnDeleteBgImage;
+
+        grid.Children.Add(tile);
+        grid.Children.Add(delete);
+        return grid;
+    }
+
+    private void SyncBgFitState()
+    {
+        var fit = Services.Appearance.WallpaperCore.NormalizeFit(
+            AppServices.Appearance.Settings.BackgroundFit);
+        BgFitFill.IsChecked = fit == Services.Appearance.WallpaperFit.Fill;
+        BgFitContain.IsChecked = fit == Services.Appearance.WallpaperFit.Contain;
+        BgFitCenter.IsChecked = fit == Services.Appearance.WallpaperFit.Center;
+        BgFitTile.IsChecked = fit == Services.Appearance.WallpaperFit.Tile;
+    }
+
+    private void SyncBgDimState()
+    {
+        var wallpapers = AppServices.Wallpapers;
+        var value = wallpapers.EffectiveDim * 100;
+        BgDimSlider.Value = Math.Round(value);
+        BgDimValue.Text = Strings.T("settings.bg.dim.value", Math.Round(value));
+        BgDimWarn.Visibility = value < 10 ? Visibility.Visible : Visibility.Collapsed;
+        BgDimAutoButton.Visibility = Services.Appearance.WallpaperCore.IsCustomDim(
+            AppServices.Appearance.Settings.BackgroundDim)
+            ? Visibility.Visible
+            : Visibility.Collapsed;
+    }
+
+    private void SyncBgBlurState()
+    {
+        var blur = Services.Appearance.WallpaperCore.NormalizeBlur(
+            AppServices.Appearance.Settings.BackgroundBlur);
+        BgBlurSlider.Value = blur;
+        BgBlurValue.Text = Math.Round(blur) + " px";
+    }
+
+    private void SyncBgSlideshowState(int libraryCount)
+    {
+        if (BgIntervalCombo.Items.Count == 0)
+        {
+            foreach (var seconds in Services.Appearance.WallpaperCore.SlideshowIntervals)
+            {
+                BgIntervalCombo.Items.Add(new ComboBoxItem
+                {
+                    Content = Strings.T("settings.bg.interval." + seconds),
+                    Tag = seconds
+                });
+            }
+        }
+
+        var settings = AppServices.Appearance.Settings;
+        BgSlideshowSwitch.IsChecked = settings.BackgroundSlideshow;
+        BgShuffleSwitch.IsChecked = settings.BackgroundShuffle;
+        BgSlideshowPanel.Visibility = settings.BackgroundSlideshow
+            ? Visibility.Visible
+            : Visibility.Collapsed;
+
+        var secondsNow = Services.Appearance.WallpaperCore.NormalizeSlideshowSeconds(
+            settings.BackgroundSlideshowSeconds);
+        foreach (var item in BgIntervalCombo.Items)
+        {
+            if (item is ComboBoxItem { Tag: int s } && s == secondsNow)
+            {
+                BgIntervalCombo.SelectedItem = item;
+                break;
+            }
+        }
+
+        BgSlideshowWarn.Visibility = settings.BackgroundSlideshow && libraryCount < 2
+            ? Visibility.Visible
+            : Visibility.Collapsed;
     }
 
     // ------------------------------------------------------------ 指引与本地数据

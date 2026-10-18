@@ -33,6 +33,20 @@ public sealed class HotkeySettings
 
     [JsonPropertyName("toggleWindow")] public HotkeyBinding ToggleWindow { get; set; } = new("O");
     [JsonPropertyName("toggleWindowEnabled")] public bool ToggleWindowEnabled { get; set; } = true;
+
+    // ---- 提词器（V3.1.0 / §12.1）----
+
+    /// <summary>呼出 / 隐藏提词器，默认 <c>Ctrl+Alt+T</c>。</summary>
+    [JsonPropertyName("teleprompterToggle")] public HotkeyBinding TeleprompterToggle { get; set; } = new("T");
+    [JsonPropertyName("teleprompterToggleEnabled")] public bool TeleprompterToggleEnabled { get; set; } = true;
+
+    /// <summary>提词器播放 / 暂停，默认 <c>Ctrl+Alt+P</c>。</summary>
+    [JsonPropertyName("teleprompterPlayPause")] public HotkeyBinding TeleprompterPlayPause { get; set; } = new("P");
+    [JsonPropertyName("teleprompterPlayPauseEnabled")] public bool TeleprompterPlayPauseEnabled { get; set; } = true;
+
+    /// <summary>提词器点击穿透开关，默认 <c>Ctrl+Alt+L</c>（穿透后唯一的退出方式）。</summary>
+    [JsonPropertyName("teleprompterClickThrough")] public HotkeyBinding TeleprompterClickThrough { get; set; } = new("L");
+    [JsonPropertyName("teleprompterClickThroughEnabled")] public bool TeleprompterClickThroughEnabled { get; set; } = true;
 }
 
 /// <summary>

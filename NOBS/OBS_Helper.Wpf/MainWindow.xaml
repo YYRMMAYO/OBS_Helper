@@ -94,16 +94,11 @@
       </Grid.RowDefinitions>
 
       <!--
-        自定义背景层（v1.10）：位于顶栏与页面之下。
-        ContentBackgroundBrush / ContentBackgroundImage / ContentBackgroundDim
-        由 AppearanceService.Apply() 写入；默认即 Surface2，视觉与改版前一致。
+        自定义背景层（v1.10 / V3.1.0）：位于顶栏与页面之下。
+        默认 / 纯色 / 高对比由 AppearanceService 写底色；图片模式由 WallpaperService
+        提供当前图、铺放方式、压暗与轮播，WallpaperLayer 负责渲染。
       -->
-      <Grid Grid.Row="0" Grid.RowSpan="2" IsHitTestVisible="False">
-        <Border Background="{DynamicResource ContentBackgroundBrush}" />
-        <Image Source="{DynamicResource ContentBackgroundImage}"
-               Stretch="UniformToFill" RenderOptions.BitmapScalingMode="HighQuality" />
-        <Border Background="{DynamicResource ContentBackgroundDim}" />
-      </Grid>
+      <ctl:WallpaperLayer Grid.Row="0" Grid.RowSpan="2" />
 
       <!-- 顶栏 -->
       <Border Grid.Row="0" Background="{DynamicResource SurfaceBrush}"
@@ -142,6 +137,9 @@
 
           <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
             <ctl:ConnectionBadge x:Name="TopBadge" Margin="0,0,10,0" />
+            <Button Style="{StaticResource SecondaryButton}" Content="{DynamicResource Loc.teleprompter.open}"
+                    Padding="10,6" Margin="0,0,8,0" Click="OnTeleprompterClick"
+                    AutomationProperties.Name="{DynamicResource Loc.teleprompter.open}" />
             <Button Style="{StaticResource SecondaryButton}" Content="{DynamicResource Loc.nav.settings}"
                     Padding="10,6" Click="OnSettingsClick" />
           </StackPanel>

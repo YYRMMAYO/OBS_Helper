@@ -1,4 +1,4 @@
-using System.IO;
+﻿using System.IO;
 using System.Text.Json.Serialization;
 using System.Windows;
 using System.Windows.Media;
@@ -55,9 +55,56 @@ public sealed class AppearanceSettings
     [JsonPropertyName("bgColor")]
     public string BackgroundColor { get; set; } = "#f4f4fb";
 
-    /// <summary>背景图片的本地路径（仅 BackgroundMode=image 时生效）。</summary>
+    /// <summary>
+    /// 旧版背景图片的绝对路径（仅 BackgroundMode=image 时生效）。
+    /// V3.1.0 起作为兼容字段保留：首次启动会把它导入壁纸库，之后以 <see cref="BackgroundWallpaperId"/> 为准。
+    /// </summary>
     [JsonPropertyName("bgImage")]
     public string BackgroundImage { get; set; } = "";
+
+    /// <summary>当前选中的壁纸 id（壁纸库 manifest 中的 SHA-256）。</summary>
+    [JsonPropertyName("bgWallpaperId")]
+    public string BackgroundWallpaperId { get; set; } = "";
+
+    /// <summary>壁纸铺放方式："fill" / "contain" / "center" / "tile"。</summary>
+    [JsonPropertyName("bgFit")]
+    public string BackgroundFit { get; set; } = "fill";
+
+    /// <summary>压暗强度 0~0.8；-1 表示跟随主题（浅色 15%、深色 40%）。</summary>
+    [JsonPropertyName("bgDim")]
+    public double BackgroundDim { get; set; } = -1;
+
+    /// <summary>模糊半径 0~24 px（P1，默认关闭）。</summary>
+    [JsonPropertyName("bgBlur")]
+    public double BackgroundBlur { get; set; }
+
+    /// <summary>是否启用壁纸轮播。</summary>
+    [JsonPropertyName("bgSlideshow")]
+    public bool BackgroundSlideshow { get; set; }
+
+    /// <summary>轮播间隔（秒，只接受 30/60/300/900/1800/3600）。</summary>
+    [JsonPropertyName("bgSlideshowSeconds")]
+    public int BackgroundSlideshowSeconds { get; set; } = 300;
+
+    /// <summary>轮播是否随机顺序（一轮内不重复）。</summary>
+    [JsonPropertyName("bgShuffle")]
+    public bool BackgroundShuffle { get; set; }
+
+    /// <summary>壁纸作用范围：3.1.0 固定 content（整窗为后续版本）。</summary>
+    [JsonPropertyName("bgScope")]
+    public string BackgroundScope { get; set; } = "content";
+
+    /// <summary>旧设置迁移标记（1 = 已尝试过迁移）。</summary>
+    [JsonPropertyName("bgMigrationVersion")]
+    public int BackgroundMigrationVersion { get; set; }
+
+    /// <summary>是否允许彩蛋（V3.1.0 / §12.3）：默认开启，可关闭；无声音、不干扰录制。</summary>
+    [JsonPropertyName("easterEggEnabled")]
+    public bool EasterEggEnabled { get; set; } = true;
+
+    /// <summary>隐藏强调色是否已解锁（彩蛋触发后置 true）。</summary>
+    [JsonPropertyName("hiddenAccentUnlocked")]
+    public bool HiddenAccentUnlocked { get; set; }
 
     /// <summary>品牌强调色 key（见 AccentScheme.Catalog），默认青瓷绿。</summary>
     [JsonPropertyName("accent")]
@@ -78,7 +125,9 @@ public sealed record AccentScheme(
     string Key, string Preview,
     string LightBase, string LightHover, string LightPressed, string LightSoft, string LightDark,
     string DarkBase, string DarkHover, string DarkPressed, string DarkSoft, string DarkDark,
-    string DarkOn)
+    string DarkOn,
+    /// <summary>隐藏配色（彩蛋解锁后才在设置页出现）。</summary>
+    bool Hidden = false)
 {
     public static readonly AccentScheme[] Catalog =
     [
@@ -97,6 +146,11 @@ public sealed record AccentScheme(
         new("violet", "#6c42c9",
             "#6c42c9", "#5c36b0", "#472a8e", "#ede5fc", "#4e2fa0",
             "#9b7ef0", "#ad94f5", "#9070e8", "#251c3f", "#c4aff8", "#140a30"),
+        // 彩蛋配色：解锁后才出现（默认隐藏，不影响现有 5 套）
+        new("midnight", "#1f6f8b",
+            "#155e78", "#125066", "#0e4254", "#d9eef5", "#114657",
+            "#4cb8d6", "#67c6e0", "#3aa6c4", "#0c2833", "#8fd8ea", "#04161d",
+            Hidden: true),
     ];
 
     public static readonly AccentScheme Default = Catalog[0];
@@ -134,6 +188,13 @@ public sealed class AppearanceService : IDisposable
     }
 
     public AppearanceSettings Settings { get; private set; } = new();
+
+    /// <summary>
+    /// 壁纸服务（V3.1.0）。图片模式的解码 / 缓存 / 轮播由它负责，
+    /// 外观服务只保留「默认底 / 纯色 / 高对比回退」与主题调色板。
+    /// 由组合根在 <see cref="Initialize"/> 之前注入，避免首次 Apply 时图片丢失。
+    /// </summary>
+    public Services.Appearance.WallpaperService? Wallpapers { get; set; }
 
     /// <summary>设置变更时触发，供设置页刷新选中态。</summary>
     public event Action? Changed;
@@ -307,6 +368,35 @@ public sealed class AppearanceService : IDisposable
         SaveAndApply();
     }
 
+    // ------------------------------------------------------------ 彩蛋（V3.1.0 / §12.3）
+
+    /// <summary>是否允许彩蛋（默认开启；设置页可关闭）。</summary>
+    public bool EasterEggEnabled => Settings.EasterEggEnabled;
+
+    public void SetEasterEggEnabled(bool on)
+    {
+        Settings.EasterEggEnabled = on;
+        SaveAndApply();
+    }
+
+    /// <summary>设置页可见的强调色：隐藏配色只在解锁后出现。</summary>
+    public IReadOnlyList<AccentScheme> VisibleAccents => Settings.HiddenAccentUnlocked
+        ? AccentScheme.Catalog
+        : AccentScheme.Catalog.Where(a => !a.Hidden).ToArray();
+
+    /// <summary>
+    /// 解锁隐藏强调色（KONAMI 彩蛋）。返回 true 表示本次是新解锁。
+    /// 纯本地、无声音、不弹置顶窗口；「减少动画」下也不会有动画。
+    /// </summary>
+    public bool UnlockHiddenAccent()
+    {
+        var isNew = !Settings.HiddenAccentUnlocked;
+        Settings.HiddenAccentUnlocked = true;
+        Settings.Accent = "midnight";
+        SaveAndApply();
+        return isNew;
+    }
+
     /// <summary>设置自定义背景模式：default / color / image。</summary>
     public void SetBackgroundMode(string mode)
     {
@@ -327,12 +417,75 @@ public sealed class AppearanceService : IDisposable
         SaveAndApply();
     }
 
-    /// <summary>设置背景图片路径（同时切到 image 模式）；传 null/空串清除图片并回到默认。</summary>
+    /// <summary>
+    /// 设置旧版背景图片路径（同时切到 image 模式）；传 null/空串清除图片并回到默认。
+    /// V3.1.0 起界面不再直接调用它，保留给旧配置与导入流程。
+    /// </summary>
     public void SetBackgroundImage(string? path)
     {
         Settings.BackgroundMode = string.IsNullOrWhiteSpace(path) ? "default" : "image";
         Settings.BackgroundImage = path?.Trim() ?? "";
         SaveAndApply();
+    }
+
+    /// <summary>选中壁纸库中的一张（同时切到 image 模式）；未知 id / 空串回退默认底。</summary>
+    public void SetWallpaper(string? wallpaperId)
+    {
+        var id = wallpaperId?.Trim() ?? "";
+        Settings.BackgroundWallpaperId = id;
+        Settings.BackgroundMode = id.Length == 0 ? "default" : "image";
+        SaveAndApply();
+    }
+
+    /// <summary>清除当前壁纸选择，回到主题默认底（不删除壁纸库文件）。</summary>
+    public void RestoreDefaultBackground()
+    {
+        Settings.BackgroundWallpaperId = "";
+        Settings.BackgroundImage = "";
+        Settings.BackgroundMode = "default";
+        SaveAndApply();
+    }
+
+    /// <summary>壁纸铺放方式（fill / contain / center / tile）。</summary>
+    public void SetWallpaperFit(Services.Appearance.WallpaperFit fit)
+    {
+        Settings.BackgroundFit = Services.Appearance.WallpaperCore.FitKey(fit);
+        SaveAndApply();
+    }
+
+    /// <summary>压暗强度 0~0.8；传负数恢复「跟随主题」。</summary>
+    public void SetWallpaperDim(double dim)
+    {
+        Settings.BackgroundDim = dim < 0
+            ? Services.Appearance.WallpaperCore.AutoDim
+            : Math.Clamp(dim, Services.Appearance.WallpaperCore.MinDim, Services.Appearance.WallpaperCore.MaxDim);
+        SaveAndApply();
+    }
+
+    /// <summary>模糊半径 0~24 px。</summary>
+    public void SetWallpaperBlur(double blur)
+    {
+        Settings.BackgroundBlur = Services.Appearance.WallpaperCore.NormalizeBlur(blur);
+        SaveAndApply();
+    }
+
+    /// <summary>轮播开关 / 间隔 / 随机顺序。</summary>
+    public void SetWallpaperSlideshow(bool enabled, int seconds, bool shuffle)
+    {
+        Settings.BackgroundSlideshow = enabled;
+        Settings.BackgroundSlideshowSeconds = Services.Appearance.WallpaperCore.NormalizeSlideshowSeconds(seconds);
+        Settings.BackgroundShuffle = shuffle;
+        SaveAndApply();
+    }
+
+    /// <summary>
+    /// 标记旧壁纸设置已完成一次迁移，不重新应用外观。
+    /// 迁移失败但文件已确定丢失时也要标记，避免每次启动重复提示。
+    /// </summary>
+    public void MarkWallpaperMigrationDone()
+    {
+        Settings.BackgroundMigrationVersion = Services.Appearance.WallpaperCore.MigrationVersion;
+        _store.SetObject(StorageKey, Settings);
     }
 
     private void SaveAndApply()
@@ -471,6 +624,20 @@ public sealed class AppearanceService : IDisposable
         res["CornerRadiusLg"] = new CornerRadius(8);
         res["CornerRadiusMd"] = new CornerRadius(6);
         res["CornerRadiusSm"] = new CornerRadius(4);
+        // V3.1.0 UI 视觉刷新 1.0：设计令牌（间距 / 圆角 / 动效），新页面优先引用它们，
+        // 避免每处硬编码 8 / 12 / 16 造成视觉漂移；19 页的全量重设计留到 3.2。
+        res["CornerRadiusXl"] = new CornerRadius(12);
+        res["SpacingXs"] = 4.0;
+        res["SpacingSm"] = 8.0;
+        res["SpacingMd"] = 12.0;
+        res["SpacingLg"] = 16.0;
+        res["SpacingXl"] = 24.0;
+        res["MotionFast"] = Settings.ReduceMotion
+            ? new Duration(TimeSpan.Zero)
+            : new Duration(TimeSpan.FromMilliseconds(100));
+        res["MotionSlow"] = Settings.ReduceMotion
+            ? new Duration(TimeSpan.Zero)
+            : new Duration(TimeSpan.FromMilliseconds(300));
 
         // ---- 字号档位
         //
@@ -507,17 +674,13 @@ public sealed class AppearanceService : IDisposable
 
     // ------------------------------------------------------------ 自定义背景
 
-    private ImageSource? _bgImageCache;
-    private string? _bgImageCachePath;
-
     /// <summary>按当前设置写入内容区背景资源：ContentBackgroundBrush / ContentBackgroundImage / ContentBackgroundDim。</summary>
     private void ApplyBackgroundResources(ResourceDictionary res, bool dark, bool hc)
     {
         if (hc || Settings.BackgroundMode == "default")
         {
             res["ContentBackgroundBrush"] = Frozen(dark ? "#14151d" : "#f4f4fb");
-            res["ContentBackgroundImage"] = null;
-            res["ContentBackgroundDim"] = Brushes.Transparent;
+            ClearWallpaperResources(res);
             return;
         }
 
@@ -526,50 +689,30 @@ public sealed class AppearanceService : IDisposable
             var brush = TryParseBrush(Settings.BackgroundColor)
                         ?? Frozen(dark ? "#14151d" : "#f4f4fb");
             res["ContentBackgroundBrush"] = brush;
-            res["ContentBackgroundImage"] = null;
-            res["ContentBackgroundDim"] = Brushes.Transparent;
+            ClearWallpaperResources(res);
             return;
         }
 
-        // image 模式：图片加载失败（文件被移动 / 删除）时静默回退默认底，不弹错误。
-        var img = LoadBackgroundImage(Settings.BackgroundImage);
+        // 图片模式（V3.1.0）：底仍是主题默认底，图片、压暗、铺放方式由 WallpaperService 写入。
+        // 高对比已在上面强制回退；文件丢失 / 损坏时服务层回退默认底并给出一次可见提示。
         res["ContentBackgroundBrush"] = Frozen(dark ? "#14151d" : "#f4f4fb");
-        res["ContentBackgroundImage"] = img;
-        // 图片上方加一层柔和压暗遮罩，保证卡片与文字可读性（craft-floor：可读性优先）
-        res["ContentBackgroundDim"] = img is null
-            ? Brushes.Transparent
-            : Frozen(dark ? "#66000000" : "#22000000");
+        res["ContentBackgroundDim"] = Brushes.Transparent;
+        res["ContentBackgroundImage"] = null;
+        res["ContentBackgroundImageA"] = null;
+        res["ContentBackgroundImageB"] = null;
+        Wallpapers?.ApplyResources(res, dark);
     }
 
-    /// <summary>加载本地背景图片；带路径缓存，文件缺失返回 null。</summary>
-    private ImageSource? LoadBackgroundImage(string path)
+    /// <summary>清空壁纸相关资源（默认 / 纯色 / 高对比共用）。</summary>
+    private static void ClearWallpaperResources(ResourceDictionary res)
     {
-        if (string.IsNullOrWhiteSpace(path)) return null;
-        if (string.Equals(_bgImageCachePath, path, StringComparison.OrdinalIgnoreCase))
-            return _bgImageCache;
-
-        ImageSource? loaded = null;
-        try
-        {
-            if (File.Exists(path))
-            {
-                var bmp = new BitmapImage();
-                bmp.BeginInit();
-                bmp.CacheOption = BitmapCacheOption.OnLoad;
-                bmp.UriSource = new Uri(path, UriKind.Absolute);
-                bmp.EndInit();
-                bmp.Freeze();
-                loaded = bmp;
-            }
-        }
-        catch (Exception)
-        {
-            loaded = null; // 文件损坏 / 权限不足：回退默认底
-        }
-
-        _bgImageCachePath = path;
-        _bgImageCache = loaded;
-        return loaded;
+        res["ContentBackgroundImage"] = null;
+        res["ContentBackgroundImageA"] = null;
+        res["ContentBackgroundImageB"] = null;
+        res["ContentBackgroundDim"] = Brushes.Transparent;
+        res["ContentBackgroundOpacity"] = 1.0;
+        res["ContentBackgroundBlurRadius"] = 0.0;
+        res["ContentBackgroundFadeDuration"] = new Duration(TimeSpan.Zero);
     }
 
     private static SolidColorBrush? TryParseBrush(string hex)

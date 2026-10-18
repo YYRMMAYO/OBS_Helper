@@ -34,7 +34,7 @@
 
 ## 3. 组合根：AppServices（无 DI 容器）
 
-`AppServices.cs` 是唯一的服务装配点：**52 个 Lazy 单例**，构造函数注入依赖，刻意不用 DI 容器（依赖是一棵静态树、零依赖、启动快、依赖关系一屏可见）。
+`AppServices.cs` 是唯一的服务装配点：**55 个 Lazy 单例**，构造函数注入依赖，刻意不用 DI 容器（依赖是一棵静态树、零依赖、启动快、依赖关系一屏可见）。
 
 ```text
 Store ─┬─ BookmarkService ── AssistantService
@@ -144,6 +144,16 @@ SceneTemplateService 场景模板：在线落地（建专属配置集合 → 逐
 | 新手引导 | `OnboardingGuide`（纯逻辑）+ `MainWindow` 覆盖层 | 步骤清单与游标状态机可单测；**每步自动把界面切到对应页面**（V2.9.1「跳转式引导」），卡片贴右下角 + 轻遮罩（页面要看得见），卡片另给站内跳转按钮与官方下载外链；「已完成」只记一个偏好键；「减少动画」时不播动效 |
 | 官方下载入口 | `ObsDownloadCard` 控件 + `ObsDownloadLinks` 常量 | 只允许 `obsproject.com` / 官方 GitHub 仓库；Windows 安装包直链由 GitHub API 解析（`ObsInstallerAsset`），解析不到退化到官方发布页 |
 | OBS 日志定位 | `ObsLogFileFinder` | 认 `.txt` / `.log` 两种扩展名（OBS 会话日志是 `.txt`），按修改时间取最新 |
+
+## 10.1 V3.1.0 新增子系统
+
+| 子系统 | 入口 | 职责与边界 |
+|---|---|---|
+| 壁纸 | `Services/Appearance/WallpaperCore` / `WallpaperStore` / `WallpaperService`、`Controls/WallpaperLayer` | 纯逻辑（校验 / 归一化 / 轮播顺序 / 迁移）与文件库分离；WPF 侧负责解码缓存、轮播计时器与资源写入。文件复制进 `%LocalAppData%\OBS_Helper\wallpapers\`，不再依赖原路径；高对比强制回退默认底。 |
+| 一键录制 | `ObsConnectionService.EnsureConnectedAsync` + `Services/Shell/SimpleRecordingService` | 单飞、超时、取消、主动连接；首次同意后不再每次弹窗；OBS 未启动时可拉起，已启动未连接时自动连接；失败分类映射到可执行出口。v4 旧协议保持「跳过设置、直接开录」。 |
+| 提词器 | `Services/Shell/TeleprompterCore` / `TeleprompterService`、`Views/TeleprompterWindow`、`Services/Compat/WindowCaptureExclusion` | 独立置顶窗口；纯逻辑负责 clamp / 滚动 / 镜像 / 分段与场景匹配；捕获排除只用 `SetWindowDisplayAffinity`，不承诺 100%；点击穿透依赖全局热键退出。 |
+| 录像命名 | `Services/Recording/RecordingNamingCore` | 停止后按模板重命名；非法字符净化、同名加序号、失败保留原文件；不写 OBS `FilenameFormatting`。 |
+| 静音提醒 | `Services/Audio/AudioAlertCore` / `AudioAlertService` | 只在录制 / 推流中生效；阈值 + 持续时间 + 防重复；只提醒，不自动改音频状态。 |
 
 ## 11. 线程模型
 

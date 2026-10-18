@@ -60,6 +60,11 @@
         <Button x:Name="StopButton" Content="{DynamicResource Loc.simple.stop}"
                 Style="{StaticResource DangerButton}" Margin="0,0,8,8"
                 Visibility="Collapsed" Click="OnStopClick" />
+        <Button x:Name="CancelButton" Content="{DynamicResource Loc.simple.cancelStart}"
+                Style="{StaticResource SecondaryButton}" Margin="0,0,8,8"
+                Visibility="Collapsed" Click="OnCancelStartClick" />
+        <Button x:Name="ErrorActionButton" Style="{StaticResource SecondaryButton}"
+                Margin="0,0,8,8" Visibility="Collapsed" Click="OnErrorActionClick" />
         <Button x:Name="RescanButton" Content="{DynamicResource Loc.simple.rescan}"
                 Style="{StaticResource GhostButton}" Margin="0,0,8,8" Click="OnRescanClick" />
         <Button x:Name="OpenDirButton" Content="{DynamicResource Loc.simple.openDir}"

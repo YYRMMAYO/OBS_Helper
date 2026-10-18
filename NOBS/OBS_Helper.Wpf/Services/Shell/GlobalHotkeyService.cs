@@ -19,7 +19,13 @@ public enum HotkeyAction
     /// <summary>录制中打点（V3.0 / D3）：标出精彩瞬间，停止后导出成章节。</summary>
     MarkRecording,
     MiniWindow,
-    ToggleWindow
+    ToggleWindow,
+    /// <summary>呼出 / 隐藏提词器（V3.1.0）。</summary>
+    TeleprompterToggle,
+    /// <summary>提词器播放 / 暂停（V3.1.0）。</summary>
+    TeleprompterPlayPause,
+    /// <summary>提词器点击穿透（V3.1.0）。</summary>
+    TeleprompterClickThrough
 }
 
 /// <summary>
@@ -53,7 +59,10 @@ public sealed class GlobalHotkeyService : IDisposable
         (HotkeyAction.SaveReplay, 0xC106),
         (HotkeyAction.MarkRecording, 0xC107),
         (HotkeyAction.MiniWindow, 0xC105),
-        (HotkeyAction.ToggleWindow, 0xC104)
+        (HotkeyAction.ToggleWindow, 0xC104),
+        (HotkeyAction.TeleprompterToggle, 0xC108),
+        (HotkeyAction.TeleprompterPlayPause, 0xC109),
+        (HotkeyAction.TeleprompterClickThrough, 0xC10A)
     };
 
     private readonly LocalStore _store;
@@ -94,6 +103,15 @@ public sealed class GlobalHotkeyService : IDisposable
 
     /// <summary>「小窗」热键触发（呼出 / 隐藏迷你小窗）。</summary>
     public event Action? ToggleMiniWindowRequested;
+
+    /// <summary>提词器呼出 / 隐藏（V3.1.0）。</summary>
+    public event Action? TeleprompterToggleRequested;
+
+    /// <summary>提词器播放 / 暂停（V3.1.0）。</summary>
+    public event Action? TeleprompterPlayPauseRequested;
+
+    /// <summary>提词器点击穿透开关（V3.1.0）。</summary>
+    public event Action? TeleprompterClickThroughRequested;
 
     /// <summary>注册状态变化（重新注册后），供设置页刷新。</summary>
     public event Action? Changed;
@@ -227,6 +245,15 @@ public sealed class GlobalHotkeyService : IDisposable
                 case HotkeyAction.ToggleWindow:
                     ToggleWindowRequested?.Invoke();
                     break;
+                case HotkeyAction.TeleprompterToggle:
+                    TeleprompterToggleRequested?.Invoke();
+                    break;
+                case HotkeyAction.TeleprompterPlayPause:
+                    TeleprompterPlayPauseRequested?.Invoke();
+                    break;
+                case HotkeyAction.TeleprompterClickThrough:
+                    TeleprompterClickThroughRequested?.Invoke();
+                    break;
             }
         }
         catch (Exception ex)
@@ -234,7 +261,10 @@ public sealed class GlobalHotkeyService : IDisposable
             // V3.0：不再完全静默。未连 OBS 时按录制热键毫无反应，用户会以为「热键没生效」——
             // 至少要落日志，并在托盘给一句原因（托盘通知节流由 TrayService 统一处理）。
             FileLogger.Warn("Hotkey", $"全局热键动作 {action} 失败：{ex.Message}");
-            if (!_obs.IsConnected)
+            if (!_obs.IsConnected && action is not (
+                    HotkeyAction.TeleprompterToggle or
+                    HotkeyAction.TeleprompterPlayPause or
+                    HotkeyAction.TeleprompterClickThrough))
                 TrayNotify?.Invoke(Strings.T("hotkey.notConnected"));
         }
     }
@@ -251,6 +281,9 @@ public sealed class GlobalHotkeyService : IDisposable
         HotkeyAction.MarkRecording => Settings.MarkRecordingEnabled,
         HotkeyAction.MiniWindow => Settings.MiniWindowEnabled,
         HotkeyAction.ToggleWindow => Settings.ToggleWindowEnabled,
+        HotkeyAction.TeleprompterToggle => Settings.TeleprompterToggleEnabled,
+        HotkeyAction.TeleprompterPlayPause => Settings.TeleprompterPlayPauseEnabled,
+        HotkeyAction.TeleprompterClickThrough => Settings.TeleprompterClickThroughEnabled,
         _ => false
     };
 
@@ -263,6 +296,9 @@ public sealed class GlobalHotkeyService : IDisposable
         HotkeyAction.MarkRecording => Settings.MarkRecording,
         HotkeyAction.MiniWindow => Settings.MiniWindow,
         HotkeyAction.ToggleWindow => Settings.ToggleWindow,
+        HotkeyAction.TeleprompterToggle => Settings.TeleprompterToggle,
+        HotkeyAction.TeleprompterPlayPause => Settings.TeleprompterPlayPause,
+        HotkeyAction.TeleprompterClickThrough => Settings.TeleprompterClickThrough,
         _ => Settings.Record
     };
 
@@ -304,7 +340,12 @@ public sealed class GlobalHotkeyService : IDisposable
     /// <summary>收敛配置：清掉空主键、Win 键组合需显式允许（默认去勾）等。</summary>
     private static void Normalize(HotkeySettings s)
     {
-        foreach (var b in new[] { s.Record, s.Stream, s.VirtualCam, s.SaveReplay, s.MarkRecording, s.MiniWindow, s.ToggleWindow })
+        foreach (var b in new[]
+                 {
+                     s.Record, s.Stream, s.VirtualCam, s.SaveReplay, s.MarkRecording,
+                     s.MiniWindow, s.ToggleWindow,
+                     s.TeleprompterToggle, s.TeleprompterPlayPause, s.TeleprompterClickThrough
+                 })
         {
             b.Key = (b.Key ?? "").Trim();
             // 只有 Ctrl/Alt/Shift/Win 任意一个作为修饰才注册（裸键太容易误触）

@@ -17,8 +17,13 @@ public sealed class ObsConnectionSettings
     /// </summary>
     public int Port { get; set; } = ObsLegacyV4Core.DefaultPort;
 
-    /// <summary>应用启动时自动尝试连接。</summary>
-    public bool AutoConnect { get; set; }
+    /// <summary>
+    /// 应用启动时自动尝试连接。
+    /// V3.1.0 起默认 true（只影响新安装 / 从未写过该键的配置）；
+    /// 旧配置里明确写了 false 的用户保持 false —— 不静默改用户的选择。
+    /// 启动时的尝试**只在 OBS 已在运行时**发起，OBS 没开不会制造重连噪音。
+    /// </summary>
+    public bool AutoConnect { get; set; } = true;
 
     /// <summary>断线后按指数退避自动重连。</summary>
     public bool AutoReconnect { get; set; } = true;

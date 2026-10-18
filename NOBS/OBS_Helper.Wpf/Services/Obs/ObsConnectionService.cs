@@ -22,14 +22,19 @@ public sealed class ObsConnectionService : IAsyncDisposable
     private readonly ObsWebSocketClient _client = new();
     private readonly ObsReconnectPolicy _policy = new();
     private readonly ObsSettingsService _settings;
+    private readonly Func<bool>? _isObsRunning;
+
+    /// <summary>EnsureConnectedAsync 的单飞闸：控制台页 / 一键录制 / 启动自动连接不会并发握手。</summary>
+    private readonly SemaphoreSlim _ensureGate = new(1, 1);
 
     private CancellationTokenSource? _reconnectCts;
     private int _attempt;
     private bool _userInitiatedDisconnect;
 
-    public ObsConnectionService(ObsSettingsService settings)
+    public ObsConnectionService(ObsSettingsService settings, Func<bool>? isObsRunning = null)
     {
         _settings = settings;
+        _isObsRunning = isObsRunning;
         _client.EventReceived += OnObsEvent;
         _client.Closed += OnClosed;
     }
@@ -191,6 +196,24 @@ public sealed class ObsConnectionService : IAsyncDisposable
 
     private async Task<bool> ConnectCoreAsync(string? password)
     {
+        var outcome = await ConnectOnceAsync(password, CancellationToken.None);
+        if (outcome is EnsureConnectionOutcome.Connected or EnsureConnectionOutcome.AlreadyConnected)
+            return true;
+
+        // V3.0（审查发现的缺陷）：用户中途点了「断开」时不能再排自动重连 ——
+        // 否则会在「连接中点了断开」之后排出一个成功的自动重连，而 `_userInitiatedDisconnect`
+        // 仍为 true，导致此后真实断线被 OnClosed 的第一道分支吞掉、本会话再也不自动重连。
+        if (outcome != EnsureConnectionOutcome.Cancelled && !_userInitiatedDisconnect)
+            ScheduleReconnect();
+        return false;
+    }
+
+    /// <summary>
+    /// 主动建立一次连接，并把失败翻译成分类结果（V3.1.0 / D3）。
+    /// 这里**不排自动重连**：调用方（一键录制 / EnsureConnected）决定是否继续尝试。
+    /// </summary>
+    private async Task<EnsureConnectionOutcome> ConnectOnceAsync(string? password, CancellationToken ct)
+    {
         var cfg = _settings.Current;
         var url = cfg.BuildUrl();
         var pwd = password ?? await _settings.GetPasswordAsync();
@@ -199,7 +222,7 @@ public sealed class ObsConnectionService : IAsyncDisposable
         try
         {
             // Identify（含鉴权）在 ConnectAsync 内部完成，这里先切到 Authenticating 便于 UI 展示
-            var connectTask = _client.ConnectAsync(url, pwd, ObsEventSubscription.Default);
+            var connectTask = _client.ConnectAsync(url, pwd, ObsEventSubscription.Default, ct);
             SetState(ObsConnectionState.Authenticating);
             await connectTask;
 
@@ -209,29 +232,123 @@ public sealed class ObsConnectionService : IAsyncDisposable
             if (!_client.IsOpen)
             {
                 SetState(ObsConnectionState.Disconnected, Strings.T("obs.ws.closed"), isFailure: true);
-                ScheduleReconnect();
-                return false;
+                return EnsureConnectionOutcome.Error;
             }
 
             SetState(ObsConnectionState.Connected);
             _attempt = 0;
             await RefreshAllAsync();
-            return true;
+            return EnsureConnectionOutcome.Connected;
+        }
+        catch (OperationCanceledException) when (ct.IsCancellationRequested)
+        {
+            SetState(ObsConnectionState.Disconnected);
+            return EnsureConnectionOutcome.Cancelled;
         }
         catch (UnauthorizedAccessException ex)
         {
             // 密码错误不做自动重连：重试没有意义，只会反复弹错。
             SetState(ObsConnectionState.Failed, ex.Message, isFailure: true);
-            return false;
+            return ObsEnsureCore.Classify(ex, _client.AuthRequired, !string.IsNullOrEmpty(pwd));
         }
         catch (Exception ex)
         {
             SetState(ObsConnectionState.Disconnected, DescribeConnectError(ex), isFailure: true);
-            // V3.0（审查发现的缺陷）：用户中途点了「断开」时不能再排自动重连 ——
-            // 否则会在「连接中点了断开」之后排出一个成功的自动重连，而 `_userInitiatedDisconnect`
-            // 仍为 true，导致此后真实断线被 OnClosed 的第一道分支吞掉、本会话再也不自动重连。
-            if (!_userInitiatedDisconnect) ScheduleReconnect();
-            return false;
+            return ObsEnsureCore.Classify(ex, _client.AuthRequired, !string.IsNullOrEmpty(pwd));
+        }
+    }
+
+    /// <summary>
+    /// 可等待、可超时、可取消、单飞的「确保连上 OBS」（V3.1.0 / D3）。
+    ///
+    /// 用途：一键录制（OBS 已启动但未连接）、控制台页、启动时自动连接。
+    /// 与 <see cref="ConnectAsync"/> 的区别：
+    /// <list type="bullet">
+    ///   <item>失败返回分类结果，而不是只给一个 bool；</item>
+    ///   <item>在超时窗口内按 1 秒间隔重试（端口刚开、插件刚加载时很常见）；</item>
+    ///   <item>不弹窗、不读写控件；需要密码时返回 <see cref="EnsureConnectionOutcome.AuthRequired"/>；</item>
+    ///   <item>OBS 退出后立即返回 <see cref="EnsureConnectionOutcome.ObsExited"/>，不空等满超时。</item>
+    /// </list>
+    /// </summary>
+    public async Task<EnsureConnectionResult> EnsureConnectedAsync(
+        TimeSpan timeout,
+        string? password = null,
+        CancellationToken ct = default,
+        IProgress<TimeSpan>? elapsed = null)
+    {
+        var started = System.Diagnostics.Stopwatch.StartNew();
+        if (IsConnected)
+            return new EnsureConnectionResult(EnsureConnectionOutcome.AlreadyConnected, null, 0, TimeSpan.Zero);
+
+        if (timeout <= TimeSpan.Zero) timeout = TimeSpan.FromSeconds(1);
+
+        var acquired = false;
+        try
+        {
+            acquired = await _ensureGate.WaitAsync(timeout, ct).ConfigureAwait(false);
+            if (!acquired)
+                return new EnsureConnectionResult(EnsureConnectionOutcome.Timeout, null, 0, started.Elapsed);
+
+            if (IsConnected)
+                return new EnsureConnectionResult(EnsureConnectionOutcome.AlreadyConnected, null, 0, started.Elapsed);
+
+            // 用户显式动作优先于后台重连：取消倒计时，避免两个连接流程互相踩状态
+            CancelReconnect();
+            _userInitiatedDisconnect = false;
+            _attempt = 0;
+
+            var attempts = 0;
+            while (started.Elapsed < timeout)
+            {
+                ct.ThrowIfCancellationRequested();
+
+                if (IsConnected)
+                    return new EnsureConnectionResult(EnsureConnectionOutcome.AlreadyConnected, null, attempts, started.Elapsed);
+
+                if (_isObsRunning is { } probe)
+                {
+                    var running = probe();
+                    if (!running)
+                    {
+                        var outcome = attempts == 0
+                            ? EnsureConnectionOutcome.ObsNotRunning
+                            : EnsureConnectionOutcome.ObsExited;
+                        return new EnsureConnectionResult(outcome, null, attempts, started.Elapsed);
+                    }
+                }
+
+                attempts++;
+                var result = await ConnectOnceAsync(password, ct).ConfigureAwait(false);
+                elapsed?.Report(started.Elapsed);
+
+                if (result is EnsureConnectionOutcome.Connected or EnsureConnectionOutcome.AlreadyConnected)
+                    return new EnsureConnectionResult(EnsureConnectionOutcome.Connected, null, attempts, started.Elapsed);
+
+                if (result == EnsureConnectionOutcome.Cancelled)
+                    return new EnsureConnectionResult(result, null, attempts, started.Elapsed);
+
+                // 认证失败 / OBS 退出：再等也没有意义
+                if (ObsEnsureCore.NeedsUserAction(result))
+                    return new EnsureConnectionResult(result, LastError, attempts, started.Elapsed);
+
+                if (!ObsEnsureCore.ShouldRetry(result))
+                    return new EnsureConnectionResult(result, LastError, attempts, started.Elapsed);
+
+                var remaining = timeout - started.Elapsed;
+                if (remaining <= TimeSpan.Zero) break;
+                await Task.Delay(remaining < TimeSpan.FromSeconds(1) ? remaining : TimeSpan.FromSeconds(1), ct)
+                    .ConfigureAwait(false);
+            }
+
+            return new EnsureConnectionResult(EnsureConnectionOutcome.Timeout, LastError, attempts, started.Elapsed);
+        }
+        catch (OperationCanceledException) when (ct.IsCancellationRequested)
+        {
+            return new EnsureConnectionResult(EnsureConnectionOutcome.Cancelled, null, 0, started.Elapsed);
+        }
+        finally
+        {
+            if (acquired) _ensureGate.Release();
         }
     }
 

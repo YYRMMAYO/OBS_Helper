@@ -195,6 +195,13 @@
           <TextBlock Style="{StaticResource CaptionText}" Margin="52,5,0,0"
                      Text="{DynamicResource Loc.settings.appearance.reduceMotionDesc}" />
 
+          <!-- 彩蛋开关（V3.1.0 / §12.3）：默认开启，可关闭；无声音、不干扰录制 -->
+          <CheckBox x:Name="EasterEggSwitch" Style="{StaticResource AppSwitch}"
+                    Content="{DynamicResource Loc.settings.appearance.easterEgg}"
+                    Margin="0,14,0,0" Checked="OnEasterEggToggled" Unchecked="OnEasterEggToggled" />
+          <TextBlock Style="{StaticResource CaptionText}" Margin="52,5,0,0" TextWrapping="Wrap"
+                     Text="{DynamicResource Loc.settings.appearance.easterEggDesc}" />
+
           <!-- ============================================ 自定义背景（v1.10） -->
           <Border Style="{StaticResource HLine}" Margin="0,14,0,0" />
 
@@ -252,23 +259,110 @@
                        VerticalAlignment="Center" Margin="2,0,0,8" />
           </WrapPanel>
 
-          <!-- 图片背景 -->
+          <!-- 图片背景：壁纸库（V3.1.0） -->
           <StackPanel x:Name="BgImagePanel" Margin="0,10,0,0" Visibility="Collapsed">
             <Grid>
-              <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="Auto" />
-                <ColumnDefinition Width="*" />
-              </Grid.ColumnDefinitions>
-              <Button Grid.Column="0" Content="{DynamicResource Loc.settings.bg.pickImage}" Style="{StaticResource SecondaryButton}"
-                      Click="OnPickBgImage" />
-              <Button x:Name="BgClearImageButton" Grid.Column="1" Content="{DynamicResource Loc.settings.bg.clearImage}"
-                      Style="{StaticResource GhostButton}" Margin="8,0,0,0"
-                      VerticalAlignment="Center" Click="OnClearBgImage" Visibility="Collapsed" />
+              <TextBlock Text="{DynamicResource Loc.settings.bg.library.title}" FontWeight="SemiBold"
+                         Foreground="{DynamicResource TextBrush}" />
+              <TextBlock x:Name="BgLibraryCount" Style="{StaticResource CaptionText}"
+                         HorizontalAlignment="Right" VerticalAlignment="Center" />
             </Grid>
-            <TextBlock x:Name="BgImagePathText" Style="{StaticResource CaptionText}"
-                       Margin="2,6,0,0" TextWrapping="Wrap" />
-            <TextBlock Style="{StaticResource CaptionText}" Margin="2,4,0,0"
-                       Text="{DynamicResource Loc.settings.bg.imageHint}" />
+
+            <TextBlock x:Name="BgLibraryEmpty" Style="{StaticResource CaptionText}"
+                       Margin="2,6,0,0" TextWrapping="Wrap"
+                       Text="{DynamicResource Loc.settings.bg.library.empty}" />
+
+            <!-- 缩略图网格：键盘可 Tab 聚焦，回车 / 空格选中 -->
+            <WrapPanel x:Name="BgLibraryPanel" Margin="0,8,0,0"
+                       AllowDrop="True" DragOver="OnBgLibraryDragOver" Drop="OnBgLibraryDrop" />
+
+            <WrapPanel Margin="0,8,0,0">
+              <Button x:Name="BgImportButton" Content="{DynamicResource Loc.settings.bg.import}"
+                      Style="{StaticResource SecondaryButton}" Margin="0,0,8,0" Click="OnImportBgImages" />
+              <Button x:Name="BgRestoreButton" Content="{DynamicResource Loc.settings.bg.restoreDefault}"
+                      Style="{StaticResource GhostButton}" Click="OnRestoreBgDefault" />
+            </WrapPanel>
+
+            <TextBlock Style="{StaticResource CaptionText}" Margin="2,6,0,0"
+                       Text="{DynamicResource Loc.settings.bg.import.dragHint}" />
+            <TextBlock Style="{StaticResource CaptionText}" Margin="2,4,0,0" TextWrapping="Wrap"
+                       Text="{DynamicResource Loc.settings.bg.library.hint}" />
+
+            <Border Style="{StaticResource HLine}" Margin="0,12,0,0" />
+
+            <!-- 显示方式 -->
+            <TextBlock Text="{DynamicResource Loc.settings.bg.fit}" Style="{StaticResource MutedText}" Margin="0,10,0,7" />
+            <WrapPanel>
+              <RadioButton x:Name="BgFitFill" GroupName="SettingsBgFit" Tag="fill"
+                           Content="{DynamicResource Loc.settings.bg.fit.fill}"
+                           Style="{StaticResource SegmentButton}" Checked="OnBgFitChecked" />
+              <RadioButton x:Name="BgFitContain" GroupName="SettingsBgFit" Tag="contain"
+                           Content="{DynamicResource Loc.settings.bg.fit.contain}"
+                           Style="{StaticResource SegmentButton}" Checked="OnBgFitChecked" />
+              <RadioButton x:Name="BgFitCenter" GroupName="SettingsBgFit" Tag="center"
+                           Content="{DynamicResource Loc.settings.bg.fit.center}"
+                           Style="{StaticResource SegmentButton}" Checked="OnBgFitChecked" />
+              <RadioButton x:Name="BgFitTile" GroupName="SettingsBgFit" Tag="tile"
+                           Content="{DynamicResource Loc.settings.bg.fit.tile}"
+                           Style="{StaticResource SegmentButton}" Checked="OnBgFitChecked" />
+            </WrapPanel>
+
+            <!-- 压暗 -->
+            <TextBlock Text="{DynamicResource Loc.settings.bg.dim}" Style="{StaticResource MutedText}" Margin="0,12,0,4" />
+            <Grid>
+              <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="52" />
+                <ColumnDefinition Width="Auto" />
+              </Grid.ColumnDefinitions>
+              <Slider x:Name="BgDimSlider" Grid.Column="0" Minimum="0" Maximum="80"
+                      TickFrequency="5" IsSnapToTickEnabled="True" VerticalAlignment="Center"
+                      AutomationProperties.Name="{DynamicResource Loc.settings.bg.dim}"
+                      ValueChanged="OnBgDimChanged" />
+              <TextBlock x:Name="BgDimValue" Grid.Column="1" Style="{StaticResource CaptionText}"
+                         VerticalAlignment="Center" HorizontalAlignment="Right" />
+              <Button x:Name="BgDimAutoButton" Grid.Column="2" Content="{DynamicResource Loc.settings.bg.dim.auto}"
+                      Style="{StaticResource LinkButton}" Margin="10,0,0,0" Click="OnBgDimAuto" />
+            </Grid>
+            <TextBlock x:Name="BgDimWarn" Style="{StaticResource CaptionText}" Foreground="{DynamicResource WarnBrush}"
+                       Margin="2,4,0,0" TextWrapping="Wrap" Visibility="Collapsed"
+                       Text="{DynamicResource Loc.settings.bg.dim.lowWarning}" />
+
+            <!-- 模糊 -->
+            <TextBlock Text="{DynamicResource Loc.settings.bg.blur}" Style="{StaticResource MutedText}" Margin="0,12,0,4" />
+            <Grid>
+              <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="52" />
+              </Grid.ColumnDefinitions>
+              <Slider x:Name="BgBlurSlider" Grid.Column="0" Minimum="0" Maximum="24"
+                      TickFrequency="1" IsSnapToTickEnabled="True" VerticalAlignment="Center"
+                      AutomationProperties.Name="{DynamicResource Loc.settings.bg.blur}"
+                      ValueChanged="OnBgBlurChanged" />
+              <TextBlock x:Name="BgBlurValue" Grid.Column="1" Style="{StaticResource CaptionText}"
+                         VerticalAlignment="Center" HorizontalAlignment="Right" />
+            </Grid>
+
+            <!-- 轮播 -->
+            <CheckBox x:Name="BgSlideshowSwitch" Style="{StaticResource AppSwitch}" Margin="0,12,0,0"
+                      Content="{DynamicResource Loc.settings.bg.slideshow}"
+                      Checked="OnBgSlideshowToggled" Unchecked="OnBgSlideshowToggled" />
+            <StackPanel x:Name="BgSlideshowPanel" Margin="52,8,0,0">
+              <WrapPanel>
+                <TextBlock Text="{DynamicResource Loc.settings.bg.slideshow.interval}"
+                           Style="{StaticResource CaptionText}" VerticalAlignment="Center" Margin="0,0,8,0" />
+                <ComboBox x:Name="BgIntervalCombo" Style="{StaticResource AppComboBox}" Width="130"
+                          SelectionChanged="OnBgIntervalChanged" />
+              </WrapPanel>
+              <CheckBox x:Name="BgShuffleSwitch" Margin="0,8,0,0"
+                        Content="{DynamicResource Loc.settings.bg.slideshow.shuffle}"
+                        Checked="OnBgSlideshowToggled" Unchecked="OnBgSlideshowToggled" />
+              <TextBlock Style="{StaticResource CaptionText}" Margin="0,6,0,0" TextWrapping="Wrap"
+                         Text="{DynamicResource Loc.settings.bg.slideshow.paused}" />
+              <TextBlock x:Name="BgSlideshowWarn" Style="{StaticResource CaptionText}"
+                         Foreground="{DynamicResource WarnBrush}" Margin="0,4,0,0" TextWrapping="Wrap"
+                         Visibility="Collapsed" Text="{DynamicResource Loc.settings.bg.slideshow.needsTwo}" />
+            </StackPanel>
           </StackPanel>
         </StackPanel>
       </Border>
@@ -301,6 +395,12 @@
                      Checked="OnShellSettingToggled" Unchecked="OnShellSettingToggled" />
           <TextBlock Style="{StaticResource CaptionText}" Margin="52,5,0,0" TextWrapping="Wrap"
                      Text="{DynamicResource Loc.settings.shell.logAlertDesc}" />
+
+          <CheckBox x:Name="AudioAlertSwitch" Style="{StaticResource AppSwitch}"
+                     Content="{DynamicResource Loc.settings.shell.audioAlert}"
+                     Checked="OnShellSettingToggled" Unchecked="OnShellSettingToggled" />
+          <TextBlock Style="{StaticResource CaptionText}" Margin="52,5,0,0" TextWrapping="Wrap"
+                     Text="{DynamicResource Loc.settings.shell.audioAlertDesc}" />
 
           <Border Style="{StaticResource HLine}" Margin="0,16,0,0" />
 
@@ -547,6 +647,36 @@
                     Checked="OnSimpleAutoLaunchToggled" Unchecked="OnSimpleAutoLaunchToggled" />
           <TextBlock Style="{StaticResource CaptionText}" Margin="52,5,0,0" TextWrapping="Wrap"
                      Text="{DynamicResource Loc.settings.record.autoLaunchDesc}" />
+
+          <StackPanel Orientation="Horizontal" Margin="0,12,0,0">
+            <TextBlock Text="{DynamicResource Loc.settings.record.consent}" VerticalAlignment="Center"
+                       Foreground="{DynamicResource TextBrush}" FontSize="{DynamicResource FontSizeSm}" />
+            <ComboBox x:Name="SimpleConsentBox" Style="{StaticResource AppComboBox}" Width="180"
+                      Margin="10,0,0,0" VerticalAlignment="Center" SelectionChanged="OnSimpleConsentChanged" />
+          </StackPanel>
+          <TextBlock Style="{StaticResource CaptionText}" Margin="2,6,0,0" TextWrapping="Wrap"
+                     Text="{DynamicResource Loc.settings.record.consentDesc}" />
+
+          <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
+            <TextBlock Text="{DynamicResource Loc.settings.record.countdown}" VerticalAlignment="Center"
+                       Foreground="{DynamicResource TextBrush}" FontSize="{DynamicResource FontSizeSm}" />
+            <ComboBox x:Name="SimpleCountdownBox" Style="{StaticResource AppComboBox}" Width="180"
+                      Margin="10,0,0,0" VerticalAlignment="Center" SelectionChanged="OnSimpleCountdownChanged" />
+          </StackPanel>
+          <TextBlock Style="{StaticResource CaptionText}" Margin="2,6,0,0" TextWrapping="Wrap"
+                     Text="{DynamicResource Loc.settings.record.countdownDesc}" />
+
+          <TextBlock Text="{DynamicResource Loc.settings.record.naming}" VerticalAlignment="Center"
+                     Foreground="{DynamicResource TextBrush}" FontSize="{DynamicResource FontSizeSm}"
+                     Margin="0,12,0,6" />
+          <TextBox x:Name="NamingTemplateBox" Style="{StaticResource AppTextBox}" Width="320"
+                   HorizontalAlignment="Left" TextChanged="OnNamingTemplateChanged"
+                   LostFocus="OnNamingTemplateLostFocus"
+                   ToolTip="{DynamicResource Loc.settings.record.namingHint}" />
+          <TextBlock x:Name="NamingPreviewText" Style="{StaticResource CaptionText}"
+                     Margin="2,6,0,0" TextWrapping="Wrap" />
+          <TextBlock Style="{StaticResource CaptionText}" Margin="2,4,0,0" TextWrapping="Wrap"
+                     Text="{DynamicResource Loc.settings.record.namingHint}" />
         </StackPanel>
       </Border>
 

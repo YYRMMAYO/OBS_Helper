@@ -55,7 +55,19 @@ public enum SimpleRecordingStep
     Stopping,
 
     /// <summary>已停止（可能录到了文件，也可能一个字节都没写）。</summary>
-    Stopped
+    Stopped,
+
+    /// <summary>正在主动建立 obs-websocket 连接（V3.1.0）。</summary>
+    ConnectingObs,
+
+    /// <summary>连接成功，正在通过 WebSocket 落地录制参数（V3.1.0）。</summary>
+    ApplyingSettings,
+
+    /// <summary>已发出 StartRecord，等待状态翻转（V3.1.0）。</summary>
+    StartingRecord,
+
+    /// <summary>录像前倒计时（V3.1.0 / §12.5.1）。</summary>
+    CountingDown
 }
 
 /// <summary>「现在能不能录」的结论。</summary>
@@ -66,7 +78,14 @@ public sealed record SimpleReadyCheck(
     /// <summary>能录但需要提醒（warn / info 级）的说明；没有时为 null。</summary>
     string? Hint,
     int WarnCount,
-    int FailCount);
+    int FailCount)
+{
+    /// <summary>就绪但需要先由本工具拉起 OBS（V3.1.0）。</summary>
+    public bool WillLaunchObs { get; init; }
+
+    /// <summary>就绪但需要先自动连接 OBS（V3.1.0）。</summary>
+    public bool WillConnectObs { get; init; }
+}
 
 /// <summary>一次「简单录像」要落地的项（复用一键部署的模型与双通道）。</summary>
 public sealed record SimpleLaunchPlan(
@@ -101,8 +120,30 @@ public sealed record SimpleProgress(
     public double MeasuredKbps { get; init; }
 }
 
-/// <summary>
-/// 「简单录像」的核心逻辑（V2.9.4）。纯 BCL、零 WPF 依赖，单测工程直接链接编译。
+/// <summary>「要拉起 OBS 了」的用户选择（V3.1.0 / D2）。</summary>
+public enum SimpleRecordLaunchConsent
+{
+    /// <summary>首次询问 / 每次都问。</summary>
+    Ask = 0,
+
+    /// <summary>允许并记住：之后一键直达。</summary>
+    Allow = 1,
+
+    /// <summary>不允许本工具启动 OBS：给「去设置」出口。</summary>
+    Deny = 2
+}
+
+/// <summary>失败后界面可提供的出口（V3.1.0 / §4.7）。</summary>
+public enum SimpleRecordErrorAction
+{
+    None = 0,
+    Retry,
+    OpenSettings,
+    OpenObs,
+    EnterPassword
+}
+
+/// <summary>「简单录像」的核心逻辑（V2.9.4）。纯 BCL、零 WPF 依赖，单测工程直接链接编译。
 ///
 /// 设计口径（与 V2.9.3 的一键部署一脉相承）：
 /// <list type="bullet">
@@ -119,6 +160,33 @@ public static class SimpleRecordingCore
 
     /// <summary>剩余可录时长的冗余系数：按预估码率的 1.5 倍算，宁可低估。</summary>
     public const double BitrateSafetyFactor = 1.5;
+
+    // ------------------------------------------------------------ 首次同意（V3.1.0）
+
+    /// <summary>把持久化的同意状态归一化；未知 / 脏值回退「首次询问」。</summary>
+    public static SimpleRecordLaunchConsent ParseConsent(string? key) => key?.Trim().ToLowerInvariant() switch
+    {
+        "allow" => SimpleRecordLaunchConsent.Allow,
+        "deny" => SimpleRecordLaunchConsent.Deny,
+        _ => SimpleRecordLaunchConsent.Ask
+    };
+
+    /// <summary>同意状态的持久化键。</summary>
+    public static string ConsentKey(SimpleRecordLaunchConsent consent) => consent switch
+    {
+        SimpleRecordLaunchConsent.Allow => "allow",
+        SimpleRecordLaunchConsent.Deny => "deny",
+        _ => "ask"
+    };
+
+    /// <summary>倒计时档位：只接受 0 / 3 / 5 / 10 秒，其余回退 0（不打断）。</summary>
+    public static int NormalizeCountdownSeconds(int seconds) => seconds switch
+    {
+        3 => 3,
+        5 => 5,
+        10 => 10,
+        _ => 0
+    };
 
     /// <summary>
     /// 实测写入速率下的冗余系数（V3.0）：与预设码率**同为 1.5**。
@@ -257,6 +325,9 @@ public static class SimpleRecordingCore
     /// <param name="warnCount">录前自检的 Warn 项数。</param>
     /// <param name="blockedReason">调用方已知的阻断原因（例如「找不到配置目录」），优先级最高。</param>
     /// <param name="noChannelReason">两条通道都不可用时的说明；为空时用默认文案。</param>
+    /// <param name="canAutoConnect">OBS 在跑但未连接时，可以由本工具主动连接（V3.1.0）。</param>
+    /// <param name="canAutoLaunch">OBS 没跑时，可以定位到主程序并拉起（V3.1.0）。</param>
+    /// <param name="launchAllowed">用户是否允许自动拉起 OBS（总开关 + 首次同意）。</param>
     public static SimpleReadyCheck Check(
         bool viaWebSocket,
         bool canWriteFiles,
@@ -266,7 +337,11 @@ public static class SimpleRecordingCore
         int failCount,
         int warnCount,
         string? blockedReason = null,
-        string? noChannelReason = null)
+        string? noChannelReason = null,
+        // 新增参数默认 false：旧调用 / 旧测试行为完全不变
+        bool canAutoConnect = false,
+        bool canAutoLaunch = false,
+        bool launchAllowed = true)
     {
         // 0) 调用方已经知道确切原因（配置目录缺失 / 配置集读不到）：直接用，别拿通用文案糊过去。
         //    这条排在第一位，是因为它的信息量最大 —— 用户要的是「怎么修」，不是「哪一类失败」。
@@ -277,13 +352,31 @@ public static class SimpleRecordingCore
         if (streaming || recording)
             return Blocked(Strings.T("simple.blocked.streaming"));
 
-        // 2) 两条通道都不可用：常见是「OBS 在跑但没连上」（WebSocket 未开 / 密码不对），
-        //    此时文件层也不能写 —— OBS 正在运行会把内存里的配置回写，改了等于白改。
-        //    也覆盖「OBS 没跑、但定位不到 basic.ini」这一种，此时由调用方给出更贴切的原因。
+        // 2) 两条通道都不可用：V3.1.0 起先看「能不能自动连上 / 自动拉起」，都不行才阻断。
         if (!viaWebSocket && !canWriteFiles)
+        {
+            if (obsProcessRunning && canAutoConnect)
+            {
+                return failCount > 0
+                    ? Blocked(Strings.T("simple.blocked.preflightFail", failCount))
+                    : ReadyWithHint(
+                        Strings.T(warnCount > 0 ? "simple.ready.willConnectWarns" : "simple.ready.willConnect", warnCount),
+                        warnCount, willConnect: true);
+            }
+
+            if (!obsProcessRunning && canAutoLaunch && launchAllowed)
+            {
+                return failCount > 0
+                    ? Blocked(Strings.T("simple.blocked.preflightFail", failCount))
+                    : ReadyWithHint(
+                        Strings.T(warnCount > 0 ? "simple.ready.willLaunchWarns" : "simple.ready.willLaunch", warnCount),
+                        warnCount, willLaunch: true);
+            }
+
             return Blocked(noChannelReason is { Length: > 0 }
                 ? noChannelReason
                 : Strings.T("simple.blocked.noChannel"));
+        }
 
         // 3) 录前自检的 Fail 级问题：录像路径不存在 / 配置目录找不到这类，落地也录不出东西
         if (failCount > 0)
@@ -295,6 +388,13 @@ public static class SimpleRecordingCore
 
         return new SimpleReadyCheck(true, null, null, 0, 0);
     }
+
+    private static SimpleReadyCheck ReadyWithHint(string hint, int warnCount, bool willLaunch = false, bool willConnect = false)
+        => new(true, null, hint, warnCount, 0)
+        {
+            WillLaunchObs = willLaunch,
+            WillConnectObs = willConnect
+        };
 
     private static SimpleReadyCheck Blocked(string reason) => new(false, reason, null, 0, 0);
 

@@ -1,0 +1,27 @@
+<UserControl x:Class="OBS_Helper.Wpf.Controls.WallpaperLayer"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             IsHitTestVisible="False" ClipToBounds="True">
+  <!--
+    内容区壁纸层（V3.1.0）。
+
+    · 底层：主题底色（ContentBackgroundBrush），默认 / 纯色 / 高对比时就是最终效果；
+    · 中层：两张图片 A/B 交叉淡入（300 ms；「减少动画」时直接切换）；
+    · 平铺模式：用 ImageBrush 画在 Rectangle 上；
+    · 顶层：黑色压暗遮罩（ContentBackgroundDim），保证卡片与文字可读。
+
+    所有参数由 WallpaperService 提供；本控件只做渲染，不读写设置。
+  -->
+  <Grid x:Name="Root" ClipToBounds="True">
+    <Border x:Name="BaseLayer" Background="{DynamicResource ContentBackgroundBrush}" />
+
+    <Image x:Name="ImageA" Stretch="UniformToFill"
+           RenderOptions.BitmapScalingMode="HighQuality" />
+    <Image x:Name="ImageB" Stretch="UniformToFill" Opacity="0"
+           RenderOptions.BitmapScalingMode="HighQuality" />
+
+    <Rectangle x:Name="TileLayer" Visibility="Collapsed" />
+
+    <Border x:Name="DimLayer" Background="{DynamicResource ContentBackgroundDim}" />
+  </Grid>
+</UserControl>

@@ -25,12 +25,23 @@ public static class AppServices
     private static readonly Lazy<ProblemService> _problems = new(() => new ProblemService());
     private static readonly Lazy<BookmarkService> _bookmarks = new(() => new BookmarkService(Store));
     private static readonly Lazy<AppearanceService> _appearance = new(() => new AppearanceService(Store));
+    // 壁纸库 / 解码 / 轮播（V3.1.0）：组合根在 Appearance 初始化前把引用挂上去
+    private static readonly Lazy<Services.Appearance.WallpaperService> _wallpapers = new(() =>
+    {
+        var service = new Services.Appearance.WallpaperService(
+            Appearance,
+            new Services.Appearance.WallpaperStore(
+                System.IO.Path.Combine(HostBridge.AppDataDirectory, "wallpapers"),
+                message => FileLogger.Warn("Wallpaper", message)));
+        Appearance.Wallpapers = service;
+        return service;
+    });
     // 语言服务（V2.9.2）：把当前语言的文案写进 Application.Resources，XAML 用 Loc.* 引用
     private static readonly Lazy<LocalizationService> _localization = new(() => new LocalizationService(Store));
     private static readonly Lazy<AssistantService> _assistant = new(() => new AssistantService(Problems));
 
     private static readonly Lazy<ObsSettingsService> _obsSettings = new(() => new ObsSettingsService(Store, Host));
-    private static readonly Lazy<ObsConnectionService> _obs = new(() => new ObsConnectionService(ObsSettings));
+    private static readonly Lazy<ObsConnectionService> _obs = new(() => new ObsConnectionService(ObsSettings, () => ObsPaths.IsObsRunning()));
     private static readonly Lazy<ObsLogAnalyzer> _analyzer = new(() => new ObsLogAnalyzer());
 
     private static readonly Lazy<ObsPathService> _obsPaths = new(() => new ObsPathService(Store));
@@ -82,6 +93,9 @@ public static class AppServices
     // 录制守护 / 实时日志尾随预警（V2.8）
     private static readonly Lazy<RecordWatchdogService> _watchdog = new(() => new RecordWatchdogService(Obs, Tray));
     private static readonly Lazy<LogTailerService> _logTailer = new(() => new LogTailerService(Tray));
+    // 录制 / 推流中静音与音量过低提醒（V3.1.0 / §12.5.1）
+    private static readonly Lazy<Services.Audio.AudioAlertService> _audioAlert =
+        new(() => new Services.Audio.AudioAlertService(Obs, Tray));
     // 会话复盘（V3.0 / D5）：把实时命中累计 + 上次会话摘要变成可导出报告
     private static readonly Lazy<SessionReviewService> _sessionReview =
         new(() => new SessionReviewService(LogTailer, Store));
@@ -94,6 +108,9 @@ public static class AppServices
     // 简单开播（V3.0 / D2）：检查推流配置 → （可选）同时录制 → 开播 → 确认真的播出去了
     private static readonly Lazy<SimpleStreamingService> _simpleStream =
         new(() => new SimpleStreamingService(Obs, SimpleRecord, Store));
+    // 提词器（V3.1.0 / §12.1）：独立窗口、脚本 / 设置持久化、场景联动
+    private static readonly Lazy<TeleprompterService> _teleprompter =
+        new(() => new TeleprompterService(Store));
 
     private static readonly Lazy<AiSettingsService> _aiSettings = new(() => new AiSettingsService(Store, Host));
     private static readonly Lazy<ObsToolRegistry> _tools = new(() => new ObsToolRegistry(Problems));
@@ -110,6 +127,13 @@ public static class AppServices
     public static ProblemService Problems => _problems.Value;
     public static BookmarkService Bookmarks => _bookmarks.Value;
     public static AppearanceService Appearance => _appearance.Value;
+
+    /// <summary>壁纸服务（V3.1.0）：壁纸库、解码缓存、轮播、迁移。</summary>
+    public static Services.Appearance.WallpaperService Wallpapers => _wallpapers.Value;
+
+    /// <summary>壁纸服务是否已经装配（供控件在启动早期安全订阅）。</summary>
+    public static Services.Appearance.WallpaperService? WallpapersOrNull()
+        => _wallpapers.IsValueCreated ? _wallpapers.Value : null;
     /// <summary>语言服务（V2.9.2）：默认中文，可在设置页即时切换为英文。</summary>
     public static LocalizationService Localization => _localization.Value;
     public static AssistantService Assistant => _assistant.Value;
@@ -173,6 +197,9 @@ public static class AppServices
     public static RecordWatchdogService RecordWatchdog => _watchdog.Value;
     public static LogTailerService LogTailer => _logTailer.Value;
 
+    /// <summary>录制 / 推流中静音与音量过低提醒（V3.1.0）。</summary>
+    public static Services.Audio.AudioAlertService AudioAlert => _audioAlert.Value;
+
     /// <summary>会话复盘（V3.0 / D5）。</summary>
     public static SessionReviewService SessionReview => _sessionReview.Value;
 
@@ -183,6 +210,9 @@ public static class AppServices
 
     /// <summary>简单开播（V3.0 / D2）。</summary>
     public static SimpleStreamingService SimpleStream => _simpleStream.Value;
+
+    /// <summary>提词器（V3.1.0）：窗口、脚本、设置与场景联动。</summary>
+    public static TeleprompterService Teleprompter => _teleprompter.Value;
     public static DiagnosticOrchestrator Orchestrator => _orchestrator.Value;
 
     /// <summary>导航服务由 MainWindow 在构造时注入，供各页面互相跳转。</summary>
@@ -197,9 +227,20 @@ public static class AppServices
     /// <summary>应用启动时的一次性初始化（外观 + 各类设置 + 后台能力）。</summary>
     public static async Task InitializeAsync()
     {
+        // V3.1.0：壁纸服务必须在 Appearance.Initialize 之前装配（Apply 会向它要图片资源），
+        // 但库加载要等设置读完之后 —— 见下面的 Wallpapers.Initialize()。
+        _ = Wallpapers;
         Appearance.Initialize();
         // 语言必须在任何窗口创建前定下来（App.OnStartup 已调一次，这里保证幂等）
         Localization.Initialize();
+
+        // V3.1.0：读壁纸库、迁移旧 bgImage、解析当前壁纸并启动轮播
+        try { Wallpapers.Initialize(); }
+        catch (Exception ex) { FileLogger.Warn("Wallpaper", $"壁纸初始化失败（已回退默认底）：{ex.Message}"); }
+
+        // V3.1.0：提词器设置 / 脚本预加载（窗口仍然按需创建）
+        try { Teleprompter.Initialize(); }
+        catch (Exception ex) { FileLogger.Warn("Teleprompter", $"提词器初始化失败：{ex.Message}"); }
         // V2.9.3：随包内容（知识库 / 插件目录 / 场景模板 / 排障指引）各有中英两份，
         // 语言一变就丢弃缓存，并按新语言补一次静默热更新（P3-1 启动加速：不阻塞首屏）。
         Localization.Changed += OnLanguageChanged;
@@ -207,6 +248,24 @@ public static class AppServices
         await Task.WhenAll(
             ObsSettings.LoadAsync(),
             AiSettings.LoadAsync()).ConfigureAwait(false);
+
+        // V3.1.0 / D6：启动自动连接只在 OBS 已在运行时尝试；失败只记日志，不弹窗、不阻塞首屏。
+        if (ObsSettings.Current.AutoConnect && ObsPaths.IsObsRunning())
+        {
+            _ = Task.Run(async () =>
+            {
+                try
+                {
+                    var result = await Obs.EnsureConnectedAsync(TimeSpan.FromSeconds(10)).ConfigureAwait(false);
+                    if (!result.Ok && result.Outcome != Services.Obs.EnsureConnectionOutcome.Cancelled)
+                        FileLogger.Warn("ObsAutoConnect", $"启动自动连接未成功：{result.Outcome}（{result.Elapsed.TotalSeconds:0.0}s）");
+                }
+                catch (Exception ex)
+                {
+                    FileLogger.Warn("ObsAutoConnect", $"启动自动连接异常：{ex.Message}");
+                }
+            });
+        }
 
         // V3.0：文件事务「回滚没能完全恢复」时的出口。
         // 副本已经被刻意保留（FileTx.RollbackFailures + .obshelper-retained 标记），
@@ -237,6 +296,8 @@ public static class AppServices
         // V2.8 后台守护：录制守护与实时日志尾随（按各自设置开关启动）
         RecordWatchdog.ApplyEnabled();
         LogTailer.ApplyEnabled();
+        // V3.1.0：录制 / 推流中的静音与音量过低提醒
+        AudioAlert.ApplyEnabled();
     }
 
     /// <summary>
@@ -264,12 +325,15 @@ public static class AppServices
     /// <summary>应用退出时的清理（MainWindow.OnClosed 调用）。</summary>
     public static void ShutdownServices()
     {
+        try { if (_wallpapers.IsValueCreated) Wallpapers.Dispose(); } catch (Exception ex) { FileLogger.Warn("Shutdown", $"Wallpapers.Dispose 失败: {ex.Message}"); }
+        try { if (_teleprompter.IsValueCreated) Teleprompter.Dispose(); } catch (Exception ex) { FileLogger.Warn("Shutdown", $"Teleprompter.Dispose 失败: {ex.Message}"); }
         try { Mini.Stop(); } catch (Exception ex) { FileLogger.Warn("Shutdown", $"Mini.Stop 失败: {ex.Message}"); }
         try { AutoSwitcher.Stop(); } catch (Exception ex) { FileLogger.Warn("Shutdown", $"AutoSwitcher.Stop 失败: {ex.Message}"); }
         try { Hotkeys.Dispose(); } catch (Exception ex) { FileLogger.Warn("Shutdown", $"Hotkeys.Dispose 失败: {ex.Message}"); }
         try { SystemMonitor.Dispose(); } catch (Exception ex) { FileLogger.Warn("Shutdown", $"SystemMonitor.Dispose 失败: {ex.Message}"); }
         try { RecordWatchdog.Dispose(); } catch (Exception ex) { FileLogger.Warn("Shutdown", $"RecordWatchdog.Dispose 失败: {ex.Message}"); }
         try { LogTailer.Dispose(); } catch (Exception ex) { FileLogger.Warn("Shutdown", $"LogTailer.Dispose 失败: {ex.Message}"); }
+        try { if (_audioAlert.IsValueCreated) AudioAlert.Dispose(); } catch (Exception ex) { FileLogger.Warn("Shutdown", $"AudioAlert.Dispose 失败: {ex.Message}"); }
         if (_simpleRecord.IsValueCreated)
         {
             try { SimpleRecord.Dispose(); } catch (Exception ex) { FileLogger.Warn("Shutdown", $"SimpleRecord.Dispose 失败: {ex.Message}"); }

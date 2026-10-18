@@ -50,6 +50,7 @@ public sealed class SimpleRecordingService : IDisposable
     private SimpleReadyCheck _ready = new(false, null, null, 0, 0);
     private SimpleLaunchPlan? _plan;
     private bool _busy;
+    private CancellationTokenSource? _startCts;
 
     public SimpleRecordingService(
         ObsPathService paths,
@@ -113,6 +114,13 @@ public sealed class SimpleRecordingService : IDisposable
 
     /// <summary>最近一次失败的原因（已本地化）；没有失败时为 null。</summary>
     public string? LastError { get; private set; }
+
+    /// <summary>失败后界面应提供的出口（V3.1.0 / §4.7）。</summary>
+    public SimpleRecordErrorAction LastErrorAction { get; private set; } = SimpleRecordErrorAction.None;
+
+    /// <summary>录像前倒计时秒数（0 / 3 / 5 / 10）。</summary>
+    public int CountdownSeconds => SimpleRecordingCore.NormalizeCountdownSeconds(
+        _tray.Settings.SimpleRecordCountdownSeconds);
 
     /// <summary>是否正在执行开始 / 停止（期间界面应禁用按钮）。</summary>
     public bool Busy => _busy;
@@ -239,13 +247,47 @@ public sealed class SimpleRecordingService : IDisposable
     public bool PendingObsRestart { get; private set; }
 
     /// <summary>
-    /// 「要拉起 OBS 了，可以吗？」的确认回调（V2.9.4）。
+    /// 首次拉起 OBS 的同意状态（V3.1.0 / D2）。
     ///
-    /// 由界面注入（首页卡用 <c>ConfirmDialog</c>）；<b>没有注入时按「不允许」处理</b> ——
-    /// 拉起别的程序并自动开始录制是有效副作用的动作，宁可少做一步，也不能在没有界面的路径上
-    /// （自检 / 后台调用）悄悄替用户执行。
+    /// 与 V2.9.4 的区别：不再每次点击都弹确认，而是「首次一次说明 + 记住选择」。
+    /// 选择存进 <c>ShellSettings.SimpleRecordLaunchConsent</c>，设置页可改回「每次都问」。
     /// </summary>
-    public Func<bool>? ConfirmLaunch { get; set; }
+    public SimpleRecordLaunchConsent LaunchConsent =>
+        SimpleRecordingCore.ParseConsent(_tray.Settings.SimpleRecordLaunchConsent);
+
+    /// <summary>写入同意状态并持久化。</summary>
+    public void SetLaunchConsent(SimpleRecordLaunchConsent consent)
+    {
+        try
+        {
+            _tray.Settings.SimpleRecordLaunchConsent = SimpleRecordingCore.ConsentKey(consent);
+            _tray.SaveSettings();
+        }
+        catch (Exception ex)
+        {
+            FileLogger.Warn("SimpleRecord", $"保存自动启动同意状态失败：{ex.Message}");
+        }
+        Notify();
+    }
+
+    /// <summary>
+    /// 首次需要拉起 OBS 时的询问回调（返回用户选择）。
+    /// 未注入时按「不允许」处理 —— 后台 / 自检路径不能悄悄启动别的程序。
+    /// </summary>
+    public Func<CancellationToken, Task<SimpleRecordLaunchConsent>>? RequestLaunchConsent { get; set; }
+
+    /// <summary>
+    /// 需要 WebSocket 密码时的输入回调（返回 null / 空串表示用户取消）。
+    /// 服务层不弹窗、不读写控件；密码只进 DPAPI 存储，不进日志。
+    /// </summary>
+    public Func<CancellationToken, Task<string?>>? RequestPassword { get; set; }
+
+    /// <summary>取消正在进行的「一键开始」（连接 / 启动 OBS / 倒计时都会停下，不产生录像）。</summary>
+    public void CancelStart()
+    {
+        try { _startCts?.Cancel(); }
+        catch (Exception) { /* 已释放 */ }
+    }
 
     /// <summary>文件通道落地时的回滚表（本次会话内有效）。</summary>
     private IReadOnlyList<RecordingRollbackEntry> _lastFileRollback = Array.Empty<RecordingRollbackEntry>();
@@ -359,6 +401,16 @@ public sealed class SimpleRecordingService : IDisposable
             // 就会被误判成「OBS 在跑但没连上」，把能录的用户挡在门外。
             var legacyLive = _obs.IsConnected && _obs.IsLegacyProtocol;
 
+            // V3.1.0：OBS 在跑但没连上时可以主动连接；OBS 没跑时可以拉起（总开关 + 首次同意）。
+            var consent = LaunchConsent;
+            var canAutoConnect = ObsProcessRunning && !legacyLive;
+            var canAutoLaunch = !ObsProcessRunning
+                                && _tray.Settings.SimpleRecordAutoLaunch
+                                && consent != SimpleRecordLaunchConsent.Deny
+                                && _paths.FindObsExecutable() is not null;
+            var launchAllowed = _tray.Settings.SimpleRecordAutoLaunch
+                                && consent != SimpleRecordLaunchConsent.Deny;
+
             _ready = SimpleRecordingCore.Check(
                 viaWebSocket: _plan.ViaWebSocket || legacyLive,
                 canWriteFiles: canWriteFiles,
@@ -367,9 +419,13 @@ public sealed class SimpleRecordingService : IDisposable
                 recording: _obs.RecordStatus.Active,
                 failCount: failCount,
                 warnCount: warnCount,
-                // 旧协议下「OBS 在跑」不是阻断（我们本来就不打算在线改配置），把计划里的阻断原因丢掉
-                blockedReason: legacyLive ? null : _plan.BlockedReason,
-                noChannelReason: noChannelReason);
+                // 旧协议下「OBS 在跑」不是阻断；可自动连接 / 自动拉起时也不该被计划里的
+                // env.blocked.obsRunning 挡住 —— 那正是 V3.1.0 要消除的摩擦。
+                blockedReason: legacyLive || canAutoConnect || canAutoLaunch ? null : _plan.BlockedReason,
+                noChannelReason: noChannelReason,
+                canAutoConnect: canAutoConnect,
+                canAutoLaunch: canAutoLaunch,
+                launchAllowed: launchAllowed);
         }
         catch (Exception ex)
         {
@@ -419,18 +475,22 @@ public sealed class SimpleRecordingService : IDisposable
     /// <summary>
     /// 一键开始。返回 true 表示「确实进入了录制状态」。
     ///
-    /// 分支：
+    /// V3.1.0 目标顺序（与计划 §4.5 / D4 一致）：
     /// <list type="number">
-    ///   <item>已连 OBS → 落地（WebSocket 通道）→ 开录；</item>
-    ///   <item>OBS 已退出且配置可写 → 落地（文件通道）→ 按设置决定是否拉起 OBS → 等就绪 → 开录；</item>
-    ///   <item>OBS 在跑但没连上 → 不落地不拉起，返回可照做的原因。</item>
+    ///   <item>只读检查 → 推流 / 录制中直接按原样处理；</item>
+    ///   <item>OBS 没跑：首次同意后拉起；能写 basic.ini 就先落地，否则等连上再走 WebSocket；</item>
+    ///   <item>OBS 在跑但没连：<c>EnsureConnectedAsync</c> 主动连接（75 秒、可取消）；</item>
+    ///   <item>连接成功后落地设置（文件通道已落地则跳过，避免二次写入）；</item>
+    ///   <item>可选倒计时 → <c>StartRecord</c> → 确认状态翻转。</item>
     /// </list>
+    /// 所有失败都分类成 <see cref="LastErrorAction"/>，界面据此给出可执行出口。
     /// </summary>
     public async Task<bool> StartAsync(IProgress<string>? progress = null, CancellationToken ct = default)
     {
         if (_busy) return false;
 
         LastError = null;
+        LastErrorAction = SimpleRecordErrorAction.None;
         LastOutputFile = null;
         LastStopProducedFile = false;
 
@@ -443,6 +503,10 @@ public sealed class SimpleRecordingService : IDisposable
         }
 
         _busy = true;
+        using var linked = CancellationTokenSource.CreateLinkedTokenSource(ct);
+        _startCts = linked;
+        var token = linked.Token;
+
         try
         {
             var check = await CheckAsync().ConfigureAwait(true);
@@ -455,82 +519,202 @@ public sealed class SimpleRecordingService : IDisposable
             }
 
             _plan = await BuildPlanAsync().ConfigureAwait(true);
-
-            // 旧协议（obs-websocket 4.x，Win7 上 OBS 27 那一代）：连着，但**改不了设置**
-            // （v4 没有 SetProfileParameter），而文件通道又要求 OBS 没在跑。
-            // 取舍：不假装能落地，跳过配置写入，直接开录 —— 录制本身在旧协议下完全可用。
-            //
-            // 审查发现的关键点：必须先算 legacyLive，**再**判 BlockedReason。
-            // 旧协议下 WebSocketAvailable 为 false、而 OBS 正在跑，计划会给出
-            // 「OBS 在跑但没连上（WebSocket 未开或密码不对）」这条阻断 —— 与实际相反，
-            // 且会让下面的 legacyLive 分支永远不可达（本版新增的那条路径形同虚设）。
             var legacyLive = _obs.IsConnected && _obs.IsLegacyProtocol;
-
-            if (!legacyLive && _plan.BlockedReason is { Length: > 0 } blocked)
-            {
-                LastError = blocked;
-                Step = SimpleRecordingStep.Blocked;
-                Notify();
-                return false;
-            }
-
-            // 文件通道 + OBS 没跑：这时候还不能开录，得先把 OBS 拉起来
-            var needLaunch = !legacyLive && !_plan.ViaWebSocket && !ObsProcessRunning;
+            var needLaunch = !legacyLive && !_obs.IsConnected && !ObsProcessRunning;
+            var fileApplied = false;
 
             if (legacyLive)
             {
+                // 旧协议改不了设置：如实说明，不假装落地（V3.0 行为保持）
                 StatusText = Strings.T("simple.legacy.skipApply");
                 Notify();
             }
-            else if (!needLaunch)
+            else if (needLaunch)
             {
-                Step = SimpleRecordingStep.SettingUp;
-                StatusText = Strings.T("simple.state.preparing");
-                Notify();
-
-                var applied = _plan.ViaWebSocket
-                    ? await ApplyViaWebSocketAsync(_plan, progress, ct).ConfigureAwait(true)
-                    : await ApplyViaFileAsync(_plan, progress).ConfigureAwait(true);
-
-                if (!applied.Ok)
-                {
-                    LastError = applied.Error ?? Strings.T("simple.error.startFailed", "");
-                    Step = SimpleRecordingStep.Blocked;
-                    Notify();
-                    return false;
-                }
-            }
-            else
-            {
-                Step = SimpleRecordingStep.SettingUp;
-                StatusText = Strings.T("simple.state.preparing");
-                Notify();
-
-                var applied = await ApplyViaFileAsync(_plan, progress).ConfigureAwait(true);
-                if (!applied.Ok)
-                {
-                    LastError = applied.Error ?? Strings.T("simple.error.startFailed", "");
-                    Step = SimpleRecordingStep.Blocked;
-                    Notify();
-                    return false;
-                }
-
-                PendingObsRestart = true;
-
                 if (!_tray.Settings.SimpleRecordAutoLaunch)
                 {
                     LastError = Strings.T("simple.needRestart");
+                    LastErrorAction = SimpleRecordErrorAction.OpenSettings;
                     Step = SimpleRecordingStep.Blocked;
                     Notify();
                     return false;
                 }
 
-                if (!await LaunchAndWaitAsync(progress, ct).ConfigureAwait(true))
+                var consent = LaunchConsent;
+                if (consent == SimpleRecordLaunchConsent.Deny)
+                {
+                    LastError = Strings.T("simple.launch.denied");
+                    LastErrorAction = SimpleRecordErrorAction.OpenSettings;
+                    Step = SimpleRecordingStep.Blocked;
+                    Notify();
+                    return false;
+                }
+
+                if (consent == SimpleRecordLaunchConsent.Ask)
+                {
+                    if (RequestLaunchConsent is null)
+                    {
+                        LastError = Strings.T("simple.launch.consentRequired");
+                        LastErrorAction = SimpleRecordErrorAction.OpenSettings;
+                        Step = SimpleRecordingStep.Blocked;
+                        Notify();
+                        return false;
+                    }
+
+                    var choice = await RequestLaunchConsent(token).ConfigureAwait(true);
+                    if (choice == SimpleRecordLaunchConsent.Deny)
+                    {
+                        SetLaunchConsent(SimpleRecordLaunchConsent.Deny);
+                        LastError = Strings.T("simple.launch.denied");
+                        LastErrorAction = SimpleRecordErrorAction.OpenSettings;
+                        Step = SimpleRecordingStep.Blocked;
+                        Notify();
+                        return false;
+                    }
+
+                    if (choice == SimpleRecordLaunchConsent.Allow)
+                        SetLaunchConsent(SimpleRecordLaunchConsent.Allow);
+
+                    token.ThrowIfCancellationRequested();
+                }
+
+                var exe = _paths.FindObsExecutable();
+                if (exe is null)
+                {
+                    LastError = Strings.T("simple.error.notFound");
+                    LastErrorAction = SimpleRecordErrorAction.OpenObs;
+                    Step = SimpleRecordingStep.Blocked;
+                    Notify();
+                    return false;
+                }
+
+                // 能写 basic.ini 时先落地：OBS 启动时就带着正确设置，不必「起来再改、还要重启」
+                if (_plan.BasicIniPath is { Length: > 0 } ini && File.Exists(ini))
+                {
+                    Step = SimpleRecordingStep.SettingUp;
+                    StatusText = Strings.T("simple.state.preparing");
+                    progress?.Report(StatusText);
+                    Notify();
+
+                    var applied = await ApplyViaFileAsync(_plan, progress).ConfigureAwait(true);
+                    if (!applied.Ok)
+                    {
+                        LastError = applied.Error ?? Strings.T("simple.error.startFailed", "");
+                        LastErrorAction = SimpleRecordErrorAction.Retry;
+                        Step = SimpleRecordingStep.Blocked;
+                        Notify();
+                        return false;
+                    }
+
+                    fileApplied = true;
+                    PendingObsRestart = true;
+                }
+
+                if (!await LaunchObsAsync(exe, progress, token).ConfigureAwait(true))
                     return false;   // LastError / Step 已在内部设好
             }
 
-            // 到这里通道已就绪：开录并确认状态真的翻转了
-            if (!await StartRecordAsync(ct).ConfigureAwait(true)) return false;
+            // 无论 OBS 是刚拉起还是早就在跑，只要还没连上就在这里等它（75 秒上限）
+            if (!_obs.IsConnected)
+            {
+                Step = SimpleRecordingStep.ConnectingObs;
+                StatusText = Strings.T("simple.state.connecting");
+                progress?.Report(StatusText);
+                Notify();
+
+                var elapsedProgress = new Progress<TimeSpan>(elapsed =>
+                {
+                    StatusText = Strings.T("simple.state.connectingElapsed",
+                        (int)elapsed.TotalSeconds, ObsReadyTimeoutSeconds);
+                    progress?.Report(StatusText);
+                    Notify();
+                });
+
+                var result = await _obs.EnsureConnectedAsync(
+                    TimeSpan.FromSeconds(ObsReadyTimeoutSeconds), null, token, elapsedProgress).ConfigureAwait(true);
+
+                if (!result.Ok && result.Outcome == EnsureConnectionOutcome.AuthRequired && RequestPassword is not null)
+                {
+                    // 服务端明确要求密码：交由界面内联输入（服务层不弹窗）
+                    StatusText = Strings.T("simple.state.authRequired");
+                    Notify();
+                    var pwd = await RequestPassword(token).ConfigureAwait(true);
+                    if (!string.IsNullOrWhiteSpace(pwd))
+                    {
+                        try
+                        {
+                            await AppServices.ObsSettings.SetPasswordAsync(
+                                pwd, AppServices.ObsSettings.Current.RememberPassword).ConfigureAwait(true);
+                        }
+                        catch (Exception ex)
+                        {
+                            FileLogger.Warn("SimpleRecord", $"保存 WebSocket 密码失败：{ex.Message}");
+                        }
+
+                        result = await _obs.EnsureConnectedAsync(
+                            TimeSpan.FromSeconds(30), pwd, token).ConfigureAwait(true);
+                    }
+                }
+
+                if (!result.Ok)
+                {
+                    SetEnsureFailure(result);
+                    return false;
+                }
+            }
+
+            // 连接成功后落地设置：
+            //   · 旧协议没有 SetProfileParameter → 跳过；
+            //   · 文件通道已落地 → 跳过（避免二次写入与回滚表混乱）。
+            if (!legacyLive && !fileApplied)
+            {
+                Step = SimpleRecordingStep.ApplyingSettings;
+                StatusText = Strings.T("simple.state.applying");
+                progress?.Report(StatusText);
+                Notify();
+
+                _plan = await BuildPlanAsync().ConfigureAwait(true);
+                if (_plan.BlockedReason is { Length: > 0 } planBlocked)
+                {
+                    LastError = planBlocked;
+                    LastErrorAction = SimpleRecordErrorAction.Retry;
+                    Step = SimpleRecordingStep.Blocked;
+                    Notify();
+                    return false;
+                }
+
+                var applied = await ApplyViaWebSocketAsync(_plan, progress, token).ConfigureAwait(true);
+                if (!applied.Ok)
+                {
+                    LastError = applied.Error ?? Strings.T("simple.error.startFailed", "");
+                    LastErrorAction = SimpleRecordErrorAction.Retry;
+                    Step = SimpleRecordingStep.Blocked;
+                    Notify();
+                    return false;
+                }
+            }
+
+            // 可选倒计时（V3.1.0 / §12.5.1）：让用户有时间做准备，可随时取消
+            var countdown = CountdownSeconds;
+            if (countdown > 0)
+            {
+                Step = SimpleRecordingStep.CountingDown;
+                for (var remaining = countdown; remaining > 0; remaining--)
+                {
+                    token.ThrowIfCancellationRequested();
+                    StatusText = Strings.T("recording.countdown", remaining);
+                    progress?.Report(StatusText);
+                    Notify();
+                    await Task.Delay(1000, token).ConfigureAwait(true);
+                }
+            }
+
+            Step = SimpleRecordingStep.StartingRecord;
+            StatusText = Strings.T("simple.state.startingRecord");
+            progress?.Report(StatusText);
+            Notify();
+
+            if (!await StartRecordAsync(token).ConfigureAwait(true)) return false;
 
             Step = SimpleRecordingStep.Recording;
             StatusText = Strings.T("simple.state.recording");
@@ -539,10 +723,20 @@ public sealed class SimpleRecordingService : IDisposable
             Notify();
             return true;
         }
+        catch (OperationCanceledException) when (token.IsCancellationRequested)
+        {
+            LastError = null;
+            LastErrorAction = SimpleRecordErrorAction.None;
+            Step = SimpleRecordingStep.Idle;
+            StatusText = Strings.T("simple.state.cancelled");
+            Notify();
+            return false;
+        }
         catch (Exception ex)
         {
             FileLogger.Warn("SimpleRecord", $"开始录制异常：{ex.Message}");
             LastError = Strings.T("simple.error.startFailed", ex.Message);
+            LastErrorAction = SimpleRecordErrorAction.Retry;
             Step = SimpleRecordingStep.Blocked;
             Notify();
             return false;
@@ -550,8 +744,39 @@ public sealed class SimpleRecordingService : IDisposable
         finally
         {
             _busy = false;
+            if (ReferenceEquals(_startCts, linked)) _startCts = null;
             Notify();
         }
+    }
+
+    /// <summary>把连接失败映射成分类文案与出口（V3.1.0 / §4.7）。</summary>
+    private void SetEnsureFailure(EnsureConnectionResult result)
+    {
+        var key = ObsEnsureCore.ErrorKey(result.Outcome);
+        var text = result.Outcome == EnsureConnectionOutcome.Timeout
+            ? Strings.T(key, ObsReadyTimeoutSeconds)
+            : Strings.T(key);
+
+        // 文案键缺失时 Strings.T 会原样返回键名：兜底成一句通用但可执行的说明
+        LastError = string.Equals(text, key, StringComparison.Ordinal)
+            ? Strings.T("simple.error.connectFailed", key)
+            : text;
+
+        LastErrorAction = result.Outcome switch
+        {
+            EnsureConnectionOutcome.ObsNotRunning or EnsureConnectionOutcome.ObsExited
+                => SimpleRecordErrorAction.OpenObs,
+            EnsureConnectionOutcome.PortClosed or EnsureConnectionOutcome.HandshakeFailed
+                => SimpleRecordErrorAction.OpenSettings,
+            EnsureConnectionOutcome.AuthRequired or EnsureConnectionOutcome.AuthFailed
+                => SimpleRecordErrorAction.EnterPassword,
+            EnsureConnectionOutcome.Cancelled => SimpleRecordErrorAction.None,
+            _ => SimpleRecordErrorAction.Retry
+        };
+
+        Step = SimpleRecordingStep.Blocked;
+        StatusText = LastError ?? "";
+        Notify();
     }
 
     /// <summary>停止录制，并记录本次产出的文件（供「打开目录 / 转 MP4」使用）。</summary>
@@ -935,31 +1160,14 @@ public sealed class SimpleRecordingService : IDisposable
 
     // ---------------------------------------------------------------- 拉起 OBS
 
-    /// <summary>拉起 OBS 并等 obs-websocket 就绪（失败时把原因写进 <see cref="LastError"/>）。</summary>
-    private async Task<bool> LaunchAndWaitAsync(IProgress<string>? progress, CancellationToken ct)
+    /// <summary>
+    /// 拉起 OBS 并等进程真正出现（V3.1.0）。
+    ///
+    /// 「等端口就绪」交给 <see cref="ObsConnectionService.EnsureConnectedAsync"/>：
+    /// 拉起的同意在调用方已经处理过，这里不再弹窗，也不再空等满 75 秒。
+    /// </summary>
+    private async Task<bool> LaunchObsAsync(string exe, IProgress<string>? progress, CancellationToken ct)
     {
-        var exe = _paths.FindObsExecutable();
-        if (exe is null)
-        {
-            LastError = Strings.T("simple.error.notFound");
-            Step = SimpleRecordingStep.Blocked;
-            Notify();
-            return false;
-        }
-
-        // 先问一次：拉起别的程序并自动开录是有副作用的动作（Release 说明里对用户是这样承诺的）
-        if (ConfirmLaunch is null || !ConfirmLaunch())
-        {
-            // 用户选了「我自己去开 OBS」：这不是错误 —— 参数已经落地了，
-            // 只是本工具不去启动 OBS。所以别用「需要重启 OBS」那句把人绕回去，
-            // 回到 Idle 并告诉他手动开 OBS 后怎么续上。
-            LastError = null;
-            Step = SimpleRecordingStep.Idle;
-            StatusText = Strings.T("simple.launch.declined");
-            Notify();
-            return false;
-        }
-
         Step = SimpleRecordingStep.LaunchingObs;
         StatusText = Strings.T("simple.state.launching");
         progress?.Report(StatusText);
@@ -976,6 +1184,7 @@ public sealed class SimpleRecordingService : IDisposable
         catch (Exception ex)
         {
             LastError = Strings.T("simple.error.launchFailed", ex.Message);
+            LastErrorAction = SimpleRecordErrorAction.OpenObs;
             Step = SimpleRecordingStep.Blocked;
             Notify();
             return false;
@@ -986,26 +1195,16 @@ public sealed class SimpleRecordingService : IDisposable
         progress?.Report(StatusText);
         Notify();
 
-        var waited = 0;
-        while (waited < ObsReadyTimeoutSeconds)
+        // 只等「进程出现」：首次启动向导 / 编码器初始化由连接阶段继续等，并给出已等待秒数
+        for (var waited = 0; waited < 15; waited++)
         {
             ct.ThrowIfCancellationRequested();
+            if (_paths.IsObsRunning()) return true;
             await Task.Delay(1000, ct).ConfigureAwait(true);
-            waited++;
-
-            if (_obs.IsConnected) return true;
-
-            // OBS 起来之后又退了（崩溃 / 用户关掉）：没必要再等满 75 秒
-            if (!_paths.IsObsRunning())
-            {
-                LastError = Strings.T("simple.error.launchFailed", Strings.T("simple.error.obsExited"));
-                Step = SimpleRecordingStep.Blocked;
-                Notify();
-                return false;
-            }
         }
 
-        LastError = Strings.T("simple.wait.timeout", ObsReadyTimeoutSeconds);
+        LastError = Strings.T("simple.error.launchFailed", Strings.T("simple.error.obsExited"));
+        LastErrorAction = SimpleRecordErrorAction.OpenObs;
         Step = SimpleRecordingStep.Blocked;
         Notify();
         return false;
@@ -1018,6 +1217,7 @@ public sealed class SimpleRecordingService : IDisposable
         if (!r.Ok)
         {
             LastError = Strings.T("simple.error.startFailed", Describe(r));
+            LastErrorAction = SimpleRecordErrorAction.Retry;
             Step = SimpleRecordingStep.Blocked;
             Notify();
             return false;
@@ -1029,6 +1229,7 @@ public sealed class SimpleRecordingService : IDisposable
         if (!_obs.RecordStatus.Active)
         {
             LastError = Strings.T("simple.error.startFailed", Strings.T("simple.error.noStateFlip"));
+            LastErrorAction = SimpleRecordErrorAction.Retry;
             Step = SimpleRecordingStep.Blocked;
             Notify();
             return false;
@@ -1058,6 +1259,9 @@ public sealed class SimpleRecordingService : IDisposable
         // 采样窗口跨越两次录制，实测速率被严重低估，剩余时间被高估，低空告警不再触发。
         if (_obs.RecordStatus.Active && Step != SimpleRecordingStep.Recording)
         {
+            // 外部开录（OBS 界面 / 托盘 / 热键）也要把状态机对齐，否则卡片一直显示「未录制」
+            Step = SimpleRecordingStep.Recording;
+            StatusText = Strings.T("simple.state.recording");
             ResetWriteRateSample();
             StartTick();
         }
@@ -1087,6 +1291,11 @@ public sealed class SimpleRecordingService : IDisposable
         {
             var info = new FileInfo(file);
             if (!info.Exists) return;
+
+            // V3.1.0：按命名模板改名（失败保留原文件，不删除任何东西）
+            var renamed = TryRenameOutput(info);
+            if (renamed is not null) info = renamed;
+
             LastOutputFile = info.FullName;
             LastOutputMb = info.Length / 1024.0 / 1024.0;
             LastStopProducedFile = info.Length > 0;
@@ -1096,6 +1305,46 @@ public sealed class SimpleRecordingService : IDisposable
         catch (Exception ex)
         {
             FileLogger.Warn("SimpleRecord", $"读取录制文件信息失败：{ex.Message}");
+        }
+    }
+
+    /// <summary>
+    /// 按命名模板重命名本次产物（V3.1.0）。
+    /// 任何失败都保留原文件并返回 null —— 录到的内容比命名重要。
+    /// </summary>
+    private FileInfo? TryRenameOutput(FileInfo info)
+    {
+        var template = _tray.Settings.RecordingNamingTemplate;
+        if (string.IsNullOrWhiteSpace(template)) return null;
+
+        try
+        {
+            var profile = _obs.Profile;
+            var context = new RecordingNamingContext(
+                DateTime.Now,
+                _obs.CurrentScene ?? "",
+                "",
+                profile.OutputWidth > 0 ? profile.OutputWidth : profile.BaseWidth,
+                profile.OutputHeight > 0 ? profile.OutputHeight : profile.BaseHeight,
+                profile.Fps,
+                info.Extension);
+
+            var name = RecordingNamingCore.Apply(template, context);
+            if (name.Length == 0) return null;
+
+            var dir = info.DirectoryName;
+            if (string.IsNullOrWhiteSpace(dir)) return null;
+
+            var target = RecordingNamingCore.EnsureUniquePath(dir, name);
+            if (string.Equals(target, info.FullName, StringComparison.OrdinalIgnoreCase)) return null;
+
+            info.MoveTo(target);
+            return new FileInfo(target);
+        }
+        catch (Exception ex)
+        {
+            FileLogger.Warn("SimpleRecord", $"按模板重命名录像失败（已保留原文件）：{ex.Message}");
+            return null;
         }
     }
 

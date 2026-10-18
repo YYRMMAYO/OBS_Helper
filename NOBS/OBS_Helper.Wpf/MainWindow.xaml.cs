@@ -75,6 +75,9 @@ public partial class MainWindow : Window
         Closed += OnClosed;
         Closing += OnClosing;
 
+        // V3.1.0 彩蛋：KONAMI 码（纯本地、无声音、不改变业务行为）
+        PreviewKeyDown += OnKonamiKeyDown;
+
         // 设置页「重新展示引导」→ 立即重播（静态事件解耦，见 App.RequestOnboardingReset）
         App.OnboardingResetRequested += OnOnboardingResetRequested;
         AppServices.Localization.Changed += OnLanguageChanged;
@@ -104,6 +107,72 @@ public partial class MainWindow : Window
         _nav.Register(Routes.ObsConfig, () => new ObsConfigPage());
     }
 
+    private void OnWallpaperNotice(string message)
+        => Dispatcher.BeginInvoke(new Action(() => AppServices.Toast?.Show(message)));
+
+    // ------------------------------------------------------------ 彩蛋（V3.1.0 / §12.3）
+
+    private static readonly Key[] KonamiCode =
+    {
+        Key.Up, Key.Up, Key.Down, Key.Down, Key.Left, Key.Right, Key.Left, Key.Right, Key.B, Key.A
+    };
+
+    private readonly List<Key> _konamiBuffer = new();
+
+    /// <summary>
+    /// KONAMI 码：解锁隐藏强调色。输入框里打字不参与；带修饰键的组合不参与（避免和热键打架）。
+    /// </summary>
+    private void OnKonamiKeyDown(object sender, KeyEventArgs e)
+    {
+        if (!AppServices.Appearance.EasterEggEnabled)
+        {
+            _konamiBuffer.Clear();
+            return;
+        }
+
+        if (Keyboard.FocusedElement is TextBox or PasswordBox or RichTextBox)
+        {
+            _konamiBuffer.Clear();
+            return;
+        }
+
+        if (Keyboard.Modifiers != ModifierKeys.None)
+        {
+            _konamiBuffer.Clear();
+            return;
+        }
+
+        _konamiBuffer.Add(e.Key);
+        if (_konamiBuffer.Count > KonamiCode.Length)
+            _konamiBuffer.RemoveAt(0);
+
+        if (_konamiBuffer.Count != KonamiCode.Length) return;
+        for (var i = 0; i < KonamiCode.Length; i++)
+        {
+            if (_konamiBuffer[i] != KonamiCode[i]) return;
+        }
+
+        _konamiBuffer.Clear();
+        var isNew = AppServices.Appearance.UnlockHiddenAccent();
+        AppServices.Toast?.Show(Strings.T(isNew ? "easterEgg.found" : "easterEgg.already"), "ok");
+    }
+
+    private void OnWallpaperPauseChanged(object? sender, EventArgs e) => UpdateWallpaperPause();
+
+    /// <summary>最小化 / 失去激活时暂停轮播；恢复时从当前张继续（不跳张）。</summary>
+    private void UpdateWallpaperPause()
+    {
+        try
+        {
+            var paused = WindowState == WindowState.Minimized || !IsActive;
+            AppServices.WallpapersOrNull()?.SetPaused(paused);
+        }
+        catch (Exception)
+        {
+            // 外观辅助能力失败不能影响主界面
+        }
+    }
+
     private async void OnLoaded(object sender, RoutedEventArgs e)
     {
         try
@@ -120,10 +189,25 @@ public partial class MainWindow : Window
         AppServices.Tray.ExitRequested += OnTrayExitRequested;
         AppServices.Tray.MiniWindowRequested += OnMiniWindowRequested;
         AppServices.Tray.OpenRecordingFolderRequested += OnOpenRecordingFolderRequested;
+        AppServices.Tray.TeleprompterRequested += OnTeleprompterToggle;
         AppServices.Hotkeys.ToggleWindowRequested += OnToggleWindowRequested;
         AppServices.Hotkeys.ToggleMiniWindowRequested += OnMiniWindowRequested;
+        AppServices.Hotkeys.TeleprompterToggleRequested += OnTeleprompterToggle;
+        AppServices.Hotkeys.TeleprompterPlayPauseRequested += OnTeleprompterPlayPause;
+        AppServices.Hotkeys.TeleprompterClickThroughRequested += OnTeleprompterClickThrough;
+        // V3.1.0：场景联动只滚动提词器，不自动切 OBS 场景
+        AppServices.Obs.StateChanged += OnObsStateChangedForTeleprompter;
         // V3.0：热键动作失败时给一句可见的提示（未连 OBS 时按录制热键毫无反应最容易被当成「热键坏了」）
         AppServices.Hotkeys.TrayNotify = message => AppServices.Toast?.Show(message);
+
+        // V3.1.0：壁纸迁移 / 原文件丢失的一次性提示；轮播在最小化 / 非激活时暂停
+        AppServices.Wallpapers.Notice += OnWallpaperNotice;
+        if (AppServices.Wallpapers.TakePendingNotice() is { Length: > 0 } wallpaperNotice)
+            AppServices.Toast?.Show(wallpaperNotice);
+        StateChanged += OnWallpaperPauseChanged;
+        Activated += OnWallpaperPauseChanged;
+        Deactivated += OnWallpaperPauseChanged;
+        UpdateWallpaperPause();
 
         // 自检测试：逐个导航所有路由，把异常写到 selftest_result.txt 后退出。
         // 用环境变量触发，避免影响正常启动。
@@ -1010,6 +1094,15 @@ public partial class MainWindow : Window
         App.OnboardingResetRequested -= OnOnboardingResetRequested;
         AppServices.Localization.Changed -= OnLanguageChanged;
         FallbackNotice.Changed -= OnFallbackNoticeChanged;
+        AppServices.Wallpapers.Notice -= OnWallpaperNotice;
+        StateChanged -= OnWallpaperPauseChanged;
+        Activated -= OnWallpaperPauseChanged;
+        Deactivated -= OnWallpaperPauseChanged;
+        AppServices.Tray.TeleprompterRequested -= OnTeleprompterToggle;
+        AppServices.Hotkeys.TeleprompterToggleRequested -= OnTeleprompterToggle;
+        AppServices.Hotkeys.TeleprompterPlayPauseRequested -= OnTeleprompterPlayPause;
+        AppServices.Hotkeys.TeleprompterClickThroughRequested -= OnTeleprompterClickThrough;
+        AppServices.Obs.StateChanged -= OnObsStateChangedForTeleprompter;
         // 退出时断开 OBS，避免 WebSocket 线程拖住进程
         try { await AppServices.Obs.DisposeAsync(); } catch { /* 退出路径，忽略 */ }
         AppServices.Appearance.Dispose();
@@ -1044,6 +1137,49 @@ public partial class MainWindow : Window
     /// <summary>托盘菜单「小窗控制」/ 全局热键「小窗」：呼出或隐藏迷你小窗。</summary>
     private void OnMiniWindowRequested()
         => Dispatcher.BeginInvoke(new Action(() => AppServices.Mini.Toggle()));
+
+    // ------------------------------------------------------------ 提词器（V3.1.0）
+
+    /// <summary>托盘 / 全局热键：呼出或隐藏提词器。</summary>
+    private void OnTeleprompterToggle()
+        => Dispatcher.BeginInvoke(new Action(() =>
+        {
+            try { AppServices.Teleprompter.Toggle(); }
+            catch (Exception ex) { AppServices.Toast.Show(Strings.T("teleprompter.importFailed", ex.Message), "error"); }
+        }));
+
+    private void OnTeleprompterPlayPause()
+        => Dispatcher.BeginInvoke(new Action(() =>
+        {
+            try { AppServices.Teleprompter.TogglePlayPause(); }
+            catch (Exception ex) { FileLogger.Warn("Teleprompter", $"播放 / 暂停失败：{ex.Message}"); }
+        }));
+
+    private void OnTeleprompterClickThrough()
+        => Dispatcher.BeginInvoke(new Action(() =>
+        {
+            try { AppServices.Teleprompter.ToggleClickThrough(); }
+            catch (Exception ex) { FileLogger.Warn("Teleprompter", $"点击穿透切换失败：{ex.Message}"); }
+        }));
+
+    private void OnTeleprompterClick(object sender, RoutedEventArgs e) => OnTeleprompterToggle();
+
+    /// <summary>
+    /// 场景切换时把提词器滚到对应段落（V3.1.0 / §12.5.1）。
+    /// 只读 <see cref="ObsConnectionService.CurrentScene"/>；不调用任何写请求，不会替用户切场景。
+    /// </summary>
+    private string _lastTeleprompterScene = "";
+
+    private void OnObsStateChangedForTeleprompter()
+    {
+        if (!AppServices.Teleprompter.IsVisible) return;
+        var scene = AppServices.Obs.CurrentScene;
+        if (string.IsNullOrWhiteSpace(scene) || string.Equals(scene, _lastTeleprompterScene, StringComparison.Ordinal))
+            return;
+
+        _lastTeleprompterScene = scene;
+        Dispatcher.BeginInvoke(new Action(() => AppServices.Teleprompter.ApplyScene(scene)));
+    }
 
     /// <summary>
     /// 托盘菜单「打开录像目录」（V2.9.4）：托盘线程只负责发事件，解析与打开都在 UI 线程做

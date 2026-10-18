@@ -80,6 +80,9 @@ public sealed class TrayService : IDisposable
     /// <summary>托盘菜单「打开录像目录」时触发（V2.9.4；由 MainWindow 走只读解析后打开资源管理器）。</summary>
     public event Action? OpenRecordingFolderRequested;
 
+    /// <summary>托盘菜单「提词器」时触发（V3.1.0；由 MainWindow 切到 UI 线程）。</summary>
+    public event Action? TeleprompterRequested;
+
     public TrayService(ObsConnectionService obs, LocalStore store)
     {
         _obs = obs;
@@ -411,6 +414,9 @@ public sealed class TrayService : IDisposable
         var miniItem = new ToolStripMenuItem(Strings.T("tray.miniWindow"));
         miniItem.Click += (_, _) => MiniWindowRequested?.Invoke();
 
+        var teleprompterItem = new ToolStripMenuItem(Strings.T("tray.teleprompterShow"));
+        teleprompterItem.Click += (_, _) => TeleprompterRequested?.Invoke();
+
         var openDirItem = new ToolStripMenuItem(Strings.T("tray.openRecordDir"));
         openDirItem.Click += (_, _) => OpenRecordingFolderRequested?.Invoke();
 
@@ -428,6 +434,7 @@ public sealed class TrayService : IDisposable
         menu.Items.Add(_markItem);
         menu.Items.Add(new ToolStripSeparator());
         menu.Items.Add(miniItem);
+        menu.Items.Add(teleprompterItem);
         menu.Items.Add(openDirItem);
         menu.Items.Add(new ToolStripSeparator());
         menu.Items.Add(exit);

@@ -29,16 +29,37 @@ public partial class SimpleRecordCard : UserControl
     {
         InitializeComponent();
 
-        // 拉起 OBS 前问一次（V2.9.4）：服务层的 ConfirmLaunch 没被注入时按「不允许」处理，
-        // 所以这里必须挂上，否则「OBS 没启动」这条路径会走到「已落地、请自己启动」的提示上。
-        AppServices.SimpleRecord.ConfirmLaunch = () => ConfirmDialog.Show(
-            Strings.T("simple.launch.title"),
-            Strings.T("simple.launch.message"),
-            Strings.T("simple.launch.yes"),
-            Strings.T("simple.launch.no"),
-            danger: false,
-            icon: "🎬");
+        // V3.1.0 / D2：不再每次点击都弹确认。首次需要拉起 OBS 时，服务层回调到这里，
+        // 由用户选择「继续并记住 / 每次都问 / 我自己开」，选择会持久化。
+        AppServices.SimpleRecord.RequestLaunchConsent = async _ =>
+        {
+            if (!Dispatcher.CheckAccess())
+            {
+                return await Dispatcher.InvokeAsync(() => AskLaunchConsent());
+            }
+            return AskLaunchConsent();
+        };
+
+        // D7：服务要求 WebSocket 密码时，用应用内对话框输入（服务层不弹窗）
+        AppServices.SimpleRecord.RequestPassword = async _ =>
+        {
+            if (!Dispatcher.CheckAccess())
+            {
+                return await Dispatcher.InvokeAsync(() => AskPassword());
+            }
+            return AskPassword();
+        };
     }
+
+    private static SimpleRecordLaunchConsent AskLaunchConsent()
+        => LaunchConsentDialog.Show(
+            Strings.T("simple.launch.consent.title"),
+            Strings.T("simple.launch.consent.message"));
+
+    private static string? AskPassword()
+        => PasswordPromptDialog.Show(
+            Strings.T("simple.error.authRequired"),
+            Strings.T("simple.password.message"));
 
     // ---------------------------------------------------------------- 生命周期
 
@@ -57,8 +78,9 @@ public partial class SimpleRecordCard : UserControl
     public void Detach()
     {
         Unsubscribe();
-        // 断开确认回调：页面已不可见时不应再弹窗（服务层会按「不允许」处理）
-        AppServices.SimpleRecord.ConfirmLaunch = null;
+        // 页面不可见时不应再弹窗；服务层会按「不允许 / 需要密码」给出可照做的提示
+        AppServices.SimpleRecord.RequestLaunchConsent = null;
+        AppServices.SimpleRecord.RequestPassword = null;
     }
 
     private void Subscribe()
@@ -184,6 +206,16 @@ public partial class SimpleRecordCard : UserControl
             return;
         }
 
+        // 执行中：直接显示分阶段状态（现在在做什么 / 已等多久），比继续显示旧的「能不能录」更有用
+        if (svc.Busy && svc.StatusText.Length > 0)
+        {
+            CheckText.Text = svc.StatusText;
+            CheckText.SetResourceReference(TextBlock.ForegroundProperty, "BrandBrush");
+            HintText.Text = Strings.T("simple.check.hint");
+            HintText.Visibility = Visibility.Visible;
+            return;
+        }
+
         var ready = svc.Ready;
         if (ready.Ready)
         {
@@ -202,6 +234,8 @@ public partial class SimpleRecordCard : UserControl
         var parts = new List<string>();
         var reason = ready.Ready ? ready.Hint : ready.BlockReason;
         if (!string.IsNullOrWhiteSpace(reason)) parts.Add(reason!);
+        if (ready.WillLaunchObs) parts.Add(Strings.T("simple.ready.willLaunch"));
+        if (ready.WillConnectObs) parts.Add(Strings.T("simple.ready.willConnect"));
         if (!ready.Ready) parts.Add(Strings.T("simple.check.hint"));
 
         if (parts.Count == 0)
@@ -222,18 +256,33 @@ public partial class SimpleRecordCard : UserControl
 
         StartButton.Visibility = recording ? Visibility.Collapsed : Visibility.Visible;
         StopButton.Visibility = recording ? Visibility.Visible : Visibility.Collapsed;
+        CancelButton.Visibility = busy && !recording ? Visibility.Visible : Visibility.Collapsed;
 
         // 就绪判定失败时仍允许点开始：用户可能刚在 OBS 里改好设置，
         // 由服务层再检查一次并给出具体原因，比一个禁用的按钮更有信息量。
         StartButton.IsEnabled = !busy && !recording;
         StopButton.IsEnabled = !busy && recording;
+        CancelButton.IsEnabled = busy && !recording;
         RescanButton.IsEnabled = !busy;
         RollbackButton.Visibility = svc.HasFileRollback ? Visibility.Visible : Visibility.Collapsed;
 
         StartButton.Content = busy && !recording ? Strings.T("simple.starting")
-            : recording ? Strings.T("simple.stop")
             : Strings.T("simple.start");
         StopButton.Content = busy ? Strings.T("simple.stopping") : Strings.T("simple.stop");
+
+        // 分类错误的可执行出口（V3.1.0 / §4.7）
+        var action = svc.LastErrorAction;
+        ErrorActionButton.Visibility = !busy && !recording && action != SimpleRecordErrorAction.None
+            ? Visibility.Visible
+            : Visibility.Collapsed;
+        ErrorActionButton.Content = action switch
+        {
+            SimpleRecordErrorAction.Retry => Strings.T("simple.action.retry"),
+            SimpleRecordErrorAction.OpenSettings => Strings.T("simple.action.openSettings"),
+            SimpleRecordErrorAction.OpenObs => Strings.T("simple.action.openObs"),
+            SimpleRecordErrorAction.EnterPassword => Strings.T("simple.action.enterPassword"),
+            _ => ""
+        };
     }
 
     private void RenderItems(SimpleRecordingService svc)
@@ -374,6 +423,9 @@ public partial class SimpleRecordCard : UserControl
     // ---------------------------------------------------------------- 动作
 
     private async void OnStartClick(object sender, RoutedEventArgs e)
+        => await RunStartAsync().ConfigureAwait(true);
+
+    private async Task RunStartAsync()
     {
         StartButton.IsEnabled = false;
         try
@@ -395,6 +447,66 @@ public partial class SimpleRecordCard : UserControl
         finally
         {
             Render();
+        }
+    }
+
+    private void OnCancelStartClick(object sender, RoutedEventArgs e)
+    {
+        AppServices.SimpleRecord.CancelStart();
+        Render();
+    }
+
+    /// <summary>失败后的出口：重试 / 去设置 / 打开 OBS / 重新输入密码（V3.1.0 / §4.7）。</summary>
+    private async void OnErrorActionClick(object sender, RoutedEventArgs e)
+    {
+        var action = AppServices.SimpleRecord.LastErrorAction;
+        ErrorActionButton.IsEnabled = false;
+        try
+        {
+            switch (action)
+            {
+                case SimpleRecordErrorAction.OpenSettings:
+                    AppServices.Navigation.Navigate(Routes.Settings);
+                    break;
+
+                case SimpleRecordErrorAction.OpenObs:
+                    OpenObsOrGuide();
+                    break;
+
+                case SimpleRecordErrorAction.EnterPassword:
+                case SimpleRecordErrorAction.Retry:
+                    await RunStartAsync().ConfigureAwait(true);
+                    break;
+            }
+        }
+        finally
+        {
+            ErrorActionButton.IsEnabled = true;
+            Render();
+        }
+    }
+
+    private static void OpenObsOrGuide()
+    {
+        var exe = AppServices.ObsPaths.FindObsExecutable();
+        if (exe is null)
+        {
+            AppServices.Toast.Show(Strings.T("simple.error.notFound"), "error");
+            AppServices.Navigation.Navigate(Routes.Settings);
+            return;
+        }
+
+        try
+        {
+            using var _ = System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+            {
+                FileName = exe,
+                UseShellExecute = true
+            });
+        }
+        catch (Exception ex)
+        {
+            AppServices.Toast.Show(Strings.T("simple.error.launchFailed", ex.Message), "error");
         }
     }
 

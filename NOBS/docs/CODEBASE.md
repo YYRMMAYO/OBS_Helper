@@ -40,7 +40,7 @@ NOBS/
 |---|---|
 | `App.xaml` | 应用资源字典装配（主题、图标、控件样式）。 |
 | `App.xaml.cs` | 启动入口：单实例 Mutex、异常三挂钩（Dispatcher/AppDomain/Unobserved）、启动服务装配、`HeadlessTest` 自检模式、新手引导重播事件。 |
-| `AppServices.cs` | 组合根：**52 个**服务的手工 Lazy 单例装配（刻意不用 DI 容器）。 |
+| `AppServices.cs` | 组合根：**55 个**服务的手工 Lazy 单例装配（刻意不用 DI 容器）。 |
 | `MainWindow.xaml` / `.xaml.cs` | 主窗口：导航框架、页面路由表、页面过渡动画、托盘联动、**新手引导覆盖层**（首启分步引导 + 设置页即时重播；V2.9.1 起每步自动跳转到对应页面并渲染站内/站外跳转按钮）、`OBS_SELFTEST=1` 的 **22 项**无界面自检。 |
 | `app.manifest` | Windows 清单（Per-Monitor V2 DPI 感知、执行级别、支持的 OS 版本）。 |
 
@@ -58,6 +58,7 @@ NOBS/
 | `Models/Shell/HotkeySettings.cs` | 全局热键配置。 |
 | `Models/Shell/AutoSwitchSettings.cs` | 场景自动切换配置。 |
 | `Models/Shell/MiniWindowSettings.cs` | 迷你小窗位置记忆。 |
+| `Models/Shell/TeleprompterSettings.cs` | **提词器设置**（V3.1.0）：字号 / 行高 / 速度 / 颜色 / 透明度 / 边距 / 镜像 / 穿透 / 捕获排除 / 显示器与窗口位置。 |
 
 ### 2.3 Services（业务服务）
 
@@ -66,7 +67,8 @@ NOBS/
 | 文件 | 职责 |
 |---|---|
 | `Services/Obs/ObsWebSocketClient.cs` | obs-websocket 底层客户端：连接、鉴权、请求/响应、事件分发、重连。 |
-| `Services/Obs/ObsConnectionService.cs` | 连接生命周期编排：自动连接、状态机、重连调度、事件订阅管理。 |
+| `Services/Obs/ObsConnectionService.cs` | 连接生命周期编排：自动连接、状态机、重连调度、事件订阅管理；V3.1.0 增加 `EnsureConnectedAsync`（单飞 / 超时 / 取消 / 主动连接）。 |
+| `Services/Obs/ObsEnsureCore.cs` | **连接结果分类与重试策略纯逻辑**（V3.1.0）：把超时 / 端口未开 / 握手失败 / 密码错误 / OBS 退出翻译成可照做的分类，决定是否继续重试。 |
 | `Services/Obs/ObsAuth.cs` | 基于 salt/challenge 的鉴权字符串计算。 |
 | `Services/Obs/ObsReconnectPolicy.cs` | 重连退避策略。 |
 | `Services/Obs/ObsLegacyV4Core.cs` | **obs-websocket 4.x（旧协议）兼容核心**（纯逻辑、零 IO、可单测）：把上层的 v5 请求名/字段翻译成 v4、把 v4 响应归一化回 v5 形状、把 v4 `update-type` 映射成 v5 事件，因此连接层与各页面一行都不用改。**只在 Win7 兼容构建启用**（`net6.0-windows` 定义 `WIN7_COMPAT`，默认端口 4444）—— OBS 28 起不再支持 Win7/8.1，Win7 能用的最新 OBS 是 27.x + obs-websocket 4.9.x 插件。v4 确实没有的能力（如 `SetProfileParameter` / `SetVideoSettings`）**不假装支持**，返回「旧协议不支持」由上层走文件通道。 |
@@ -103,7 +105,15 @@ NOBS/
 | `Services/ObsConfig/ObsLaunchCore.cs` | **拉起 OBS 的纯逻辑**（V2.9.4）：`DisplayIcon` 解析（含引号 / `,0` 后缀 / 目录名带逗号）、安装根推导四档、去重与存在性过滤。探测留在 `ObsPathService`，这里只做字符串与路径推导。 |
 | `Services/ObsConfig/RecordingEnvService.cs` | 一键部署录制环境（V2.9.3）：双通道落地 + 备份 / 回滚 / 读回校验；V2.9.4 增加「录制 / 推流中」硬阻断（建计划与执行点各判一次）与只读快照。 |
 | `Services/ObsConfig/RecordingEnvCore.cs` | **一键部署录制环境的推荐项纯逻辑**（V2.9.3）与跨会话「待回滚记录」模型（V2.9.4）：每项给出「当前值 → 推荐值」与落地通道，由调用方决定勾选与落地方式。 |
-| `Services/Shell/SimpleRecordingService.cs` | **简单录像服务**（V2.9.4）：状态机与落地编排、拉起 OBS 并等就绪、录制中进度、停止收尾、跨会话回滚记录的落盘与恢复。 |
+| `Services/Shell/SimpleRecordingService.cs` | **简单录像服务**（V2.9.4 / V3.1.0）：状态机与落地编排、首次同意后拉起 OBS、主动连接、可选倒计时、停止收尾（含命名模板）、跨会话回滚记录的落盘与恢复。 |
+| `Services/Recording/RecordingNamingCore.cs` | **录像命名模板纯逻辑**（V3.1.0）：变量替换、非法字符净化、长度上限、未知变量提示与同名冲突处理。 |
+| `Services/Appearance/WallpaperCore.cs` | **壁纸纯逻辑**（V3.1.0）：格式 / 大小 / 尺寸校验、哈希文件名、fit/dim/blur 归一化、轮播顺序、旧设置迁移决策、manifest 容错。 |
+| `Services/Appearance/WallpaperStore.cs` | **壁纸库文件层**（V3.1.0）：按 SHA-256 去重导入、manifest 原子写、损坏扫描重建、删除与孤儿清理；不依赖 WPF。 |
+| `Services/Appearance/WallpaperService.cs` | **壁纸服务**（V3.1.0）：解码 / 缓存 / 轮播计时器 / 主题联动 / 旧路径迁移 / 资源写入；导入与解码不阻塞 UI。 |
+| `Services/Shell/TeleprompterCore.cs` | **提词器纯逻辑**（V3.1.0）：速度 / 字号 / 行高 / 透明度 clamp、滚动步进、镜像、脚本分段与场景匹配、显示器与窗口位置计算。 |
+| `Services/Shell/TeleprompterService.cs` | **提词器服务**（V3.1.0）：单实例窗口生命周期、脚本 / 设置持久化、热键入口、场景联动、脚本原子保存。 |
+| `Services/Audio/AudioAlertCore.cs` | **静音 / 音量过低提醒判定纯逻辑**（V3.1.0）：阈值、持续时间、防重复；只提醒，不自动改音频状态。 |
+| `Services/Audio/AudioAlertService.cs` | **静音 / 音量过低提醒服务**（V3.1.0）：录制 / 推流中读取 OBS 音频状态，托盘提醒，一次会话每输入只提醒一次。 |
 | `Services/ObsConfig/FileTx.cs` | 文件事务：提交 / 回滚目录级操作。 |
 | `Services/ObsConfig/SafeIniFile.cs` | 对 OBS 配置文件（`basic.ini` 一类）的**受护栏保护的原子写入**：写前留 `.obshelper.bak` → 过 `ObsSafePath` 护栏 → 同目录临时文件原子替换；任一步失败即抛异常，**绝不半途留下截断的文件**。 |
 
@@ -192,6 +202,7 @@ NOBS/
 | `Compat/RequiredMembers.cs` | `required` 成员的三个特性 polyfill（net6.0 目标框架用），语义与 .NET 7+ 一致。 |
 | `Services/Compat/Compat.cs` | 跨 TFM 的**语义等价**替换：`char.IsAsciiDigit` / `IsAsciiLetterOrDigit` 等价实现、`AesGcm` 新旧构造函数统一成 16 字节标签（两条分支密文完全一致）。 |
 | `Services/Compat/FolderPicker.cs` | 「选择一个文件夹」的跨版本实现：net8+ 用 WPF 自带 `OpenFolderDialog`，net6.0 退到 WinForms `FolderBrowserDialog`；两条分支都返回「绝对路径 / 取消时 null」。 |
+| `Services/Compat/WindowCaptureExclusion.cs` | **提词器捕获排除与点击穿透**（V3.1.0）：`SetWindowDisplayAffinity(WDA_EXCLUDEFROMCAPTURE)`、OS 版本判断、`WS_EX_TRANSPARENT` 点击穿透与工具窗口样式；Win7 明确降级。 |
 
 ### 2.4 Controls（自定义控件）
 
@@ -209,6 +220,9 @@ NOBS/
 | `Controls/RecordingEnvCard.xaml(.cs)` | **一键部署录制环境卡**（V2.9.3）：逐项列出推荐值与当前值、可单独取消、应用前整备份、可一键回滚。 |
 | `Controls/SimpleRecordCard.xaml(.cs)` | **简单录像卡**（V2.9.4，挂在首页）：预设三选 → 「现在能不能录」一行结论 → 一键开始 / 停止 → 录制中时长与剩余可录 → 停止后打开目录 / 转 MP4；并提示并恢复「上次会话未回滚的改动」。 |
 | `Controls/FeedbackCard.xaml(.cs)` | **帮助与反馈卡**（V2.9.4）：反馈表单 / GitHub Issue / 离线二维码 + 一键复制报错材料（版本 / 系统 / OBS 连接与场景 / 录前自检，不含路径与日志原文）+ 安全上报引导（中英双语）。 |
+| `Controls/WallpaperLayer.xaml(.cs)` | **内容区壁纸渲染层**（V3.1.0）：填充 / 适应 / 居中 / 平铺、压暗、模糊、A/B 交叉淡入；高对比与「减少动画」自动降级。 |
+| `Controls/LaunchConsentDialog.xaml(.cs)` | **首次拉起 OBS 的同意对话框**（V3.1.0）：继续并记住 / 每次都问 / 我自己开。 |
+| `Controls/PasswordPromptDialog.xaml(.cs)` | **OBS WebSocket 密码输入**（V3.1.0）：应用内样式，密码只交给 DPAPI 存储。 |
 
 ### 2.5 Views（页面）
 
@@ -227,6 +241,7 @@ NOBS/
 | `Views/TemplatePage.xaml(.cs)` | 场景模板页（在线落地 / 离线导出）。 |
 | `Views/SettingsPage.xaml(.cs)` | 设置页（AI、连接、热键、外观、**新手引导重播**、更新等全部设置）。 |
 | `Views/SetupPage.xaml(.cs)` | 新手搭建流程六步引导 + 竖屏 / 多平台进阶向导（V2.2）。 |
+| `Views/TeleprompterWindow.xaml(.cs)` | **提词器窗口**（V3.1.0）：置顶 / 无边框 / 可拖动缩放、自动滚动、速度 / 字号 / 行高 / 透明度 / 镜像、点击穿透、3-2-1 倒计时、脚本编辑与导入、阅读参考线、捕获排除提示。 |
 | `Views/PluginsPage.xaml(.cs)` | 插件广场：目录热更新 + 目录版本/复核日期 + 维护状态标注（V2.9）+ 本机体检 + 下载角标 + AI 预算提示 + 关注（V2.2）。 |
 | `Views/ToolboxPage.xaml(.cs)` | 工具箱（V2.6）：录像工具 / 参数处方 / 隐私清单 / 冲突扫描 / 带宽计算 / 版本情报 / 快捷键速查。 |
 | `Views/SetupWizardWindow.xaml(.cs)` | 分步向导窗口（竖屏双画布 / 多平台推流，V2.2）。 |
@@ -283,8 +298,8 @@ NOBS/
 | 文件 | 职责 |
 |---|---|
 | `Localization/Strings.cs` | 文案表入口（纯 BCL、零 WPF）：当前语言、`T(key)` / `T(key, args)`、键集、语言标识归一化、缺键回退次序。 |
-| `Localization/StringTableZhHans.cs` | 简体中文文案（默认语言，**2239 条键**，按模块分段）。 |
-| `Localization/StringTableEnUs.cs` | English 文案（**2239 条键**，键集必须与中文表完全一致，有单测钉死）。 |
+| `Localization/StringTableZhHans.cs` | 简体中文文案（默认语言，**2390 条键**，按模块分段）。 |
+| `Localization/StringTableEnUs.cs` | English 文案（**2390 条键**，键集必须与中文表完全一致，有单测钉死）。 |
 | `Localization/ContentAssets.cs` | 随包离线内容的**按语言取资产**统一入口（V2.9.3）：外部缓存 → 当前语言内嵌 → 中文内嵌（最后一级兜底必写 WARN，否则英文用户会「安静地看到中文内容」）。 |
 | `Localization/DataValues.cs` | 数据驱动展示值的**跨语言**判定（severity / level / badge：中文「常见」与英文 `Common` 都认）。 |
 | `Services/LocalizationService.cs` | 语言服务：读 / 写偏好（`prefs.json` 的 `obshelper.language`）、解析首启语言（用户选择 > 安装向导 `language.ini` > 中文）、把整表写进 `Application.Resources`、广播 `Changed`。 |

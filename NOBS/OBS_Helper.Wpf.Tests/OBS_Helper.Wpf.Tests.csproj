@@ -44,6 +44,8 @@
     <Compile Include="..\OBS_Helper.Wpf\Services\Obs\ObsLogAnalyzer.cs" Link="Linked\ObsLogAnalyzer.cs" />
     <Compile Include="..\OBS_Helper.Wpf\Services\Obs\PreflightCheckCore.cs" Link="Linked\PreflightCheckCore.cs" />
     <Compile Include="..\OBS_Helper.Wpf\Services\Obs\ObsReconnectPolicy.cs" Link="Linked\ObsReconnectPolicy.cs" />
+    <!-- V3.1.0 一键录制：连接结果分类 / 重试策略（纯 BCL） -->
+    <Compile Include="..\OBS_Helper.Wpf\Services\Obs\ObsEnsureCore.cs" Link="Linked\ObsEnsureCore.cs" />
     <Compile Include="..\OBS_Helper.Wpf\Services\Ai\DiagnosticSeverity.cs" Link="Linked\DiagnosticSeverity.cs" />
     <Compile Include="..\OBS_Helper.Wpf\Services\Ai\DiagnosticSeverityMapper.cs" Link="Linked\DiagnosticSeverityMapper.cs" />
     <Compile Include="..\OBS_Helper.Wpf\Services\Markdown\MarkdownRenderer.cs" Link="Linked\MarkdownRenderer.cs" />
@@ -66,6 +68,8 @@
     <Compile Include="..\OBS_Helper.Wpf\Services\Tools\IngestPingService.cs" Link="Linked\Tools\IngestPingService.cs" />
     <Compile Include="..\OBS_Helper.Wpf\Services\Obs\ColorCheckCore.cs" Link="Linked\Obs\ColorCheckCore.cs" />
     <Compile Include="..\OBS_Helper.Wpf\Services\Audio\SampleRateCheckCore.cs" Link="Linked\Audio\SampleRateCheckCore.cs" />
+    <!-- V3.1.0 静音 / 音量过低提醒的判定（纯逻辑） -->
+    <Compile Include="..\OBS_Helper.Wpf\Services\Audio\AudioAlertCore.cs" Link="Linked\Audio\AudioAlertCore.cs" />
     <Compile Include="..\OBS_Helper.Wpf\Services\EnvCheckItem.cs" Link="Linked\EnvCheckItem.cs" />
     <Compile Include="..\OBS_Helper.Wpf\Services\Shell\RecordWatchdogCore.cs" Link="Linked\Shell\RecordWatchdogCore.cs" />
     <Compile Include="..\OBS_Helper.Wpf\Services\Shell\LogAlertThrottle.cs" Link="Linked\Shell\LogAlertThrottle.cs" />
@@ -83,6 +87,8 @@
     <Compile Include="..\OBS_Helper.Wpf\Services\ObsConfig\SimpleStreamingCore.cs" Link="Linked\ObsConfig\SimpleStreamingCore.cs" />
     <Compile Include="..\OBS_Helper.Wpf\Services\Tools\ToolboxSections.cs" Link="Linked\Tools\ToolboxSections.cs" />
     <Compile Include="..\OBS_Helper.Wpf\Services\Recording\RecordingArchiveCore.cs" Link="Linked\Recording\RecordingArchiveCore.cs" />
+    <!-- V3.1.0 录像命名模板：变量替换 / 非法字符净化 / 冲突处理（纯 BCL） -->
+    <Compile Include="..\OBS_Helper.Wpf\Services\Recording\RecordingNamingCore.cs" Link="Linked\Recording\RecordingNamingCore.cs" />
     <Compile Include="..\OBS_Helper.Wpf\Services\Diagnostics\ChecklistAutoFillCore.cs" Link="Linked\Diagnostics\ChecklistAutoFillCore.cs" />
     <Compile Include="..\OBS_Helper.Wpf\Services\Diagnostics\MachineProfileCore.cs" Link="Linked\Diagnostics\MachineProfileCore.cs" />
     <Compile Include="..\OBS_Helper.Wpf\Services\Diagnostics\SessionReviewCore.cs" Link="Linked\Diagnostics\SessionReviewCore.cs" />
@@ -115,6 +121,12 @@
     <Compile Include="..\OBS_Helper.Wpf\Services\ObsConfig\ObsSafePath.cs" Link="Linked\ObsConfig\ObsSafePath.cs" />
     <Compile Include="..\OBS_Helper.Wpf\Services\ObsConfig\SafeIniFile.cs" Link="Linked\ObsConfig\SafeIniFile.cs" />
     <Compile Include="..\OBS_Helper.Wpf\Services\ObsConfig\FileTx.cs" Link="Linked\ObsConfig\FileTx.cs" />
+    <!-- V3.1.0 壁纸：校验 / 归一化 / 轮播顺序 / 迁移 / manifest 与文件库都是纯 BCL -->
+    <Compile Include="..\OBS_Helper.Wpf\Services\Appearance\WallpaperCore.cs" Link="Linked\Appearance\WallpaperCore.cs" />
+    <Compile Include="..\OBS_Helper.Wpf\Services\Appearance\WallpaperStore.cs" Link="Linked\Appearance\WallpaperStore.cs" />
+    <!-- V3.1.0 提词器：数值归一化 / 滚动 / 镜像 / 脚本分段 / 场景匹配（纯 BCL） -->
+    <Compile Include="..\OBS_Helper.Wpf\Services\Shell\TeleprompterCore.cs" Link="Linked\Shell\TeleprompterCore.cs" />
+    <Compile Include="..\OBS_Helper.Wpf\Models\Shell\TeleprompterSettings.cs" Link="Linked\Shell\TeleprompterSettings.cs" />
   </ItemGroup>
 
   <ItemGroup>

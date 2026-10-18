@@ -459,13 +459,20 @@ jobs:
           # Release 正文 = 仓库里的发布说明（必须写清新增 / 修复），末尾再追加 SHA-256 表。
           # 规则见 docs/RELEASE_RULES.md：不允许只发标题 + 哈希表，也不允许空说明发版。
           $tag = $env:GITHUB_REF_NAME
-          $notesSource = Join-Path $ws "NOBS/RELEASE_NOTES_$tag.md"
-          if (-not (Test-Path -LiteralPath $notesSource)) {
-              throw "缺少发布说明：NOBS/RELEASE_NOTES_$tag.md。每个 Release 必须写明新增 / 修复内容（见 docs/RELEASE_RULES.md）。"
+          # tag 形如 V3.1.1（正式版）或 01（DEV）：对应 NOBS/RELEASE_NOTES_v3.1.1.md / RELEASE_NOTES_DEV_01.md
+          $version = $tag -replace '^[Vv]', ''
+          $devNotes = Join-Path $ws "NOBS/RELEASE_NOTES_DEV_$version.md"
+          $stableNotes = Join-Path $ws "NOBS/RELEASE_NOTES_v$version.md"
+          $stableNotesNoV = Join-Path $ws "NOBS/RELEASE_NOTES_$version.md"
+          if (Test-Path -LiteralPath $devNotes) { $notesSource = $devNotes }
+          elseif (Test-Path -LiteralPath $stableNotes) { $notesSource = $stableNotes }
+          elseif (Test-Path -LiteralPath $stableNotesNoV) { $notesSource = $stableNotesNoV }
+          else {
+              throw "缺少发布说明：NOBS/RELEASE_NOTES_v$version.md（或 RELEASE_NOTES_DEV_$version.md）。每个 Release 必须写明新增 / 修复内容（见 docs/RELEASE_RULES.md）。"
           }
           $notesBody = (Get-Content -LiteralPath $notesSource -Raw).Trim()
           if ($notesBody.Length -lt 120) {
-              throw "发布说明过短（$($notesBody.Length) 字符）：NOBS/RELEASE_NOTES_$tag.md。请写清新增 / 修复内容（见 docs/RELEASE_RULES.md）。"
+              throw "发布说明过短（$($notesBody.Length) 字符）：$notesSource。请写清新增 / 修复内容（见 docs/RELEASE_RULES.md）。"
           }
           $notes = @($notesBody, '', '---', '', '### 资产 SHA-256', '') + $table + @('', '完整的 `SHA256SUMS.txt` 也作为 Release 资产上传，可用 `sha256sum -c SHA256SUMS.txt` 校验。')
           [System.IO.File]::WriteAllLines((Join-Path $ws 'NOBS/PAKE/release_notes.md'), [string[]]$notes, (New-Object System.Text.UTF8Encoding($false)))

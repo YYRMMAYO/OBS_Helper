@@ -11,6 +11,7 @@ using OBS_Helper.Wpf.Services.Ai;
 using OBS_Helper.Wpf.Services.ObsConfig;
 using OBS_Helper.Wpf.Services.Recording;
 using OBS_Helper.Wpf.Services.Shell;
+using OBS_Helper.Wpf.Services.Update;
 
 namespace OBS_Helper.Wpf.Views;
 
@@ -624,7 +625,11 @@ public partial class SettingsPage : UserControl, INavigationAware
     private async Task RefreshAboutAsync()
     {
         var ver = typeof(SettingsPage).Assembly.GetName().Version;
-        AppVersionText.Text = ver is null ? "1.0.0" : $"{ver.Major}.{ver.Minor}.{ver.Build}";
+        var appVersion = ver is null ? "1.0.0" : $"{ver.Major}.{ver.Minor}.{ver.Build}";
+        // dev 构建：正式版本号后面再标出 DEV 构建序号（01/02/03），方便测试者确认装的是哪个 dev 版
+        AppVersionText.Text = UpdateChannel.IsDev
+            ? appVersion + Strings.T("settings.about.devSuffix", UpdateChannel.DevBuildLabel)
+            : appVersion;
 
         var data = await AppServices.Problems.GetDataAsync();
         DataVersionText.Text = string.IsNullOrWhiteSpace(data.Version) ? "—" : data.Version;
@@ -1457,11 +1462,15 @@ public partial class SettingsPage : UserControl, INavigationAware
         switch (last.Status)
         {
             case UpdateCheckStatus.UpToDate:
-                UpdateStatusText.Text = Strings.T("settings.update.upToDate", CurrentVersionText(last.CurrentVersion));
+                UpdateStatusText.Text = Strings.T(
+                    UpdateChannel.IsDev ? "settings.update.dev.upToDate" : "settings.update.upToDate",
+                    ChannelVersionText(last.CurrentVersion));
                 UpdateStatusText.SetResourceReference(TextBlock.ForegroundProperty, "OkBrush");
                 break;
             case UpdateCheckStatus.UpdateAvailable:
-                UpdateStatusText.Text = Strings.T("settings.update.available", CurrentVersionText(last.LatestVersion));
+                UpdateStatusText.Text = Strings.T(
+                    UpdateChannel.IsDev ? "settings.update.dev.available" : "settings.update.available",
+                    ChannelVersionText(last.LatestVersion));
                 UpdateStatusText.SetResourceReference(TextBlock.ForegroundProperty, "OkBrush");
                 break;
             default:
@@ -1471,8 +1480,11 @@ public partial class SettingsPage : UserControl, INavigationAware
         }
     }
 
-    private static string CurrentVersionText(Version? v)
-        => v is null ? "—" : $"{v.Major}.{v.Minor}.{v.Build}";
+    /// <summary>
+    /// 通道口径的裸版本号：dev 为构建序号（01/02/03），主分支为 3.1.0。
+    /// 文案模板里已经带了「V」「DEV 版本」这类前缀，所以这里只给数字。
+    /// </summary>
+    private static string ChannelVersionText(Version? v) => UpdateService.ChannelVersionNumber(v);
 
     private async void OnCheckUpdate(object sender, RoutedEventArgs e)
     {
@@ -1489,7 +1501,7 @@ public partial class SettingsPage : UserControl, INavigationAware
                 // 弹窗本身（XAML/下载）出错也要兜底，别让 async void 把整个应用带崩
                 try
                 {
-                    var choice = UpdateDialog.Show(result.CurrentVersion, result.LatestVersion);
+                    var choice = UpdateDialog.Show(result);
                     if (choice == UpdateDialogResult.Applying)
                     {
                         // 增量更新已就绪：退出应用，自举进程完成替换后自动重启

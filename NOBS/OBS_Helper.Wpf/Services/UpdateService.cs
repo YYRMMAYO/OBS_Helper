@@ -26,18 +26,29 @@ public sealed class UpdateCheckResult
 {
     public required UpdateCheckStatus Status { get; init; }
 
-    /// <summary>当前应用版本（程序集版本）。</summary>
+    /// <summary>当前构建在所属通道内的版本（dev：构建序号；主分支：程序集版本）。</summary>
     public Version? CurrentVersion { get; init; }
 
-    /// <summary>GitHub 最新 tag 解析出的版本；失败时为空。</summary>
+    /// <summary>GitHub 最新 tag 解析出的版本（按本通道口径）；失败时为空。</summary>
     public Version? LatestVersion { get; init; }
+
+    /// <summary>
+    /// 最新版本对应的原始 tag（dev：<c>01</c> / <c>02</c>），用于直达 dev Release 页；拿不到时为空。
+    /// </summary>
+    public string? LatestTag { get; init; }
 
     /// <summary>失败原因（仅 Status == Failed 时有意义，用于手动检查时展示）。</summary>
     public string? Error { get; init; }
 }
 
 /// <summary>
-/// 更新检查：读取 GitHub 仓库的最新 tag，与自身程序集版本比较。
+/// 更新检查：读取 GitHub 仓库的 tag / Release，与「本通道当前构建」比较。
+///
+/// <b>本文件属于 dev（测试）分支</b>：通道口径由 <see cref="UpdateChannel"/> 定义 —— dev tag 是
+/// <c>01</c> / <c>02</c> / <c>03</c>（纯数字、不带字母 V），当前构建序号来自
+/// <see cref="UpdateChannel.DevBuildNumber"/>，更新只从 <b>dev 的 Release 页</b>获取。
+/// 主分支的 <c>V3.1.0</c> 这类 tag 在 dev 通道里算「不是本通道」，永不参与比较；
+/// 反过来主分支的解析器也解析不出纯数字 tag，两类 tag 同仓库共存不会互相串版本。
 ///
 /// 遵循应用的离线优先原则：默认不发起任何网络请求，只有调用方显式触发
 /// （启动自动检查 / 设置页手动检查）才会请求 GitHub API；任何失败都返回
@@ -45,17 +56,31 @@ public sealed class UpdateCheckResult
 /// </summary>
 public sealed class UpdateService
 {
-    /// <summary>蓝奏云下载链接（新版本安装包存放处）。</summary>
+    /// <summary>蓝奏云下载链接（新版本安装包存放处）。<b>仅正式版渠道</b>：dev 构建不展示它。</summary>
     public const string DownloadUrl = "https://wwbpq.lanzouu.com/b01d7578be";
 
-    /// <summary>蓝奏云下载密码，随更新提示一并展示。</summary>
+    /// <summary>蓝奏云下载密码，随更新提示一并展示。<b>仅正式版渠道</b>：dev 构建不展示它。</summary>
     public const string UpdatePassword = "YYKWY";
 
     /// <summary>GitHub 仓库主页。</summary>
     public const string RepoUrl = "https://github.com/YYRMMAYO/OBS_Helper";
 
-    /// <summary>GitHub Release 页（浏览器打开，看发布说明 / 历史版本 / 手动下载）。</summary>
-    public const string ReleasesPageUrl = RepoUrl + "/releases/latest";
+    /// <summary>
+    /// dev 的 Release 页（浏览器打开，看 dev 版本的发布说明 / 手动下载）。
+    /// 主分支原本指向 <c>/releases/latest</c>；dev 的编号是 01、02、03，没有 latest 语义，
+    /// 因此指向 Release 列表，某个具体版本用 <see cref="ReleaseTagPageUrl"/> 直达。
+    /// </summary>
+    public const string ReleasesPageUrl = RepoUrl + "/releases";
+
+    /// <summary>某个 tag 的 Release 详情页（dev：<c>/releases/tag/02</c>）。</summary>
+    public static string ReleaseTagPageUrl(string tag) => RepoUrl + "/releases/tag/" + Uri.EscapeDataString(tag);
+
+    /// <summary>
+    /// 「打开 Release 页」的目标地址：有具体 tag 就直达该版本的 Release 详情页（dev：<c>/releases/tag/02</c>），
+    /// 否则退到 Release 列表页。
+    /// </summary>
+    public static string GetReleasePageUrl(string? tag)
+        => string.IsNullOrWhiteSpace(tag) ? ReleasesPageUrl : ReleaseTagPageUrl(tag.Trim());
 
     private const string TagsApi = "https://api.github.com/repos/YYRMMAYO/OBS_Helper/tags";
 
@@ -71,7 +96,41 @@ public sealed class UpdateService
     private const long MaxInstallerBytes = 1L * 1024 * 1024 * 1024;
 
     /// <summary>
-    /// tag 版本解析：兼容 V1.3.0 / v1.3.0 / 1.3.0 三种写法；
+    /// 当前构建在「本通道」内的版本：dev = 构建序号（1 对应 tag <c>01</c>），主分支 = 程序集版本。
+    /// 注意它<b>不是</b>程序集版本 —— dev 的 tag（01/02）与 3.1.0 不可比，一切按通道序号比较。
+    /// </summary>
+    public static Version CurrentChannelVersion { get; } =
+        UpdateChannel.IsDev
+            ? new Version(UpdateChannel.DevBuildNumber, 0, 0)
+            : typeof(UpdateService).Assembly.GetName().Version ?? new Version(0, 0, 0);
+
+    /// <summary>通道版本 → 界面上的裸版本号：dev 为 <c>01</c>，主分支为 <c>3.1.0</c>。</summary>
+    public static string ChannelVersionNumber(Version? v)
+        => v is null
+            ? "—"
+            : UpdateChannel.IsDev
+                ? UpdateChannel.FormatDevBuild(v.Major)
+                : $"{v.Major}.{v.Minor}.{v.Build}";
+
+    /// <summary>通道版本 → 独立显示用的完整版本名：dev 为 <c>DEV 01</c>，主分支为 <c>V3.1.0</c>。</summary>
+    public static string FormatChannelVersion(Version? v)
+        => v is null
+            ? "—"
+            : UpdateChannel.IsDev
+                ? "DEV " + UpdateChannel.FormatDevBuild(v.Major)
+                : "V" + ChannelVersionNumber(v);
+
+    /// <summary>
+    /// 把 tag 解析成本通道的可比较版本；<b>不属于本通道的 tag 返回 null</b>。
+    /// dev 通道只认纯数字 dev tag（01/02/03），主分支只认 <c>X.Y[.Z]</c>。
+    /// </summary>
+    public static Version? ParseChannelVersion(string? tag)
+        => UpdateChannel.IsDev
+            ? (UpdateChannel.TryParseDevTag(tag, out var build) ? new Version(build, 0, 0) : null)
+            : ParseVersion(tag);
+
+    /// <summary>
+    /// tag 版本解析（<b>正式版通道</b>）：兼容 V1.3.0 / v1.3.0 / 1.3.0 三种写法；
     /// 带后缀的（如 1.0-beta）能取到前缀版本，若 GitHub 上混用也无碍。
     /// </summary>
     private static readonly Regex VersionPattern = new(
@@ -164,7 +223,7 @@ public sealed class UpdateService
         _lastResult = new UpdateCheckResult
         {
             Status = UpdateCheckStatus.Failed,
-            CurrentVersion = typeof(UpdateService).Assembly.GetName().Version,
+            CurrentVersion = CurrentChannelVersion,
             Error = lastError ?? Strings.T("update.checkFailedGeneric"),
         };
         return _lastResult;
@@ -179,20 +238,19 @@ public sealed class UpdateService
         try
         {
             using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(12));
-            using var resp = await Http.GetAsync(TagsApi, cts.Token).ConfigureAwait(false);
-            resp.EnsureSuccessStatusCode();
+            // dev 通道：dev 的 Release 页优先，回退 tag 列表（见 FindLatestDevBuildAsync）
+            var (latest, latestTag) = UpdateChannel.IsDev
+                ? await FindLatestDevBuildAsync(cts.Token).ConfigureAwait(false)
+                : (ParseLatestVersion(await FetchJsonAsync(TagsApi, cts.Token).ConfigureAwait(false)), null);
 
-            var body = await resp.Content.ReadAsStringAsync(cts.Token).ConfigureAwait(false);
-            var latest = ParseLatestVersion(body);
-
-            var current = typeof(UpdateService).Assembly.GetName().Version;
+            var current = CurrentChannelVersion;
             if (latest is null)
             {
                 return (new UpdateCheckResult
                 {
                     Status = UpdateCheckStatus.Failed,
                     CurrentVersion = current,
-                    Error = Strings.T("update.tagUnparsable"),
+                    Error = Strings.T(UpdateChannel.IsDev ? "update.dev.tagUnparsable" : "update.tagUnparsable"),
                 }, null);
             }
 
@@ -205,6 +263,7 @@ public sealed class UpdateService
                 Status = status,
                 CurrentVersion = current,
                 LatestVersion = latest,
+                LatestTag = latestTag,
             }, null);
         }
         catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException or JsonException)
@@ -243,6 +302,66 @@ public sealed class UpdateService
         return max;
     }
 
+    /// <summary>
+    /// dev 通道的「最新构建」：先看 dev 的 Release 页（<c>tag_name</c>），拿不到再回退 tag 列表（<c>name</c>）——
+    /// dev 版本只推了 tag 没建 Release 时，检查更新也还能提示。
+    /// 两个来源都没有 dev tag 时返回 <c>(null, null)</c>。
+    /// </summary>
+    private static async Task<(Version? Version, string? Tag)> FindLatestDevBuildAsync(CancellationToken ct)
+    {
+        var fromReleases = await FetchJsonOrNullAsync(ReleasesApi, ct).ConfigureAwait(false);
+        var best = FindLatestDevTagged(fromReleases, "tag_name");
+        if (best.Version is not null) return best;
+
+        var fromTags = await FetchJsonOrNullAsync(TagsApi, ct).ConfigureAwait(false);
+        var fallback = FindLatestDevTagged(fromTags, "name");
+        return fallback.Version is not null ? fallback : (null, null);
+    }
+
+    /// <summary>
+    /// 在 Release / tag 列表 JSON（数组）里找<b>序号最大</b>的 dev tag。
+    /// <paramref name="tagProperty"/>：Releases 用 <c>tag_name</c>，Tags 用 <c>name</c>。
+    /// 无法解析的 tag（含主分支的 V3.1.0）直接跳过 —— 这是两条通道互不串版本的关键。
+    /// </summary>
+    internal static (Version? Version, string? Tag) FindLatestDevTagged(string? json, string tagProperty)
+    {
+        if (string.IsNullOrWhiteSpace(json)) return (null, null);
+
+        using var doc = JsonDocument.Parse(json);
+        if (doc.RootElement.ValueKind != JsonValueKind.Array) return (null, null);
+
+        int? best = null;
+        string? bestTag = null;
+        foreach (var el in doc.RootElement.EnumerateArray())
+        {
+            if (!el.TryGetProperty(tagProperty, out var prop)) continue;
+            var tag = prop.GetString();
+            if (!UpdateChannel.TryParseDevTag(tag, out var build)) continue;
+            if (best is null || build > best)
+            {
+                best = build;
+                bestTag = tag;
+            }
+        }
+
+        return best is null ? (null, null) : (new Version(best.Value, 0, 0), bestTag);
+    }
+
+    /// <summary>GET 一个 JSON 接口，非 2xx 视为「页面还没内容」（返回 null）；网络异常照常抛出。</summary>
+    private static async Task<string?> FetchJsonOrNullAsync(string url, CancellationToken ct)
+    {
+        using var resp = await Http.GetAsync(url, ct).ConfigureAwait(false);
+        return resp.IsSuccessStatusCode ? await resp.Content.ReadAsStringAsync(ct).ConfigureAwait(false) : null;
+    }
+
+    /// <summary>GET 一个 JSON 接口，非 2xx 直接抛出（用于必须成功的通道）。</summary>
+    private static async Task<string> FetchJsonAsync(string url, CancellationToken ct)
+    {
+        using var resp = await Http.GetAsync(url, ct).ConfigureAwait(false);
+        resp.EnsureSuccessStatusCode();
+        return await resp.Content.ReadAsStringAsync(ct).ConfigureAwait(false);
+    }
+
     /// <summary>a &lt; b 返回负数，a == b 返回 0，a &gt; b 返回正数。null 视为 0.0.0。</summary>
     private static int Compare(Version? a, Version? b)
     {
@@ -276,6 +395,10 @@ public sealed class UpdateService
     ///
     /// 与 <see cref="CheckAsync"/> 同口径：遍历全部 Release，取「版本号最高且带安装包资产」的一条。
     /// 这样即使某个版本只推了 tag 没建 Release，也不会让 /releases/latest 一直指向旧包。
+    ///
+    /// <b>dev 通道</b>：只在 dev tag（01/02/03）的 Release 里找，主分支的 V3.1.0 一律跳过 ——
+    /// dev 构建绝不会把正式版安装包当成自己的更新（反过来也一样）。dev 版目前还没出包，
+    /// 因此这里短期内会返回 <see cref="GitHubReleaseInfo.Error"/>（界面据此提示「还没有带安装包的 dev 版本」）。
     /// 永不抛异常：任何失败都放进 <see cref="GitHubReleaseInfo.Error"/>。
     /// </summary>
     public async Task<GitHubReleaseInfo> GetLatestReleaseAsync()
@@ -291,7 +414,8 @@ public sealed class UpdateService
 
             var best = FindBestRelease(doc.RootElement);
             if (best is null)
-                return new GitHubReleaseInfo(null, null, Strings.T("update.noSetupRelease"));
+                return new GitHubReleaseInfo(null, null,
+                    Strings.T(UpdateChannel.IsDev ? "update.dev.noInstaller" : "update.noSetupRelease"));
 
             return new GitHubReleaseInfo(best.Tag, best.AssetUrl, null) { Digest = best.Digest };
         }
@@ -315,8 +439,9 @@ public sealed class UpdateService
         {
             var tag = rel.TryGetProperty("tag_name", out var tagProp) ? tagProp.GetString() : null;
             if (string.IsNullOrWhiteSpace(tag)) continue;
-            var v = ParseVersion(tag);
-            if (v is null) continue; // 跳过无法解析出版本号的 Release
+            // dev 通道按 01/02/03 的构建序号比；正式 tag 在 dev 通道里解析为 null，直接跳过
+            var v = ParseChannelVersion(tag);
+            if (v is null) continue; // 跳过不属于本通道 / 解析不出版本号的 Release
 
             var asset = FindAsset(rel, name =>
                 name.StartsWith("OBS_Helper_Setup_", StringComparison.OrdinalIgnoreCase)
@@ -382,16 +507,21 @@ public sealed class UpdateService
     // ------------------------------------------------------------ 增量包 / 知识库资产
 
     /// <summary>
-    /// 查询 GitHub 最新 Release 中的「增量更新包」（OBS_Helper_Update_&lt;ver&gt;.zip）下载地址。
+    /// 查询 GitHub Release 中的「增量更新包」（OBS_Helper_Update_&lt;ver&gt;.zip）下载地址。
     /// 遍历全部 Release，取「版本号最高且确实带增量包资产」的一条；找不到返回 Error。
     /// 永不抛异常。
+    ///
+    /// <b>dev 通道</b>：只在 dev tag（01/02/03）的 Release 里找。增量包与安装包一样由 dev Release 提供
+    /// （dev 出包后资产命名沿用正式版规则），所以版本比较同样按 dev 构建序号。
+    /// dev 版目前还没出包，短期内会返回「暂无增量包」。
     /// </summary>
     public async Task<GitHubAssetInfo> GetLatestDeltaPackageAsync()
     {
         return await FindNamedAssetAsync(
             name => name.StartsWith("OBS_Helper_Update_", StringComparison.OrdinalIgnoreCase)
                  && name.EndsWith(".zip", StringComparison.OrdinalIgnoreCase),
-            Strings.T("update.noDeltaRelease")).ConfigureAwait(false);
+            Strings.T(UpdateChannel.IsDev ? "update.dev.noDelta" : "update.noDeltaRelease"),
+            devAssets: true).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -418,9 +548,12 @@ public sealed class UpdateService
     public async Task<GitHubAssetInfo> GetLatestKbAssetAsync(string? language = null)
     {
         var english = ContentAssets.IsEnglish(language);
+        // 知识库资产跟着**正式版**发布：dev 构建也走正式通道（devAssets: false），
+        // 否则 dev 用户会完全拉不到知识库 / 插件目录。
         return await FindNamedAssetAsync(
             name => AssetMatchesLanguage(name, "OBS_Helper_Knowledge_", ".json", english),
-            Strings.T("update.noKbRelease")).ConfigureAwait(false);
+            Strings.T("update.noKbRelease"),
+            devAssets: false).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -430,13 +563,20 @@ public sealed class UpdateService
     public async Task<GitHubAssetInfo> GetLatestPluginsAssetAsync(string? language = null)
     {
         var english = ContentAssets.IsEnglish(language);
+        // 插件目录同样跟着正式版发布（dev 构建也走正式通道）
         return await FindNamedAssetAsync(
             name => AssetMatchesLanguage(name, "OBS_Helper_Plugins_", ".json", english),
-            Strings.T("update.noPluginsRelease")).ConfigureAwait(false);
+            Strings.T("update.noPluginsRelease"),
+            devAssets: false).ConfigureAwait(false);
     }
 
-    /// <summary>遍历全部 Release，取「版本号最高且带指定命名资产」的一条；找不到返回 Error。</summary>
-    private async Task<GitHubAssetInfo> FindNamedAssetAsync(Func<string, bool> match, string notFoundMessage)
+    /// <summary>
+    /// 遍历全部 Release，取「版本号最高且带指定命名资产」的一条；找不到返回 Error。
+    /// <paramref name="devAssets"/>：true = 只在 dev tag（01/02/03）里找（安装包 / 增量包）；
+    /// false = 只在正式 tag（V3.1.0）里找（知识库 / 插件目录这类跟着正式版发布的资产）。
+    /// </summary>
+    private async Task<GitHubAssetInfo> FindNamedAssetAsync(
+        Func<string, bool> match, string notFoundMessage, bool devAssets)
     {
         try
         {
@@ -456,7 +596,7 @@ public sealed class UpdateService
             {
                 var tag = rel.TryGetProperty("tag_name", out var tagProp) ? tagProp.GetString() : null;
                 if (string.IsNullOrWhiteSpace(tag)) continue;
-                var v = ParseVersion(tag);
+                var v = devAssets ? ParseChannelVersion(tag) : ParseVersion(tag);
                 if (v is null) continue;
 
                 var asset = FindAsset(rel, match);

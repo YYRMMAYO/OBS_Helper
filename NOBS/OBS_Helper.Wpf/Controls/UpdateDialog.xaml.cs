@@ -14,6 +14,10 @@ namespace OBS_Helper.Wpf.Controls;
 /// </list>
 /// 另提供「GitHub Release 页」入口（浏览器打开发布说明 / 历史版本）。
 /// 弹窗内只做展示、打开浏览器与下载安装，不含版本比较之外的更新逻辑。
+///
+/// <b>dev（测试）通道</b>：版本号是 01、02、03（不带字母 V），更新只从 dev 的 Release 页获取。
+/// 蓝奏云只放正式版安装包，因此在 dev 构建里整段隐藏（见 <see cref="ApplyDevChannelLayout"/>）；
+/// GitHub 相关文案换成 dev Release 的说法，并加一行通道说明。
 /// </summary>
 public partial class UpdateDialog : Window
 {
@@ -22,23 +26,39 @@ public partial class UpdateDialog : Window
         InitializeComponent();
     }
 
-    /// <summary>弹出更新提示框。返回用户选择（蓝奏云/应用内下载 / 稍后再说 / GitHub Release 页）。</summary>
-    public static UpdateDialogResult Show(Version? current, Version? latest)
+    /// <summary>
+    /// 弹出更新提示框。返回用户选择（增量更新 / 蓝奏云 / 应用内下载 / 稍后再说 / Release 页）。
+    /// <paramref name="result"/> 里的版本已按「本通道」口径给出：dev 为构建序号（01/02/03），
+    /// 主分支为正式版本号（3.1.0）；文案分别取 <c>update.dev.*</c> / <c>update.*</c>。
+    /// </summary>
+    public static UpdateDialogResult Show(UpdateCheckResult result)
     {
         var dlg = new UpdateDialog
         {
             Owner = Application.Current?.MainWindow
         };
-        dlg._currentVersion = current;
+        dlg._currentVersion = result.CurrentVersion;
+        dlg._latestVersion = result.LatestVersion;
+        dlg._latestTag = result.LatestTag;
+
+        var current = result.CurrentVersion;
+        var latest = result.LatestVersion;
 
         dlg.CurrentRun.Text = current is null
             ? Strings.T("update.currentUnknown")
-            : Strings.T("update.current", $"{current.Major}.{current.Minor}.{current.Build}");
+            : Strings.T(UpdateChannel.IsDev ? "update.dev.current" : "update.current",
+                UpdateService.ChannelVersionNumber(current));
         dlg.LatestRun.Text = latest is null
             ? Strings.T("update.latestUnknown")
-            : Strings.T("update.latest", $"{latest.Major}.{latest.Minor}.{latest.Build}");
-        dlg.TitleText.Text = latest is null ? Strings.T("update.title") : Strings.T("update.dialogTitle", $"{latest.Major}.{latest.Minor}.{latest.Build}");
+            : Strings.T(UpdateChannel.IsDev ? "update.dev.latest" : "update.latest",
+                UpdateService.ChannelVersionNumber(latest));
+        dlg.TitleText.Text = latest is null
+            ? Strings.T("update.title")
+            : Strings.T(UpdateChannel.IsDev ? "update.dev.dialogTitle" : "update.dialogTitle",
+                UpdateService.ChannelVersionNumber(latest));
         dlg.PasswordText.Text = UpdateService.UpdatePassword;
+
+        if (UpdateChannel.IsDev) dlg.ApplyDevChannelLayout();
 
         // 展示当前知识库版本（异步刷新，失败静默）
         _ = dlg.RefreshKbStatusAsync();
@@ -53,8 +73,29 @@ public partial class UpdateDialog : Window
         return dlg._result;
     }
 
-    /// <summary>当前应用版本（用于应用内下载前的版本比较）。</summary>
+    /// <summary>当前构建在所属通道内的版本（dev：构建序号；主分支：正式版本号）。</summary>
     private Version? _currentVersion;
+
+    /// <summary>最新版本（通道口径），用于「已是最新 DEV 02」这类提示。</summary>
+    private Version? _latestVersion;
+
+    /// <summary>最新版本对应的原始 tag（dev：01/02/03），用于直达 dev Release 页。</summary>
+    private string? _latestTag;
+
+    /// <summary>
+    /// dev（测试）通道的界面调整：蓝奏云只放正式版安装包，dev 弹窗里整段隐藏；
+    /// GitHub 相关文案换成 dev Release 的说法，并加一行通道说明 ——
+    /// 避免测试者误以为这里能拿到正式版安装包。
+    /// </summary>
+    private void ApplyDevChannelLayout()
+    {
+        ChannelNoteText.Visibility = Visibility.Visible;
+        LanzouSection.Visibility = Visibility.Collapsed;
+        GithubHeadText.SetResourceReference(TextBlock.TextProperty, "Loc.update.dev.github.head");
+        GithubDescText.SetResourceReference(TextBlock.TextProperty, "Loc.update.dev.github.desc");
+        FootnoteText.SetResourceReference(TextBlock.TextProperty, "Loc.update.dev.footnote");
+        ReleasePageButton.SetResourceReference(ContentControl.ContentProperty, "Loc.update.dev.releasePage.button");
+    }
 
     private UpdateDialogResult _result = UpdateDialogResult.Later;
 
@@ -92,10 +133,12 @@ public partial class UpdateDialog : Window
     {
         try
         {
-            var opened = await AppServices.Host.OpenExternalAsync(UpdateService.ReleasesPageUrl);
+            // 有具体 tag 就直达该版本的 Release 详情页（dev：/releases/tag/02），否则退到列表页
+            var url = UpdateService.GetReleasePageUrl(_latestTag);
+            var opened = await AppServices.Host.OpenExternalAsync(url);
             if (!opened)
             {
-                SetGithubStatus(Strings.T("update.openBrowserFailed") + UpdateService.ReleasesPageUrl);
+                SetGithubStatus(Strings.T("update.openBrowserFailed") + url);
                 return;
             }
             _result = UpdateDialogResult.Repo;
@@ -133,17 +176,21 @@ public partial class UpdateDialog : Window
 
             // 去掉版本号前头的 "V"（不论大小写）再比较版本大小：
             // 最新 Release 不高于当前版本时，没有下载的必要。
-            var latestVersion = UpdateService.ParseVersion(info.Tag);
+            var latestVersion = UpdateService.ParseChannelVersion(info.Tag);
             if (latestVersion is not null && _currentVersion is not null && latestVersion <= _currentVersion)
             {
-                SetGithubStatus(Strings.T("update.notNewer", latestVersion, $"{_currentVersion.Major}.{_currentVersion.Minor}.{_currentVersion.Build}"));
+                SetGithubStatus(Strings.T(UpdateChannel.IsDev ? "update.dev.notNewer" : "update.notNewer",
+                    UpdateService.FormatChannelVersion(latestVersion),
+                    UpdateService.FormatChannelVersion(_currentVersion)));
                 SetDownloading(false);
                 return;
             }
 
             GithubStatusText.Text = latestVersion is null
                 ? Strings.T("update.downloadingTag", info.Tag)
-                : Strings.T("update.downloadingVersion", latestVersion);
+                : UpdateChannel.IsDev
+                    ? Strings.T("update.dev.downloadingVersion", UpdateService.FormatChannelVersion(latestVersion))
+                    : Strings.T("update.downloadingVersion", latestVersion);
 
             var progress = new Progress<(long Received, long? Total)>(p =>
             {
@@ -223,17 +270,21 @@ public partial class UpdateDialog : Window
                 return;
             }
 
-            var target = UpdateService.ParseVersion(info.Tag);
+            var target = UpdateService.ParseChannelVersion(info.Tag);
             if (target is not null && _currentVersion is not null && target <= _currentVersion)
             {
-                SetDeltaStatus(Strings.T("update.deltaNotNewer", target));
+                SetDeltaStatus(Strings.T(UpdateChannel.IsDev ? "update.dev.deltaNotNewer" : "update.deltaNotNewer",
+                    UpdateService.FormatChannelVersion(target),
+                    UpdateService.FormatChannelVersion(_currentVersion)));
                 SetDownloading(false);
                 return;
             }
 
             SetDeltaStatus(target is null
                 ? Strings.T("update.deltaDownloading")
-                : Strings.T("update.deltaDownloadingVersion", target));
+                : UpdateChannel.IsDev
+                    ? Strings.T("update.dev.deltaDownloadingVersion", UpdateService.FormatChannelVersion(target))
+                    : Strings.T("update.deltaDownloadingVersion", target));
 
             var progress = new Progress<(long Received, long? Total)>(p =>
             {

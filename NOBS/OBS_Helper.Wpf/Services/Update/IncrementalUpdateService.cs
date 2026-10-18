@@ -188,7 +188,19 @@ public sealed class IncrementalUpdateService
                 return (null, Strings.T("delta.invalidManifest"));
             }
 
-            // 4) 兼容性：当前版本必须 ≥ 基准版本，否则说明跳版本，增量包不适用
+            // 4) 兼容性：当前版本必须 ≥ 基准版本，否则说明跳版本，增量包不适用。
+            // dev 通道（UpdateChannel.IsDev）：清单里的 baseVersion 可能写成 dev tag（01 / 02）——
+            // 按构建序号比；也可能写成正式版本（3.1.0，dev 构建的程序集版本沿用基准正式版本）——
+            // 按程序集版本比。两种写法都验证，任一不满足就判为不适用。
+            var channelBase = UpdateService.ParseChannelVersion(manifest.BaseVersion);
+            if (channelBase is not null && UpdateService.CurrentChannelVersion < channelBase)
+            {
+                ClearPending();
+                return (null, Strings.T(UpdateChannel.IsDev ? "delta.dev.baseNewer" : "delta.baseNewer",
+                    UpdateService.ChannelVersionNumber(channelBase)));
+            }
+
+            // 正式版本口径：dev 构建的程序集版本仍是基准正式版本，清单写成 3.1.0 时也要拦住
             var current = typeof(UpdateService).Assembly.GetName().Version;
             var baseV = UpdateService.ParseVersion(manifest.BaseVersion);
             if (current is not null && baseV is not null && current < baseV)

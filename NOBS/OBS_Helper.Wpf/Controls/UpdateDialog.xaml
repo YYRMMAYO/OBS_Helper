@@ -33,6 +33,12 @@
         <Run x:Name="CurrentRun" Text="{DynamicResource Loc.update.currentUnknown}" />&#x0a;<Run x:Name="LatestRun" Text="{DynamicResource Loc.update.latestUnknown}" FontWeight="SemiBold" />
       </TextBlock>
 
+      <!-- DEV 通道说明：仅 dev 构建显示（见 ApplyDevChannelLayout） -->
+      <TextBlock x:Name="ChannelNoteText" Visibility="Collapsed" TextWrapping="Wrap"
+                 FontSize="{DynamicResource FontSizeSm}"
+                 Foreground="{DynamicResource MutedBrush}" Margin="0,8,0,0"
+                 Text="{DynamicResource Loc.update.dev.channelNote}" />
+
       <Border Background="{DynamicResource OkSoftBrush}"
               CornerRadius="{DynamicResource CornerRadiusMd}"
               Padding="12,10" Margin="0,14,0,0">
@@ -67,9 +73,10 @@
                        Foreground="{DynamicResource MutedBrush}" Margin="0,6,0,0" />
           </StackPanel>
 
-          <Border Style="{StaticResource HLine}" Margin="0,14,0,10" />
+          <!-- 方式一：蓝奏云网盘（浏览器打开）—— 只提供正式版安装包，dev 构建会隐藏整段 -->
+          <StackPanel x:Name="LanzouSection">
+            <Border Style="{StaticResource HLine}" Margin="0,14,0,10" />
 
-          <!-- 方式一：蓝奏云网盘（浏览器打开） -->
           <TextBlock TextWrapping="Wrap" FontSize="{DynamicResource FontSizeBase}"
                      Foreground="{DynamicResource TextBrush}">
             <Run Text="{DynamicResource Loc.update.lanzou.head}" FontWeight="SemiBold" />
@@ -90,17 +97,17 @@
                     Content="{DynamicResource Loc.update.lanzou.button}" MinWidth="150" Margin="14,0,0,0"
                     Click="OnDownloadLanzou" />
           </StackPanel>
+          </StackPanel>
 
           <Border Style="{StaticResource HLine}" Margin="0,0,0,10" />
 
           <!-- 方式二：应用内下载（GitHub Release） -->
-          <TextBlock Text="{DynamicResource Loc.update.github.head}"
+          <TextBlock x:Name="GithubHeadText" Text="{DynamicResource Loc.update.github.head}"
                      FontSize="{DynamicResource FontSizeBase}" FontWeight="SemiBold"
                      Foreground="{DynamicResource TextBrush}" />
-          <TextBlock TextWrapping="Wrap" FontSize="{DynamicResource FontSizeSm}"
-                     Foreground="{DynamicResource MutedBrush}" Margin="0,4,0,8">
-            {DynamicResource Loc.update.github.desc}
-          </TextBlock>
+          <TextBlock x:Name="GithubDescText" TextWrapping="Wrap" FontSize="{DynamicResource FontSizeSm}"
+                     Foreground="{DynamicResource MutedBrush}" Margin="0,4,0,8"
+                     Text="{DynamicResource Loc.update.github.desc}" />
 
           <Button x:Name="GithubDownloadButton" Style="{StaticResource PrimaryButton}"
                   Content="{DynamicResource Loc.update.github.button}" HorizontalAlignment="Left"
@@ -116,7 +123,7 @@
         </StackPanel>
       </Border>
 
-      <TextBlock Style="{StaticResource CaptionText}" Margin="2,8,0,0"
+      <TextBlock x:Name="FootnoteText" Style="{StaticResource CaptionText}" Margin="2,8,0,0"
                  Text="{DynamicResource Loc.update.github.footnote}" />
 
       <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,16,0,0">

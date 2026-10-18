@@ -69,7 +69,12 @@ public partial class MainWindow : Window
         _nav.CanGoBackChanged += SyncBackButton;
 
         var ver = typeof(MainWindow).Assembly.GetName().Version;
-        if (ver is not null) VersionText.Text = $"v{ver.Major}.{ver.Minor}.{ver.Build}";
+        if (ver is not null)
+        {
+            var baseVersion = $"v{ver.Major}.{ver.Minor}.{ver.Build}";
+            // dev 构建：顶栏在正式版本号后面标出 DEV 构建序号（01/02/03），一眼能看出装的是哪个 dev 版
+            VersionText.Text = UpdateChannel.IsDev ? $"{baseVersion} · {UpdateChannel.DevVersionLabel}" : baseVersion;
+        }
 
         Loaded += OnLoaded;
         Closed += OnClosed;
@@ -625,7 +630,7 @@ public partial class MainWindow : Window
             var result = await AppServices.Updates.CheckAsync();
             if (result.Status == UpdateCheckStatus.UpdateAvailable)
             {
-                var choice = UpdateDialog.Show(result.CurrentVersion, result.LatestVersion);
+                var choice = UpdateDialog.Show(result);
                 if (choice == UpdateDialogResult.Applying)
                 {
                     // 增量更新已就绪：退出应用，让自举进程完成文件替换后自动重启

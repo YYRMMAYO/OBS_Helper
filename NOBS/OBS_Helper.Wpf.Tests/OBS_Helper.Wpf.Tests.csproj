@@ -50,6 +50,8 @@
     <Compile Include="..\OBS_Helper.Wpf\Services\Ai\DiagnosticSeverityMapper.cs" Link="Linked\DiagnosticSeverityMapper.cs" />
     <Compile Include="..\OBS_Helper.Wpf\Services\Markdown\MarkdownRenderer.cs" Link="Linked\MarkdownRenderer.cs" />
     <Compile Include="..\OBS_Helper.Wpf\Services\UpdateService.cs" Link="Linked\UpdateService.cs" />
+    <!-- dev 分支：dev 通道（tag 01/02/03）的编号规则与解析，纯 BCL -->
+    <Compile Include="..\OBS_Helper.Wpf\Services\Update\UpdateChannel.cs" Link="Linked\Update\UpdateChannel.cs" />
     <Compile Include="..\OBS_Helper.Wpf\Services\Update\UpdateManifest.cs" Link="Linked\Update\UpdateManifest.cs" />
     <Compile Include="..\OBS_Helper.Wpf\Services\Update\DeltaBuilder.cs" Link="Linked\Update\DeltaBuilder.cs" />
     <Compile Include="..\OBS_Helper.Wpf\Services\Update\FileHasher.cs" Link="Linked\Update\FileHasher.cs" />

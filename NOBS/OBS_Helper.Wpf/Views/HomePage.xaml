@@ -25,6 +25,40 @@
       </StackPanel>
 
       <!--
+        V3.4.0 新功能入口（显眼）：手机联动是这一版的主题，放在首页第一屏；
+        另外四个新页面也在这里给出标题 + 一句话说明，避免用户不知道有新功能。
+      -->
+      <Border Style="{StaticResource Card}" Margin="0,18,0,0" Padding="20"
+              Background="{DynamicResource BrandSoftBrush}" BorderBrush="{DynamicResource BrandBrush}" BorderThickness="1">
+        <Grid>
+          <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*" />
+            <ColumnDefinition Width="Auto" />
+          </Grid.ColumnDefinitions>
+          <StackPanel>
+            <TextBlock Text="{DynamicResource Loc.home.hero.title}" Style="{StaticResource H2Text}"
+                       Foreground="{DynamicResource BrandBrush}" />
+            <TextBlock Text="{DynamicResource Loc.home.hero.desc}" Style="{StaticResource BodyText}"
+                       Margin="0,8,0,0" TextWrapping="Wrap" MaxWidth="680" />
+            <WrapPanel Margin="0,14,0,0">
+              <Button Style="{StaticResource PrimaryButton}" Tag="remote" Click="OnHeroAction"
+                      Content="{DynamicResource Loc.feature.hub.hero.remote}" />
+              <Button Style="{StaticResource SecondaryButton}" Margin="8,0,0,0" Tag="camera" Click="OnHeroAction"
+                      Content="{DynamicResource Loc.feature.hub.hero.camera}" />
+              <Button Style="{StaticResource SecondaryButton}" Margin="8,0,0,0" Tag="multicam" Click="OnHeroAction"
+                      Content="{DynamicResource Loc.feature.hub.hero.multicam}" />
+            </WrapPanel>
+          </StackPanel>
+          <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="16,0,0,0">
+            <TextBlock Text="V3.4.0" Style="{StaticResource H2Text}" Foreground="{DynamicResource BrandBrush}"
+                       HorizontalAlignment="Right" />
+            <Button Style="{StaticResource PrimaryButton}" Margin="0,8,0,0" Click="OnOpenFeatures"
+                    Content="{DynamicResource Loc.home.hero.all}" />
+          </StackPanel>
+        </Grid>
+      </Border>
+
+      <!--
         简单录像（V2.9.4）：放在首页而不是只留在「搭建」页 ——
         「我就想录个像」是最常见的进入意图，不该先让人翻三个页面找入口。
       -->

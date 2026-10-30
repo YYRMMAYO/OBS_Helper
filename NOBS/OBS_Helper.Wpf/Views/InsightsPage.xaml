@@ -3,9 +3,6 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
   <ScrollViewer Style="{StaticResource PageScroll}">
     <StackPanel Margin="22,18,22,26">
-      <TextBlock Style="{StaticResource H1Text}" Text="{DynamicResource Loc.page.insights.title}" />
-      <TextBlock Style="{StaticResource MutedText}" Margin="0,4,0,0"
-                 Text="{DynamicResource Loc.page.insights.subtitle}" />
 
       <TextBlock Style="{StaticResource SectionTitle}" Margin="0,16,0,8" Text="{DynamicResource Loc.insights.metrics}" />
       <Border Style="{StaticResource Card}" Padding="14">

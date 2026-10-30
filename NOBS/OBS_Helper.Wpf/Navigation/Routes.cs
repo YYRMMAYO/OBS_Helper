@@ -49,6 +49,8 @@ public static class Routes
 
     // ---------------------------------------------------------------- V3.4.0
     // 五个新入口都先走首页卡片 / 控制台 / 设置页，不直接塞进一级导航（避免侧栏膨胀）。
+    /// <summary>功能中心（V3.4.0）：按模块集中展示全部新功能，手机联动置顶。</summary>
+    public const string Features = "features";
     /// <summary>手机联动：遥控 / 摄像头 / 多机位 / 设备（V3.4.0）。参数 <c>remote</c> / <c>camera</c> / <c>multicam</c> / <c>devices</c>。</summary>
     public const string MobileLink = "mobile";
     /// <summary>直播互动：弹幕 / 字幕 / 互动 / 切片（V3.4.0）。</summary>

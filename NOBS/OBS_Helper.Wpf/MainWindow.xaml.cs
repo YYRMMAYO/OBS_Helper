@@ -61,7 +61,8 @@ public partial class MainWindow : Window
             [Routes.Problem] = (null, "page.problem.title", ""),
             [Routes.Logs] = (null, "page.logs.title", "page.logs.subtitle"),
             [Routes.ObsConfig] = (null, "page.obsconfig.title", "page.obsconfig.subtitle"),
-            [Routes.MobileLink] = (null, "page.mobile.title", "page.mobile.subtitle"),
+            [Routes.Features] = (NavFeatures, "page.features.title", "page.features.subtitle"),
+            [Routes.MobileLink] = (NavMobileLink, "page.mobile.title", "page.mobile.subtitle"),
             [Routes.Interaction] = (null, "page.interaction.title", "page.interaction.subtitle"),
             [Routes.Insights] = (null, "page.insights.title", "page.insights.subtitle"),
             [Routes.Stream] = (null, "page.stream.title", "page.stream.subtitle"),
@@ -163,6 +164,7 @@ public partial class MainWindow : Window
         _nav.Register(Routes.Logs, () => new LogsPage());
         _nav.Register(Routes.ObsConfig, () => new ObsConfigPage());
         // V3.4.0：五个功能入口（先走卡片/工具栏，不占一级导航）
+        _nav.Register(Routes.Features, () => new FeatureHubPage());
         _nav.Register(Routes.MobileLink, () => new MobileLinkPage());
         _nav.Register(Routes.Interaction, () => new InteractionPage());
         _nav.Register(Routes.Insights, () => new InsightsPage());
@@ -865,6 +867,7 @@ public partial class MainWindow : Window
             (Routes.Plugins, "localvocal"),
             (Routes.Logs, null),
             (Routes.ObsConfig, null),
+            (Routes.Features, null),
             (Routes.MobileLink, "remote"),
             (Routes.MobileLink, "camera"),
             (Routes.Interaction, null),

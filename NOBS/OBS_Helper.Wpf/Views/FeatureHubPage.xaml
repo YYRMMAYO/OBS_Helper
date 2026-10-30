@@ -1,0 +1,45 @@
+<UserControl x:Class="OBS_Helper.Wpf.Views.FeatureHubPage"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+  <ScrollViewer Style="{StaticResource PageScroll}">
+    <StackPanel Margin="22,18,22,26">
+      <!-- 主推模块：手机联动（V3.4.0 主题） -->
+      <Border Style="{StaticResource Card}" Margin="0,16,0,0" Padding="20"
+              Background="{DynamicResource BrandSoftBrush}" BorderBrush="{DynamicResource BrandBrush}" BorderThickness="1">
+        <Grid>
+          <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*" />
+            <ColumnDefinition Width="Auto" />
+          </Grid.ColumnDefinitions>
+          <StackPanel>
+            <TextBlock Text="{DynamicResource Loc.feature.hub.hero.title}" Style="{StaticResource H2Text}"
+                       Foreground="{DynamicResource BrandBrush}" />
+            <TextBlock Text="{DynamicResource Loc.feature.hub.hero.desc}" Style="{StaticResource BodyText}"
+                       Margin="0,8,0,0" TextWrapping="Wrap" MaxWidth="720" />
+            <WrapPanel Margin="0,14,0,0">
+              <Button Style="{StaticResource PrimaryButton}" Tag="remote" Click="OnMobileAction"
+                      Content="{DynamicResource Loc.feature.hub.hero.remote}" />
+              <Button Style="{StaticResource SecondaryButton}" Margin="8,0,0,0" Tag="camera" Click="OnMobileAction"
+                      Content="{DynamicResource Loc.feature.hub.hero.camera}" />
+              <Button Style="{StaticResource SecondaryButton}" Margin="8,0,0,0" Tag="multicam" Click="OnMobileAction"
+                      Content="{DynamicResource Loc.feature.hub.hero.multicam}" />
+              <Button Style="{StaticResource GhostButton}" Margin="8,0,0,0" Tag="devices" Click="OnMobileAction"
+                      Content="{DynamicResource Loc.feature.hub.hero.devices}" />
+            </WrapPanel>
+          </StackPanel>
+          <Border Grid.Column="1" Background="{DynamicResource BrandBrush}" CornerRadius="999"
+                  Padding="12,6" VerticalAlignment="Top" Margin="16,0,0,0">
+            <TextBlock Text="V3.4.0" Foreground="{DynamicResource BrandForegroundBrush}" FontWeight="SemiBold" />
+          </Border>
+        </Grid>
+      </Border>
+
+      <TextBlock Text="{DynamicResource Loc.feature.hub.new}" Style="{StaticResource SectionTitle}" Margin="0,20,0,10" />
+      <StackPanel x:Name="NewModuleList" />
+      <TextBlock Text="{DynamicResource Loc.feature.hub.common}" Style="{StaticResource SectionTitle}" Margin="0,14,0,10" />
+      <StackPanel x:Name="CommonModuleList" />
+      <TextBlock Text="{DynamicResource Loc.feature.hub.note}" Style="{StaticResource CaptionText}"
+                 Margin="0,14,0,0" TextWrapping="Wrap" />
+    </StackPanel>
+  </ScrollViewer>
+</UserControl>

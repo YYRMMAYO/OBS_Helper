@@ -227,6 +227,7 @@ public partial class App : Application
         }));
     }
 
+
     protected override void OnStartup(StartupEventArgs e)
     {
         // 更新自举模式（--apply-update）：无窗口跑完替换即退出。

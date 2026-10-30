@@ -76,6 +76,7 @@
     <Compile Include="..\OBS_Helper.Wpf\Services\Shell\ObsLogFileFinder.cs" Link="Linked\Shell\ObsLogFileFinder.cs" />
     <Compile Include="..\OBS_Helper.Wpf\Services\Shell\OnboardingGuide.cs" Link="Linked\Shell\OnboardingGuide.cs" />
     <Compile Include="..\OBS_Helper.Wpf\Navigation\Routes.cs" Link="Linked\Navigation\Routes.cs" />
+    <Compile Include="..\OBS_Helper.Wpf\Services\Shell\FeatureCatalog.cs" Link="Linked\Shell\FeatureCatalog.cs" />
     <Compile Include="..\OBS_Helper.Wpf\Services\SystemCheck\GraphicsEnvCheckCore.cs" Link="Linked\SystemCheck\GraphicsEnvCheckCore.cs" />
     <Compile Include="..\OBS_Helper.Wpf\Services\Audio\AudioDeviceHealthCore.cs" Link="Linked\Audio\AudioDeviceHealthCore.cs" />
     <Compile Include="..\OBS_Helper.Wpf\Services\Compat\Compat.cs" Link="Linked\Compat.cs" />

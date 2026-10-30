@@ -70,6 +70,12 @@
         <ScrollViewer VerticalScrollBarVisibility="Auto" Style="{StaticResource PageScroll}">
           <StackPanel x:Name="NavPanel" Margin="0,2,0,8">
             <RadioButton x:Name="NavHome"       Style="{StaticResource NavTabButton}" Content="{DynamicResource Loc.nav.home}"   Tag="{StaticResource IconGeomHome}"       Checked="OnNavChecked" />
+            <!-- V3.4.0：功能中心（模块总览）+ 手机联动（主推）直接出现在一级导航 -->
+            <Border Height="1" Background="{DynamicResource LineBrush}" Margin="10,10,10,8" />
+            <TextBlock Text="{DynamicResource Loc.nav.newFeatures}" Margin="16,0,0,6"
+                       FontSize="{DynamicResource FontSizeXs}" Foreground="{DynamicResource MutedBrush}" />
+            <RadioButton x:Name="NavFeatures" Style="{StaticResource NavTabButton}" Content="{DynamicResource Loc.nav.features}" Tag="{StaticResource IconGeomTemplates}" Checked="OnNavChecked" />
+            <RadioButton x:Name="NavMobileLink" Style="{StaticResource NavTabButton}" Content="{DynamicResource Loc.nav.mobile}" Tag="{StaticResource IconGeomConsole}" Checked="OnNavChecked" />
             <RadioButton x:Name="NavSearch"     Style="{StaticResource NavTabButton}" Content="{DynamicResource Loc.nav.search}"   Tag="{StaticResource IconGeomSearch}"     Checked="OnNavChecked" />
             <RadioButton x:Name="NavAssistant"  Style="{StaticResource NavTabButton}" Content="{DynamicResource Loc.nav.assistant}"   Tag="{StaticResource IconGeomAssistant}"  Checked="OnNavChecked" />
             <RadioButton x:Name="NavDiagnostic" Style="{StaticResource NavTabButton}" Content="{DynamicResource Loc.nav.diagnostic}"   Tag="{StaticResource IconGeomDiagnostic}" Checked="OnNavChecked" />
@@ -83,6 +89,7 @@
             <RadioButton x:Name="NavGuide"      Style="{StaticResource NavTabButton}" Content="{DynamicResource Loc.nav.guide}"   Tag="{StaticResource IconGeomGuide}"      Checked="OnNavChecked" />
             <RadioButton x:Name="NavFeedback"   Style="{StaticResource NavTabButton}" Content="{DynamicResource Loc.nav.feedback}" Tag="{StaticResource IconGeomFeedback}" Checked="OnNavChecked" />
             <RadioButton x:Name="NavSettings"   Style="{StaticResource NavTabButton}" Content="{DynamicResource Loc.nav.settings}"   Tag="{StaticResource IconGeomSettings}"   Checked="OnNavChecked" />
+
           </StackPanel>
         </ScrollViewer>
       </DockPanel>

@@ -152,7 +152,7 @@ public static class AppServices
         var manager = new SidecarManager();
         try
         {
-            var json = OBS_Helper.Wpf.Localization.ContentAssets.ReadEmbedded("sidecars.json");
+            var json = OBS_Helper.Wpf.Localization.ContentAssets.ReadEmbedded(OBS_Helper.Wpf.Localization.ContentAssets.ResourcePrefix + "sidecars.json");
             if (!string.IsNullOrWhiteSpace(json)) manager.LoadManifest(json);
         }
         catch (Exception ex)

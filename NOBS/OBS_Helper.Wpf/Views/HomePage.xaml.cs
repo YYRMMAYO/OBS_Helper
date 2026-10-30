@@ -188,6 +188,21 @@ public partial class HomePage : UserControl, INavigationAware
         }
     }
 
+    private void OnHeroAction(object sender, RoutedEventArgs e)
+    {
+        if (sender is Button { Tag: string tab })
+            AppServices.Navigation.Navigate(Routes.MobileLink, tab);
+    }
+
+    private void OnOpenFeatures(object sender, RoutedEventArgs e)
+        => AppServices.Navigation.Navigate(Routes.Features);
+
+    private void OnNewFeatureClick(object sender, RoutedEventArgs e)
+    {
+        if (sender is Button { Tag: string route })
+            AppServices.Navigation.Navigate(route);
+    }
+
     private void OnSearchClick(object sender, RoutedEventArgs e)
         => AppServices.Navigation.Navigate(Routes.Search);
 

@@ -1,0 +1,197 @@
+<UserControl x:Class="OBS_Helper.Wpf.Views.MobileLinkPage"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+  <ScrollViewer Style="{StaticResource PageScroll}">
+    <StackPanel Margin="22,18,22,26">
+      <TextBlock Style="{StaticResource H1Text}" Text="{DynamicResource Loc.page.mobile.title}" />
+      <TextBlock Style="{StaticResource MutedText}" Margin="0,4,0,0"
+                 Text="{DynamicResource Loc.page.mobile.subtitle}" />
+
+      <StackPanel Orientation="Horizontal" Margin="0,14,0,0">
+        <Button x:Name="RemoteTab" Style="{StaticResource PrimaryButton}"
+                Content="{DynamicResource Loc.mobile.tab.remote}" Click="OnTabClick" Tag="remote" />
+        <Button x:Name="CameraTab" Style="{StaticResource SecondaryButton}" Margin="8,0,0,0"
+                Content="{DynamicResource Loc.mobile.tab.camera}" Click="OnTabClick" Tag="camera" />
+        <Button x:Name="MulticamTab" Style="{StaticResource SecondaryButton}" Margin="8,0,0,0"
+                Content="{DynamicResource Loc.mobile.tab.multicam}" Click="OnTabClick" Tag="multicam" />
+        <Button x:Name="DevicesTab" Style="{StaticResource SecondaryButton}" Margin="8,0,0,0"
+                Content="{DynamicResource Loc.mobile.tab.devices}" Click="OnTabClick" Tag="devices" />
+      </StackPanel>
+
+      <TextBlock x:Name="ServerStateText" Style="{StaticResource CaptionText}" Margin="0,10,0,0"
+                 TextWrapping="Wrap" />
+      <TextBlock Style="{StaticResource CaptionText}" Margin="0,4,0,0" TextWrapping="Wrap"
+                 Text="{DynamicResource Loc.mobile.server.firewall}" />
+
+      <!-- ============================================================ 遥控 / 配对 -->
+      <StackPanel x:Name="RemotePanel" Margin="0,8,0,0">
+        <TextBlock Style="{StaticResource SectionTitle}" Margin="0,14,0,8"
+                   Text="{DynamicResource Loc.mobile.pair.title}" />
+        <Border Style="{StaticResource Card}" Padding="16">
+          <Grid>
+            <Grid.ColumnDefinitions>
+              <ColumnDefinition Width="Auto" />
+              <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+            <Border Background="White" Padding="6" CornerRadius="8"
+                    HorizontalAlignment="Left" VerticalAlignment="Top">
+              <Image x:Name="QrImage" Width="180" Height="180" Stretch="Uniform"
+                     AutomationProperties.Name="Pairing QR" />
+            </Border>
+            <StackPanel Grid.Column="1" Margin="18,0,0,0">
+              <TextBlock Style="{StaticResource BodyText}" TextWrapping="Wrap"
+                         Text="{DynamicResource Loc.mobile.pair.desc}" />
+              <TextBlock x:Name="PairCodeText" Style="{StaticResource H2Text}" Margin="0,10,0,0" />
+              <TextBlock x:Name="PairUrlText" Style="{StaticResource MonoText}" Margin="0,6,0,0"
+                         TextWrapping="Wrap" />
+              <TextBlock x:Name="PairExpiryText" Style="{StaticResource CaptionText}" Margin="0,6,0,0" />
+              <StackPanel Orientation="Horizontal" Margin="0,12,0,0">
+                <Button x:Name="PairButton" Style="{StaticResource PrimaryButton}"
+                        Content="{DynamicResource Loc.mobile.pair.generate}" Click="OnPairClick" />
+                <Button x:Name="StopServerButton" Style="{StaticResource GhostButton}" Margin="8,0,0,0"
+                        Content="{DynamicResource Loc.mobile.server.stop}" Click="OnStopServerClick" />
+              </StackPanel>
+              <TextBlock Style="{StaticResource CaptionText}" Margin="0,10,0,0" TextWrapping="Wrap"
+                         Text="{DynamicResource Loc.mobile.pair.note}" />
+            </StackPanel>
+          </Grid>
+        </Border>
+
+        <TextBlock Style="{StaticResource SectionTitle}" Margin="0,18,0,8"
+                   Text="{DynamicResource Loc.mobile.devices.title}" />
+        <Border Style="{StaticResource Card}" Padding="14">
+          <StackPanel x:Name="DeviceList" />
+        </Border>
+      </StackPanel>
+
+      <!-- ============================================================ 摄像头 -->
+      <StackPanel x:Name="CameraPanel" Margin="0,8,0,0" Visibility="Collapsed">
+        <TextBlock Style="{StaticResource SectionTitle}" Margin="0,14,0,8"
+                   Text="{DynamicResource Loc.mobile.camera.title}" />
+        <Border Style="{StaticResource Card}" Padding="16">
+          <StackPanel>
+            <TextBlock Style="{StaticResource BodyText}" TextWrapping="Wrap"
+                       Text="{DynamicResource Loc.mobile.camera.desc}" />
+            <TextBlock x:Name="CameraStatusText" Style="{StaticResource CaptionText}" Margin="0,10,0,0"
+                       TextWrapping="Wrap" />
+            <WrapPanel Margin="0,12,0,0">
+              <StackPanel Margin="0,0,18,8">
+                <TextBlock Style="{StaticResource CaptionText}" Text="{DynamicResource Loc.mobile.camera.quality}" />
+                <ComboBox x:Name="QualityCombo" Width="150" Margin="0,4,0,0" />
+              </StackPanel>
+              <StackPanel Margin="0,0,18,8">
+                <TextBlock Style="{StaticResource CaptionText}" Text="{DynamicResource Loc.mobile.camera.layout}" />
+                <ComboBox x:Name="LayoutCombo" Width="170" Margin="0,4,0,0" />
+              </StackPanel>
+              <CheckBox x:Name="AudioCheck" Content="{DynamicResource Loc.mobile.camera.audio}"
+                        IsChecked="True" VerticalAlignment="Bottom" Margin="0,0,18,10" />
+              <Button x:Name="CameraStartButton" Style="{StaticResource PrimaryButton}"
+                      Content="{DynamicResource Loc.mobile.camera.start}" Click="OnCameraStartClick"
+                      VerticalAlignment="Bottom" Margin="0,0,8,6" />
+              <Button x:Name="CameraStopButton" Style="{StaticResource SecondaryButton}"
+                      Content="{DynamicResource Loc.mobile.camera.stop}" Click="OnCameraStopClick"
+                      VerticalAlignment="Bottom" Margin="0,0,8,6" IsEnabled="False" />
+              <Button x:Name="SidecarButton" Style="{StaticResource SecondaryButton}"
+                      Content="{DynamicResource Loc.mobile.camera.download}" Click="OnSidecarClick"
+                      VerticalAlignment="Bottom" Margin="0,0,8,6" Visibility="Collapsed" />
+            </WrapPanel>
+            <WrapPanel Margin="0,10,0,0">
+              <TextBlock Style="{StaticResource CaptionText}" VerticalAlignment="Center"
+                         Text="{DynamicResource Loc.mobile.camera.sync}" />
+              <TextBox x:Name="SyncOffsetBox" Width="80" Margin="8,0,0,0" Text="0" />
+              <Button Style="{StaticResource SecondaryButton}" Margin="8,0,0,0"
+                      Content="{DynamicResource Loc.mobile.camera.applySync}" Click="OnApplySyncClick" />
+            </WrapPanel>
+            <TextBlock x:Name="CameraUrlText" Style="{StaticResource MonoText}" Margin="0,8,0,0"
+                       TextWrapping="Wrap" />
+            <TextBlock Style="{StaticResource CaptionText}" Margin="0,8,0,0" TextWrapping="Wrap"
+                       Text="{DynamicResource Loc.mobile.camera.steps}" />
+          </StackPanel>
+        </Border>
+
+        <TextBlock Style="{StaticResource SectionTitle}" Margin="0,18,0,8"
+                   Text="{DynamicResource Loc.mobile.usb.title}" />
+        <Border Style="{StaticResource Card}" Padding="16">
+          <StackPanel>
+            <TextBlock x:Name="UsbDetectText" Style="{StaticResource CaptionText}" TextWrapping="Wrap" />
+            <TextBlock Style="{StaticResource H3Text}" Margin="0,8,0,2"
+                       Text="{DynamicResource Loc.mobile.usb.android}" />
+            <TextBlock x:Name="AndroidStepsText" Style="{StaticResource BodyText}" TextWrapping="Wrap" />
+            <TextBlock Style="{StaticResource H3Text}" Margin="0,10,0,2"
+                       Text="{DynamicResource Loc.mobile.usb.ios}" />
+            <TextBlock x:Name="IosStepsText" Style="{StaticResource BodyText}" TextWrapping="Wrap" />
+          </StackPanel>
+        </Border>
+
+        <TextBlock Style="{StaticResource SectionTitle}" Margin="0,18,0,8"
+                   Text="{DynamicResource Loc.mobile.notify.title}" />
+        <Border Style="{StaticResource Card}" Padding="16">
+          <StackPanel>
+            <TextBlock Style="{StaticResource CaptionText}" TextWrapping="Wrap"
+                       Text="{DynamicResource Loc.mobile.notify.desc}" />
+            <WrapPanel Margin="0,10,0,0">
+              <Button x:Name="NotifyEnableButton" Style="{StaticResource SecondaryButton}"
+                      Content="{DynamicResource Loc.mobile.notify.enable}" Click="OnNotifyEnableClick" />
+              <Button x:Name="NotifyAuthButton" Style="{StaticResource SecondaryButton}" Margin="8,0,0,0"
+                      Content="{DynamicResource Loc.mobile.notify.authorize}" Click="OnNotifyAuthClick" />
+              <Button x:Name="NotifyReadButton" Style="{StaticResource SecondaryButton}" Margin="8,0,0,0"
+                      Content="{DynamicResource Loc.mobile.notify.read}" Click="OnNotifyReadClick" />
+            </WrapPanel>
+            <TextBlock x:Name="NotifyResultText" Style="{StaticResource BodyText}" Margin="0,10,0,0"
+                       TextWrapping="Wrap" />
+          </StackPanel>
+        </Border>
+      </StackPanel>
+
+      <!-- ============================================================ 多机位 -->
+      <StackPanel x:Name="MulticamPanel" Margin="0,8,0,0" Visibility="Collapsed">
+        <TextBlock Style="{StaticResource SectionTitle}" Margin="0,14,0,8"
+                   Text="{DynamicResource Loc.mobile.multicam.title}" />
+        <Border Style="{StaticResource Card}" Padding="16">
+          <StackPanel>
+            <TextBlock Style="{StaticResource BodyText}" TextWrapping="Wrap"
+                       Text="{DynamicResource Loc.mobile.multicam.sessions}" />
+            <StackPanel x:Name="MulticamList" Margin="0,8,0,0" />
+            <WrapPanel Margin="0,8,0,0">
+              <Button Style="{StaticResource PrimaryButton}" Content="{DynamicResource Loc.mobile.multicam.add}" Click="OnAddCameraClick" />
+              <Button Style="{StaticResource SecondaryButton}" Margin="8,0,0,0" Content="{DynamicResource Loc.mobile.multicam.stop}" Click="OnStopCameraClick" />
+              <ComboBox x:Name="MulticamLayoutCombo" Width="150" Margin="8,0,0,0" />
+              <Button Style="{StaticResource SecondaryButton}" Margin="8,0,0,0" Content="{DynamicResource Loc.mobile.multicam.applyLayout}" Click="OnApplyLayoutClick" />
+            </WrapPanel>
+            <TextBlock x:Name="MulticamNote" Style="{StaticResource CaptionText}" Margin="0,8,0,0"
+                       TextWrapping="Wrap" />
+            <Separator Margin="0,12,0,8" />
+            <TextBlock Style="{StaticResource H3Text}" Text="{DynamicResource Loc.mobile.guest.title}" />
+            <WrapPanel Margin="0,6,0,0">
+              <Button x:Name="GuestStartButton" Style="{StaticResource SecondaryButton}" Content="{DynamicResource Loc.mobile.guest.start}" Click="OnGuestStartClick" />
+              <Button x:Name="GuestStopButton" Style="{StaticResource GhostButton}" Margin="8,0,0,0" Content="{DynamicResource Loc.mobile.guest.stop}" Click="OnGuestStopClick" />
+              <CheckBox x:Name="GuestRecordCheck" Content="{DynamicResource Loc.mobile.guest.record}" Margin="12,0,0,0" VerticalAlignment="Center" Click="OnGuestRecordClick" />
+            </WrapPanel>
+            <TextBox x:Name="GuestInviteBox" Margin="0,8,0,0" IsReadOnly="True" TextWrapping="Wrap" />
+            <TextBlock x:Name="GuestBlockedText" Style="{StaticResource CaptionText}" Margin="0,6,0,0" TextWrapping="Wrap" />
+            <StackPanel x:Name="GuestList" Margin="0,6,0,0" />
+          </StackPanel>
+        </Border>
+      </StackPanel>
+
+      <!-- ============================================================ 设备 / 快传 -->
+      <StackPanel x:Name="DevicesPanel" Margin="0,8,0,0" Visibility="Collapsed">
+        <TextBlock Style="{StaticResource SectionTitle}" Margin="0,14,0,8"
+                   Text="{DynamicResource Loc.mobile.upload.title}" />
+        <Border Style="{StaticResource Card}" Padding="16">
+          <StackPanel>
+            <TextBlock Style="{StaticResource BodyText}" TextWrapping="Wrap"
+                       Text="{DynamicResource Loc.mobile.upload.hint}" />
+            <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
+              <Button Style="{StaticResource SecondaryButton}"
+                      Content="{DynamicResource Loc.mobile.upload.open}" Click="OnOpenUploadsClick" />
+              <Button x:Name="RevokeAllButton" Style="{StaticResource GhostButton}" Margin="8,0,0,0"
+                      Content="{DynamicResource Loc.mobile.devices.revokeAll}" Click="OnRevokeAllClick" />
+            </StackPanel>
+            <StackPanel x:Name="UploadList" Margin="0,10,0,0" />
+          </StackPanel>
+        </Border>
+      </StackPanel>
+    </StackPanel>
+  </ScrollViewer>
+</UserControl>

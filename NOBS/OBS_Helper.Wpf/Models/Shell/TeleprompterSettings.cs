@@ -24,6 +24,8 @@ public sealed class TeleprompterSettings
     [JsonPropertyName("top")] public double Top { get; set; } = double.NaN;
     [JsonPropertyName("width")] public double Width { get; set; } = 900;
     [JsonPropertyName("height")] public double Height { get; set; } = 320;
+    /// <summary>当前滚动偏移（像素）。手机端遥控时由 PC 推送，避免两端漂移（V3.4.0 / M05）。</summary>
+    [JsonPropertyName("offset")] public double Offset { get; set; }
 
     public TeleprompterSettings Clone() => (TeleprompterSettings)MemberwiseClone();
 }

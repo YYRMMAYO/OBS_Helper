@@ -312,6 +312,15 @@ public partial class TeleprompterWindow : Window
 
     public void TogglePlayPause() => SetPlaying(!_playing);
 
+    /// <summary>是否正在滚动（手机遥控 / 状态快照使用，V3.4.0 / M05）。</summary>
+    public bool IsPlaying => _playing;
+
+    /// <summary>由手机端设置播放状态（不切换窗口显隐）。</summary>
+    public void SetPlayingState(bool playing) => SetPlaying(playing);
+
+    /// <summary>回到脚本开头（手机端「回到开头」）。</summary>
+    public void ScrollToStart() => ScrollTo(0);
+
     private void OnPlayPauseClick(object sender, RoutedEventArgs e) => TogglePlayPause();
 
     private void OnSpeedDownClick(object sender, RoutedEventArgs e) => ChangeSpeed(-5);

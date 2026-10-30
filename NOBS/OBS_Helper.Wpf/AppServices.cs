@@ -8,6 +8,15 @@ using OBS_Helper.Wpf.Services.Diagnostics;
 using OBS_Helper.Wpf.Services.Recording;using OBS_Helper.Wpf.Services.Plugins;
 using OBS_Helper.Wpf.Services.Shell;
 using OBS_Helper.Wpf.Services.Tools;
+using OBS_Helper.Wpf.Services.Mobile;
+using OBS_Helper.Wpf.Services.Interop;
+using OBS_Helper.Wpf.Services.Chat;
+using OBS_Helper.Wpf.Services.Streaming;
+using OBS_Helper.Wpf.Services.Recording;
+using OBS_Helper.Wpf.Services.Audio;
+using OBS_Helper.Wpf.Services.Subtitles;
+using OBS_Helper.Wpf.Services.Analytics;
+using OBS_Helper.Wpf.Services.Clips;
 using OBS_Helper.Wpf.Services.Update;
 
 namespace OBS_Helper.Wpf;
@@ -136,6 +145,73 @@ public static class AppServices
     private static readonly Lazy<TeleprompterService> _teleprompter =
         new(() => new TeleprompterService(Store));
 
+    // ---------------------------------------------------------------- V3.4.0 手机联动
+    // sidecar 管理器（mediamtx / whisper.cpp / ffmpeg / rclone）：清单随包，二进制按需下载
+    private static readonly Lazy<SidecarManager> _sidecars = new(() =>
+    {
+        var manager = new SidecarManager();
+        try
+        {
+            var json = OBS_Helper.Wpf.Localization.ContentAssets.ReadEmbedded("sidecars.json");
+            if (!string.IsNullOrWhiteSpace(json)) manager.LoadManifest(json);
+        }
+        catch (Exception ex)
+        {
+            FileLogger.Warn("Sidecar", $"清单加载失败：{ex.Message}");
+        }
+        return manager;
+    });
+    private static readonly Lazy<MobileSessionStore> _mobileSessions = new(() =>
+        new MobileSessionStore(System.IO.Path.Combine(HostBridge.AppDataDirectory, "mobile", "devices.json")));
+    private static readonly Lazy<MobileSnapshotService> _mobileSnapshots = new(() =>
+        new MobileSnapshotService(Obs, Teleprompter, SystemMonitor));
+    private static readonly Lazy<MobilePreviewService> _mobilePreview = new(() => new MobilePreviewService(Obs));
+    private static readonly Lazy<MobileUploadService> _mobileUploads = new(() => new MobileUploadService());
+    private static readonly Lazy<MobileCommandRouter> _mobileRouter = new(() =>
+        new MobileCommandRouter(Obs, Teleprompter, MobileSessions, MobileSnapshots, MobilePreview,
+            deviceId =>
+            {
+                if (_mobileLink.IsValueCreated) MobileLink.RevokeDevice(deviceId);
+            }));
+    private static readonly Lazy<MobileLinkServer> _mobileLink = new(() =>
+        new MobileLinkServer(Obs, MobileSessions, MobileSnapshots, MobileRouter, MobilePreview, MobileUploads));
+    private static readonly Lazy<MediaServerManager> _mediaServer = new(() => new MediaServerManager(Sidecars, Obs));
+    private static readonly Lazy<UsbCameraGuide> _usbCamera = new(() => new UsbCameraGuide());
+    private static readonly Lazy<MobileNotifyService> _mobileNotify = new(() => new MobileNotifyService(UsbCamera));
+    private static readonly Lazy<Services.Live.RemoteGuestService> _remoteGuests =
+        new(() => new Services.Live.RemoteGuestService(Sidecars));
+    private static readonly Lazy<MultiPlatformRelayService> _relay = new(() =>
+        new MultiPlatformRelayService(Sidecars, Obs, Store, Host, InstalledSidecar("ffmpeg")));
+    private static readonly Lazy<ArchiveService> _archiveUpload = new(() =>
+        new ArchiveService(InstalledSidecar("rclone")));
+    private static readonly Lazy<AudioChainService> _audioChain = new(() => new AudioChainService(Obs));
+    private static readonly Lazy<PanicService> _panic = new(() => new PanicService(Obs));
+    private static readonly Lazy<Services.Hardware.MidiService> _midi = new(() => new Services.Hardware.MidiService(Obs, Teleprompter));
+    private static readonly Lazy<Services.Hardware.LightingService> _lighting =
+        new(() => new Services.Hardware.LightingService(new Services.Automation.WledClient(), ChatHub, Obs, Store));
+    private static readonly Lazy<Services.Live.ThemeMarketService> _themes = new(() => new Services.Live.ThemeMarketService());
+    private static readonly Lazy<Services.Ai.AiHostService> _aiHost = new(() => new Services.Ai.AiHostService(Host));
+
+    private static string InstalledSidecar(string id)
+    {
+        var entry = Sidecars.Manifest.Find(id);
+        return entry is null ? "" : Sidecars.InstalledExecutable(entry) ?? "";
+    }
+
+    // ---------------------------------------------------------------- V3.4.0 弹幕 / 字幕 / 统计
+    private static readonly Lazy<ChatHub> _chatHub = new(() => new ChatHub());
+    private static readonly Lazy<SubmissionQueue> _submissions = new(() => new SubmissionQueue());
+    private static readonly Lazy<ChatHistoryStore> _chatHistory = new(() =>
+        new ChatHistoryStore(System.IO.Path.Combine(HostBridge.AppDataDirectory, "chat", "logs")));
+    private static readonly Lazy<ChatTtsService> _chatTts = new(() => new ChatTtsService(ChatHub));
+    private static readonly Lazy<ChatOverlayServer> _chatOverlay = new(() => new ChatOverlayServer());
+    private static readonly Lazy<TranslationCore> _translator = new(() => new TranslationCore());
+    private static readonly Lazy<AsrService> _asr = new(() => new AsrService(Obs, Translator));
+    private static readonly Lazy<Services.Subtitles.VoiceControlService> _voice =
+        new(() => new Services.Subtitles.VoiceControlService(Asr, Obs));
+    private static readonly Lazy<ViewerStatsCore> _viewerStats = new(() => new ViewerStatsCore());
+    private static readonly Lazy<RecordingSearchCore> _recordingSearch = new(() => new RecordingSearchCore());
+
     private static readonly Lazy<AiSettingsService> _aiSettings = new(() => new AiSettingsService(Store, Host));
     private static readonly Lazy<ObsToolRegistry> _tools = new(() => new ObsToolRegistry(Problems));
     private static readonly Lazy<LocalDiagnosticEngine> _localEngine = new(() => new LocalDiagnosticEngine(Problems, Assistant));
@@ -258,6 +334,48 @@ public static class AppServices
 
     /// <summary>提词器（V3.1.0）：窗口、脚本、设置与场景联动。</summary>
     public static TeleprompterService Teleprompter => _teleprompter.Value;
+
+    // ---------------------------------------------------------------- V3.4.0 手机联动
+    /// <summary>sidecar 清单与下载/启动（mediamtx / whisper.cpp / ffmpeg / rclone）。</summary>
+    public static SidecarManager Sidecars => _sidecars.Value;
+    /// <summary>已配对设备（只存 token 哈希）。</summary>
+    public static MobileSessionStore MobileSessions => _mobileSessions.Value;
+    public static MobileSnapshotService MobileSnapshots => _mobileSnapshots.Value;
+    public static MobilePreviewService MobilePreview => _mobilePreview.Value;
+    public static MobileUploadService MobileUploads => _mobileUploads.Value;
+    public static MobileCommandRouter MobileRouter => _mobileRouter.Value;
+    /// <summary>手机联动服务端（默认不启动，用户点「生成配对码」才开端口）。</summary>
+    public static MobileLinkServer MobileLink => _mobileLink.Value;
+    /// <summary>手机摄像头（mediamtx sidecar）。</summary>
+    public static MediaServerManager MediaServer => _mediaServer.Value;
+    public static UsbCameraGuide UsbCamera => _usbCamera.Value;
+    /// <summary>手机通知/剪贴板上屏（Android + ADB，默认关闭）。</summary>
+    public static MobileNotifyService MobileNotify => _mobileNotify.Value;
+    /// <summary>远程嘉宾房间（M10）：房间/权限/SFU 配置；浏览器推流需 HTTPS（见服务内说明）。</summary>
+    public static Services.Live.RemoteGuestService RemoteGuests => _remoteGuests.Value;
+    public static MultiPlatformRelayService Relay => _relay.Value;
+    public static ArchiveService ArchiveUpload => _archiveUpload.Value;
+    public static AudioChainService AudioChain => _audioChain.Value;
+    public static PanicService Panic => _panic.Value;
+    public static Services.Hardware.MidiService Midi => _midi.Value;
+    public static Services.Hardware.LightingService Lighting => _lighting.Value;
+    public static Services.Live.ThemeMarketService Themes => _themes.Value;
+    public static Services.Ai.AiHostService AiHost => _aiHost.Value;
+
+    // ---------------------------------------------------------------- V3.4.0 弹幕 / 字幕 / 统计
+    public static ChatHub ChatHub => _chatHub.Value;
+    /// <summary>可选本地弹幕留存（默认关闭，最多 7 天）。</summary>
+    public static ChatHistoryStore ChatHistory => _chatHistory.Value;
+    /// <summary>观众投稿/来信队列（C06）：人工审核后才上屏。</summary>
+    public static SubmissionQueue Submissions => _submissions.Value;
+    public static ChatTtsService ChatTts => _chatTts.Value;
+    public static ChatOverlayServer ChatOverlay => _chatOverlay.Value;
+    public static TranslationCore Translator => _translator.Value;
+    public static AsrService Asr => _asr.Value;
+    /// <summary>语音控制（S03）：唤醒词 + 白名单 + 破坏性确认，默认关闭。</summary>
+    public static Services.Subtitles.VoiceControlService VoiceControl => _voice.Value;
+    public static ViewerStatsCore ViewerStats => _viewerStats.Value;
+    public static RecordingSearchCore RecordingSearch => _recordingSearch.Value;
     public static DiagnosticOrchestrator Orchestrator => _orchestrator.Value;
 
     /// <summary>导航服务由 MainWindow 在构造时注入，供各页面互相跳转。</summary>
@@ -373,6 +491,22 @@ public static class AppServices
     {
         try { if (_wallpapers.IsValueCreated) Wallpapers.Dispose(); } catch (Exception ex) { FileLogger.Warn("Shutdown", $"Wallpapers.Dispose 失败: {ex.Message}"); }
         try { if (_teleprompter.IsValueCreated) Teleprompter.Dispose(); } catch (Exception ex) { FileLogger.Warn("Shutdown", $"Teleprompter.Dispose 失败: {ex.Message}"); }
+        // V3.4.0：先停手机联动，再停媒体服务器与 sidecar（顺序见 PLAN §5.2）
+        try { if (_mobileLink.IsValueCreated) MobileLink.Dispose(); } catch (Exception ex) { FileLogger.Warn("Shutdown", $"MobileLink.Dispose 失败: {ex.Message}"); }
+        try { if (_panic.IsValueCreated) Panic.Dispose(); } catch (Exception ex) { FileLogger.Warn("Shutdown", $"Panic.Dispose 失败: {ex.Message}"); }
+        try { if (_midi.IsValueCreated) Midi.Dispose(); } catch (Exception ex) { FileLogger.Warn("Shutdown", $"Midi.Dispose 失败: {ex.Message}"); }
+        try { if (_lighting.IsValueCreated) Lighting.Dispose(); } catch (Exception ex) { FileLogger.Warn("Shutdown", $"Lighting.Dispose 失败: {ex.Message}"); }
+        try { if (_aiHost.IsValueCreated) AiHost.Dispose(); } catch (Exception ex) { FileLogger.Warn("Shutdown", $"AiHost.Dispose 失败: {ex.Message}"); }
+        try { if (_relay.IsValueCreated) Relay.Dispose(); } catch (Exception ex) { FileLogger.Warn("Shutdown", $"Relay.Dispose 失败: {ex.Message}"); }
+        try { if (_remoteGuests.IsValueCreated) RemoteGuests.Dispose(); } catch (Exception ex) { FileLogger.Warn("Shutdown", $"RemoteGuests.Dispose 失败: {ex.Message}"); }
+        try { if (_mediaServer.IsValueCreated) MediaServer.Dispose(); } catch (Exception ex) { FileLogger.Warn("Shutdown", $"MediaServer.Dispose 失败: {ex.Message}"); }
+        try { if (_sidecars.IsValueCreated) Sidecars.Dispose(); } catch (Exception ex) { FileLogger.Warn("Shutdown", $"Sidecars.Dispose 失败: {ex.Message}"); }
+        // V3.4.0：字幕 / 弹幕 / overlay 依序停止
+        try { if (_voice.IsValueCreated) VoiceControl.Dispose(); } catch (Exception ex) { FileLogger.Warn("Shutdown", $"VoiceControl.Dispose 失败: {ex.Message}"); }
+        try { if (_asr.IsValueCreated) Asr.Dispose(); } catch (Exception ex) { FileLogger.Warn("Shutdown", $"Asr.Dispose 失败: {ex.Message}"); }
+        try { if (_chatTts.IsValueCreated) ChatTts.Dispose(); } catch (Exception ex) { FileLogger.Warn("Shutdown", $"ChatTts.Dispose 失败: {ex.Message}"); }
+        try { if (_chatOverlay.IsValueCreated) ChatOverlay.Dispose(); } catch (Exception ex) { FileLogger.Warn("Shutdown", $"ChatOverlay.Dispose 失败: {ex.Message}"); }
+        try { if (_chatHub.IsValueCreated) ChatHub.StopAsync().GetAwaiter().GetResult(); } catch (Exception ex) { FileLogger.Warn("Shutdown", $"ChatHub.Stop 失败: {ex.Message}"); }
         // V3.3.0：释放 overlay 本地端口（未启动过就不必碰它）
         try { if (_rooms.IsValueCreated) Rooms.Dispose(); } catch (Exception ex) { FileLogger.Warn("Shutdown", $"Rooms.Dispose 失败: {ex.Message}"); }
         try { if (_live2d.IsValueCreated) Live2D.DisposeAsync().AsTask().GetAwaiter().GetResult(); } catch (Exception ex) { FileLogger.Warn("Shutdown", $"Live2D.Dispose 失败: {ex.Message}"); }

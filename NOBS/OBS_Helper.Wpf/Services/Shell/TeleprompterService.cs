@@ -126,6 +126,25 @@ public sealed class TeleprompterService : IDisposable
         _window?.TogglePlayPause();
     }
 
+    /// <summary>提词器是否正在滚动（未打开时为 false）。</summary>
+    public bool IsPlaying => _window?.IsPlaying == true;
+
+    /// <summary>手机端遥控播放/暂停（V3.4.0 / M05）：窗口未打开时先呼出。</summary>
+    public void SetPlaying(bool playing)
+    {
+        if (_window is null) Show();
+        _window?.SetPlayingState(playing);
+        StateChanged?.Invoke();
+    }
+
+    /// <summary>手机端「回到开头」。</summary>
+    public void ScrollToStart()
+    {
+        if (_window is null) Show();
+        _window?.ScrollToStart();
+        StateChanged?.Invoke();
+    }
+
     /// <summary>切换点击穿透（开启后靠全局热键关掉）。</summary>
     public void ToggleClickThrough()
     {

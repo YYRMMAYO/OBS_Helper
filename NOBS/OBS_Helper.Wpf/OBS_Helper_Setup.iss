@@ -1,4 +1,4 @@
-﻿; OBS帮助助手（WPF 版）Windows 安装包脚本（Inno Setup 6）
+; OBS帮助助手（WPF 版）Windows 安装包脚本（Inno Setup 6）
 ;
 ; 源目录：OBS_Helper.Wpf\bin\Release\net10.0-windows\win-x64\publish
 ;    （自包含发布，含 .NET 运行时；界面与知识库都在程序集内，无需附带站点文件）
@@ -15,7 +15,7 @@
 ; 版本号默认与 csproj 对齐；build.ps1 会用 /DMyAppVersion=<ver> 覆盖此值。
 ; 用 #ifndef：ISPP 中命令行 /D 定义过的符号在脚本里不应再 #define 覆盖。
 #ifndef MyAppVersion
-#define MyAppVersion "3.3.0"
+#define MyAppVersion "3.4.0"
 #endif
 ; 发布产物所在的 TFM 子目录（V2.9.3 起双目标：主构建 / Win7 兼容构建）
 #ifndef MyAppTfm

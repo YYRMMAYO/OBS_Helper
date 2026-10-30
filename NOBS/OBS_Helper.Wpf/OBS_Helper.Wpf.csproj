@@ -30,9 +30,9 @@
          程序集名 / exe 名（AssemblyName=OBS_Helper）与数据目录刻意**不变**：
          增量更新、安装目录识别、%LocalAppData%\OBS_Helper 下的用户数据都依赖它，
          改名等于让老用户的数据和升级链路一起断掉。 -->
-    <Version>3.3.0</Version>
-    <FileVersion>3.3.0.0</FileVersion>
-    <AssemblyVersion>3.3.0.0</AssemblyVersion>
+    <Version>3.4.0</Version>
+    <FileVersion>3.4.0.0</FileVersion>
+    <AssemblyVersion>3.4.0.0</AssemblyVersion>
     <AssemblyTitle>OBS帮助助手</AssemblyTitle>
     <Product>OBS帮助助手</Product>
     <Company>OBS Helper</Company>
@@ -97,6 +97,8 @@
     <!-- V3.3.0 开播引导：平台目录（中英并列，同样必须 WithCulture=false，理由见上方注释） -->
     <EmbeddedResource Include="Assets\platforms.json" LogicalName="OBS_Helper.Wpf.Assets.platforms.json" />
     <EmbeddedResource Include="Assets\platforms.en-US.json" LogicalName="OBS_Helper.Wpf.Assets.platforms.en-US.json" WithCulture="false" />
+    <!-- V3.4.0 sidecar 清单（只含来源/许可证/放置位置，不含二进制） -->
+    <EmbeddedResource Include="Assets\sidecars.json" LogicalName="OBS_Helper.Wpf.Assets.sidecars.json" />
     <!-- 托盘图标：运行时以 Stream 读取（WinForms Icon 需要流，不能直接用 WPF 资源） -->
     <EmbeddedResource Include="Assets\appicon.ico" LogicalName="OBS_Helper.Wpf.Assets.appicon.ico" />
     <!-- BUG 反馈二维码（V2.9.3）：离线可扫，不依赖任何在线二维码服务 -->

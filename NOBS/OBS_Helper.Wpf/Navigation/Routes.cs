@@ -46,4 +46,17 @@ public static class Routes
 
     /// <summary>帮助与反馈：反馈表单 / GitHub Issue / 一键复制报错材料（一级导航，V2.9.4）。</summary>
     public const string Feedback = "feedback";
+
+    // ---------------------------------------------------------------- V3.4.0
+    // 五个新入口都先走首页卡片 / 控制台 / 设置页，不直接塞进一级导航（避免侧栏膨胀）。
+    /// <summary>手机联动：遥控 / 摄像头 / 多机位 / 设备（V3.4.0）。参数 <c>remote</c> / <c>camera</c> / <c>multicam</c> / <c>devices</c>。</summary>
+    public const string MobileLink = "mobile";
+    /// <summary>直播互动：弹幕 / 字幕 / 互动 / 切片（V3.4.0）。</summary>
+    public const string Interaction = "interaction";
+    /// <summary>智能与复盘：复盘 / 封面 / 看板（V3.4.0）。</summary>
+    public const string Insights = "insights";
+    /// <summary>画质与分发：推流健康 / 转推 / 归档 / 安全 / 预案（V3.4.0）。</summary>
+    public const string Stream = "stream";
+    /// <summary>自动化与生态：硬件 / 灯光 / 市场 / 团队 / 数字人 / AI 导播（V3.4.0）。</summary>
+    public const string Automation = "automation";
 }

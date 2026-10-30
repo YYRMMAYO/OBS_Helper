@@ -1,0 +1,71 @@
+{
+  "schema": 1,
+  "updated": "2026-10-30",
+  "note": "sidecar 清单只记录官方来源、许可证与放置位置；本轮不提供自动下载。原因：GitHub API 在本轮构建环境被限流，无法取得并核对二进制 SHA-256；按 PLAN_V3.4.0 §6.3「哈希 + 版本固定 + 用户确认」的门槛，未核验哈希的二进制不允许自动下载。用户在界面上点「打开来源」后自行下载，并按 installPath 放置；应用只检测存在性，不静默安装、不静默更新。补全 sha256/size 并把 manual 改为 false 后即可启用自动下载。",
+  "sidecars": [
+    {
+      "id": "mediamtx",
+      "version": "manual",
+      "url": "https://github.com/bluenviron/mediamtx/releases",
+      "sha256": "",
+      "size": 0,
+      "license": "MIT",
+      "source": "https://github.com/bluenviron/mediamtx",
+      "minOs": "10.0",
+      "arch": "x64",
+      "executable": "mediamtx.exe",
+      "args": [],
+      "installSubdir": "",
+      "notes": "Wi-Fi 摄像头主链路。只监听私网；API 由应用固定绑 127.0.0.1；退出即停。放置路径：%LocalAppData%\\OBS_Helper\\sidecars\\mediamtx\\manual\\mediamtx.exe。",
+      "manual": true
+    },
+    {
+      "id": "whisper",
+      "version": "manual",
+      "url": "https://github.com/ggml-org/whisper.cpp/releases",
+      "sha256": "",
+      "size": 0,
+      "license": "MIT",
+      "source": "https://github.com/ggml-org/whisper.cpp",
+      "minOs": "10.0",
+      "arch": "x64",
+      "executable": "whisper-cli.exe",
+      "args": [],
+      "installSubdir": "",
+      "notes": "实时字幕（本地）。模型权重另有许可证，需用户自行下载并在字幕页选择。Win7 不承诺。",
+      "manual": true
+    },
+    {
+      "id": "ffmpeg",
+      "version": "manual",
+      "url": "https://github.com/BtbN/FFmpeg-Builds/releases",
+      "sha256": "",
+      "size": 0,
+      "license": "LGPL-3.0-or-later",
+      "source": "https://github.com/BtbN/FFmpeg-Builds",
+      "minOs": "10.0",
+      "arch": "x64",
+      "executable": "ffmpeg.exe",
+      "args": [],
+      "installSubdir": "",
+      "notes": "高光切片 / 竖屏 / 音频链。只使用 LGPL 构建（BtbN 的 *-lgpl 资产），不使用 --enable-gpl 产物。",
+      "manual": true
+    },
+    {
+      "id": "rclone",
+      "version": "manual",
+      "url": "https://rclone.org/downloads/",
+      "sha256": "",
+      "size": 0,
+      "license": "MIT",
+      "source": "https://github.com/rclone/rclone",
+      "minOs": "10.0",
+      "arch": "x64",
+      "executable": "rclone.exe",
+      "args": [],
+      "installSubdir": "",
+      "notes": "录制自动归档。远端凭据由用户在 rclone config 中自行配置，应用不保存。",
+      "manual": true
+    }
+  ]
+}

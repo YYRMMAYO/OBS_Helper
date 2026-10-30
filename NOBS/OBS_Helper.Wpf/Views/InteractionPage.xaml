@@ -1,0 +1,130 @@
+<UserControl x:Class="OBS_Helper.Wpf.Views.InteractionPage"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+  <ScrollViewer Style="{StaticResource PageScroll}">
+    <StackPanel Margin="22,18,22,26">
+      <TextBlock Style="{StaticResource H1Text}" Text="{DynamicResource Loc.page.interaction.title}" />
+      <TextBlock Style="{StaticResource MutedText}" Margin="0,4,0,0"
+                 Text="{DynamicResource Loc.page.interaction.subtitle}" />
+
+      <TextBlock Style="{StaticResource SectionTitle}" Margin="0,16,0,8" Text="{DynamicResource Loc.chat.title}" />
+      <Border Style="{StaticResource Card}" Padding="14">
+        <StackPanel>
+          <WrapPanel>
+            <ComboBox x:Name="PlatformCombo" Width="130" />
+            <TextBox x:Name="RoomBox" Width="220" Margin="8,0,0,0" />
+            <Button x:Name="ChatStartButton" Style="{StaticResource PrimaryButton}" Margin="8,0,0,0"
+                    Content="{DynamicResource Loc.chat.start}" Click="OnChatStart" />
+            <Button x:Name="ChatStopButton" Style="{StaticResource SecondaryButton}" Margin="8,0,0,0"
+                    Content="{DynamicResource Loc.chat.stop}" Click="OnChatStop" IsEnabled="False" />
+            <CheckBox x:Name="TtsMuteCheck" Content="{DynamicResource Loc.chat.ttsMute}" Margin="12,0,0,0"
+                      VerticalAlignment="Center" Click="OnTtsMute" />
+            <Button Style="{StaticResource GhostButton}" Margin="8,0,0,0"
+                    Content="{DynamicResource Loc.chat.exportAlerts}" Click="OnExportAlerts" />
+          </WrapPanel>
+          <TextBlock x:Name="ChatStateText" Style="{StaticResource CaptionText}" Margin="0,8,0,0" />
+          <TextBlock x:Name="OverlayText" Style="{StaticResource MonoText}" Margin="0,6,0,0" TextWrapping="Wrap" />
+          <ListBox x:Name="ChatList" Height="220" Margin="0,10,0,0" />
+        </StackPanel>
+      </Border>
+
+      <TextBlock Style="{StaticResource SectionTitle}" Margin="0,18,0,8" Text="{DynamicResource Loc.caption.title}" />
+      <Border Style="{StaticResource Card}" Padding="14">
+        <StackPanel>
+          <WrapPanel>
+            <TextBox x:Name="WhisperBox" Width="300" />
+            <Button Style="{StaticResource SecondaryButton}" Margin="8,0,0,0"
+                    Content="{DynamicResource Loc.caption.browse}" Click="OnBrowseWhisper" />
+            <TextBox x:Name="ModelBox" Width="260" Margin="8,0,0,0" />
+            <Button Style="{StaticResource SecondaryButton}" Margin="8,0,0,0"
+                    Content="{DynamicResource Loc.caption.browse}" Click="OnBrowseModel" />
+            <CheckBox x:Name="LoopbackCheck" Content="{DynamicResource Loc.caption.loopback}" Margin="12,0,0,0"
+                      IsChecked="True" VerticalAlignment="Center" />
+            <CheckBox x:Name="BilingualCheck" Content="{DynamicResource Loc.caption.bilingual}" Margin="8,0,0,0"
+                      VerticalAlignment="Center" Click="OnBilingualClick" />
+            <CheckBox x:Name="VoiceControlCheck" Content="{DynamicResource Loc.caption.voice}" Margin="8,0,0,0"
+                      VerticalAlignment="Center" Click="OnVoiceControlClick" />
+            <Button x:Name="CaptionStartButton" Style="{StaticResource PrimaryButton}" Margin="8,0,0,0"
+                    Content="{DynamicResource Loc.caption.start}" Click="OnCaptionStart" />
+            <Button x:Name="CaptionStopButton" Style="{StaticResource SecondaryButton}" Margin="8,0,0,0"
+                    Content="{DynamicResource Loc.caption.stop}" Click="OnCaptionStop" IsEnabled="False" />
+          </WrapPanel>
+          <TextBlock x:Name="CaptionStateText" Style="{StaticResource CaptionText}" Margin="0,8,0,0" TextWrapping="Wrap" />
+          <TextBlock x:Name="CaptionText" Style="{StaticResource H2Text}" Margin="0,8,0,0" TextWrapping="Wrap" />
+        </StackPanel>
+      </Border>
+
+      <TextBlock Style="{StaticResource SectionTitle}" Margin="0,18,0,8" Text="{DynamicResource Loc.interaction.title}" />
+      <Border Style="{StaticResource Card}" Padding="14">
+        <StackPanel>
+          <WrapPanel>
+            <TextBox x:Name="SongBox" Width="240" />
+            <Button Style="{StaticResource SecondaryButton}" Margin="8,0,0,0"
+                    Content="{DynamicResource Loc.interaction.addSong}" Click="OnAddSong" />
+            <Button Style="{StaticResource SecondaryButton}" Margin="8,0,0,0"
+                    Content="{DynamicResource Loc.interaction.nextSong}" Click="OnNextSong" />
+            <Button Style="{StaticResource SecondaryButton}" Margin="8,0,0,0"
+                    Content="{DynamicResource Loc.interaction.drawRaffle}" Click="OnDrawRaffle" />
+          </WrapPanel>
+          <TextBlock x:Name="InteractionText" Style="{StaticResource BodyText}" Margin="0,8,0,0" TextWrapping="Wrap" />
+        </StackPanel>
+      </Border>
+
+      <TextBlock Style="{StaticResource SectionTitle}" Margin="0,18,0,8" Text="{DynamicResource Loc.interaction.execute}" />
+      <Border Style="{StaticResource Card}" Padding="14">
+        <StackPanel>
+          <WrapPanel>
+            <CheckBox x:Name="GiftEffectCheck" Content="{DynamicResource Loc.interaction.giftEffect}" VerticalAlignment="Center" />
+            <TextBox x:Name="GiftSceneBox" Width="160" Margin="8,0,0,0" />
+            <TextBox x:Name="PollQuestionBox" Width="180" Margin="16,0,0,0" />
+            <TextBox x:Name="PollOptionsBox" Width="200" Margin="8,0,0,0" />
+            <Button Style="{StaticResource SecondaryButton}" Margin="8,0,0,0" Content="{DynamicResource Loc.interaction.pollCreate}" Click="OnPollCreate" />
+            <Button Style="{StaticResource SecondaryButton}" Margin="8,0,0,0" Content="{DynamicResource Loc.interaction.pollClose}" Click="OnPollClose" />
+          </WrapPanel>
+          <TextBlock x:Name="PollText" Style="{StaticResource BodyText}" Margin="0,8,0,0" TextWrapping="Wrap" />
+          <WrapPanel Margin="0,8,0,0">
+            <TextBox x:Name="SubmissionBox" Width="300" />
+            <Button Style="{StaticResource SecondaryButton}" Margin="8,0,0,0" Content="{DynamicResource Loc.interaction.submitAdd}" Click="OnSubmissionAdd" />
+            <Button Style="{StaticResource GhostButton}" Margin="8,0,0,0" Content="{DynamicResource Loc.interaction.submitApprove}" Click="OnSubmissionApprove" />
+          </WrapPanel>
+          <ListBox x:Name="SubmissionList" Height="90" Margin="0,8,0,0" />
+          <WrapPanel Margin="0,8,0,0">
+            <TextBox x:Name="CalendarTitleBox" Width="160" />
+            <TextBox x:Name="CalendarTimeBox" Width="160" Margin="8,0,0,0" />
+            <Button Style="{StaticResource SecondaryButton}" Margin="8,0,0,0" Content="{DynamicResource Loc.interaction.calendarAdd}" Click="OnCalendarAdd" />
+            <Button Style="{StaticResource GhostButton}" Margin="8,0,0,0" Content="{DynamicResource Loc.interaction.aiReply}" Click="OnAiReply" />
+          </WrapPanel>
+          <TextBlock x:Name="CalendarText" Style="{StaticResource CaptionText}" Margin="0,8,0,0" TextWrapping="Wrap" />
+          <ListBox x:Name="AiReplyList" Height="80" Margin="0,8,0,0" />
+        </StackPanel>
+      </Border>
+
+      <TextBlock Style="{StaticResource SectionTitle}" Margin="0,18,0,8" Text="{DynamicResource Loc.clips.title}" />
+      <Border Style="{StaticResource Card}" Padding="14">
+        <StackPanel>
+          <WrapPanel>
+            <TextBox x:Name="FfmpegBox" Width="300" />
+            <Button Style="{StaticResource SecondaryButton}" Margin="8,0,0,0"
+                    Content="{DynamicResource Loc.clips.browse}" Click="OnBrowseFfmpeg" />
+            <Button Style="{StaticResource SecondaryButton}" Margin="8,0,0,0"
+                    Content="{DynamicResource Loc.clips.find}" Click="OnFindHighlights" />
+            <Button Style="{StaticResource SecondaryButton}" Margin="8,0,0,0"
+                    Content="{DynamicResource Loc.clips.export}" Click="OnExportClip" />
+            <Button Style="{StaticResource SecondaryButton}" Margin="8,0,0,0"
+                    Content="{DynamicResource Loc.clips.exportVertical}" Click="OnExportVertical" />
+          </WrapPanel>
+          <ListBox x:Name="ClipList" Height="150" Margin="0,10,0,0" />
+          <TextBlock x:Name="ClipStateText" Style="{StaticResource CaptionText}" Margin="0,6,0,0" TextWrapping="Wrap" />
+          <WrapPanel Margin="0,8,0,0">
+            <TextBox x:Name="SearchBox" Width="240" />
+            <Button Style="{StaticResource SecondaryButton}" Margin="8,0,0,0"
+                    Content="{DynamicResource Loc.clips.search}" Click="OnSearchTranscripts" />
+            <Button Style="{StaticResource GhostButton}" Margin="8,0,0,0"
+                    Content="{DynamicResource Loc.clips.clearIndex}" Click="OnClearIndex" />
+          </WrapPanel>
+          <ListBox x:Name="SearchList" Height="120" Margin="0,8,0,0" />
+        </StackPanel>
+      </Border>
+    </StackPanel>
+  </ScrollViewer>
+</UserControl>

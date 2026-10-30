@@ -144,6 +144,26 @@
     <Compile Include="..\OBS_Helper.Wpf\Models\Plugins\PluginInstallManifest.cs" Link="Linked\Plugins\PluginInstallManifest.cs" />
     <Compile Include="..\OBS_Helper.Wpf\Services\Plugins\PluginInstallCore.cs" Link="Linked\Plugins\PluginInstallCore.cs" />
     <Compile Include="..\OBS_Helper.Wpf\Services\Plugins\GitHubSearchCore.cs" Link="Linked\Plugins\GitHubSearchCore.cs" />
+    <!-- V3.4.0 批次 0：局域网安全策略 / 手写 HTTP 与 WS 报文 / 二维码 / sidecar 清单（纯 BCL） -->
+    <Compile Include="..\OBS_Helper.Wpf\Services\Security\LanPolicy.cs" Link="Linked\Security\LanPolicy.cs" />
+    <Compile Include="..\OBS_Helper.Wpf\Services\Security\HttpWireCore.cs" Link="Linked\Security\HttpWireCore.cs" />
+    <Compile Include="..\OBS_Helper.Wpf\Services\Security\WebSocketFrameCore.cs" Link="Linked\Security\WebSocketFrameCore.cs" />
+    <Compile Include="..\OBS_Helper.Wpf\Services\Mobile\QrCodeCore.cs" Link="Linked\Mobile\QrCodeCore.cs" />
+    <Compile Include="..\OBS_Helper.Wpf\Services\Interop\SidecarCore.cs" Link="Linked\Interop\SidecarCore.cs" />
+
+    <!-- V3.4.0 纯逻辑：手机联动 / 弹幕 / 字幕 / 流健康 / 切片 / 复盘 / 自动化 / 多机位 -->
+    <Compile Include="..\OBS_Helper.Wpf\Models\Mobile\MobileModels.cs" Link="Linked\Mobile\MobileModels.cs" />
+    <Compile Include="..\OBS_Helper.Wpf\Services\Mobile\MobileCore.cs" Link="Linked\Mobile\MobileCore.cs" />
+    <Compile Include="..\OBS_Helper.Wpf\Services\Mobile\MobilePageAssets.cs" Link="Linked\Mobile\MobilePageAssets.cs" />
+    <Compile Include="..\OBS_Helper.Wpf\Services\Mobile\PhoneCameraCore.cs" Link="Linked\Mobile\PhoneCameraCore.cs" />
+    <Compile Include="..\OBS_Helper.Wpf\Services\Chat\ChatCore.cs" Link="Linked\Chat\ChatCore.cs" />
+    <Compile Include="..\OBS_Helper.Wpf\Services\Subtitles\AsrCore.cs" Link="Linked\Subtitles\AsrCore.cs" />
+    <Compile Include="..\OBS_Helper.Wpf\Services\Stream\StreamCore.cs" Link="Linked\Stream\StreamCore.cs" />
+    <Compile Include="..\OBS_Helper.Wpf\Services\Clips\ClipsCore.cs" Link="Linked\Clips\ClipsCore.cs" />
+    <Compile Include="..\OBS_Helper.Wpf\Services\Analytics\InsightsCore.cs" Link="Linked\Analytics\InsightsCore.cs" />
+    <Compile Include="..\OBS_Helper.Wpf\Services\Automation\AutomationCore.cs" Link="Linked\Automation\AutomationCore.cs" />
+    <Compile Include="..\OBS_Helper.Wpf\Services\Live\MultiCamCore.cs" Link="Linked\Live\MultiCamCore.cs" />
+    <Compile Include="..\OBS_Helper.Wpf\Services\Live\ThemeMarketService.cs" Link="Linked\Live\ThemeMarketService.cs" />
   </ItemGroup>
 
   <ItemGroup>
@@ -165,6 +185,8 @@
     <None Include="..\OBS_Helper.Wpf\Assets\platforms.json" Link="Assets\platforms.json"
           CopyToOutputDirectory="PreserveNewest" />
     <None Include="..\OBS_Helper.Wpf\Assets\platforms.en-US.json" Link="Assets\platforms.en-US.json"
+          CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\OBS_Helper.Wpf\Assets\sidecars.json" Link="Assets\sidecars.json"
           CopyToOutputDirectory="PreserveNewest" />
     <None Include="..\OBS_Helper.Wpf\Assets\troubleshooting.md" Link="Assets\troubleshooting.md"
           CopyToOutputDirectory="PreserveNewest" />

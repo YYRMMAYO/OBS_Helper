@@ -49,6 +49,21 @@
 - 平台目录（`platforms.json`）只记录官方入口与文字说明，不使用平台 Logo。
 - 用户导入的 Live2D 模型、房间素材与插件归用户所有；本项目不复制、不再分发。
 
+## V3.4.0 新增外部组件与协议
+| 项目 | 许可证 | 用途 | 边界 |
+|---|---|---|---|
+| mediamtx | MIT | 本地 SRT/RTMP/RTSP 媒体服务器、转推收流 | 外部进程；清单 manual，用户自行下载；不捆绑 |
+| whisper.cpp | MIT | 本地实时字幕 | 外部进程；模型权重另行授权；不捆绑 |
+| rclone | MIT | 录制归档 | 外部进程；用户自行配置远端 |
+| FFmpeg | LGPL-2.1+ | 切片/竖屏/音频链 | 外部进程；只用 LGPL 构建 |
+| scrcpy | Apache-2.0 | Android USB 摄像头引导 | 仅检测与步骤，不自动安装 |
+| WLED | EUPL-1.2 | 灯光 HTTP API | 仅调用 API，不复制代码 |
+| VTube Studio | 专有 | 数字人口型 | 用户自装；通过公开 API 调用 |
+| obs-websocket | GPL-2.0 | OBS 控制协议 | 协议复刻，不复制代码 |
+| xfgryujk/blivedm | MIT | B 站弹幕协议参考 | 协议复刻，不复制代码 |
+| TwitchLib | MIT | Twitch IRC 参考 | 协议复刻，不复制代码 |
+| LiveKit / mediasoup | Apache-2.0 / ISC | 远程嘉宾 SFU（可选） | 外部进程；TLS 部署由用户负责 |
+
 ## 六、署名与反馈
 
 如果你认为本项目遗漏了某个应当署名的项目、或许可证标注有误，请通过

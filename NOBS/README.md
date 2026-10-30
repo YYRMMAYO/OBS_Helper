@@ -2,9 +2,7 @@
 
 <img src="../assets/banner.svg" alt="OBS Helper — 面向直播新手的 OBS 排障工具" width="100%"/>
 
-**当前版本：V3.3.0** —— 「虚拟直播」工作台：Live2D 形象一键配置、6 套虚拟直播间模板、
-国内 + 国外平台开播引导、插件广场一键安装 / 回滚 / GitHub 导入，以及无障碍模式与老年模式。
-详见 [`RELEASE_NOTES_v3.3.0.md`](RELEASE_NOTES_v3.3.0.md)。
+**当前版本：V3.4.0** —— 「手机联动」：手机扫码即可遥控 / 监看 / 提词 / 补光 / 快传，手机当 Wi-Fi 摄像头与麦克风；并交付弹幕聚合、本地实时字幕、复盘/切片、多平台转推、MIDI/灯光与团队协作。详见 [`RELEASE_NOTES_v3.4.0.md`](RELEASE_NOTES_v3.4.0.md)。
 
 > **本文档是 Windows 原生 WPF 版的开发向完整文档，随源码一起放在 `NOBS/`**；仓库根的 [`README.md`](../README.md) 是面向用户的完整说明（功能 · 使用 · 安装），本文档额外保留质量基线、逐版本发布说明与代码清单。
 > **当前维护的源码在本目录的 [`OBS_Helper.Wpf/`](OBS_Helper.Wpf/)**；macOS 壳与旧版共享前端仅存档。
@@ -13,11 +11,11 @@
 [![平台](https://img.shields.io/badge/Platform-Windows_7_SP1%2B_%2F_10_%2F_11-0078D6.svg)]()
 [![.NET](https://img.shields.io/badge/.NET-10_%2F_6-512BD4.svg)]()
 [![技术栈](https://img.shields.io/badge/Stack-WPF_%2F_C%23-239120.svg)]()
-[![版本](https://img.shields.io/badge/Release-3.3.0-38bdf8.svg)](https://github.com/YYRMMAYO/OBS_Helper/releases)
+[![版本](https://img.shields.io/badge/Release-3.4.0-38bdf8.svg)](https://github.com/YYRMMAYO/OBS_Helper/releases)
 [![OBS](https://img.shields.io/badge/OBS-32.2.2-302E31.svg)](https://github.com/obsproject/obs-studio/releases)
 [![离线可用](https://img.shields.io/badge/offline--first-2ea44f.svg)]()
 [![增量更新](https://img.shields.io/badge/Incremental%20Update-2.5MB-7dd3fc.svg)]()
-[![测试](https://img.shields.io/badge/Tests-1508%20passed-2ea44f.svg)]()
+[![测试](https://img.shields.io/badge/Tests-1663%20passed-2ea44f.svg)]()
 [![许可](https://img.shields.io/badge/License-MIT-green.svg)](../LICENSE)
 
 [English](README.en.md) · **简体中文**

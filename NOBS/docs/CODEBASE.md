@@ -360,3 +360,23 @@ NOBS/
 - **改新手引导（步骤文案 / 顺序 / 跳转目标）** → `Services/Shell/OnboardingGuide.cs`（文案、游标、每步对应路由与跳转按钮等纯逻辑）+ `MainWindow.xaml`（覆盖层外观）+ `MainWindow.xaml.cs`（自动跳转与按钮渲染）；设置页入口在 `Views/SettingsPage.xaml(.cs)`
 - **改插件广场数据（收录 / 维护状态）** → `Assets/plugins.json` + `docs/PLUGIN_AUDIT_2026-09.md`（复核报告），模型在 `Services/Plugins/PluginCatalog.cs`
 - **改文档里的数字** → 先看 `scripts/check_docs.py` 校验的是哪几处，改完必须跑一遍
+
+## V3.4.0 新增源码（按域）
+- `Services/Security/`：LanPolicy、HttpWireCore、WebSocketFrameCore
+- `Services/Mobile/`：QrCodeCore、MobileCore、MobileServices、MobilePageAssets、MobileLinkServer、PhoneCameraCore
+- `Services/Interop/`：SidecarCore、SidecarManager（含 ProcessGuard）
+- `Services/Chat/`：ChatCore、ChatServices
+- `Services/Subtitles/`：AsrCore、AsrServices、VoiceControlService
+- `Services/Streaming/`：StreamCore、RelayService
+- `Services/Recording/`：ArchiveService
+- `Services/Audio/`：AudioChainService
+- `Services/Shell/`：PanicService
+- `Services/Clips/`：ClipsCore
+- `Services/Analytics/`：InsightsCore
+- `Services/Automation/`：AutomationCore
+- `Services/Hardware/`：MidiService、LightingService
+- `Services/Live/`：MultiCamCore、RemoteGuestService、ThemeMarketService
+- `Services/Ai/`：AiHostService
+- `Models/Mobile/`：MobileModels
+- `Views/`：MobileLinkPage、InteractionPage、InsightsPage、StreamPage、AutomationPage
+- `Assets/sidecars.json`：sidecar 清单（manual 项不含哈希，不自动下载）

@@ -35,6 +35,12 @@ public static class Routes
     /// <summary>OBS 插件广场：常用插件的分类导航与官方下载跳转（一级导航）。</summary>
     public const string Plugins = "plugins";
 
+    /// <summary>
+    /// 虚拟直播工作台（V3.3.0，一级导航）：参数 <c>avatar</c> / <c>room</c> / <c>golive</c>
+    /// 分别对应「形象（Live2D）」「直播间（模板）」「开播（平台引导）」三个 Tab。
+    /// </summary>
+    public const string VirtualLive = "virtuallive";
+
     /// <summary>工具箱：录像工具 / 参数处方 / 隐私清单 / 冲突扫描 / 带宽计算 / 版本情报（一级导航，V2.6）。</summary>
     public const string Toolbox = "toolbox";
 

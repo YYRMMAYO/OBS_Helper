@@ -25,7 +25,7 @@ See [RELEASE_NOTES_v3.1.1.md](RELEASE_NOTES_v3.1.1.md) (Chinese).
 [![OBS](https://img.shields.io/badge/OBS-32.2.2-302E31.svg)](https://github.com/obsproject/obs-studio/releases)
 [![Offline](https://img.shields.io/badge/offline--first-2ea44f.svg)]()
 [![Incremental Update](https://img.shields.io/badge/Incremental%20Update-2.5MB-7dd3fc.svg)]()
-[![Tests](https://img.shields.io/badge/Tests-1345%20passed-2ea44f.svg)]()
+[![Tests](https://img.shields.io/badge/Tests-1508%20passed-2ea44f.svg)]()
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](../LICENSE)
 
 **English** · [简体中文](README.md)
@@ -95,7 +95,7 @@ There are two channels for the same app — pick the one that matches how much "
 **Tests**
 
 - 4 new unit tests: scroll end, drag offset, window-move clamping and script trailing blank lines;
-- The full suite of 1345 unit tests passed three rounds in a row, with both builds (`net10.0-windows` / `net6.0-windows`) + the headless self-test + static checks all green.
+- The full suite of 1508 unit tests passed three rounds in a row, with both builds (`net10.0-windows` / `net6.0-windows`) + the headless self-test + static checks all green.
 
 ## V3.1.0 highlights
 
@@ -356,3 +356,23 @@ If the app saved you some troubleshooting time, you can buy the author a coffee 
 ## License
 
 [MIT](LICENSE)
+
+### Open-source components
+
+This project is built on the following open-source projects and public protocols.
+See [`docs/OPEN_SOURCE_ATTRIBUTION.md`](docs/OPEN_SOURCE_ATTRIBUTION.md) for the full list,
+licenses and boundaries.
+
+| Project | License | Use | Boundary |
+|---|---|---|---|
+| [OBS Studio](https://github.com/obsproject/obs-studio) | GPL-2.0 | Target application being controlled | External integration only; not bundled or modified |
+| [obs-websocket](https://github.com/obsproject/obs-websocket) | GPL-2.0 | Scene / recording / streaming / virtual camera control | Independent C# client written from the public protocol; no code copied |
+| [VTube Studio API](https://github.com/DenchiSoft/VTubeStudio) | MIT | Live2D model loading / authentication | Public WebSocket API only; no process injection |
+| [.NET / WPF](https://github.com/dotnet/wpf) | MIT | Desktop runtime and UI framework | Self-contained publish; runtime ships with the app |
+| [xUnit](https://github.com/xunit/xunit) | Apache-2.0 | Unit tests | Test project only; not shipped |
+| [DistroAV](https://github.com/DistroAV/DistroAV) / [obs-spout2-plugin](https://github.com/Off-World-Live/obs-spout2-plugin) | GPL-2.0 | NDI / Spout2 capture for Live2D | Optional external plugins; no code copied or bundled |
+| [Watt Toolkit](https://github.com/BeyondDimension/SteamTools) | GPL-3.0 | GitHub acceleration | Detection / launch / guidance only; never modifies its config |
+
+> The Live2D Cubism SDK is proprietary. This project does **not** include or redistribute any
+> Cubism runtime or sample model; models provided by users remain theirs. The main application
+> stays under the **MIT** license.

@@ -7,6 +7,22 @@
 > （文件与行为都写出来了），但那是对源码的**静态核对**，不是用辅助技术实测出来的结论 ——
 > 详见 §5 的证据边界。请不要把 §1 的承诺读成「已经做到」。
 
+### V3.3.0 更新摘要（2026-10-30）
+
+- **新增无障碍模式 / 老年模式**：模式组合由 `Services/Appearance/UiProfileCore.cs` 统一计算，
+  输出字号、密度、控件高度、焦点框粗细、导航宽度、行高与「跳到主内容」显隐等令牌；
+  系统文本缩放与系统「减少动画」是**下限**，用户显式改过的单项优先于预设。
+- **新增「跳到主内容」链接**：无障碍 / 老年模式自动出现，键盘 / 读屏用户不必每次 Tab 穿过侧栏。
+- **减少动画现在跟随系统**：`SystemParameters.ClientAreaAnimation` 为 false 时直接归零动效，
+  应用内开关只作为显式覆盖（见 §3.6 已更新）。
+- **焦点与尺寸令牌化**：`FocusThickness` / `ControlMinHeight` / `NavWidth` 等由令牌驱动，
+  无障碍模式按钮 ≥ 44×44、老年模式 ≥ 48×48。
+- **新页面（虚拟直播、插件安装）**：所有可交互控件有可访问名称，状态区带实时区域声明；
+  `scripts/check_accessibility.py` 继续拦截「无名称的图标按钮」与「只声明不抛事件的实时区域」。
+- **自动化**：`UiProfileCoreTests` 11 项（模式组合 / 系统下限 / 用户覆盖 / 空间计算），
+  并有 `check_resources.py` / `check_accessibility.py` 常驻检查。
+- **仍然没有经过 NVDA / Narrator 实测**：本节只代表代码与静态检查，不代表读屏实际体验。
+
 ## 中文版
 
 ### 1. 我们的无障碍承诺
@@ -56,7 +72,7 @@ UI Automation 支持（按钮 / 复选框 / 下拉 / 列表项的文字能被读
 | **主题** | 跟随系统 / 浅色 / 深色，即时生效、不用重启；另有 5 套品牌强调色。 | `AppearanceService`、设置 →「外观与无障碍」 |
 | **字号档位** | 四档：小 / 标准 / 大 / 特大（档位系数 0.92 / 1.0 / 1.12 / **1.28**），即时生效。实际字号还要**再乘以** Windows「辅助功能 → 文本大小」的缩放系数（读注册表 `HKCU\Software\Microsoft\Accessibility\TextScaleFactor`，钳在 1.0~2.0），所以**会跟随系统把文字调大**。 | `AppearanceService.Apply`、`SystemTextScaleFactor` |
 | **高对比** | 有（开关在设置 →「外观与无障碍」）**或** Windows 高对比主题 —— 实际生效值是「应用内开关 **OR** 系统高对比」（`SystemParameters.HighContrast`），并监听系统变更（关掉系统高对比后自动恢复原样，不改写用户自己的设置）。它会把正文 / 次要文字 / 线条推到纯黑或纯白，并强制内容区背景回默认底。**覆盖面仍有限，见 §3.4。** | `AppearanceService.HighContrastEffective`、`Apply` |
-| **减少动画** | 有（开关同上）。统一动效时长 `MotionDuration` 归零。**只认应用内开关，不跟随系统偏好，见 §3.6。** | `AppearanceService`、`MotionDuration` 各引用点 |
+| **减少动画** | 有（开关同上）。统一动效时长 `MotionDuration` 归零；**同时跟随系统「显示动画」偏好**（`SystemParameters.ClientAreaAnimation`），无障碍 / 老年模式默认开启。 | `AppearanceService`、`MotionDuration` 各引用点、`ReduceMotionEffective` |
 | **界面语言** | 简体中文 / English，**即时切换、不用重启**；随包离线内容（知识库 / 模板 / 插件目录 / 排障指引）也是中英两份。首启语言次序：应用内选过 > 安装向导写的 `language.ini` > 简体中文。繁体中文 / 日语尚无。 | `Localization/*`、`LocalizationService` |
 | **键盘（应用内）** | `Ctrl+F` 搜索、`Alt+←` 或鼠标后退键返回、`Esc` 关对话框（`IsCancel`）。导航项、按钮、复选框、下拉均为标准控件，参与 Tab 顺序。**剩余缺口见 §3.2。** | `MainWindow.xaml`、`Themes/Controls.xaml` |
 | **全局热键（应用外也生效）** | 5 组，默认 `Ctrl+Alt+R` 录制 / `+S` 推流 / `+C` 虚拟摄像头 / `+M` 迷你小窗 / `+O` 显示隐藏窗口，均可在设置里改键或关闭。 | `Models/Shell/HotkeySettings.cs` |
@@ -102,7 +118,7 @@ UI Automation 支持（按钮 / 复选框 / 下拉 / 列表项的文字能被读
 - **连接徽章只能鼠标点。** 它是 `Border` + `MouseLeftButtonUp`，不是 Tab 停靠点
   （既没有 `IsTabStop` 也没有 `Focusable`）、没有键盘激活方式
   （键盘用户可走侧栏导航进控制台，功能不丢，但徽章本身不可键盘操作）。
-- **没有跳过导航的入口（skip link）**，长页面里键盘用户要逐个 Tab 过侧栏。
+- ~~没有跳过导航的入口（skip link）~~ —— **V3.3.0 已加**：无障碍 / 老年模式下主窗口显示「跳到主内容」，点击把焦点交给当前页面第一个可聚焦控件。
 
 **V3.0 已修（第三轮验证，2026-10-06）**：上面这些里能在代码里判定的都已处理 ——
 ① `ToastService` 现在会主动抛 `AutomationEvents.LiveRegionChanged`（不再是「只声明不抛」，
@@ -136,7 +152,7 @@ UI Automation 支持，文字内容一般能被读到；Toast 是实时区域且
 - **连接徽章只能鼠标点**（同 §3.1）：不是 Tab 停靠点。
 - **没有访问键（Alt+字母）助记符。** 模板里配了 `RecognizesAccessKey`，但文案里没有用 `_` 前缀。
 - **没有自定义 Tab 顺序**（全仓 `TabIndex` 零命中），顺序完全跟随可视树。
-- **没有跳过导航的入口**（同 §3.1）。
+- ~~没有跳过导航的入口~~ —— **V3.3.0 已加**（同 §3.1）。
 
 > 逐控件核对（`Themes/Controls.xaml`）：`BaseButton` / `CardButton` / `NavTabButton` /
 > `SegmentButton` / `AppCheckBox` / `AppSwitch` / `AppComboBoxItem` 都有键盘焦点触发器；
@@ -184,11 +200,11 @@ UI Automation 支持，文字内容一般能被读到；Toast 是实时区域且
 也就是说 150% 及以上缩放时窗口无法压到屏幕内，右侧内容可能落到屏幕外且**无法触达**
 （没有横向滚动条）。**这条是按数值推算的，没有在真机上复核** —— 如实标注，欢迎按 §4 反馈实测结果。
 
-#### 3.6 减少动画不跟随系统偏好
+#### 3.6 减少动画：已跟随系统（V3.3.0 修复）
 
-应用内「减少动画」把 `MotionDuration` 归零是有效的，但它**不读系统的「显示动画」偏好**
-（`SystemParameters.ClientAreaAnimation` 零命中）。系统里关掉动画不会自动改变本应用，
-需要用户在应用内自己开。
+应用内「减少动画」把 `MotionDuration` 归零；V3.3.0 起还读取系统的「显示动画」偏好
+（`SystemParameters.ClientAreaAnimation` 为 false 即视为减少动画），系统关掉动画后应用会跟着静止。
+应用内开关仍可作为显式覆盖；无障碍 / 老年模式默认开启减少动画。
 
 #### 3.7 内容与语言的限制
 
@@ -271,6 +287,23 @@ UI Automation 支持，文字内容一般能被读到；Toast 是实时区域且
 
 ---
 
+### V3.3.0 update summary (2026-10-30)
+
+- **Accessibility and Elder modes**: mode composition is computed by
+  `Services/Appearance/UiProfileCore.cs`, producing tokens for text size, density, control height,
+  focus thickness, sidebar width, line height and the skip link. System text scaling and
+  system reduce-motion are the floor; explicit user choices override the presets.
+- **Skip link**: shown automatically in Accessibility / Elder modes so keyboard and screen-reader
+  users do not have to tab through the whole sidebar.
+- **Reduce motion now follows the system**: `SystemParameters.ClientAreaAnimation == false` zeroes
+  the shared motion durations; the in-app toggle is an explicit override (see updated §3.6).
+- **Focus and sizing tokens**: `FocusThickness`, `ControlMinHeight`, `NavWidth` etc. are token-driven;
+  buttons are at least 44×44 in Accessibility mode and 48×48 in Elder mode.
+- **New pages** (Virtual Live, plugin install) give every interactive control an accessible name and
+  declare live regions for status text; `scripts/check_accessibility.py` keeps guarding these rules.
+- **Automation**: 11 `UiProfileCoreTests` plus the existing resource / accessibility static checks.
+- **Still not tested with NVDA / Narrator**: this section reflects code and static checks only.
+
 ## English
 
 > This document states **what we intend to do**, **what actually works today**,
@@ -332,7 +365,7 @@ system high contrast, system text size). See §3 and §5.
 | **Theme** | Follow system / Light / Dark, applied live with no restart; plus 5 brand accent colours. | `AppearanceService`, Settings → "Appearance and accessibility" |
 | **Font size** | Four steps: Small / Default / Large / Extra large (step factors 0.92 / 1.0 / 1.12 / **1.28**), applied live. The effective size is then **multiplied by** the Windows "Accessibility → Text size" factor (read from the registry key `HKCU\Software\Microsoft\Accessibility\TextScaleFactor`, clamped to 1.0–2.0), so it **does follow the system text-size setting**. | `AppearanceService.Apply`, `SystemTextScaleFactor` |
 | **High contrast** | Yes (toggle in Settings → "Appearance and accessibility") **or** the Windows high-contrast theme — the effective value is the in-app toggle **OR** the system setting (`SystemParameters.HighContrast`), and system changes are observed (turning the system theme off restores the previous look without overwriting your own setting). It pushes body / muted text and lines to pure black or white and forces the content background back to the default. **Palette coverage is still partial — see §3.4.** | `AppearanceService.HighContrastEffective`, `Apply` |
-| **Reduce motion** | Yes (same section). Zeroes the shared motion duration `MotionDuration`. **It honours only the in-app toggle, not the system preference — see §3.6.** | `AppearanceService`, `MotionDuration` call sites |
+| **Reduce motion** | Yes (same section). Zeroes the shared motion duration `MotionDuration` and **follows the system animation preference** (`SystemParameters.ClientAreaAnimation`); Accessibility / Elder modes enable it by default. | `AppearanceService`, `MotionDuration` call sites, `ReduceMotionEffective` |
 | **UI language** | Simplified Chinese / English, **switched live with no restart**; bundled offline content (knowledge base / templates / plugin catalog / troubleshooting guide) exists in both languages. First-run order: in-app choice > `language.ini` written by the installer > Simplified Chinese. Traditional Chinese and Japanese are not available. | `Localization/*`, `LocalizationService` |
 | **Keyboard (in-app)** | `Ctrl+F` search, `Alt+←` or the mouse Back button to go back, `Esc` closes dialogs (`IsCancel`). Navigation items, buttons, checkboxes and combo boxes are standard controls and participate in tab order. **Remaining gaps in §3.2.** | `MainWindow.xaml`, `Themes/Controls.xaml` |
 | **Global hotkeys (work outside the app)** | Five, defaulting to `Ctrl+Alt+R` record / `+S` stream / `+C` virtual camera / `+M` mini window / `+O` show-hide window. All are rebindable or can be disabled. | `Models/Shell/HotkeySettings.cs` |
@@ -484,11 +517,12 @@ So at 150% and above the window cannot be squeezed onto the screen and content o
 off-screen and be **unreachable** (there is no horizontal scrollbar). **This is derived from the
 numbers, not verified on real hardware** — flagged honestly; measured results are welcome via §4.
 
-#### 3.6 Reduce motion does not follow the system preference
+#### 3.6 Reduce motion now follows the system (fixed in V3.3.0)
 
-The in-app "Reduce motion" toggle does zero `MotionDuration`, but it does **not** read the Windows
-animation preference (`SystemParameters.ClientAreaAnimation` has zero hits). Turning animations off
-in Windows will not change this app; it has to be switched on in-app.
+The in-app "Reduce motion" toggle zeroes `MotionDuration`, and since V3.3.0 the app also reads the
+Windows animation preference (`SystemParameters.ClientAreaAnimation == false` means reduce motion).
+Turning animations off in Windows now stops the app's animations too; the in-app toggle remains an
+explicit override, and Accessibility / Elder modes enable it by default.
 
 #### 3.7 Content and language limits
 

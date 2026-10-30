@@ -34,7 +34,7 @@
 
 ## 3. 组合根：AppServices（无 DI 容器）
 
-`AppServices.cs` 是唯一的服务装配点：**55 个 Lazy 单例**，构造函数注入依赖，刻意不用 DI 容器（依赖是一棵静态树、零依赖、启动快、依赖关系一屏可见）。
+`AppServices.cs` 是唯一的服务装配点：**62 个 Lazy 单例**，构造函数注入依赖，刻意不用 DI 容器（依赖是一棵静态树、零依赖、启动快、依赖关系一屏可见）。
 
 ```text
 Store ─┬─ BookmarkService ── AssistantService
@@ -162,7 +162,7 @@ SceneTemplateService 场景模板：在线落地（建专属配置集合 → 逐
   - WebSocket 收包循环（`ObsWebSocketClient.ReceiveLoop`）→ 事件经 Dispatcher 封送；
   - 系统采样计时器（`SystemMonitorService`）→ 数据发布到 UI 线程；
   - AI / HTTP / 文件 IO → `async/await`（`ConfigureAwait(false)` 后自行封送）；
-  - 自检模式（`OBS_SELFTEST=1`）→ 无界面跑 **26 项**自检（18 条路由用例，覆盖 `Routes.cs` 的 17 条路由 —— `plugins` 带参跑两次；外加新手引导覆盖层、迷你小窗、文案资源解析、语言切换往返、**逐页语言重放**、**内容回退提示条**、**D7 连接态护栏**、**双构建协议分支** 8 项），结果写 `selftest_result.txt`。
+  - 自检模式（`OBS_SELFTEST=1`）→ 无界面跑 **29 项**自检（21 条路由用例，覆盖 `Routes.cs` 的 17 条路由 —— `plugins` 带参跑两次；外加新手引导覆盖层、迷你小窗、文案资源解析、语言切换往返、**逐页语言重放**、**内容回退提示条**、**D7 连接态护栏**、**双构建协议分支** 8 项），结果写 `selftest_result.txt`。
 - **跨线程事件约定**：服务只发布事件，不直接碰控件；页面在事件处理器里用 `Dispatcher` 或服务已封送的回调更新 UI。
 
 ## 12. 日志与错误处理
@@ -212,7 +212,7 @@ SceneTemplateService 场景模板：在线落地（建专属配置集合 → 逐
 
 - `build.ps1`：`dotnet publish`（Release、R2R、自包含单文件）→ Inno Setup 安装包 → 便携 zip；产物到 `PAKE/windows/`（gitignore）。
 - 免费 AI 密钥：构建期由 `scripts/embed_free_ai_key.ps1` 注入 `Assets/free_ai_key.json`（真实密钥不入库）。
-- 自检：`OBS_SELFTEST=1` 无界面跑 **26 项**自检（18 条路由用例 + 新手引导覆盖层 + 迷你小窗 + 文案资源解析 + 语言切换往返 + 逐页语言重放 + 内容回退提示条 + D7 连接态护栏 + 双构建协议分支；**两个 TFM 各跑一次**），结果写 `selftest_result.txt`——「编译过但运行炸」类错误的最有效拦截。引导一项会**逐步真实导航**并校验「页面名与路由表一致」「跳转按钮数量与步骤定义一致」「站外链接落在官方域名」。
+- 自检：`OBS_SELFTEST=1` 无界面跑 **29 项**自检（21 条路由用例 + 新手引导覆盖层 + 迷你小窗 + 文案资源解析 + 语言切换往返 + 逐页语言重放 + 内容回退提示条 + D7 连接态护栏 + 双构建协议分支；**两个 TFM 各跑一次**），结果写 `selftest_result.txt`——「编译过但运行炸」类错误的最有效拦截。引导一项会**逐步真实导航**并校验「页面名与路由表一致」「跳转按钮数量与步骤定义一致」「站外链接落在官方域名」。
 - 数据脚本：`scripts/add_problems.py` / `add_templates.py` 可复用改知识库 / 模板数据。
 
 ## 16. 国际化（V2.9.2）

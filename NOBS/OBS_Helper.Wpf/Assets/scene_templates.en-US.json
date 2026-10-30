@@ -1,2574 +1,4109 @@
 [
- {
-  "id": "gaming",
-  "title": "Gaming Stream",
-  "summary": "Game + webcam + microphone, ready to stream at 1080p60 landscape.",
-  "icon": "🎮",
-  "portrait": false,
-  "notes": "Game source falls back to window / display capture; pick your camera and mic devices in OBS.",
-  "canvas": {
-   "baseWidth": 1920,
-   "baseHeight": 1080,
-   "outputWidth": 1920,
-   "outputHeight": 1080,
-   "fpsNumerator": 60,
-   "fpsDenominator": 1
-  },
-  "transition": "Fade",
-  "transitionDurationMs": 300,
-  "scenes": [
-   {
-    "name": "Gaming Live",
+  {
+    "id": "gaming",
+    "title": "Gaming Stream",
+    "summary": "Game + webcam + microphone, ready to stream at 1080p60 landscape.",
+    "icon": "🎮",
+    "portrait": false,
+    "notes": "Game source falls back to window / display capture; pick your camera and mic devices in OBS.",
+    "canvas": {
+      "baseWidth": 1920,
+      "baseHeight": 1080,
+      "outputWidth": 1920,
+      "outputHeight": 1080,
+      "fpsNumerator": 60,
+      "fpsDenominator": 1
+    },
+    "transition": "Fade",
     "transitionDurationMs": 300,
-    "hotkey": "Ctrl+1",
-    "sources": [
-     {
-      "name": "Background Color",
-      "inputKind": "color_source_v3",
-      "zOrder": 0,
-      "enabled": true,
-      "settings": {
-       "color": 4278190080
+    "scenes": [
+      {
+        "name": "Gaming Live",
+        "transitionDurationMs": 300,
+        "hotkey": "Ctrl+1",
+        "sources": [
+          {
+            "name": "Background Color",
+            "inputKind": "color_source_v3",
+            "zOrder": 0,
+            "enabled": true,
+            "settings": {
+              "color": 4278190080
+            },
+            "transform": {
+              "posX": 0,
+              "posY": 0,
+              "boundsType": "OBS_BOUNDS_SCALE_OUTER",
+              "boundsWidth": 1920,
+              "boundsHeight": 1080,
+              "alignment": 0
+            }
+          },
+          {
+            "name": "Game Capture",
+            "inputKind": "game_capture",
+            "zOrder": 1,
+            "enabled": true,
+            "fallbackKinds": [
+              "window_capture",
+              "monitor_capture"
+            ],
+            "placeholder": {
+              "kind": "window",
+              "hint": "Choose the game window or display to capture"
+            },
+            "transform": {
+              "posX": 0,
+              "posY": 0,
+              "boundsType": "OBS_BOUNDS_SCALE_OUTER",
+              "boundsWidth": 1920,
+              "boundsHeight": 1080,
+              "alignment": 0
+            }
+          },
+          {
+            "name": "Webcam",
+            "inputKind": "dshow_input",
+            "zOrder": 2,
+            "enabled": true,
+            "fallbackKinds": [
+              "dshow_video_source"
+            ],
+            "placeholder": {
+              "kind": "device",
+              "hint": "Choose your camera device"
+            },
+            "transform": {
+              "posX": 1490,
+              "posY": 835,
+              "boundsType": "OBS_BOUNDS_TO_WIDTH",
+              "boundsWidth": 400,
+              "alignment": 5
+            }
+          },
+          {
+            "name": "My Microphone",
+            "inputKind": "wasapi_input_capture",
+            "zOrder": 3,
+            "enabled": true,
+            "shared": true,
+            "placeholder": {
+              "kind": "device",
+              "hint": "Choose your microphone"
+            }
+          },
+          {
+            "name": "Desktop Audio",
+            "inputKind": "wasapi_output_capture",
+            "zOrder": 4,
+            "enabled": true,
+            "placeholder": {
+              "kind": "device",
+              "hint": "Choose desktop / system audio"
+            }
+          },
+          {
+            "name": "Stream Title",
+            "inputKind": "text_gdiplus_v3",
+            "zOrder": 5,
+            "enabled": true,
+            "fallbackKinds": [
+              "text_ft2_source_v3"
+            ],
+            "settings": {
+              "text": "Gaming Live - Welcome to the Stream",
+              "font": {
+                "face": "Microsoft YaHei",
+                "size": 48
+              },
+              "color": 4294967295
+            },
+            "transform": {
+              "posX": 60,
+              "posY": 40,
+              "boundsType": "OBS_BOUNDS_NONE",
+              "alignment": 5
+            }
+          }
+        ]
       },
-      "transform": {
-       "posX": 0,
-       "posY": 0,
-       "boundsType": "OBS_BOUNDS_SCALE_OUTER",
-       "boundsWidth": 1920,
-       "boundsHeight": 1080,
-       "alignment": 0
+      {
+        "name": "Pause",
+        "transitionDurationMs": 500,
+        "hotkey": "Ctrl+2",
+        "sources": [
+          {
+            "name": "Background Color",
+            "inputKind": "color_source_v3",
+            "zOrder": 0,
+            "enabled": true,
+            "settings": {
+              "color": 4278650880
+            },
+            "transform": {
+              "posX": 0,
+              "posY": 0,
+              "boundsType": "OBS_BOUNDS_SCALE_OUTER",
+              "boundsWidth": 1920,
+              "boundsHeight": 1080,
+              "alignment": 0
+            }
+          },
+          {
+            "name": "Webcam",
+            "inputKind": "dshow_input",
+            "zOrder": 1,
+            "enabled": true,
+            "shared": true,
+            "fallbackKinds": [
+              "dshow_video_source"
+            ],
+            "placeholder": {
+              "kind": "device",
+              "hint": "Choose your camera device"
+            },
+            "transform": {
+              "posX": 760,
+              "posY": 340,
+              "boundsType": "OBS_BOUNDS_TO_WIDTH",
+              "boundsWidth": 400,
+              "alignment": 0
+            }
+          },
+          {
+            "name": "My Microphone",
+            "inputKind": "wasapi_input_capture",
+            "zOrder": 2,
+            "enabled": true,
+            "shared": true
+          },
+          {
+            "name": "Please Wait",
+            "inputKind": "text_gdiplus_v3",
+            "zOrder": 3,
+            "enabled": true,
+            "fallbackKinds": [
+              "text_ft2_source_v3"
+            ],
+            "settings": {
+              "text": "Please wait, back in a moment",
+              "font": {
+                "face": "Microsoft YaHei",
+                "size": 72
+              },
+              "color": 4294967295
+            },
+            "transform": {
+              "posX": 960,
+              "posY": 220,
+              "boundsType": "OBS_BOUNDS_NONE",
+              "alignment": 0
+            }
+          }
+        ]
       }
-     },
-     {
-      "name": "Game Capture",
-      "inputKind": "game_capture",
-      "zOrder": 1,
-      "enabled": true,
-      "fallbackKinds": [
-       "window_capture",
-       "monitor_capture"
-      ],
-      "placeholder": {
-       "kind": "window",
-       "hint": "Choose the game window or display to capture"
-      },
-      "transform": {
-       "posX": 0,
-       "posY": 0,
-       "boundsType": "OBS_BOUNDS_SCALE_OUTER",
-       "boundsWidth": 1920,
-       "boundsHeight": 1080,
-       "alignment": 0
-      }
-     },
-     {
-      "name": "Webcam",
-      "inputKind": "dshow_input",
-      "zOrder": 2,
-      "enabled": true,
-      "fallbackKinds": [
-       "dshow_video_source"
-      ],
-      "placeholder": {
-       "kind": "device",
-       "hint": "Choose your camera device"
-      },
-      "transform": {
-       "posX": 1490,
-       "posY": 835,
-       "boundsType": "OBS_BOUNDS_TO_WIDTH",
-       "boundsWidth": 400,
-       "alignment": 5
-      }
-     },
-     {
-      "name": "My Microphone",
-      "inputKind": "wasapi_input_capture",
-      "zOrder": 3,
-      "enabled": true,
-      "shared": true,
-      "placeholder": {
-       "kind": "device",
-       "hint": "Choose your microphone"
-      }
-     },
-     {
-      "name": "Desktop Audio",
-      "inputKind": "wasapi_output_capture",
-      "zOrder": 4,
-      "enabled": true,
-      "placeholder": {
-       "kind": "device",
-       "hint": "Choose desktop / system audio"
-      }
-     },
-     {
-      "name": "Stream Title",
-      "inputKind": "text_gdiplus_v3",
-      "zOrder": 5,
-      "enabled": true,
-      "fallbackKinds": [
-       "text_ft2_source_v3"
-      ],
-      "settings": {
-       "text": "Gaming Live - Welcome to the Stream",
-       "font": {
-        "face": "Microsoft YaHei",
-        "size": 48
-       },
-       "color": 4294967295
-      },
-      "transform": {
-       "posX": 60,
-       "posY": 40,
-       "boundsType": "OBS_BOUNDS_NONE",
-       "alignment": 5
-      }
-     }
     ]
-   },
-   {
-    "name": "Pause",
+  },
+  {
+    "id": "vertical-selling",
+    "title": "Vertical Live Selling",
+    "summary": "Vertical 1080×1920 talk scene, main camera full, product image / titles / script in place.",
+    "icon": "📱",
+    "portrait": true,
+    "notes": "Note: this template sets the global OBS canvas to 1080×1920 (portrait). When switching back to landscape streaming, change the canvas back to 1920×1080 in OBS Settings → Video.",
+    "canvas": {
+      "baseWidth": 1080,
+      "baseHeight": 1920,
+      "outputWidth": 1080,
+      "outputHeight": 1920,
+      "fpsNumerator": 30,
+      "fpsDenominator": 1
+    },
+    "transition": "Fade",
+    "transitionDurationMs": 300,
+    "scenes": [
+      {
+        "name": "Main Talking Shot",
+        "transitionDurationMs": 300,
+        "hotkey": "Ctrl+1",
+        "sources": [
+          {
+            "name": "Background Color",
+            "inputKind": "color_source_v3",
+            "zOrder": 0,
+            "enabled": true,
+            "settings": {
+              "color": 4292935679
+            },
+            "transform": {
+              "posX": 0,
+              "posY": 0,
+              "boundsType": "OBS_BOUNDS_SCALE_OUTER",
+              "boundsWidth": 1080,
+              "boundsHeight": 1920,
+              "alignment": 0
+            }
+          },
+          {
+            "name": "Main Webcam",
+            "inputKind": "dshow_input",
+            "zOrder": 1,
+            "enabled": true,
+            "fallbackKinds": [
+              "dshow_video_source"
+            ],
+            "placeholder": {
+              "kind": "device",
+              "hint": "Choose your vertical front / external camera"
+            },
+            "transform": {
+              "posX": 540,
+              "posY": 960,
+              "boundsType": "OBS_BOUNDS_SCALE_OUTER",
+              "boundsWidth": 1080,
+              "boundsHeight": 1920,
+              "alignment": 0
+            }
+          },
+          {
+            "name": "Product Image",
+            "inputKind": "image_source",
+            "zOrder": 2,
+            "enabled": false,
+            "settings": {
+              "file": ""
+            },
+            "placeholder": {
+              "kind": "file",
+              "hint": "Choose the product image to show (hidden by default)"
+            },
+            "transform": {
+              "posX": 540,
+              "posY": 960,
+              "boundsType": "OBS_BOUNDS_SCALE_OUTER",
+              "boundsWidth": 1080,
+              "boundsHeight": 1920,
+              "alignment": 0
+            }
+          },
+          {
+            "name": "Top Banner",
+            "inputKind": "text_gdiplus_v3",
+            "zOrder": 3,
+            "enabled": true,
+            "fallbackKinds": [
+              "text_ft2_source_v3"
+            ],
+            "settings": {
+              "text": "🔥 Limited-Time Offer",
+              "font": {
+                "face": "Microsoft YaHei",
+                "size": 52
+              },
+              "color": 4294967295
+            },
+            "transform": {
+              "posX": 40,
+              "posY": 60,
+              "boundsType": "OBS_BOUNDS_NONE",
+              "alignment": 5
+            }
+          },
+          {
+            "name": "Event Title",
+            "inputKind": "text_gdiplus_v3",
+            "zOrder": 4,
+            "enabled": true,
+            "fallbackKinds": [
+              "text_ft2_source_v3"
+            ],
+            "settings": {
+              "text": "Today's Top Pick - Tap the Cart Below",
+              "font": {
+                "face": "Microsoft YaHei",
+                "size": 64
+              },
+              "color": 4294967295
+            },
+            "transform": {
+              "posX": 540,
+              "posY": 1680,
+              "boundsType": "OBS_BOUNDS_NONE",
+              "alignment": 0
+            }
+          },
+          {
+            "name": "Scrolling Script",
+            "inputKind": "text_gdiplus_v3",
+            "zOrder": 5,
+            "enabled": true,
+            "fallbackKinds": [
+              "text_ft2_source_v3"
+            ],
+            "settings": {
+              "text": "Follow the Host - Order Now for a Deal",
+              "font": {
+                "face": "Microsoft YaHei",
+                "size": 44
+              },
+              "color": 4294967295
+            },
+            "transform": {
+              "posX": 540,
+              "posY": 1780,
+              "boundsType": "OBS_BOUNDS_NONE",
+              "alignment": 0
+            }
+          },
+          {
+            "name": "My Microphone",
+            "inputKind": "wasapi_input_capture",
+            "zOrder": 6,
+            "enabled": true,
+            "shared": true,
+            "placeholder": {
+              "kind": "device",
+              "hint": "Choose your microphone"
+            }
+          }
+        ]
+      },
+      {
+        "name": "Starting Soon",
+        "transitionDurationMs": 500,
+        "hotkey": "Ctrl+2",
+        "sources": [
+          {
+            "name": "Background Color",
+            "inputKind": "color_source_v3",
+            "zOrder": 0,
+            "enabled": true,
+            "settings": {
+              "color": 4278650880
+            },
+            "transform": {
+              "posX": 0,
+              "posY": 0,
+              "boundsType": "OBS_BOUNDS_SCALE_OUTER",
+              "boundsWidth": 1080,
+              "boundsHeight": 1920,
+              "alignment": 0
+            }
+          },
+          {
+            "name": "Main Webcam",
+            "inputKind": "dshow_input",
+            "zOrder": 1,
+            "enabled": true,
+            "shared": true,
+            "fallbackKinds": [
+              "dshow_video_source"
+            ],
+            "placeholder": {
+              "kind": "device",
+              "hint": "Choose your camera device"
+            },
+            "transform": {
+              "posX": 540,
+              "posY": 760,
+              "boundsType": "OBS_BOUNDS_TO_WIDTH",
+              "boundsWidth": 700,
+              "alignment": 0
+            }
+          },
+          {
+            "name": "My Microphone",
+            "inputKind": "wasapi_input_capture",
+            "zOrder": 2,
+            "enabled": true,
+            "shared": true
+          },
+          {
+            "name": "Going Live Soon",
+            "inputKind": "text_gdiplus_v3",
+            "zOrder": 3,
+            "enabled": true,
+            "fallbackKinds": [
+              "text_ft2_source_v3"
+            ],
+            "settings": {
+              "text": "Going Live Soon, Follow First",
+              "font": {
+                "face": "Microsoft YaHei",
+                "size": 60
+              },
+              "color": 4294967295
+            },
+            "transform": {
+              "posX": 540,
+              "posY": 1500,
+              "boundsType": "OBS_BOUNDS_NONE",
+              "alignment": 0
+            }
+          }
+        ]
+      }
+    ],
+    "requiresPlugins": [
+      {
+        "id": "aitum-vertical",
+        "reason": "Horizontal/vertical simulcast with linked switching"
+      }
+    ]
+  },
+  {
+    "id": "duo-guest",
+    "title": "Duo Co-Stream",
+    "summary": "Host + guest split left/right, great for interviews / two-person shows.",
+    "icon": "👥",
+    "portrait": false,
+    "notes": "Guest view uses Window Capture (WGC) by default; if it won't capture, switch to Display Capture in OBS.",
+    "canvas": {
+      "baseWidth": 1920,
+      "baseHeight": 1080,
+      "outputWidth": 1920,
+      "outputHeight": 1080,
+      "fpsNumerator": 30,
+      "fpsDenominator": 1
+    },
+    "transition": "Fade",
+    "transitionDurationMs": 300,
+    "scenes": [
+      {
+        "name": "Duo Conversation",
+        "transitionDurationMs": 300,
+        "hotkey": "Ctrl+1",
+        "sources": [
+          {
+            "name": "Background Color",
+            "inputKind": "color_source_v3",
+            "zOrder": 0,
+            "enabled": true,
+            "settings": {
+              "color": 4278650880
+            },
+            "transform": {
+              "posX": 0,
+              "posY": 0,
+              "boundsType": "OBS_BOUNDS_SCALE_OUTER",
+              "boundsWidth": 1920,
+              "boundsHeight": 1080,
+              "alignment": 0
+            }
+          },
+          {
+            "name": "Host Camera",
+            "inputKind": "dshow_input",
+            "zOrder": 1,
+            "enabled": true,
+            "fallbackKinds": [
+              "dshow_video_source"
+            ],
+            "placeholder": {
+              "kind": "device",
+              "hint": "Choose the host camera"
+            },
+            "transform": {
+              "posX": 30,
+              "posY": 278,
+              "boundsType": "OBS_BOUNDS_TO_WIDTH",
+              "boundsWidth": 930,
+              "alignment": 5
+            }
+          },
+          {
+            "name": "Guest View",
+            "inputKind": "window_capture",
+            "zOrder": 2,
+            "enabled": true,
+            "fallbackKinds": [
+              "monitor_capture",
+              "dshow_input"
+            ],
+            "settings": {
+              "method": 2
+            },
+            "placeholder": {
+              "kind": "window",
+              "hint": "Choose the guest window (set to WGC capture)"
+            },
+            "transform": {
+              "posX": 960,
+              "posY": 278,
+              "boundsType": "OBS_BOUNDS_TO_WIDTH",
+              "boundsWidth": 930,
+              "alignment": 5
+            }
+          },
+          {
+            "name": "Host Label",
+            "inputKind": "text_gdiplus_v3",
+            "zOrder": 3,
+            "enabled": true,
+            "fallbackKinds": [
+              "text_ft2_source_v3"
+            ],
+            "settings": {
+              "text": "Host",
+              "font": {
+                "face": "Microsoft YaHei",
+                "size": 40
+              },
+              "color": 4294967295
+            },
+            "transform": {
+              "posX": 40,
+              "posY": 250,
+              "boundsType": "OBS_BOUNDS_NONE",
+              "alignment": 5
+            }
+          },
+          {
+            "name": "Guest Label",
+            "inputKind": "text_gdiplus_v3",
+            "zOrder": 4,
+            "enabled": true,
+            "fallbackKinds": [
+              "text_ft2_source_v3"
+            ],
+            "settings": {
+              "text": "Guest",
+              "font": {
+                "face": "Microsoft YaHei",
+                "size": 40
+              },
+              "color": 4294967295
+            },
+            "transform": {
+              "posX": 970,
+              "posY": 250,
+              "boundsType": "OBS_BOUNDS_NONE",
+              "alignment": 5
+            }
+          },
+          {
+            "name": "Topic Title",
+            "inputKind": "text_gdiplus_v3",
+            "zOrder": 5,
+            "enabled": true,
+            "fallbackKinds": [
+              "text_ft2_source_v3"
+            ],
+            "settings": {
+              "text": "Today's Topic: ...",
+              "font": {
+                "face": "Microsoft YaHei",
+                "size": 48
+              },
+              "color": 4294967295
+            },
+            "transform": {
+              "posX": 960,
+              "posY": 40,
+              "boundsType": "OBS_BOUNDS_NONE",
+              "alignment": 0
+            }
+          },
+          {
+            "name": "My Microphone",
+            "inputKind": "wasapi_input_capture",
+            "zOrder": 6,
+            "enabled": true,
+            "shared": true,
+            "placeholder": {
+              "kind": "device",
+              "hint": "Choose the host microphone"
+            }
+          },
+          {
+            "name": "Guest Microphone",
+            "inputKind": "wasapi_input_capture",
+            "zOrder": 7,
+            "enabled": true,
+            "placeholder": {
+              "kind": "device",
+              "hint": "Choose the guest microphone"
+            }
+          }
+        ]
+      },
+      {
+        "name": "Solo Closeup",
+        "transitionDurationMs": 300,
+        "hotkey": "Ctrl+2",
+        "sources": [
+          {
+            "name": "Background Color",
+            "inputKind": "color_source_v3",
+            "zOrder": 0,
+            "enabled": true,
+            "settings": {
+              "color": 4278190080
+            },
+            "transform": {
+              "posX": 0,
+              "posY": 0,
+              "boundsType": "OBS_BOUNDS_SCALE_OUTER",
+              "boundsWidth": 1920,
+              "boundsHeight": 1080,
+              "alignment": 0
+            }
+          },
+          {
+            "name": "Host Camera",
+            "inputKind": "dshow_input",
+            "zOrder": 1,
+            "enabled": true,
+            "shared": true,
+            "fallbackKinds": [
+              "dshow_video_source"
+            ],
+            "placeholder": {
+              "kind": "device",
+              "hint": "Choose the host camera"
+            },
+            "transform": {
+              "posX": 540,
+              "posY": 540,
+              "boundsType": "OBS_BOUNDS_SCALE_OUTER",
+              "boundsWidth": 1280,
+              "boundsHeight": 720,
+              "alignment": 0
+            }
+          },
+          {
+            "name": "My Microphone",
+            "inputKind": "wasapi_input_capture",
+            "zOrder": 2,
+            "enabled": true,
+            "shared": true
+          },
+          {
+            "name": "Solo Closeup Title",
+            "inputKind": "text_gdiplus_v3",
+            "zOrder": 3,
+            "enabled": true,
+            "fallbackKinds": [
+              "text_ft2_source_v3"
+            ],
+            "settings": {
+              "text": "Host Chats Solo",
+              "font": {
+                "face": "Microsoft YaHei",
+                "size": 56
+              },
+              "color": 4294967295
+            },
+            "transform": {
+              "posX": 960,
+              "posY": 80,
+              "boundsType": "OBS_BOUNDS_NONE",
+              "alignment": 0
+            }
+          }
+        ]
+      }
+    ],
+    "requiresPlugins": [
+      {
+        "id": "droidcam-obs",
+        "reason": "Use a phone as a second camera (optional)"
+      }
+    ]
+  },
+  {
+    "id": "teaching",
+    "title": "Teaching Screen Recording",
+    "summary": "Display Capture as the base, instructor camera inset + chapter titles, ideal for recording courses.",
+    "icon": "📚",
+    "portrait": false,
+    "notes": "Captures the main display by default; switch the display index in OBS for multi-monitor setups.",
+    "canvas": {
+      "baseWidth": 1920,
+      "baseHeight": 1080,
+      "outputWidth": 1920,
+      "outputHeight": 1080,
+      "fpsNumerator": 30,
+      "fpsDenominator": 1
+    },
+    "transition": "Fade",
+    "transitionDurationMs": 300,
+    "scenes": [
+      {
+        "name": "Screen Lecture",
+        "transitionDurationMs": 300,
+        "hotkey": "Ctrl+1",
+        "sources": [
+          {
+            "name": "Display",
+            "inputKind": "monitor_capture",
+            "zOrder": 0,
+            "enabled": true,
+            "placeholder": {
+              "kind": "window",
+              "hint": "Choose the display to capture"
+            },
+            "transform": {
+              "posX": 0,
+              "posY": 0,
+              "boundsType": "OBS_BOUNDS_SCALE_OUTER",
+              "boundsWidth": 1920,
+              "boundsHeight": 1080,
+              "alignment": 0
+            }
+          },
+          {
+            "name": "Instructor Camera",
+            "inputKind": "dshow_input",
+            "zOrder": 1,
+            "enabled": true,
+            "fallbackKinds": [
+              "dshow_video_source"
+            ],
+            "placeholder": {
+              "kind": "device",
+              "hint": "Choose the instructor camera"
+            },
+            "transform": {
+              "posX": 1900,
+              "posY": 1060,
+              "boundsType": "OBS_BOUNDS_TO_WIDTH",
+              "boundsWidth": 320,
+              "alignment": 10
+            }
+          },
+          {
+            "name": "Chapter Title",
+            "inputKind": "text_gdiplus_v3",
+            "zOrder": 2,
+            "enabled": true,
+            "fallbackKinds": [
+              "text_ft2_source_v3"
+            ],
+            "settings": {
+              "text": "Chapter 1 - Intro",
+              "font": {
+                "face": "Microsoft YaHei",
+                "size": 44
+              },
+              "color": 4294967295
+            },
+            "transform": {
+              "posX": 40,
+              "posY": 40,
+              "boundsType": "OBS_BOUNDS_NONE",
+              "alignment": 5
+            }
+          },
+          {
+            "name": "My Microphone",
+            "inputKind": "wasapi_input_capture",
+            "zOrder": 3,
+            "enabled": true,
+            "shared": true,
+            "placeholder": {
+              "kind": "device",
+              "hint": "Choose the instructor microphone"
+            }
+          },
+          {
+            "name": "System Audio",
+            "inputKind": "wasapi_output_capture",
+            "zOrder": 4,
+            "enabled": true,
+            "placeholder": {
+              "kind": "device",
+              "hint": "Choose system audio (slide audio)"
+            }
+          }
+        ]
+      },
+      {
+        "name": "Slides Fullscreen",
+        "transitionDurationMs": 300,
+        "hotkey": "Ctrl+2",
+        "sources": [
+          {
+            "name": "Display",
+            "inputKind": "monitor_capture",
+            "zOrder": 0,
+            "enabled": true,
+            "shared": true,
+            "placeholder": {
+              "kind": "window",
+              "hint": "Choose the display to capture"
+            },
+            "transform": {
+              "posX": 0,
+              "posY": 0,
+              "boundsType": "OBS_BOUNDS_SCALE_OUTER",
+              "boundsWidth": 1920,
+              "boundsHeight": 1080,
+              "alignment": 0
+            }
+          },
+          {
+            "name": "Chapter Title",
+            "inputKind": "text_gdiplus_v3",
+            "zOrder": 1,
+            "enabled": true,
+            "shared": true,
+            "fallbackKinds": [
+              "text_ft2_source_v3"
+            ],
+            "settings": {
+              "text": "Slides Playing",
+              "font": {
+                "face": "Microsoft YaHei",
+                "size": 44
+              },
+              "color": 4294967295
+            },
+            "transform": {
+              "posX": 40,
+              "posY": 40,
+              "boundsType": "OBS_BOUNDS_NONE",
+              "alignment": 5
+            }
+          }
+        ]
+      },
+      {
+        "name": "On Break",
+        "transitionDurationMs": 500,
+        "hotkey": "Ctrl+3",
+        "sources": [
+          {
+            "name": "Background Color",
+            "inputKind": "color_source_v3",
+            "zOrder": 0,
+            "enabled": true,
+            "settings": {
+              "color": 4278650880
+            },
+            "transform": {
+              "posX": 0,
+              "posY": 0,
+              "boundsType": "OBS_BOUNDS_SCALE_OUTER",
+              "boundsWidth": 1920,
+              "boundsHeight": 1080,
+              "alignment": 0
+            }
+          },
+          {
+            "name": "Take a Break",
+            "inputKind": "text_gdiplus_v3",
+            "zOrder": 1,
+            "enabled": true,
+            "fallbackKinds": [
+              "text_ft2_source_v3"
+            ],
+            "settings": {
+              "text": "On a short break, back soon",
+              "font": {
+                "face": "Microsoft YaHei",
+                "size": 64
+              },
+              "color": 4294967295
+            },
+            "transform": {
+              "posX": 960,
+              "posY": 540,
+              "boundsType": "OBS_BOUNDS_NONE",
+              "alignment": 0
+            }
+          },
+          {
+            "name": "My Microphone",
+            "inputKind": "wasapi_input_capture",
+            "zOrder": 2,
+            "enabled": false,
+            "shared": true
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "radio-idle",
+    "title": "Radio Idle",
+    "summary": "Idle and mic-on scenes for radio / music streams: background, dim overlay, and scrolling track.",
+    "icon": "📻",
+    "portrait": false,
+    "notes": "Background music loops local audio via ffmpeg; Now Playing can read a text file (OBS text source read_from_file).",
+    "canvas": {
+      "baseWidth": 1920,
+      "baseHeight": 1080,
+      "outputWidth": 1920,
+      "outputHeight": 1080,
+      "fpsNumerator": 30,
+      "fpsDenominator": 1
+    },
+    "transition": "Fade",
     "transitionDurationMs": 500,
-    "hotkey": "Ctrl+2",
-    "sources": [
-     {
-      "name": "Background Color",
-      "inputKind": "color_source_v3",
-      "zOrder": 0,
-      "enabled": true,
-      "settings": {
-       "color": 4278650880
+    "scenes": [
+      {
+        "name": "Radio Idle",
+        "transitionDurationMs": 500,
+        "hotkey": "Ctrl+1",
+        "sources": [
+          {
+            "name": "Background Image",
+            "inputKind": "image_source",
+            "zOrder": 0,
+            "enabled": true,
+            "settings": {
+              "file": ""
+            },
+            "placeholder": {
+              "kind": "file",
+              "hint": "Choose the radio background image"
+            },
+            "transform": {
+              "posX": 0,
+              "posY": 0,
+              "boundsType": "OBS_BOUNDS_SCALE_OUTER",
+              "boundsWidth": 1920,
+              "boundsHeight": 1080,
+              "alignment": 0
+            }
+          },
+          {
+            "name": "Dim Overlay",
+            "inputKind": "color_source_v3",
+            "zOrder": 1,
+            "enabled": true,
+            "settings": {
+              "color": 2147483648
+            },
+            "transform": {
+              "posX": 0,
+              "posY": 0,
+              "boundsType": "OBS_BOUNDS_SCALE_OUTER",
+              "boundsWidth": 1920,
+              "boundsHeight": 1080,
+              "alignment": 0
+            }
+          },
+          {
+            "name": "Radio Name",
+            "inputKind": "text_gdiplus_v3",
+            "zOrder": 2,
+            "enabled": true,
+            "fallbackKinds": [
+              "text_ft2_source_v3"
+            ],
+            "settings": {
+              "text": "Night Flight Radio - FM Always On",
+              "font": {
+                "face": "Microsoft YaHei",
+                "size": 64
+              },
+              "color": 4294967295
+            },
+            "transform": {
+              "posX": 960,
+              "posY": 360,
+              "boundsType": "OBS_BOUNDS_NONE",
+              "alignment": 0
+            }
+          },
+          {
+            "name": "Now Playing",
+            "inputKind": "text_gdiplus_v3",
+            "zOrder": 3,
+            "enabled": true,
+            "fallbackKinds": [
+              "text_ft2_source_v3"
+            ],
+            "settings": {
+              "text": "",
+              "read_from_file": true,
+              "file": ""
+            },
+            "placeholder": {
+              "kind": "file",
+              "hint": "Choose the Now Playing text file (OBS reads it on a timer)"
+            },
+            "transform": {
+              "posX": 960,
+              "posY": 520,
+              "boundsType": "OBS_BOUNDS_NONE",
+              "alignment": 0
+            }
+          },
+          {
+            "name": "Background Music",
+            "inputKind": "ffmpeg_source",
+            "zOrder": 4,
+            "enabled": true,
+            "shared": true,
+            "settings": {
+              "input": "",
+              "is_local_file": true,
+              "looping": true
+            },
+            "placeholder": {
+              "kind": "file",
+              "hint": "Choose the background music file to loop"
+            }
+          },
+          {
+            "name": "My Microphone",
+            "inputKind": "wasapi_input_capture",
+            "zOrder": 5,
+            "enabled": false,
+            "shared": true,
+            "placeholder": {
+              "kind": "device",
+              "hint": "Choose the host microphone (muted while idle)"
+            }
+          }
+        ]
       },
-      "transform": {
-       "posX": 0,
-       "posY": 0,
-       "boundsType": "OBS_BOUNDS_SCALE_OUTER",
-       "boundsWidth": 1920,
-       "boundsHeight": 1080,
-       "alignment": 0
+      {
+        "name": "Mic On",
+        "transitionDurationMs": 300,
+        "hotkey": "Ctrl+2",
+        "sources": [
+          {
+            "name": "Background Image",
+            "inputKind": "image_source",
+            "zOrder": 0,
+            "enabled": true,
+            "shared": true,
+            "settings": {
+              "file": ""
+            },
+            "placeholder": {
+              "kind": "file",
+              "hint": "Choose the radio background image"
+            },
+            "transform": {
+              "posX": 0,
+              "posY": 0,
+              "boundsType": "OBS_BOUNDS_SCALE_OUTER",
+              "boundsWidth": 1920,
+              "boundsHeight": 1080,
+              "alignment": 0
+            }
+          },
+          {
+            "name": "Dim Overlay",
+            "inputKind": "color_source_v3",
+            "zOrder": 1,
+            "enabled": true,
+            "shared": true,
+            "settings": {
+              "color": 2147483648
+            },
+            "transform": {
+              "posX": 0,
+              "posY": 0,
+              "boundsType": "OBS_BOUNDS_SCALE_OUTER",
+              "boundsWidth": 1920,
+              "boundsHeight": 1080,
+              "alignment": 0
+            }
+          },
+          {
+            "name": "Host Camera",
+            "inputKind": "dshow_input",
+            "zOrder": 2,
+            "enabled": true,
+            "fallbackKinds": [
+              "dshow_video_source"
+            ],
+            "placeholder": {
+              "kind": "device",
+              "hint": "Choose the host camera"
+            },
+            "transform": {
+              "posX": 1490,
+              "posY": 835,
+              "boundsType": "OBS_BOUNDS_TO_WIDTH",
+              "boundsWidth": 400,
+              "alignment": 5
+            }
+          },
+          {
+            "name": "Radio Name",
+            "inputKind": "text_gdiplus_v3",
+            "zOrder": 3,
+            "enabled": true,
+            "shared": true,
+            "fallbackKinds": [
+              "text_ft2_source_v3"
+            ],
+            "settings": {
+              "text": "Night Flight Radio - Live Now",
+              "font": {
+                "face": "Microsoft YaHei",
+                "size": 64
+              },
+              "color": 4294967295
+            },
+            "transform": {
+              "posX": 960,
+              "posY": 360,
+              "boundsType": "OBS_BOUNDS_NONE",
+              "alignment": 0
+            }
+          },
+          {
+            "name": "Background Music",
+            "inputKind": "ffmpeg_source",
+            "zOrder": 4,
+            "enabled": true,
+            "shared": true
+          },
+          {
+            "name": "My Microphone",
+            "inputKind": "wasapi_input_capture",
+            "zOrder": 5,
+            "enabled": true,
+            "shared": true,
+            "placeholder": {
+              "kind": "device",
+              "hint": "Choose the host microphone"
+            }
+          }
+        ]
       }
-     },
-     {
-      "name": "Webcam",
-      "inputKind": "dshow_input",
-      "zOrder": 1,
-      "enabled": true,
-      "shared": true,
-      "fallbackKinds": [
-       "dshow_video_source"
-      ],
-      "placeholder": {
-       "kind": "device",
-       "hint": "Choose your camera device"
-      },
-      "transform": {
-       "posX": 760,
-       "posY": 340,
-       "boundsType": "OBS_BOUNDS_TO_WIDTH",
-       "boundsWidth": 400,
-       "alignment": 0
-      }
-     },
-     {
-      "name": "My Microphone",
-      "inputKind": "wasapi_input_capture",
-      "zOrder": 2,
-      "enabled": true,
-      "shared": true
-     },
-     {
-      "name": "Please Wait",
-      "inputKind": "text_gdiplus_v3",
-      "zOrder": 3,
-      "enabled": true,
-      "fallbackKinds": [
-       "text_ft2_source_v3"
-      ],
-      "settings": {
-       "text": "Please wait, back in a moment",
-       "font": {
-        "face": "Microsoft YaHei",
-        "size": 72
-       },
-       "color": 4294967295
-      },
-      "transform": {
-       "posX": 960,
-       "posY": 220,
-       "boundsType": "OBS_BOUNDS_NONE",
-       "alignment": 0
-      }
-     }
     ]
-   }
-  ]
- },
- {
-  "id": "vertical-selling",
-  "title": "Vertical Live Selling",
-  "summary": "Vertical 1080×1920 talk scene, main camera full, product image / titles / script in place.",
-  "icon": "📱",
-  "portrait": true,
-  "notes": "Note: this template sets the global OBS canvas to 1080×1920 (portrait). When switching back to landscape streaming, change the canvas back to 1920×1080 in OBS Settings → Video.",
-  "canvas": {
-   "baseWidth": 1080,
-   "baseHeight": 1920,
-   "outputWidth": 1080,
-   "outputHeight": 1920,
-   "fpsNumerator": 30,
-   "fpsDenominator": 1
   },
-  "transition": "Fade",
-  "transitionDurationMs": 300,
-  "scenes": [
-   {
-    "name": "Main Talking Shot",
+  {
+    "id": "show-triple",
+    "title": "Go-Live / BRB / End Pack",
+    "summary": "Countdown, Be Right Back, and end-of-stream screens, with big text ready.",
+    "icon": "🎬",
+    "portrait": false,
+    "notes": "The countdown browser source is hidden by default; unhide it and fill in your countdown page URL when needed.",
+    "canvas": {
+      "baseWidth": 1920,
+      "baseHeight": 1080,
+      "outputWidth": 1920,
+      "outputHeight": 1080,
+      "fpsNumerator": 30,
+      "fpsDenominator": 1
+    },
+    "transition": "Fade",
     "transitionDurationMs": 300,
-    "hotkey": "Ctrl+1",
-    "sources": [
-     {
-      "name": "Background Color",
-      "inputKind": "color_source_v3",
-      "zOrder": 0,
-      "enabled": true,
-      "settings": {
-       "color": 4292935679
+    "scenes": [
+      {
+        "name": "Live Countdown",
+        "transitionDurationMs": 500,
+        "hotkey": "Ctrl+1",
+        "sources": [
+          {
+            "name": "Base Color",
+            "inputKind": "color_source_v3",
+            "zOrder": 0,
+            "enabled": true,
+            "settings": {
+              "color": 4279257088
+            },
+            "transform": {
+              "posX": 0,
+              "posY": 0,
+              "boundsType": "OBS_BOUNDS_SCALE_OUTER",
+              "boundsWidth": 1920,
+              "boundsHeight": 1080,
+              "alignment": 0
+            }
+          },
+          {
+            "name": "Start Text",
+            "inputKind": "text_gdiplus_v3",
+            "zOrder": 1,
+            "enabled": true,
+            "fallbackKinds": [
+              "text_ft2_source_v3"
+            ],
+            "settings": {
+              "text": "Stream Starting Soon",
+              "font": {
+                "face": "Microsoft YaHei",
+                "size": 96
+              },
+              "color": 4294967295
+            },
+            "transform": {
+              "posX": 960,
+              "posY": 460,
+              "boundsType": "OBS_BOUNDS_NONE",
+              "alignment": 0
+            }
+          },
+          {
+            "name": "Countdown Browser",
+            "inputKind": "browser_source",
+            "zOrder": 2,
+            "enabled": false,
+            "settings": {
+              "url": "",
+              "width": 1920,
+              "height": 1080
+            },
+            "placeholder": {
+              "kind": "url",
+              "hint": "Enter your countdown page URL (hidden by default)"
+            },
+            "transform": {
+              "posX": 0,
+              "posY": 0,
+              "boundsType": "OBS_BOUNDS_SCALE_OUTER",
+              "boundsWidth": 1920,
+              "boundsHeight": 1080,
+              "alignment": 0
+            }
+          },
+          {
+            "name": "Waiting Music",
+            "inputKind": "ffmpeg_source",
+            "zOrder": 3,
+            "enabled": true,
+            "shared": true,
+            "settings": {
+              "input": "",
+              "is_local_file": true,
+              "looping": true
+            },
+            "placeholder": {
+              "kind": "file",
+              "hint": "Choose the waiting music"
+            }
+          },
+          {
+            "name": "My Microphone",
+            "inputKind": "wasapi_input_capture",
+            "zOrder": 4,
+            "enabled": false,
+            "shared": true,
+            "placeholder": {
+              "kind": "device",
+              "hint": "Choose the microphone (off during countdown)"
+            }
+          }
+        ]
       },
-      "transform": {
-       "posX": 0,
-       "posY": 0,
-       "boundsType": "OBS_BOUNDS_SCALE_OUTER",
-       "boundsWidth": 1080,
-       "boundsHeight": 1920,
-       "alignment": 0
-      }
-     },
-     {
-      "name": "Main Webcam",
-      "inputKind": "dshow_input",
-      "zOrder": 1,
-      "enabled": true,
-      "fallbackKinds": [
-       "dshow_video_source"
-      ],
-      "placeholder": {
-       "kind": "device",
-       "hint": "Choose your vertical front / external camera"
+      {
+        "name": "Be Right Back BRB",
+        "transitionDurationMs": 300,
+        "hotkey": "Ctrl+2",
+        "sources": [
+          {
+            "name": "Base Color",
+            "inputKind": "color_source_v3",
+            "zOrder": 0,
+            "enabled": true,
+            "settings": {
+              "color": 4279257088
+            },
+            "transform": {
+              "posX": 0,
+              "posY": 0,
+              "boundsType": "OBS_BOUNDS_SCALE_OUTER",
+              "boundsWidth": 1920,
+              "boundsHeight": 1080,
+              "alignment": 0
+            }
+          },
+          {
+            "name": "BRB Text",
+            "inputKind": "text_gdiplus_v3",
+            "zOrder": 1,
+            "enabled": true,
+            "fallbackKinds": [
+              "text_ft2_source_v3"
+            ],
+            "settings": {
+              "text": "Be Right Back BRB",
+              "font": {
+                "face": "Microsoft YaHei",
+                "size": 96
+              },
+              "color": 4294967295
+            },
+            "transform": {
+              "posX": 960,
+              "posY": 540,
+              "boundsType": "OBS_BOUNDS_NONE",
+              "alignment": 0
+            }
+          },
+          {
+            "name": "Waiting Music",
+            "inputKind": "ffmpeg_source",
+            "zOrder": 2,
+            "enabled": true,
+            "shared": true
+          },
+          {
+            "name": "My Microphone",
+            "inputKind": "wasapi_input_capture",
+            "zOrder": 3,
+            "enabled": false,
+            "shared": true
+          }
+        ]
       },
-      "transform": {
-       "posX": 540,
-       "posY": 960,
-       "boundsType": "OBS_BOUNDS_SCALE_OUTER",
-       "boundsWidth": 1080,
-       "boundsHeight": 1920,
-       "alignment": 0
+      {
+        "name": "That's It For Today",
+        "transitionDurationMs": 500,
+        "hotkey": "Ctrl+3",
+        "sources": [
+          {
+            "name": "Base Color",
+            "inputKind": "color_source_v3",
+            "zOrder": 0,
+            "enabled": true,
+            "settings": {
+              "color": 4279257088
+            },
+            "transform": {
+              "posX": 0,
+              "posY": 0,
+              "boundsType": "OBS_BOUNDS_SCALE_OUTER",
+              "boundsWidth": 1920,
+              "boundsHeight": 1080,
+              "alignment": 0
+            }
+          },
+          {
+            "name": "End Text",
+            "inputKind": "text_gdiplus_v3",
+            "zOrder": 1,
+            "enabled": true,
+            "fallbackKinds": [
+              "text_ft2_source_v3"
+            ],
+            "settings": {
+              "text": "That's all for today, see you tomorrow",
+              "font": {
+                "face": "Microsoft YaHei",
+                "size": 84
+              },
+              "color": 4294967295
+            },
+            "transform": {
+              "posX": 960,
+              "posY": 540,
+              "boundsType": "OBS_BOUNDS_NONE",
+              "alignment": 0
+            }
+          },
+          {
+            "name": "Waiting Music",
+            "inputKind": "ffmpeg_source",
+            "zOrder": 2,
+            "enabled": true,
+            "shared": true
+          }
+        ]
       }
-     },
-     {
-      "name": "Product Image",
-      "inputKind": "image_source",
-      "zOrder": 2,
-      "enabled": false,
-      "settings": {
-       "file": ""
-      },
-      "placeholder": {
-       "kind": "file",
-       "hint": "Choose the product image to show (hidden by default)"
-      },
-      "transform": {
-       "posX": 540,
-       "posY": 960,
-       "boundsType": "OBS_BOUNDS_SCALE_OUTER",
-       "boundsWidth": 1080,
-       "boundsHeight": 1920,
-       "alignment": 0
-      }
-     },
-     {
-      "name": "Top Banner",
-      "inputKind": "text_gdiplus_v3",
-      "zOrder": 3,
-      "enabled": true,
-      "fallbackKinds": [
-       "text_ft2_source_v3"
-      ],
-      "settings": {
-       "text": "🔥 Limited-Time Offer",
-       "font": {
-        "face": "Microsoft YaHei",
-        "size": 52
-       },
-       "color": 4294967295
-      },
-      "transform": {
-       "posX": 40,
-       "posY": 60,
-       "boundsType": "OBS_BOUNDS_NONE",
-       "alignment": 5
-      }
-     },
-     {
-      "name": "Event Title",
-      "inputKind": "text_gdiplus_v3",
-      "zOrder": 4,
-      "enabled": true,
-      "fallbackKinds": [
-       "text_ft2_source_v3"
-      ],
-      "settings": {
-       "text": "Today's Top Pick - Tap the Cart Below",
-       "font": {
-        "face": "Microsoft YaHei",
-        "size": 64
-       },
-       "color": 4294967295
-      },
-      "transform": {
-       "posX": 540,
-       "posY": 1680,
-       "boundsType": "OBS_BOUNDS_NONE",
-       "alignment": 0
-      }
-     },
-     {
-      "name": "Scrolling Script",
-      "inputKind": "text_gdiplus_v3",
-      "zOrder": 5,
-      "enabled": true,
-      "fallbackKinds": [
-       "text_ft2_source_v3"
-      ],
-      "settings": {
-       "text": "Follow the Host - Order Now for a Deal",
-       "font": {
-        "face": "Microsoft YaHei",
-        "size": 44
-       },
-       "color": 4294967295
-      },
-      "transform": {
-       "posX": 540,
-       "posY": 1780,
-       "boundsType": "OBS_BOUNDS_NONE",
-       "alignment": 0
-      }
-     },
-     {
-      "name": "My Microphone",
-      "inputKind": "wasapi_input_capture",
-      "zOrder": 6,
-      "enabled": true,
-      "shared": true,
-      "placeholder": {
-       "kind": "device",
-       "hint": "Choose your microphone"
-      }
-     }
     ]
-   },
-   {
-    "name": "Starting Soon",
-    "transitionDurationMs": 500,
-    "hotkey": "Ctrl+2",
-    "sources": [
-     {
-      "name": "Background Color",
-      "inputKind": "color_source_v3",
-      "zOrder": 0,
-      "enabled": true,
-      "settings": {
-       "color": 4278650880
-      },
-      "transform": {
-       "posX": 0,
-       "posY": 0,
-       "boundsType": "OBS_BOUNDS_SCALE_OUTER",
-       "boundsWidth": 1080,
-       "boundsHeight": 1920,
-       "alignment": 0
-      }
-     },
-     {
-      "name": "Main Webcam",
-      "inputKind": "dshow_input",
-      "zOrder": 1,
-      "enabled": true,
-      "shared": true,
-      "fallbackKinds": [
-       "dshow_video_source"
-      ],
-      "placeholder": {
-       "kind": "device",
-       "hint": "Choose your camera device"
-      },
-      "transform": {
-       "posX": 540,
-       "posY": 760,
-       "boundsType": "OBS_BOUNDS_TO_WIDTH",
-       "boundsWidth": 700,
-       "alignment": 0
-      }
-     },
-     {
-      "name": "My Microphone",
-      "inputKind": "wasapi_input_capture",
-      "zOrder": 2,
-      "enabled": true,
-      "shared": true
-     },
-     {
-      "name": "Going Live Soon",
-      "inputKind": "text_gdiplus_v3",
-      "zOrder": 3,
-      "enabled": true,
-      "fallbackKinds": [
-       "text_ft2_source_v3"
-      ],
-      "settings": {
-       "text": "Going Live Soon, Follow First",
-       "font": {
-        "face": "Microsoft YaHei",
-        "size": 60
-       },
-       "color": 4294967295
-      },
-      "transform": {
-       "posX": 540,
-       "posY": 1500,
-       "boundsType": "OBS_BOUNDS_NONE",
-       "alignment": 0
-      }
-     }
-    ]
-   }
-  ],
-  "requiresPlugins": [
-   {
-    "id": "aitum-vertical",
-    "reason": "Horizontal/vertical simulcast with linked switching"
-   }
-  ]
- },
- {
-  "id": "duo-guest",
-  "title": "Duo Co-Stream",
-  "summary": "Host + guest split left/right, great for interviews / two-person shows.",
-  "icon": "👥",
-  "portrait": false,
-  "notes": "Guest view uses Window Capture (WGC) by default; if it won't capture, switch to Display Capture in OBS.",
-  "canvas": {
-   "baseWidth": 1920,
-   "baseHeight": 1080,
-   "outputWidth": 1920,
-   "outputHeight": 1080,
-   "fpsNumerator": 30,
-   "fpsDenominator": 1
   },
-  "transition": "Fade",
-  "transitionDurationMs": 300,
-  "scenes": [
-   {
-    "name": "Duo Conversation",
+  {
+    "id": "green-screen",
+    "title": "Green Screen Background",
+    "summary": "Key the subject over a virtual background image, great for gaming, teaching, and stream backgrounds.",
+    "icon": "🟢",
+    "portrait": false,
+    "notes": "The camera must shoot in front of a green screen; without one, remove the Chroma Key filter in OBS and use the camera as a normal shot. Pick the background image, camera, and mic in OBS.",
+    "canvas": {
+      "baseWidth": 1920,
+      "baseHeight": 1080,
+      "outputWidth": 1920,
+      "outputHeight": 1080,
+      "fpsNumerator": 30,
+      "fpsDenominator": 1
+    },
+    "transition": "Fade",
     "transitionDurationMs": 300,
-    "hotkey": "Ctrl+1",
-    "sources": [
-     {
-      "name": "Background Color",
-      "inputKind": "color_source_v3",
-      "zOrder": 0,
-      "enabled": true,
-      "settings": {
-       "color": 4278650880
+    "scenes": [
+      {
+        "name": "Live",
+        "transitionDurationMs": 300,
+        "hotkey": "Ctrl+1",
+        "sources": [
+          {
+            "name": "Virtual Background",
+            "inputKind": "image_source",
+            "zOrder": 0,
+            "enabled": true,
+            "settings": {
+              "file": ""
+            },
+            "placeholder": {
+              "kind": "file",
+              "hint": "Choose the virtual background image"
+            },
+            "transform": {
+              "posX": 0,
+              "posY": 0,
+              "boundsType": "OBS_BOUNDS_SCALE_OUTER",
+              "boundsWidth": 1920,
+              "boundsHeight": 1080,
+              "alignment": 0
+            }
+          },
+          {
+            "name": "Webcam (Green Screen)",
+            "inputKind": "dshow_input",
+            "zOrder": 1,
+            "enabled": true,
+            "fallbackKinds": [
+              "dshow_video_source"
+            ],
+            "placeholder": {
+              "kind": "device",
+              "hint": "Choose your camera"
+            },
+            "transform": {
+              "posX": 420,
+              "posY": 60,
+              "boundsType": "OBS_BOUNDS_TO_WIDTH",
+              "alignment": 0,
+              "boundsWidth": 1080
+            }
+          },
+          {
+            "name": "My Microphone",
+            "inputKind": "wasapi_input_capture",
+            "zOrder": 2,
+            "enabled": true,
+            "placeholder": {
+              "kind": "device",
+              "hint": "Choose your microphone"
+            },
+            "shared": true
+          },
+          {
+            "name": "Desktop Audio",
+            "inputKind": "wasapi_output_capture",
+            "zOrder": 3,
+            "enabled": true,
+            "placeholder": {
+              "kind": "device",
+              "hint": "Choose desktop / system audio"
+            }
+          },
+          {
+            "name": "Stream Title",
+            "inputKind": "text_gdiplus_v3",
+            "zOrder": 4,
+            "enabled": true,
+            "settings": {
+              "text": "Green Screen Live - Welcome to the Stream",
+              "font": {
+                "face": "Microsoft YaHei",
+                "size": 44
+              },
+              "color": 4294967295
+            },
+            "fallbackKinds": [
+              "text_ft2_source_v3"
+            ],
+            "transform": {
+              "posX": 60,
+              "posY": 40,
+              "boundsType": "OBS_BOUNDS_NONE",
+              "alignment": 5
+            }
+          }
+        ]
       },
-      "transform": {
-       "posX": 0,
-       "posY": 0,
-       "boundsType": "OBS_BOUNDS_SCALE_OUTER",
-       "boundsWidth": 1920,
-       "boundsHeight": 1080,
-       "alignment": 0
+      {
+        "name": "Be Right Back BRB",
+        "transitionDurationMs": 500,
+        "hotkey": "Ctrl+2",
+        "sources": [
+          {
+            "name": "Background Color",
+            "inputKind": "color_source_v3",
+            "zOrder": 0,
+            "enabled": true,
+            "settings": {
+              "color": 4278650880
+            },
+            "transform": {
+              "posX": 0,
+              "posY": 0,
+              "boundsType": "OBS_BOUNDS_SCALE_OUTER",
+              "boundsWidth": 1920,
+              "boundsHeight": 1080,
+              "alignment": 0
+            }
+          },
+          {
+            "name": "BRB Text",
+            "inputKind": "text_gdiplus_v3",
+            "zOrder": 1,
+            "enabled": true,
+            "settings": {
+              "text": "Be Right Back",
+              "font": {
+                "face": "Microsoft YaHei",
+                "size": 96
+              },
+              "color": 4294967295
+            },
+            "fallbackKinds": [
+              "text_ft2_source_v3"
+            ],
+            "transform": {
+              "posX": 960,
+              "posY": 430,
+              "boundsType": "OBS_BOUNDS_NONE",
+              "alignment": 0
+            }
+          }
+        ]
       }
-     },
-     {
-      "name": "Host Camera",
-      "inputKind": "dshow_input",
-      "zOrder": 1,
-      "enabled": true,
-      "fallbackKinds": [
-       "dshow_video_source"
-      ],
-      "placeholder": {
-       "kind": "device",
-       "hint": "Choose the host camera"
-      },
-      "transform": {
-       "posX": 30,
-       "posY": 278,
-       "boundsType": "OBS_BOUNDS_TO_WIDTH",
-       "boundsWidth": 930,
-       "alignment": 5
-      }
-     },
-     {
-      "name": "Guest View",
-      "inputKind": "window_capture",
-      "zOrder": 2,
-      "enabled": true,
-      "fallbackKinds": [
-       "monitor_capture",
-       "dshow_input"
-      ],
-      "settings": {
-       "method": 2
-      },
-      "placeholder": {
-       "kind": "window",
-       "hint": "Choose the guest window (set to WGC capture)"
-      },
-      "transform": {
-       "posX": 960,
-       "posY": 278,
-       "boundsType": "OBS_BOUNDS_TO_WIDTH",
-       "boundsWidth": 930,
-       "alignment": 5
-      }
-     },
-     {
-      "name": "Host Label",
-      "inputKind": "text_gdiplus_v3",
-      "zOrder": 3,
-      "enabled": true,
-      "fallbackKinds": [
-       "text_ft2_source_v3"
-      ],
-      "settings": {
-       "text": "Host",
-       "font": {
-        "face": "Microsoft YaHei",
-        "size": 40
-       },
-       "color": 4294967295
-      },
-      "transform": {
-       "posX": 40,
-       "posY": 250,
-       "boundsType": "OBS_BOUNDS_NONE",
-       "alignment": 5
-      }
-     },
-     {
-      "name": "Guest Label",
-      "inputKind": "text_gdiplus_v3",
-      "zOrder": 4,
-      "enabled": true,
-      "fallbackKinds": [
-       "text_ft2_source_v3"
-      ],
-      "settings": {
-       "text": "Guest",
-       "font": {
-        "face": "Microsoft YaHei",
-        "size": 40
-       },
-       "color": 4294967295
-      },
-      "transform": {
-       "posX": 970,
-       "posY": 250,
-       "boundsType": "OBS_BOUNDS_NONE",
-       "alignment": 5
-      }
-     },
-     {
-      "name": "Topic Title",
-      "inputKind": "text_gdiplus_v3",
-      "zOrder": 5,
-      "enabled": true,
-      "fallbackKinds": [
-       "text_ft2_source_v3"
-      ],
-      "settings": {
-       "text": "Today's Topic: ...",
-       "font": {
-        "face": "Microsoft YaHei",
-        "size": 48
-       },
-       "color": 4294967295
-      },
-      "transform": {
-       "posX": 960,
-       "posY": 40,
-       "boundsType": "OBS_BOUNDS_NONE",
-       "alignment": 0
-      }
-     },
-     {
-      "name": "My Microphone",
-      "inputKind": "wasapi_input_capture",
-      "zOrder": 6,
-      "enabled": true,
-      "shared": true,
-      "placeholder": {
-       "kind": "device",
-       "hint": "Choose the host microphone"
-      }
-     },
-     {
-      "name": "Guest Microphone",
-      "inputKind": "wasapi_input_capture",
-      "zOrder": 7,
-      "enabled": true,
-      "placeholder": {
-       "kind": "device",
-       "hint": "Choose the guest microphone"
-      }
-     }
     ]
-   },
-   {
-    "name": "Solo Closeup",
-    "transitionDurationMs": 300,
-    "hotkey": "Ctrl+2",
-    "sources": [
-     {
-      "name": "Background Color",
-      "inputKind": "color_source_v3",
-      "zOrder": 0,
-      "enabled": true,
-      "settings": {
-       "color": 4278190080
-      },
-      "transform": {
-       "posX": 0,
-       "posY": 0,
-       "boundsType": "OBS_BOUNDS_SCALE_OUTER",
-       "boundsWidth": 1920,
-       "boundsHeight": 1080,
-       "alignment": 0
-      }
-     },
-     {
-      "name": "Host Camera",
-      "inputKind": "dshow_input",
-      "zOrder": 1,
-      "enabled": true,
-      "shared": true,
-      "fallbackKinds": [
-       "dshow_video_source"
-      ],
-      "placeholder": {
-       "kind": "device",
-       "hint": "Choose the host camera"
-      },
-      "transform": {
-       "posX": 540,
-       "posY": 540,
-       "boundsType": "OBS_BOUNDS_SCALE_OUTER",
-       "boundsWidth": 1280,
-       "boundsHeight": 720,
-       "alignment": 0
-      }
-     },
-     {
-      "name": "My Microphone",
-      "inputKind": "wasapi_input_capture",
-      "zOrder": 2,
-      "enabled": true,
-      "shared": true
-     },
-     {
-      "name": "Solo Closeup Title",
-      "inputKind": "text_gdiplus_v3",
-      "zOrder": 3,
-      "enabled": true,
-      "fallbackKinds": [
-       "text_ft2_source_v3"
-      ],
-      "settings": {
-       "text": "Host Chats Solo",
-       "font": {
-        "face": "Microsoft YaHei",
-        "size": 56
-       },
-       "color": 4294967295
-      },
-      "transform": {
-       "posX": 960,
-       "posY": 80,
-       "boundsType": "OBS_BOUNDS_NONE",
-       "alignment": 0
-      }
-     }
-    ]
-   }
-  ],
-  "requiresPlugins": [
-   {
-    "id": "droidcam-obs",
-    "reason": "Use a phone as a second camera (optional)"
-   }
-  ]
- },
- {
-  "id": "teaching",
-  "title": "Teaching Screen Recording",
-  "summary": "Display Capture as the base, instructor camera inset + chapter titles, ideal for recording courses.",
-  "icon": "📚",
-  "portrait": false,
-  "notes": "Captures the main display by default; switch the display index in OBS for multi-monitor setups.",
-  "canvas": {
-   "baseWidth": 1920,
-   "baseHeight": 1080,
-   "outputWidth": 1920,
-   "outputHeight": 1080,
-   "fpsNumerator": 30,
-   "fpsDenominator": 1
   },
-  "transition": "Fade",
-  "transitionDurationMs": 300,
-  "scenes": [
-   {
-    "name": "Screen Lecture",
+  {
+    "id": "product-duo",
+    "title": "Selling Dual Camera",
+    "summary": "Host wide + product closeup dual cameras, with product image and price bar on demand, ideal for live selling.",
+    "icon": "🛍️",
+    "portrait": false,
+    "notes": "Needs two cameras (a phone + capture card works as the second). The product image in the Product Closeup scene is hidden by default; just toggle the source visible when needed.",
+    "canvas": {
+      "baseWidth": 1920,
+      "baseHeight": 1080,
+      "outputWidth": 1920,
+      "outputHeight": 1080,
+      "fpsNumerator": 30,
+      "fpsDenominator": 1
+    },
+    "transition": "Fade",
     "transitionDurationMs": 300,
-    "hotkey": "Ctrl+1",
-    "sources": [
-     {
-      "name": "Display",
-      "inputKind": "monitor_capture",
-      "zOrder": 0,
-      "enabled": true,
-      "placeholder": {
-       "kind": "window",
-       "hint": "Choose the display to capture"
+    "scenes": [
+      {
+        "name": "Host Wide Shot",
+        "transitionDurationMs": 300,
+        "hotkey": "Ctrl+1",
+        "sources": [
+          {
+            "name": "Background Color",
+            "inputKind": "color_source_v3",
+            "zOrder": 0,
+            "enabled": true,
+            "settings": {
+              "color": 4278190080
+            },
+            "transform": {
+              "posX": 0,
+              "posY": 0,
+              "boundsType": "OBS_BOUNDS_SCALE_OUTER",
+              "boundsWidth": 1920,
+              "boundsHeight": 1080,
+              "alignment": 0
+            }
+          },
+          {
+            "name": "Main Camera (Host Wide)",
+            "inputKind": "dshow_input",
+            "zOrder": 1,
+            "enabled": true,
+            "fallbackKinds": [
+              "dshow_video_source"
+            ],
+            "placeholder": {
+              "kind": "device",
+              "hint": "Choose your camera"
+            },
+            "transform": {
+              "posX": 0,
+              "posY": 0,
+              "boundsType": "OBS_BOUNDS_SCALE_OUTER",
+              "alignment": 0,
+              "boundsWidth": 1920,
+              "boundsHeight": 1080
+            }
+          },
+          {
+            "name": "Product Title Bar",
+            "inputKind": "text_gdiplus_v3",
+            "zOrder": 2,
+            "enabled": true,
+            "settings": {
+              "text": "Today's Picks - Tap to Buy",
+              "font": {
+                "face": "Microsoft YaHei",
+                "size": 40
+              },
+              "color": 4294967295
+            },
+            "fallbackKinds": [
+              "text_ft2_source_v3"
+            ],
+            "transform": {
+              "posX": 60,
+              "posY": 940,
+              "boundsType": "OBS_BOUNDS_NONE",
+              "alignment": 5
+            }
+          },
+          {
+            "name": "My Microphone",
+            "inputKind": "wasapi_input_capture",
+            "zOrder": 3,
+            "enabled": true,
+            "placeholder": {
+              "kind": "device",
+              "hint": "Choose your microphone"
+            },
+            "shared": true
+          },
+          {
+            "name": "Desktop Audio",
+            "inputKind": "wasapi_output_capture",
+            "zOrder": 4,
+            "enabled": true,
+            "placeholder": {
+              "kind": "device",
+              "hint": "Choose desktop / system audio"
+            }
+          }
+        ]
       },
-      "transform": {
-       "posX": 0,
-       "posY": 0,
-       "boundsType": "OBS_BOUNDS_SCALE_OUTER",
-       "boundsWidth": 1920,
-       "boundsHeight": 1080,
-       "alignment": 0
+      {
+        "name": "Product Closeup",
+        "transitionDurationMs": 300,
+        "hotkey": "Ctrl+2",
+        "sources": [
+          {
+            "name": "Background Color",
+            "inputKind": "color_source_v3",
+            "zOrder": 0,
+            "enabled": true,
+            "settings": {
+              "color": 4278190080
+            },
+            "transform": {
+              "posX": 0,
+              "posY": 0,
+              "boundsType": "OBS_BOUNDS_SCALE_OUTER",
+              "boundsWidth": 1920,
+              "boundsHeight": 1080,
+              "alignment": 0
+            }
+          },
+          {
+            "name": "Closeup Camera (Product)",
+            "inputKind": "dshow_input",
+            "zOrder": 1,
+            "enabled": true,
+            "fallbackKinds": [
+              "dshow_video_source"
+            ],
+            "placeholder": {
+              "kind": "device",
+              "hint": "Choose your camera"
+            },
+            "transform": {
+              "posX": 0,
+              "posY": 0,
+              "boundsType": "OBS_BOUNDS_SCALE_OUTER",
+              "alignment": 0,
+              "boundsWidth": 1920,
+              "boundsHeight": 1080
+            }
+          },
+          {
+            "name": "Product Image",
+            "inputKind": "image_source",
+            "zOrder": 2,
+            "enabled": false,
+            "settings": {
+              "file": ""
+            },
+            "placeholder": {
+              "kind": "file",
+              "hint": "Choose the product image to show (hidden by default)"
+            },
+            "transform": {
+              "posX": 200,
+              "posY": 120,
+              "boundsType": "OBS_BOUNDS_SCALE_OUTER",
+              "boundsWidth": 1520,
+              "boundsHeight": 720,
+              "alignment": 0
+            }
+          },
+          {
+            "name": "Price Tag",
+            "inputKind": "text_gdiplus_v3",
+            "zOrder": 3,
+            "enabled": true,
+            "settings": {
+              "text": "Limited Deal ¥99",
+              "font": {
+                "face": "Microsoft YaHei",
+                "size": 56
+              },
+              "color": 4294967295
+            },
+            "fallbackKinds": [
+              "text_ft2_source_v3"
+            ],
+            "transform": {
+              "posX": 60,
+              "posY": 60,
+              "boundsType": "OBS_BOUNDS_NONE",
+              "alignment": 5
+            }
+          },
+          {
+            "name": "My Microphone",
+            "inputKind": "wasapi_input_capture",
+            "zOrder": 4,
+            "enabled": true,
+            "placeholder": {
+              "kind": "device",
+              "hint": "Choose your microphone"
+            },
+            "shared": true
+          },
+          {
+            "name": "Desktop Audio",
+            "inputKind": "wasapi_output_capture",
+            "zOrder": 5,
+            "enabled": true,
+            "placeholder": {
+              "kind": "device",
+              "hint": "Choose desktop / system audio"
+            }
+          }
+        ]
       }
-     },
-     {
-      "name": "Instructor Camera",
-      "inputKind": "dshow_input",
-      "zOrder": 1,
-      "enabled": true,
-      "fallbackKinds": [
-       "dshow_video_source"
-      ],
-      "placeholder": {
-       "kind": "device",
-       "hint": "Choose the instructor camera"
-      },
-      "transform": {
-       "posX": 1900,
-       "posY": 1060,
-       "boundsType": "OBS_BOUNDS_TO_WIDTH",
-       "boundsWidth": 320,
-       "alignment": 10
-      }
-     },
-     {
-      "name": "Chapter Title",
-      "inputKind": "text_gdiplus_v3",
-      "zOrder": 2,
-      "enabled": true,
-      "fallbackKinds": [
-       "text_ft2_source_v3"
-      ],
-      "settings": {
-       "text": "Chapter 1 - Intro",
-       "font": {
-        "face": "Microsoft YaHei",
-        "size": 44
-       },
-       "color": 4294967295
-      },
-      "transform": {
-       "posX": 40,
-       "posY": 40,
-       "boundsType": "OBS_BOUNDS_NONE",
-       "alignment": 5
-      }
-     },
-     {
-      "name": "My Microphone",
-      "inputKind": "wasapi_input_capture",
-      "zOrder": 3,
-      "enabled": true,
-      "shared": true,
-      "placeholder": {
-       "kind": "device",
-       "hint": "Choose the instructor microphone"
-      }
-     },
-     {
-      "name": "System Audio",
-      "inputKind": "wasapi_output_capture",
-      "zOrder": 4,
-      "enabled": true,
-      "placeholder": {
-       "kind": "device",
-       "hint": "Choose system audio (slide audio)"
-      }
-     }
     ]
-   },
-   {
-    "name": "Slides Fullscreen",
-    "transitionDurationMs": 300,
-    "hotkey": "Ctrl+2",
-    "sources": [
-     {
-      "name": "Display",
-      "inputKind": "monitor_capture",
-      "zOrder": 0,
-      "enabled": true,
-      "shared": true,
-      "placeholder": {
-       "kind": "window",
-       "hint": "Choose the display to capture"
-      },
-      "transform": {
-       "posX": 0,
-       "posY": 0,
-       "boundsType": "OBS_BOUNDS_SCALE_OUTER",
-       "boundsWidth": 1920,
-       "boundsHeight": 1080,
-       "alignment": 0
-      }
-     },
-     {
-      "name": "Chapter Title",
-      "inputKind": "text_gdiplus_v3",
-      "zOrder": 1,
-      "enabled": true,
-      "shared": true,
-      "fallbackKinds": [
-       "text_ft2_source_v3"
-      ],
-      "settings": {
-       "text": "Slides Playing",
-       "font": {
-        "face": "Microsoft YaHei",
-        "size": 44
-       },
-       "color": 4294967295
-      },
-      "transform": {
-       "posX": 40,
-       "posY": 40,
-       "boundsType": "OBS_BOUNDS_NONE",
-       "alignment": 5
-      }
-     }
-    ]
-   },
-   {
-    "name": "On Break",
-    "transitionDurationMs": 500,
-    "hotkey": "Ctrl+3",
-    "sources": [
-     {
-      "name": "Background Color",
-      "inputKind": "color_source_v3",
-      "zOrder": 0,
-      "enabled": true,
-      "settings": {
-       "color": 4278650880
-      },
-      "transform": {
-       "posX": 0,
-       "posY": 0,
-       "boundsType": "OBS_BOUNDS_SCALE_OUTER",
-       "boundsWidth": 1920,
-       "boundsHeight": 1080,
-       "alignment": 0
-      }
-     },
-     {
-      "name": "Take a Break",
-      "inputKind": "text_gdiplus_v3",
-      "zOrder": 1,
-      "enabled": true,
-      "fallbackKinds": [
-       "text_ft2_source_v3"
-      ],
-      "settings": {
-       "text": "On a short break, back soon",
-       "font": {
-        "face": "Microsoft YaHei",
-        "size": 64
-       },
-       "color": 4294967295
-      },
-      "transform": {
-       "posX": 960,
-       "posY": 540,
-       "boundsType": "OBS_BOUNDS_NONE",
-       "alignment": 0
-      }
-     },
-     {
-      "name": "My Microphone",
-      "inputKind": "wasapi_input_capture",
-      "zOrder": 2,
-      "enabled": false,
-      "shared": true
-     }
-    ]
-   }
-  ]
- },
- {
-  "id": "radio-idle",
-  "title": "Radio Idle",
-  "summary": "Idle and mic-on scenes for radio / music streams: background, dim overlay, and scrolling track.",
-  "icon": "📻",
-  "portrait": false,
-  "notes": "Background music loops local audio via ffmpeg; Now Playing can read a text file (OBS text source read_from_file).",
-  "canvas": {
-   "baseWidth": 1920,
-   "baseHeight": 1080,
-   "outputWidth": 1920,
-   "outputHeight": 1080,
-   "fpsNumerator": 30,
-   "fpsDenominator": 1
   },
-  "transition": "Fade",
-  "transitionDurationMs": 500,
-  "scenes": [
-   {
-    "name": "Radio Idle",
-    "transitionDurationMs": 500,
-    "hotkey": "Ctrl+1",
-    "sources": [
-     {
-      "name": "Background Image",
-      "inputKind": "image_source",
-      "zOrder": 0,
-      "enabled": true,
-      "settings": {
-       "file": ""
-      },
-      "placeholder": {
-       "kind": "file",
-       "hint": "Choose the radio background image"
-      },
-      "transform": {
-       "posX": 0,
-       "posY": 0,
-       "boundsType": "OBS_BOUNDS_SCALE_OUTER",
-       "boundsWidth": 1920,
-       "boundsHeight": 1080,
-       "alignment": 0
-      }
-     },
-     {
-      "name": "Dim Overlay",
-      "inputKind": "color_source_v3",
-      "zOrder": 1,
-      "enabled": true,
-      "settings": {
-       "color": 2147483648
-      },
-      "transform": {
-       "posX": 0,
-       "posY": 0,
-       "boundsType": "OBS_BOUNDS_SCALE_OUTER",
-       "boundsWidth": 1920,
-       "boundsHeight": 1080,
-       "alignment": 0
-      }
-     },
-     {
-      "name": "Radio Name",
-      "inputKind": "text_gdiplus_v3",
-      "zOrder": 2,
-      "enabled": true,
-      "fallbackKinds": [
-       "text_ft2_source_v3"
-      ],
-      "settings": {
-       "text": "Night Flight Radio - FM Always On",
-       "font": {
-        "face": "Microsoft YaHei",
-        "size": 64
-       },
-       "color": 4294967295
-      },
-      "transform": {
-       "posX": 960,
-       "posY": 360,
-       "boundsType": "OBS_BOUNDS_NONE",
-       "alignment": 0
-      }
-     },
-     {
-      "name": "Now Playing",
-      "inputKind": "text_gdiplus_v3",
-      "zOrder": 3,
-      "enabled": true,
-      "fallbackKinds": [
-       "text_ft2_source_v3"
-      ],
-      "settings": {
-       "text": "",
-       "read_from_file": true,
-       "file": ""
-      },
-      "placeholder": {
-       "kind": "file",
-       "hint": "Choose the Now Playing text file (OBS reads it on a timer)"
-      },
-      "transform": {
-       "posX": 960,
-       "posY": 520,
-       "boundsType": "OBS_BOUNDS_NONE",
-       "alignment": 0
-      }
-     },
-     {
-      "name": "Background Music",
-      "inputKind": "ffmpeg_source",
-      "zOrder": 4,
-      "enabled": true,
-      "shared": true,
-      "settings": {
-       "input": "",
-       "is_local_file": true,
-       "looping": true
-      },
-      "placeholder": {
-       "kind": "file",
-       "hint": "Choose the background music file to loop"
-      }
-     },
-     {
-      "name": "My Microphone",
-      "inputKind": "wasapi_input_capture",
-      "zOrder": 5,
-      "enabled": false,
-      "shared": true,
-      "placeholder": {
-       "kind": "device",
-       "hint": "Choose the host microphone (muted while idle)"
-      }
-     }
-    ]
-   },
-   {
-    "name": "Mic On",
+  {
+    "id": "esports-cast",
+    "title": "Esports Cast",
+    "summary": "Fullscreen game + caster camera bottom right + score bar, great for event casting and watch parties.",
+    "icon": "🏆",
+    "portrait": false,
+    "notes": "The game view uses Game Capture first and falls back to Display Capture if no window is found; double-click the score bar text to edit it.",
+    "canvas": {
+      "baseWidth": 1920,
+      "baseHeight": 1080,
+      "outputWidth": 1920,
+      "outputHeight": 1080,
+      "fpsNumerator": 60,
+      "fpsDenominator": 1
+    },
+    "transition": "Fade",
     "transitionDurationMs": 300,
-    "hotkey": "Ctrl+2",
-    "sources": [
-     {
-      "name": "Background Image",
-      "inputKind": "image_source",
-      "zOrder": 0,
-      "enabled": true,
-      "shared": true,
-      "settings": {
-       "file": ""
+    "scenes": [
+      {
+        "name": "Caster View",
+        "transitionDurationMs": 300,
+        "hotkey": "Ctrl+1",
+        "sources": [
+          {
+            "name": "Game Capture",
+            "inputKind": "game_capture",
+            "zOrder": 0,
+            "enabled": true,
+            "fallbackKinds": [
+              "window_capture",
+              "monitor_capture"
+            ],
+            "placeholder": {
+              "kind": "window",
+              "hint": "Choose the game window or display to capture"
+            },
+            "transform": {
+              "posX": 0,
+              "posY": 0,
+              "boundsType": "OBS_BOUNDS_SCALE_OUTER",
+              "boundsWidth": 1920,
+              "boundsHeight": 1080,
+              "alignment": 0
+            }
+          },
+          {
+            "name": "Caster Camera",
+            "inputKind": "dshow_input",
+            "zOrder": 1,
+            "enabled": true,
+            "fallbackKinds": [
+              "dshow_video_source"
+            ],
+            "placeholder": {
+              "kind": "device",
+              "hint": "Choose your camera"
+            },
+            "transform": {
+              "posX": 1490,
+              "posY": 820,
+              "boundsType": "OBS_BOUNDS_TO_WIDTH",
+              "alignment": 5,
+              "boundsWidth": 380
+            }
+          },
+          {
+            "name": "Score Bar",
+            "inputKind": "text_gdiplus_v3",
+            "zOrder": 2,
+            "enabled": true,
+            "settings": {
+              "text": "Team A 2 : 1 Team B",
+              "font": {
+                "face": "Microsoft YaHei",
+                "size": 44
+              },
+              "color": 4294967295
+            },
+            "fallbackKinds": [
+              "text_ft2_source_v3"
+            ],
+            "transform": {
+              "posX": 60,
+              "posY": 40,
+              "boundsType": "OBS_BOUNDS_NONE",
+              "alignment": 5
+            }
+          },
+          {
+            "name": "My Microphone",
+            "inputKind": "wasapi_input_capture",
+            "zOrder": 3,
+            "enabled": true,
+            "placeholder": {
+              "kind": "device",
+              "hint": "Choose your microphone"
+            },
+            "shared": true
+          },
+          {
+            "name": "Desktop Audio",
+            "inputKind": "wasapi_output_capture",
+            "zOrder": 4,
+            "enabled": true,
+            "placeholder": {
+              "kind": "device",
+              "hint": "Choose desktop / system audio"
+            }
+          }
+        ]
       },
-      "placeholder": {
-       "kind": "file",
-       "hint": "Choose the radio background image"
-      },
-      "transform": {
-       "posX": 0,
-       "posY": 0,
-       "boundsType": "OBS_BOUNDS_SCALE_OUTER",
-       "boundsWidth": 1920,
-       "boundsHeight": 1080,
-       "alignment": 0
+      {
+        "name": "Halftime",
+        "transitionDurationMs": 500,
+        "hotkey": "Ctrl+2",
+        "sources": [
+          {
+            "name": "Background Color",
+            "inputKind": "color_source_v3",
+            "zOrder": 0,
+            "enabled": true,
+            "settings": {
+              "color": 4278650880
+            },
+            "transform": {
+              "posX": 0,
+              "posY": 0,
+              "boundsType": "OBS_BOUNDS_SCALE_OUTER",
+              "boundsWidth": 1920,
+              "boundsHeight": 1080,
+              "alignment": 0
+            }
+          },
+          {
+            "name": "Halftime Text",
+            "inputKind": "text_gdiplus_v3",
+            "zOrder": 1,
+            "enabled": true,
+            "settings": {
+              "text": "Halftime - Back Soon",
+              "font": {
+                "face": "Microsoft YaHei",
+                "size": 72
+              },
+              "color": 4294967295
+            },
+            "fallbackKinds": [
+              "text_ft2_source_v3"
+            ],
+            "transform": {
+              "posX": 960,
+              "posY": 460,
+              "boundsType": "OBS_BOUNDS_NONE",
+              "alignment": 0
+            }
+          },
+          {
+            "name": "Desktop Audio",
+            "inputKind": "wasapi_output_capture",
+            "zOrder": 2,
+            "enabled": true,
+            "placeholder": {
+              "kind": "device",
+              "hint": "Choose desktop / system audio"
+            }
+          }
+        ]
       }
-     },
-     {
-      "name": "Dim Overlay",
-      "inputKind": "color_source_v3",
-      "zOrder": 1,
-      "enabled": true,
-      "shared": true,
-      "settings": {
-       "color": 2147483648
-      },
-      "transform": {
-       "posX": 0,
-       "posY": 0,
-       "boundsType": "OBS_BOUNDS_SCALE_OUTER",
-       "boundsWidth": 1920,
-       "boundsHeight": 1080,
-       "alignment": 0
-      }
-     },
-     {
-      "name": "Host Camera",
-      "inputKind": "dshow_input",
-      "zOrder": 2,
-      "enabled": true,
-      "fallbackKinds": [
-       "dshow_video_source"
-      ],
-      "placeholder": {
-       "kind": "device",
-       "hint": "Choose the host camera"
-      },
-      "transform": {
-       "posX": 1490,
-       "posY": 835,
-       "boundsType": "OBS_BOUNDS_TO_WIDTH",
-       "boundsWidth": 400,
-       "alignment": 5
-      }
-     },
-     {
-      "name": "Radio Name",
-      "inputKind": "text_gdiplus_v3",
-      "zOrder": 3,
-      "enabled": true,
-      "shared": true,
-      "fallbackKinds": [
-       "text_ft2_source_v3"
-      ],
-      "settings": {
-       "text": "Night Flight Radio - Live Now",
-       "font": {
-        "face": "Microsoft YaHei",
-        "size": 64
-       },
-       "color": 4294967295
-      },
-      "transform": {
-       "posX": 960,
-       "posY": 360,
-       "boundsType": "OBS_BOUNDS_NONE",
-       "alignment": 0
-      }
-     },
-     {
-      "name": "Background Music",
-      "inputKind": "ffmpeg_source",
-      "zOrder": 4,
-      "enabled": true,
-      "shared": true
-     },
-     {
-      "name": "My Microphone",
-      "inputKind": "wasapi_input_capture",
-      "zOrder": 5,
-      "enabled": true,
-      "shared": true,
-      "placeholder": {
-       "kind": "device",
-       "hint": "Choose the host microphone"
-      }
-     }
     ]
-   }
-  ]
- },
- {
-  "id": "show-triple",
-  "title": "Go-Live / BRB / End Pack",
-  "summary": "Countdown, Be Right Back, and end-of-stream screens, with big text ready.",
-  "icon": "🎬",
-  "portrait": false,
-  "notes": "The countdown browser source is hidden by default; unhide it and fill in your countdown page URL when needed.",
-  "canvas": {
-   "baseWidth": 1920,
-   "baseHeight": 1080,
-   "outputWidth": 1920,
-   "outputHeight": 1080,
-   "fpsNumerator": 30,
-   "fpsDenominator": 1
   },
-  "transition": "Fade",
-  "transitionDurationMs": 300,
-  "scenes": [
-   {
-    "name": "Live Countdown",
-    "transitionDurationMs": 500,
-    "hotkey": "Ctrl+1",
-    "sources": [
-     {
-      "name": "Base Color",
-      "inputKind": "color_source_v3",
-      "zOrder": 0,
-      "enabled": true,
-      "settings": {
-       "color": 4279257088
-      },
-      "transform": {
-       "posX": 0,
-       "posY": 0,
-       "boundsType": "OBS_BOUNDS_SCALE_OUTER",
-       "boundsWidth": 1920,
-       "boundsHeight": 1080,
-       "alignment": 0
-      }
-     },
-     {
-      "name": "Start Text",
-      "inputKind": "text_gdiplus_v3",
-      "zOrder": 1,
-      "enabled": true,
-      "fallbackKinds": [
-       "text_ft2_source_v3"
-      ],
-      "settings": {
-       "text": "Stream Starting Soon",
-       "font": {
-        "face": "Microsoft YaHei",
-        "size": 96
-       },
-       "color": 4294967295
-      },
-      "transform": {
-       "posX": 960,
-       "posY": 460,
-       "boundsType": "OBS_BOUNDS_NONE",
-       "alignment": 0
-      }
-     },
-     {
-      "name": "Countdown Browser",
-      "inputKind": "browser_source",
-      "zOrder": 2,
-      "enabled": false,
-      "settings": {
-       "url": "",
-       "width": 1920,
-       "height": 1080
-      },
-      "placeholder": {
-       "kind": "url",
-       "hint": "Enter your countdown page URL (hidden by default)"
-      },
-      "transform": {
-       "posX": 0,
-       "posY": 0,
-       "boundsType": "OBS_BOUNDS_SCALE_OUTER",
-       "boundsWidth": 1920,
-       "boundsHeight": 1080,
-       "alignment": 0
-      }
-     },
-     {
-      "name": "Waiting Music",
-      "inputKind": "ffmpeg_source",
-      "zOrder": 3,
-      "enabled": true,
-      "shared": true,
-      "settings": {
-       "input": "",
-       "is_local_file": true,
-       "looping": true
-      },
-      "placeholder": {
-       "kind": "file",
-       "hint": "Choose the waiting music"
-      }
-     },
-     {
-      "name": "My Microphone",
-      "inputKind": "wasapi_input_capture",
-      "zOrder": 4,
-      "enabled": false,
-      "shared": true,
-      "placeholder": {
-       "kind": "device",
-       "hint": "Choose the microphone (off during countdown)"
-      }
-     }
-    ]
-   },
-   {
-    "name": "Be Right Back BRB",
+  {
+    "id": "podcast-duo",
+    "title": "Podcast Talk",
+    "summary": "Two side-by-side guest cameras + background image, great for interviews, podcasts, and roundtables.",
+    "icon": "🎙️",
+    "portrait": false,
+    "notes": "Needs two cameras; you can also set the Guest Camera to Window Capture for a co-stream feed. Pick the background image and devices in OBS.",
+    "canvas": {
+      "baseWidth": 1920,
+      "baseHeight": 1080,
+      "outputWidth": 1920,
+      "outputHeight": 1080,
+      "fpsNumerator": 30,
+      "fpsDenominator": 1
+    },
+    "transition": "Fade",
     "transitionDurationMs": 300,
-    "hotkey": "Ctrl+2",
-    "sources": [
-     {
-      "name": "Base Color",
-      "inputKind": "color_source_v3",
-      "zOrder": 0,
-      "enabled": true,
-      "settings": {
-       "color": 4279257088
+    "scenes": [
+      {
+        "name": "Talk View",
+        "transitionDurationMs": 300,
+        "hotkey": "Ctrl+1",
+        "sources": [
+          {
+            "name": "Background Image",
+            "inputKind": "image_source",
+            "zOrder": 0,
+            "enabled": true,
+            "settings": {
+              "file": ""
+            },
+            "placeholder": {
+              "kind": "file",
+              "hint": "Choose the talk background image"
+            },
+            "transform": {
+              "posX": 0,
+              "posY": 0,
+              "boundsType": "OBS_BOUNDS_SCALE_OUTER",
+              "boundsWidth": 1920,
+              "boundsHeight": 1080,
+              "alignment": 0
+            }
+          },
+          {
+            "name": "Main Camera",
+            "inputKind": "dshow_input",
+            "zOrder": 1,
+            "enabled": true,
+            "fallbackKinds": [
+              "dshow_video_source"
+            ],
+            "placeholder": {
+              "kind": "device",
+              "hint": "Choose your camera"
+            },
+            "transform": {
+              "posX": 120,
+              "posY": 220,
+              "boundsType": "OBS_BOUNDS_TO_WIDTH",
+              "alignment": 0,
+              "boundsWidth": 820
+            }
+          },
+          {
+            "name": "Guest Camera",
+            "inputKind": "dshow_input",
+            "zOrder": 2,
+            "enabled": true,
+            "fallbackKinds": [
+              "dshow_video_source"
+            ],
+            "placeholder": {
+              "kind": "device",
+              "hint": "Choose your camera"
+            },
+            "transform": {
+              "posX": 980,
+              "posY": 220,
+              "boundsType": "OBS_BOUNDS_TO_WIDTH",
+              "alignment": 0,
+              "boundsWidth": 820
+            }
+          },
+          {
+            "name": "Show Title",
+            "inputKind": "text_gdiplus_v3",
+            "zOrder": 3,
+            "enabled": true,
+            "settings": {
+              "text": "What's on Today - Episode 1",
+              "font": {
+                "face": "Microsoft YaHei",
+                "size": 40
+              },
+              "color": 4294967295
+            },
+            "fallbackKinds": [
+              "text_ft2_source_v3"
+            ],
+            "transform": {
+              "posX": 60,
+              "posY": 40,
+              "boundsType": "OBS_BOUNDS_NONE",
+              "alignment": 5
+            }
+          },
+          {
+            "name": "My Microphone",
+            "inputKind": "wasapi_input_capture",
+            "zOrder": 4,
+            "enabled": true,
+            "placeholder": {
+              "kind": "device",
+              "hint": "Choose your microphone"
+            },
+            "shared": true
+          }
+        ]
       },
-      "transform": {
-       "posX": 0,
-       "posY": 0,
-       "boundsType": "OBS_BOUNDS_SCALE_OUTER",
-       "boundsWidth": 1920,
-       "boundsHeight": 1080,
-       "alignment": 0
+      {
+        "name": "Starting Soon",
+        "transitionDurationMs": 500,
+        "hotkey": "Ctrl+2",
+        "sources": [
+          {
+            "name": "Background Color",
+            "inputKind": "color_source_v3",
+            "zOrder": 0,
+            "enabled": true,
+            "settings": {
+              "color": 4278650880
+            },
+            "transform": {
+              "posX": 0,
+              "posY": 0,
+              "boundsType": "OBS_BOUNDS_SCALE_OUTER",
+              "boundsWidth": 1920,
+              "boundsHeight": 1080,
+              "alignment": 0
+            }
+          },
+          {
+            "name": "Opening Text",
+            "inputKind": "text_gdiplus_v3",
+            "zOrder": 1,
+            "enabled": true,
+            "settings": {
+              "text": "Starting Soon - Stay Tuned",
+              "font": {
+                "face": "Microsoft YaHei",
+                "size": 72
+              },
+              "color": 4294967295
+            },
+            "fallbackKinds": [
+              "text_ft2_source_v3"
+            ],
+            "transform": {
+              "posX": 960,
+              "posY": 460,
+              "boundsType": "OBS_BOUNDS_NONE",
+              "alignment": 0
+            }
+          }
+        ]
       }
-     },
-     {
-      "name": "BRB Text",
-      "inputKind": "text_gdiplus_v3",
-      "zOrder": 1,
-      "enabled": true,
-      "fallbackKinds": [
-       "text_ft2_source_v3"
-      ],
-      "settings": {
-       "text": "Be Right Back BRB",
-       "font": {
-        "face": "Microsoft YaHei",
-        "size": 96
-       },
-       "color": 4294967295
-      },
-      "transform": {
-       "posX": 960,
-       "posY": 540,
-       "boundsType": "OBS_BOUNDS_NONE",
-       "alignment": 0
+    ],
+    "requiresPlugins": [
+      {
+        "id": "audio-monitor",
+        "reason": "Dual-track monitoring and output (optional)"
       }
-     },
-     {
-      "name": "Waiting Music",
-      "inputKind": "ffmpeg_source",
-      "zOrder": 2,
-      "enabled": true,
-      "shared": true
-     },
-     {
-      "name": "My Microphone",
-      "inputKind": "wasapi_input_capture",
-      "zOrder": 3,
-      "enabled": false,
-      "shared": true
-     }
     ]
-   },
-   {
-    "name": "That's It For Today",
-    "transitionDurationMs": 500,
-    "hotkey": "Ctrl+3",
-    "sources": [
-     {
-      "name": "Base Color",
-      "inputKind": "color_source_v3",
-      "zOrder": 0,
-      "enabled": true,
-      "settings": {
-       "color": 4279257088
-      },
-      "transform": {
-       "posX": 0,
-       "posY": 0,
-       "boundsType": "OBS_BOUNDS_SCALE_OUTER",
-       "boundsWidth": 1920,
-       "boundsHeight": 1080,
-       "alignment": 0
-      }
-     },
-     {
-      "name": "End Text",
-      "inputKind": "text_gdiplus_v3",
-      "zOrder": 1,
-      "enabled": true,
-      "fallbackKinds": [
-       "text_ft2_source_v3"
-      ],
-      "settings": {
-       "text": "That's all for today, see you tomorrow",
-       "font": {
-        "face": "Microsoft YaHei",
-        "size": 84
-       },
-       "color": 4294967295
-      },
-      "transform": {
-       "posX": 960,
-       "posY": 540,
-       "boundsType": "OBS_BOUNDS_NONE",
-       "alignment": 0
-      }
-     },
-     {
-      "name": "Waiting Music",
-      "inputKind": "ffmpeg_source",
-      "zOrder": 2,
-      "enabled": true,
-      "shared": true
-     }
-    ]
-   }
-  ]
- },
- {
-  "id": "green-screen",
-  "title": "Green Screen Background",
-  "summary": "Key the subject over a virtual background image, great for gaming, teaching, and stream backgrounds.",
-  "icon": "🟢",
-  "portrait": false,
-  "notes": "The camera must shoot in front of a green screen; without one, remove the Chroma Key filter in OBS and use the camera as a normal shot. Pick the background image, camera, and mic in OBS.",
-  "canvas": {
-   "baseWidth": 1920,
-   "baseHeight": 1080,
-   "outputWidth": 1920,
-   "outputHeight": 1080,
-   "fpsNumerator": 30,
-   "fpsDenominator": 1
   },
-  "transition": "Fade",
-  "transitionDurationMs": 300,
-  "scenes": [
-   {
-    "name": "Live",
+  {
+    "id": "short-video",
+    "title": "Vertical Short Recording",
+    "summary": "9:16 vertical canvas, centered camera + top/bottom title bars, record shorts or go vertical live directly.",
+    "icon": "📱",
+    "portrait": true,
+    "notes": "Canvas and output are both 1080×1920; ready for vertical short-video platforms. Double-click the top/bottom title text to edit it.",
+    "canvas": {
+      "baseWidth": 1080,
+      "baseHeight": 1920,
+      "outputWidth": 1080,
+      "outputHeight": 1920,
+      "fpsNumerator": 30,
+      "fpsDenominator": 1
+    },
+    "transition": "Fade",
     "transitionDurationMs": 300,
-    "hotkey": "Ctrl+1",
-    "sources": [
-     {
-      "name": "Virtual Background",
-      "inputKind": "image_source",
-      "zOrder": 0,
-      "enabled": true,
-      "settings": {
-       "file": ""
+    "scenes": [
+      {
+        "name": "Recording",
+        "transitionDurationMs": 300,
+        "hotkey": "Ctrl+1",
+        "sources": [
+          {
+            "name": "Background Color",
+            "inputKind": "color_source_v3",
+            "zOrder": 0,
+            "enabled": true,
+            "settings": {
+              "color": 4278190080
+            },
+            "transform": {
+              "posX": 0,
+              "posY": 0,
+              "boundsType": "OBS_BOUNDS_SCALE_OUTER",
+              "boundsWidth": 1920,
+              "boundsHeight": 1080,
+              "alignment": 0
+            }
+          },
+          {
+            "name": "Webcam (Center)",
+            "inputKind": "dshow_input",
+            "zOrder": 1,
+            "enabled": true,
+            "fallbackKinds": [
+              "dshow_video_source"
+            ],
+            "placeholder": {
+              "kind": "device",
+              "hint": "Choose your camera"
+            },
+            "transform": {
+              "posX": 200,
+              "posY": 240,
+              "boundsType": "OBS_BOUNDS_TO_WIDTH",
+              "alignment": 0,
+              "boundsWidth": 680
+            }
+          },
+          {
+            "name": "Top Title",
+            "inputKind": "text_gdiplus_v3",
+            "zOrder": 2,
+            "enabled": true,
+            "settings": {
+              "text": "Short Video Title",
+              "font": {
+                "face": "Microsoft YaHei",
+                "size": 52
+              },
+              "color": 4294967295
+            },
+            "fallbackKinds": [
+              "text_ft2_source_v3"
+            ],
+            "transform": {
+              "posX": 540,
+              "posY": 100,
+              "boundsType": "OBS_BOUNDS_NONE",
+              "alignment": 0
+            }
+          },
+          {
+            "name": "Bottom Caption",
+            "inputKind": "text_gdiplus_v3",
+            "zOrder": 3,
+            "enabled": true,
+            "settings": {
+              "text": "Like and follow if you enjoy",
+              "font": {
+                "face": "Microsoft YaHei",
+                "size": 40
+              },
+              "color": 4294967295
+            },
+            "fallbackKinds": [
+              "text_ft2_source_v3"
+            ],
+            "transform": {
+              "posX": 540,
+              "posY": 1750,
+              "boundsType": "OBS_BOUNDS_NONE",
+              "alignment": 0
+            }
+          },
+          {
+            "name": "My Microphone",
+            "inputKind": "wasapi_input_capture",
+            "zOrder": 4,
+            "enabled": true,
+            "placeholder": {
+              "kind": "device",
+              "hint": "Choose your microphone"
+            },
+            "shared": true
+          }
+        ]
       },
-      "placeholder": {
-       "kind": "file",
-       "hint": "Choose the virtual background image"
-      },
-      "transform": {
-       "posX": 0,
-       "posY": 0,
-       "boundsType": "OBS_BOUNDS_SCALE_OUTER",
-       "boundsWidth": 1920,
-       "boundsHeight": 1080,
-       "alignment": 0
+      {
+        "name": "Outro",
+        "transitionDurationMs": 500,
+        "hotkey": "Ctrl+2",
+        "sources": [
+          {
+            "name": "Background Color",
+            "inputKind": "color_source_v3",
+            "zOrder": 0,
+            "enabled": true,
+            "settings": {
+              "color": 4278650880
+            },
+            "transform": {
+              "posX": 0,
+              "posY": 0,
+              "boundsType": "OBS_BOUNDS_SCALE_OUTER",
+              "boundsWidth": 1920,
+              "boundsHeight": 1080,
+              "alignment": 0
+            }
+          },
+          {
+            "name": "Outro Text",
+            "inputKind": "text_gdiplus_v3",
+            "zOrder": 1,
+            "enabled": true,
+            "settings": {
+              "text": "Thanks for Watching - See You Next Time",
+              "font": {
+                "face": "Microsoft YaHei",
+                "size": 64
+              },
+              "color": 4294967295
+            },
+            "fallbackKinds": [
+              "text_ft2_source_v3"
+            ],
+            "transform": {
+              "posX": 540,
+              "posY": 900,
+              "boundsType": "OBS_BOUNDS_NONE",
+              "alignment": 0
+            }
+          }
+        ]
       }
-     },
-     {
-      "name": "Webcam (Green Screen)",
-      "inputKind": "dshow_input",
-      "zOrder": 1,
-      "enabled": true,
-      "fallbackKinds": [
-       "dshow_video_source"
-      ],
-      "placeholder": {
-       "kind": "device",
-       "hint": "Choose your camera"
-      },
-      "transform": {
-       "posX": 420,
-       "posY": 60,
-       "boundsType": "OBS_BOUNDS_TO_WIDTH",
-       "alignment": 0,
-       "boundsWidth": 1080
+    ],
+    "requiresPlugins": [
+      {
+        "id": "aitum-vertical",
+        "reason": "Vertical dual-canvas recording"
       }
-     },
-     {
-      "name": "My Microphone",
-      "inputKind": "wasapi_input_capture",
-      "zOrder": 2,
-      "enabled": true,
-      "placeholder": {
-       "kind": "device",
-       "hint": "Choose your microphone"
-      },
-      "shared": true
-     },
-     {
-      "name": "Desktop Audio",
-      "inputKind": "wasapi_output_capture",
-      "zOrder": 3,
-      "enabled": true,
-      "placeholder": {
-       "kind": "device",
-       "hint": "Choose desktop / system audio"
-      }
-     },
-     {
-      "name": "Stream Title",
-      "inputKind": "text_gdiplus_v3",
-      "zOrder": 4,
-      "enabled": true,
-      "settings": {
-       "text": "Green Screen Live - Welcome to the Stream",
-       "font": {
-        "face": "Microsoft YaHei",
-        "size": 44
-       },
-       "color": 4294967295
-      },
-      "fallbackKinds": [
-       "text_ft2_source_v3"
-      ],
-      "transform": {
-       "posX": 60,
-       "posY": 40,
-       "boundsType": "OBS_BOUNDS_NONE",
-       "alignment": 5
-      }
-     }
     ]
-   },
-   {
-    "name": "Be Right Back BRB",
-    "transitionDurationMs": 500,
-    "hotkey": "Ctrl+2",
-    "sources": [
-     {
-      "name": "Background Color",
-      "inputKind": "color_source_v3",
-      "zOrder": 0,
-      "enabled": true,
-      "settings": {
-       "color": 4278650880
-      },
-      "transform": {
-       "posX": 0,
-       "posY": 0,
-       "boundsType": "OBS_BOUNDS_SCALE_OUTER",
-       "boundsWidth": 1920,
-       "boundsHeight": 1080,
-       "alignment": 0
-      }
-     },
-     {
-      "name": "BRB Text",
-      "inputKind": "text_gdiplus_v3",
-      "zOrder": 1,
-      "enabled": true,
-      "settings": {
-       "text": "Be Right Back",
-       "font": {
-        "face": "Microsoft YaHei",
-        "size": 96
-       },
-       "color": 4294967295
-      },
-      "fallbackKinds": [
-       "text_ft2_source_v3"
-      ],
-      "transform": {
-       "posX": 960,
-       "posY": 430,
-       "boundsType": "OBS_BOUNDS_NONE",
-       "alignment": 0
-      }
-     }
-    ]
-   }
-  ]
- },
- {
-  "id": "product-duo",
-  "title": "Selling Dual Camera",
-  "summary": "Host wide + product closeup dual cameras, with product image and price bar on demand, ideal for live selling.",
-  "icon": "🛍️",
-  "portrait": false,
-  "notes": "Needs two cameras (a phone + capture card works as the second). The product image in the Product Closeup scene is hidden by default; just toggle the source visible when needed.",
-  "canvas": {
-   "baseWidth": 1920,
-   "baseHeight": 1080,
-   "outputWidth": 1920,
-   "outputHeight": 1080,
-   "fpsNumerator": 30,
-   "fpsDenominator": 1
   },
-  "transition": "Fade",
-  "transitionDurationMs": 300,
-  "scenes": [
-   {
-    "name": "Host Wide Shot",
+  {
+    "id": "meeting-teach",
+    "title": "Meeting/Class Multicam",
+    "summary": "Slides fullscreen + speaker PiP + whiteboard camera, great for online classes, demos, and meetings.",
+    "icon": "🎓",
+    "portrait": false,
+    "notes": "Pick the PPT / browser window for the Slide Window with Window Capture; the Whiteboard Closeup needs a second camera or phone mirroring.",
+    "canvas": {
+      "baseWidth": 1920,
+      "baseHeight": 1080,
+      "outputWidth": 1920,
+      "outputHeight": 1080,
+      "fpsNumerator": 30,
+      "fpsDenominator": 1
+    },
+    "transition": "Fade",
     "transitionDurationMs": 300,
-    "hotkey": "Ctrl+1",
-    "sources": [
-     {
-      "name": "Background Color",
-      "inputKind": "color_source_v3",
-      "zOrder": 0,
-      "enabled": true,
-      "settings": {
-       "color": 4278190080
+    "scenes": [
+      {
+        "name": "Slide Lecture",
+        "transitionDurationMs": 300,
+        "hotkey": "Ctrl+1",
+        "sources": [
+          {
+            "name": "Slide Window",
+            "inputKind": "window_capture",
+            "zOrder": 0,
+            "enabled": true,
+            "settings": {
+              "method": 2
+            },
+            "fallbackKinds": [
+              "monitor_capture"
+            ],
+            "placeholder": {
+              "kind": "window",
+              "hint": "Choose the PPT / browser window (WGC capture)"
+            },
+            "transform": {
+              "posX": 0,
+              "posY": 0,
+              "boundsType": "OBS_BOUNDS_SCALE_OUTER",
+              "boundsWidth": 1920,
+              "boundsHeight": 1080,
+              "alignment": 0
+            }
+          },
+          {
+            "name": "Speaker PiP",
+            "inputKind": "dshow_input",
+            "zOrder": 1,
+            "enabled": true,
+            "fallbackKinds": [
+              "dshow_video_source"
+            ],
+            "placeholder": {
+              "kind": "device",
+              "hint": "Choose your camera"
+            },
+            "transform": {
+              "posX": 1490,
+              "posY": 820,
+              "boundsType": "OBS_BOUNDS_TO_WIDTH",
+              "alignment": 5,
+              "boundsWidth": 380
+            }
+          },
+          {
+            "name": "Course Title",
+            "inputKind": "text_gdiplus_v3",
+            "zOrder": 2,
+            "enabled": true,
+            "settings": {
+              "text": "Course Title - Chapter 1",
+              "font": {
+                "face": "Microsoft YaHei",
+                "size": 40
+              },
+              "color": 4294967295
+            },
+            "fallbackKinds": [
+              "text_ft2_source_v3"
+            ],
+            "transform": {
+              "posX": 60,
+              "posY": 40,
+              "boundsType": "OBS_BOUNDS_NONE",
+              "alignment": 5
+            }
+          },
+          {
+            "name": "My Microphone",
+            "inputKind": "wasapi_input_capture",
+            "zOrder": 3,
+            "enabled": true,
+            "placeholder": {
+              "kind": "device",
+              "hint": "Choose your microphone"
+            },
+            "shared": true
+          },
+          {
+            "name": "Desktop Audio",
+            "inputKind": "wasapi_output_capture",
+            "zOrder": 4,
+            "enabled": true,
+            "placeholder": {
+              "kind": "device",
+              "hint": "Choose desktop / system audio"
+            }
+          }
+        ]
       },
-      "transform": {
-       "posX": 0,
-       "posY": 0,
-       "boundsType": "OBS_BOUNDS_SCALE_OUTER",
-       "boundsWidth": 1920,
-       "boundsHeight": 1080,
-       "alignment": 0
-      }
-     },
-     {
-      "name": "Main Camera (Host Wide)",
-      "inputKind": "dshow_input",
-      "zOrder": 1,
-      "enabled": true,
-      "fallbackKinds": [
-       "dshow_video_source"
-      ],
-      "placeholder": {
-       "kind": "device",
-       "hint": "Choose your camera"
+      {
+        "name": "Speaker Closeup",
+        "transitionDurationMs": 300,
+        "hotkey": "Ctrl+2",
+        "sources": [
+          {
+            "name": "Background Color",
+            "inputKind": "color_source_v3",
+            "zOrder": 0,
+            "enabled": true,
+            "settings": {
+              "color": 4278190080
+            },
+            "transform": {
+              "posX": 0,
+              "posY": 0,
+              "boundsType": "OBS_BOUNDS_SCALE_OUTER",
+              "boundsWidth": 1920,
+              "boundsHeight": 1080,
+              "alignment": 0
+            }
+          },
+          {
+            "name": "Speaker Closeup",
+            "inputKind": "dshow_input",
+            "zOrder": 1,
+            "enabled": true,
+            "fallbackKinds": [
+              "dshow_video_source"
+            ],
+            "placeholder": {
+              "kind": "device",
+              "hint": "Choose your camera"
+            },
+            "transform": {
+              "posX": 0,
+              "posY": 0,
+              "boundsType": "OBS_BOUNDS_SCALE_OUTER",
+              "alignment": 0,
+              "boundsWidth": 1920,
+              "boundsHeight": 1080
+            }
+          },
+          {
+            "name": "Speaker Name Bar",
+            "inputKind": "text_gdiplus_v3",
+            "zOrder": 2,
+            "enabled": true,
+            "settings": {
+              "text": "Instructor - Name",
+              "font": {
+                "face": "Microsoft YaHei",
+                "size": 40
+              },
+              "color": 4294967295
+            },
+            "fallbackKinds": [
+              "text_ft2_source_v3"
+            ],
+            "transform": {
+              "posX": 60,
+              "posY": 940,
+              "boundsType": "OBS_BOUNDS_NONE",
+              "alignment": 5
+            }
+          },
+          {
+            "name": "My Microphone",
+            "inputKind": "wasapi_input_capture",
+            "zOrder": 3,
+            "enabled": true,
+            "placeholder": {
+              "kind": "device",
+              "hint": "Choose your microphone"
+            },
+            "shared": true
+          },
+          {
+            "name": "Desktop Audio",
+            "inputKind": "wasapi_output_capture",
+            "zOrder": 4,
+            "enabled": true,
+            "placeholder": {
+              "kind": "device",
+              "hint": "Choose desktop / system audio"
+            }
+          }
+        ]
       },
-      "transform": {
-       "posX": 0,
-       "posY": 0,
-       "boundsType": "OBS_BOUNDS_SCALE_OUTER",
-       "alignment": 0,
-       "boundsWidth": 1920,
-       "boundsHeight": 1080
+      {
+        "name": "Whiteboard Closeup",
+        "transitionDurationMs": 300,
+        "hotkey": "Ctrl+3",
+        "sources": [
+          {
+            "name": "Background Color",
+            "inputKind": "color_source_v3",
+            "zOrder": 0,
+            "enabled": true,
+            "settings": {
+              "color": 4278190080
+            },
+            "transform": {
+              "posX": 0,
+              "posY": 0,
+              "boundsType": "OBS_BOUNDS_SCALE_OUTER",
+              "boundsWidth": 1920,
+              "boundsHeight": 1080,
+              "alignment": 0
+            }
+          },
+          {
+            "name": "Whiteboard Camera",
+            "inputKind": "dshow_input",
+            "zOrder": 1,
+            "enabled": true,
+            "fallbackKinds": [
+              "dshow_video_source"
+            ],
+            "placeholder": {
+              "kind": "device",
+              "hint": "Choose your camera"
+            },
+            "transform": {
+              "posX": 0,
+              "posY": 0,
+              "boundsType": "OBS_BOUNDS_SCALE_OUTER",
+              "alignment": 0,
+              "boundsWidth": 1920,
+              "boundsHeight": 1080
+            }
+          },
+          {
+            "name": "My Microphone",
+            "inputKind": "wasapi_input_capture",
+            "zOrder": 2,
+            "enabled": true,
+            "placeholder": {
+              "kind": "device",
+              "hint": "Choose your microphone"
+            },
+            "shared": true
+          },
+          {
+            "name": "Desktop Audio",
+            "inputKind": "wasapi_output_capture",
+            "zOrder": 3,
+            "enabled": true,
+            "placeholder": {
+              "kind": "device",
+              "hint": "Choose desktop / system audio"
+            }
+          }
+        ]
       }
-     },
-     {
-      "name": "Product Title Bar",
-      "inputKind": "text_gdiplus_v3",
-      "zOrder": 2,
-      "enabled": true,
-      "settings": {
-       "text": "Today's Picks - Tap to Buy",
-       "font": {
-        "face": "Microsoft YaHei",
-        "size": 40
-       },
-       "color": 4294967295
-      },
-      "fallbackKinds": [
-       "text_ft2_source_v3"
-      ],
-      "transform": {
-       "posX": 60,
-       "posY": 940,
-       "boundsType": "OBS_BOUNDS_NONE",
-       "alignment": 5
-      }
-     },
-     {
-      "name": "My Microphone",
-      "inputKind": "wasapi_input_capture",
-      "zOrder": 3,
-      "enabled": true,
-      "placeholder": {
-       "kind": "device",
-       "hint": "Choose your microphone"
-      },
-      "shared": true
-     },
-     {
-      "name": "Desktop Audio",
-      "inputKind": "wasapi_output_capture",
-      "zOrder": 4,
-      "enabled": true,
-      "placeholder": {
-       "kind": "device",
-       "hint": "Choose desktop / system audio"
-      }
-     }
     ]
-   },
-   {
-    "name": "Product Closeup",
-    "transitionDurationMs": 300,
-    "hotkey": "Ctrl+2",
-    "sources": [
-     {
-      "name": "Background Color",
-      "inputKind": "color_source_v3",
-      "zOrder": 0,
-      "enabled": true,
-      "settings": {
-       "color": 4278190080
-      },
-      "transform": {
-       "posX": 0,
-       "posY": 0,
-       "boundsType": "OBS_BOUNDS_SCALE_OUTER",
-       "boundsWidth": 1920,
-       "boundsHeight": 1080,
-       "alignment": 0
-      }
-     },
-     {
-      "name": "Closeup Camera (Product)",
-      "inputKind": "dshow_input",
-      "zOrder": 1,
-      "enabled": true,
-      "fallbackKinds": [
-       "dshow_video_source"
-      ],
-      "placeholder": {
-       "kind": "device",
-       "hint": "Choose your camera"
-      },
-      "transform": {
-       "posX": 0,
-       "posY": 0,
-       "boundsType": "OBS_BOUNDS_SCALE_OUTER",
-       "alignment": 0,
-       "boundsWidth": 1920,
-       "boundsHeight": 1080
-      }
-     },
-     {
-      "name": "Product Image",
-      "inputKind": "image_source",
-      "zOrder": 2,
-      "enabled": false,
-      "settings": {
-       "file": ""
-      },
-      "placeholder": {
-       "kind": "file",
-       "hint": "Choose the product image to show (hidden by default)"
-      },
-      "transform": {
-       "posX": 200,
-       "posY": 120,
-       "boundsType": "OBS_BOUNDS_SCALE_OUTER",
-       "boundsWidth": 1520,
-       "boundsHeight": 720,
-       "alignment": 0
-      }
-     },
-     {
-      "name": "Price Tag",
-      "inputKind": "text_gdiplus_v3",
-      "zOrder": 3,
-      "enabled": true,
-      "settings": {
-       "text": "Limited Deal ¥99",
-       "font": {
-        "face": "Microsoft YaHei",
-        "size": 56
-       },
-       "color": 4294967295
-      },
-      "fallbackKinds": [
-       "text_ft2_source_v3"
-      ],
-      "transform": {
-       "posX": 60,
-       "posY": 60,
-       "boundsType": "OBS_BOUNDS_NONE",
-       "alignment": 5
-      }
-     },
-     {
-      "name": "My Microphone",
-      "inputKind": "wasapi_input_capture",
-      "zOrder": 4,
-      "enabled": true,
-      "placeholder": {
-       "kind": "device",
-       "hint": "Choose your microphone"
-      },
-      "shared": true
-     },
-     {
-      "name": "Desktop Audio",
-      "inputKind": "wasapi_output_capture",
-      "zOrder": 5,
-      "enabled": true,
-      "placeholder": {
-       "kind": "device",
-       "hint": "Choose desktop / system audio"
-      }
-     }
-    ]
-   }
-  ]
- },
- {
-  "id": "esports-cast",
-  "title": "Esports Cast",
-  "summary": "Fullscreen game + caster camera bottom right + score bar, great for event casting and watch parties.",
-  "icon": "🏆",
-  "portrait": false,
-  "notes": "The game view uses Game Capture first and falls back to Display Capture if no window is found; double-click the score bar text to edit it.",
-  "canvas": {
-   "baseWidth": 1920,
-   "baseHeight": 1080,
-   "outputWidth": 1920,
-   "outputHeight": 1080,
-   "fpsNumerator": 60,
-   "fpsDenominator": 1
   },
-  "transition": "Fade",
-  "transitionDurationMs": 300,
-  "scenes": [
-   {
-    "name": "Caster View",
+  {
+    "id": "vtuber-chat",
+    "title": "VTuber · Just Chatting",
+    "summary": "Half-body avatar, chat panel and a soft frame — ready for chatting and karaoke.",
+    "icon": "🎀",
+    "portrait": false,
+    "notes": "The avatar slot falls back from NDI / Spout / virtual camera to window capture; microphone and desktop audio are shared across scenes.",
+    "tags": [
+      "vtuber",
+      "chat",
+      "cute"
+    ],
+    "assetPack": "",
+    "minAppVersion": "3.3.0",
+    "canvas": {
+      "baseWidth": 1920,
+      "baseHeight": 1080,
+      "outputWidth": 1920,
+      "outputHeight": 1080,
+      "fpsNumerator": 30,
+      "fpsDenominator": 1
+    },
+    "transition": "Fade",
     "transitionDurationMs": 300,
-    "hotkey": "Ctrl+1",
-    "sources": [
-     {
-      "name": "Game Capture",
-      "inputKind": "game_capture",
-      "zOrder": 0,
-      "enabled": true,
-      "fallbackKinds": [
-       "window_capture",
-       "monitor_capture"
-      ],
-      "placeholder": {
-       "kind": "window",
-       "hint": "Choose the game window or display to capture"
+    "scenes": [
+      {
+        "name": "Just Chatting",
+        "sources": [
+          {
+            "name": "Background Color",
+            "inputKind": "color_source_v3",
+            "zOrder": 0,
+            "enabled": true,
+            "role": "bg",
+            "settings": {
+              "color": 4294965224
+            },
+            "transform": {
+              "posX": 0,
+              "posY": 0,
+              "boundsType": "OBS_BOUNDS_STRETCH",
+              "boundsWidth": 1920,
+              "boundsHeight": 1080,
+              "alignment": 0
+            }
+          },
+          {
+            "name": "Decorative Frame",
+            "inputKind": "browser_source",
+            "zOrder": 1,
+            "enabled": true,
+            "role": "frame",
+            "transform": {
+              "posX": 0,
+              "posY": 0,
+              "boundsType": "OBS_BOUNDS_STRETCH",
+              "boundsWidth": 1920,
+              "boundsHeight": 1080,
+              "alignment": 0
+            },
+            "browser": {
+              "page": "frame.html?theme=cream",
+              "width": 1920,
+              "height": 1080,
+              "css": "",
+              "rerouteAudio": false
+            }
+          },
+          {
+            "name": "Avatar",
+            "inputKind": "ndi_source",
+            "zOrder": 3,
+            "enabled": true,
+            "role": "avatar",
+            "fallbackKinds": [
+              "spout2_source",
+              "dshow_input",
+              "window_capture"
+            ],
+            "placeholder": {
+              "kind": "tracker",
+              "hint": "Bind it with Live2D Setup, or pick an existing window / NDI source."
+            },
+            "transform": {
+              "posX": 1110,
+              "posY": 330,
+              "boundsType": "OBS_BOUNDS_SCALE_INNER",
+              "boundsWidth": 720,
+              "boundsHeight": 700,
+              "alignment": 0
+            }
+          },
+          {
+            "name": "Chat",
+            "inputKind": "browser_source",
+            "zOrder": 4,
+            "enabled": true,
+            "role": "chat",
+            "placeholder": {
+              "kind": "url",
+              "hint": "You can replace this source URL with your own chat widget."
+            },
+            "transform": {
+              "posX": 1430,
+              "posY": 330,
+              "boundsType": "OBS_BOUNDS_SCALE_INNER",
+              "boundsWidth": 430,
+              "boundsHeight": 700,
+              "alignment": 0
+            },
+            "browser": {
+              "page": "chat.html",
+              "width": 430,
+              "height": 700,
+              "css": "body{background:rgba(0,0,0,0);margin:0;overflow:hidden}",
+              "rerouteAudio": false
+            }
+          },
+          {
+            "name": "Title",
+            "inputKind": "text_gdiplus_v3",
+            "zOrder": 6,
+            "enabled": true,
+            "role": "caption",
+            "settings": {
+              "text": "Welcome to the stream",
+              "font": {
+                "face": "Microsoft YaHei UI",
+                "size": 46
+              },
+              "color": 4282003781
+            },
+            "fallbackKinds": [
+              "text_ft2_source_v3"
+            ],
+            "placeholder": {
+              "kind": "text",
+              "hint": "Replace with your title / announcement"
+            },
+            "transform": {
+              "posX": 70,
+              "posY": 40,
+              "boundsType": "OBS_BOUNDS_NONE",
+              "alignment": 5
+            }
+          },
+          {
+            "name": "My Microphone",
+            "inputKind": "wasapi_input_capture",
+            "zOrder": 5,
+            "enabled": true,
+            "role": "audio",
+            "placeholder": {
+              "kind": "device",
+              "hint": "Select your microphone"
+            },
+            "shared": true
+          }
+        ],
+        "hotkey": "Ctrl+1"
       },
-      "transform": {
-       "posX": 0,
-       "posY": 0,
-       "boundsType": "OBS_BOUNDS_SCALE_OUTER",
-       "boundsWidth": 1920,
-       "boundsHeight": 1080,
-       "alignment": 0
-      }
-     },
-     {
-      "name": "Caster Camera",
-      "inputKind": "dshow_input",
-      "zOrder": 1,
-      "enabled": true,
-      "fallbackKinds": [
-       "dshow_video_source"
-      ],
-      "placeholder": {
-       "kind": "device",
-       "hint": "Choose your camera"
+      {
+        "name": "Full Screen",
+        "sources": [
+          {
+            "name": "Background Color",
+            "inputKind": "color_source_v3",
+            "zOrder": 0,
+            "enabled": true,
+            "role": "bg",
+            "settings": {
+              "color": 4293916415
+            },
+            "transform": {
+              "posX": 0,
+              "posY": 0,
+              "boundsType": "OBS_BOUNDS_STRETCH",
+              "boundsWidth": 1920,
+              "boundsHeight": 1080,
+              "alignment": 0
+            }
+          },
+          {
+            "name": "Decorative Frame",
+            "inputKind": "browser_source",
+            "zOrder": 1,
+            "enabled": true,
+            "role": "frame",
+            "transform": {
+              "posX": 0,
+              "posY": 0,
+              "boundsType": "OBS_BOUNDS_STRETCH",
+              "boundsWidth": 1920,
+              "boundsHeight": 1080,
+              "alignment": 0
+            },
+            "browser": {
+              "page": "frame.html?theme=mint",
+              "width": 1920,
+              "height": 1080,
+              "css": "",
+              "rerouteAudio": false
+            }
+          },
+          {
+            "name": "Avatar",
+            "inputKind": "ndi_source",
+            "zOrder": 3,
+            "enabled": true,
+            "role": "avatar",
+            "fallbackKinds": [
+              "spout2_source",
+              "dshow_input",
+              "window_capture"
+            ],
+            "placeholder": {
+              "kind": "tracker",
+              "hint": "Bind it with Live2D Setup, or pick an existing window / NDI source."
+            },
+            "transform": {
+              "posX": 560,
+              "posY": 40,
+              "boundsType": "OBS_BOUNDS_SCALE_INNER",
+              "boundsWidth": 800,
+              "boundsHeight": 1000,
+              "alignment": 0
+            }
+          },
+          {
+            "name": "My Microphone",
+            "inputKind": "wasapi_input_capture",
+            "zOrder": 5,
+            "enabled": true,
+            "role": "audio",
+            "placeholder": {
+              "kind": "device",
+              "hint": "Select your microphone"
+            },
+            "shared": true
+          },
+          {
+            "name": "Desktop Audio",
+            "inputKind": "wasapi_output_capture",
+            "zOrder": 5,
+            "enabled": true,
+            "role": "audio",
+            "placeholder": {
+              "kind": "device",
+              "hint": "Select the desktop audio device (game / music)"
+            },
+            "shared": true
+          }
+        ],
+        "hotkey": "Ctrl+2"
       },
-      "transform": {
-       "posX": 1490,
-       "posY": 820,
-       "boundsType": "OBS_BOUNDS_TO_WIDTH",
-       "alignment": 5,
-       "boundsWidth": 380
+      {
+        "name": "BRB",
+        "hotkey": "Ctrl+9",
+        "sources": [
+          {
+            "name": "BRB Screen",
+            "inputKind": "browser_source",
+            "zOrder": 0,
+            "enabled": true,
+            "role": "brb",
+            "transform": {
+              "posX": 0,
+              "posY": 0,
+              "boundsType": "OBS_BOUNDS_STRETCH",
+              "boundsWidth": 1920,
+              "boundsHeight": 1080,
+              "alignment": 0
+            },
+            "browser": {
+              "page": "brb.html?theme=cream",
+              "width": 1920,
+              "height": 1080,
+              "css": "",
+              "rerouteAudio": false
+            }
+          },
+          {
+            "name": "My Microphone",
+            "inputKind": "wasapi_input_capture",
+            "zOrder": 1,
+            "enabled": true,
+            "role": "audio",
+            "placeholder": {
+              "kind": "device",
+              "hint": "Select your microphone"
+            },
+            "shared": true
+          }
+        ]
       }
-     },
-     {
-      "name": "Score Bar",
-      "inputKind": "text_gdiplus_v3",
-      "zOrder": 2,
-      "enabled": true,
-      "settings": {
-       "text": "Team A 2 : 1 Team B",
-       "font": {
-        "face": "Microsoft YaHei",
-        "size": 44
-       },
-       "color": 4294967295
-      },
-      "fallbackKinds": [
-       "text_ft2_source_v3"
-      ],
-      "transform": {
-       "posX": 60,
-       "posY": 40,
-       "boundsType": "OBS_BOUNDS_NONE",
-       "alignment": 5
-      }
-     },
-     {
-      "name": "My Microphone",
-      "inputKind": "wasapi_input_capture",
-      "zOrder": 3,
-      "enabled": true,
-      "placeholder": {
-       "kind": "device",
-       "hint": "Choose your microphone"
-      },
-      "shared": true
-     },
-     {
-      "name": "Desktop Audio",
-      "inputKind": "wasapi_output_capture",
-      "zOrder": 4,
-      "enabled": true,
-      "placeholder": {
-       "kind": "device",
-       "hint": "Choose desktop / system audio"
-      }
-     }
     ]
-   },
-   {
-    "name": "Halftime",
-    "transitionDurationMs": 500,
-    "hotkey": "Ctrl+2",
-    "sources": [
-     {
-      "name": "Background Color",
-      "inputKind": "color_source_v3",
-      "zOrder": 0,
-      "enabled": true,
-      "settings": {
-       "color": 4278650880
-      },
-      "transform": {
-       "posX": 0,
-       "posY": 0,
-       "boundsType": "OBS_BOUNDS_SCALE_OUTER",
-       "boundsWidth": 1920,
-       "boundsHeight": 1080,
-       "alignment": 0
-      }
-     },
-     {
-      "name": "Halftime Text",
-      "inputKind": "text_gdiplus_v3",
-      "zOrder": 1,
-      "enabled": true,
-      "settings": {
-       "text": "Halftime - Back Soon",
-       "font": {
-        "face": "Microsoft YaHei",
-        "size": 72
-       },
-       "color": 4294967295
-      },
-      "fallbackKinds": [
-       "text_ft2_source_v3"
-      ],
-      "transform": {
-       "posX": 960,
-       "posY": 460,
-       "boundsType": "OBS_BOUNDS_NONE",
-       "alignment": 0
-      }
-     },
-     {
-      "name": "Desktop Audio",
-      "inputKind": "wasapi_output_capture",
-      "zOrder": 2,
-      "enabled": true,
-      "placeholder": {
-       "kind": "device",
-       "hint": "Choose desktop / system audio"
-      }
-     }
-    ]
-   }
-  ]
- },
- {
-  "id": "podcast-duo",
-  "title": "Podcast Talk",
-  "summary": "Two side-by-side guest cameras + background image, great for interviews, podcasts, and roundtables.",
-  "icon": "🎙️",
-  "portrait": false,
-  "notes": "Needs two cameras; you can also set the Guest Camera to Window Capture for a co-stream feed. Pick the background image and devices in OBS.",
-  "canvas": {
-   "baseWidth": 1920,
-   "baseHeight": 1080,
-   "outputWidth": 1920,
-   "outputHeight": 1080,
-   "fpsNumerator": 30,
-   "fpsDenominator": 1
   },
-  "transition": "Fade",
-  "transitionDurationMs": 300,
-  "scenes": [
-   {
-    "name": "Talk View",
+  {
+    "id": "vtuber-game",
+    "title": "VTuber · Gaming",
+    "summary": "Gameplay + corner avatar + chat panel at 1080p60.",
+    "icon": "🎮",
+    "portrait": false,
+    "notes": "The full-screen scene keeps only gameplay and audio; switch back to Gaming when you want the avatar.",
+    "tags": [
+      "vtuber",
+      "game",
+      "chat"
+    ],
+    "assetPack": "",
+    "minAppVersion": "3.3.0",
+    "canvas": {
+      "baseWidth": 1920,
+      "baseHeight": 1080,
+      "outputWidth": 1920,
+      "outputHeight": 1080,
+      "fpsNumerator": 60,
+      "fpsDenominator": 1
+    },
+    "transition": "Fade",
     "transitionDurationMs": 300,
-    "hotkey": "Ctrl+1",
-    "sources": [
-     {
-      "name": "Background Image",
-      "inputKind": "image_source",
-      "zOrder": 0,
-      "enabled": true,
-      "settings": {
-       "file": ""
+    "scenes": [
+      {
+        "name": "Gaming",
+        "sources": [
+          {
+            "name": "Background Color",
+            "inputKind": "color_source_v3",
+            "zOrder": 0,
+            "enabled": true,
+            "role": "bg",
+            "settings": {
+              "color": 4279243804
+            },
+            "transform": {
+              "posX": 0,
+              "posY": 0,
+              "boundsType": "OBS_BOUNDS_STRETCH",
+              "boundsWidth": 1920,
+              "boundsHeight": 1080,
+              "alignment": 0
+            }
+          },
+          {
+            "name": "Game Capture",
+            "inputKind": "game_capture",
+            "zOrder": 2,
+            "enabled": true,
+            "role": "bg",
+            "fallbackKinds": [
+              "window_capture",
+              "monitor_capture"
+            ],
+            "placeholder": {
+              "kind": "window",
+              "hint": "Select a game window or display"
+            },
+            "transform": {
+              "posX": 0,
+              "posY": 0,
+              "boundsType": "OBS_BOUNDS_STRETCH",
+              "boundsWidth": 1920,
+              "boundsHeight": 1080,
+              "alignment": 0
+            }
+          },
+          {
+            "name": "Decorative Frame",
+            "inputKind": "browser_source",
+            "zOrder": 1,
+            "enabled": true,
+            "role": "frame",
+            "transform": {
+              "posX": 0,
+              "posY": 0,
+              "boundsType": "OBS_BOUNDS_STRETCH",
+              "boundsWidth": 1920,
+              "boundsHeight": 1080,
+              "alignment": 0
+            },
+            "browser": {
+              "page": "frame.html?theme=mint",
+              "width": 1920,
+              "height": 1080,
+              "css": "",
+              "rerouteAudio": false
+            }
+          },
+          {
+            "name": "Avatar",
+            "inputKind": "ndi_source",
+            "zOrder": 3,
+            "enabled": true,
+            "role": "avatar",
+            "fallbackKinds": [
+              "spout2_source",
+              "dshow_input",
+              "window_capture"
+            ],
+            "placeholder": {
+              "kind": "tracker",
+              "hint": "Bind it with Live2D Setup, or pick an existing window / NDI source."
+            },
+            "transform": {
+              "posX": 1460,
+              "posY": 700,
+              "boundsType": "OBS_BOUNDS_SCALE_INNER",
+              "boundsWidth": 400,
+              "boundsHeight": 380,
+              "alignment": 0
+            }
+          },
+          {
+            "name": "Chat",
+            "inputKind": "browser_source",
+            "zOrder": 4,
+            "enabled": true,
+            "role": "chat",
+            "placeholder": {
+              "kind": "url",
+              "hint": "You can replace this source URL with your own chat widget."
+            },
+            "transform": {
+              "posX": 1460,
+              "posY": 120,
+              "boundsType": "OBS_BOUNDS_SCALE_INNER",
+              "boundsWidth": 380,
+              "boundsHeight": 560,
+              "alignment": 0
+            },
+            "browser": {
+              "page": "chat.html",
+              "width": 380,
+              "height": 560,
+              "css": "body{background:rgba(0,0,0,0);margin:0;overflow:hidden}",
+              "rerouteAudio": false
+            }
+          },
+          {
+            "name": "My Microphone",
+            "inputKind": "wasapi_input_capture",
+            "zOrder": 5,
+            "enabled": true,
+            "role": "audio",
+            "placeholder": {
+              "kind": "device",
+              "hint": "Select your microphone"
+            },
+            "shared": true
+          },
+          {
+            "name": "Desktop Audio",
+            "inputKind": "wasapi_output_capture",
+            "zOrder": 5,
+            "enabled": true,
+            "role": "audio",
+            "placeholder": {
+              "kind": "device",
+              "hint": "Select the desktop audio device (game / music)"
+            },
+            "shared": true
+          }
+        ],
+        "hotkey": "Ctrl+1"
       },
-      "placeholder": {
-       "kind": "file",
-       "hint": "Choose the talk background image"
+      {
+        "name": "Full Screen Game",
+        "sources": [
+          {
+            "name": "Game Capture",
+            "inputKind": "game_capture",
+            "zOrder": 2,
+            "enabled": true,
+            "role": "bg",
+            "fallbackKinds": [
+              "window_capture",
+              "monitor_capture"
+            ],
+            "placeholder": {
+              "kind": "window",
+              "hint": "Select a game window or display"
+            },
+            "transform": {
+              "posX": 0,
+              "posY": 0,
+              "boundsType": "OBS_BOUNDS_STRETCH",
+              "boundsWidth": 1920,
+              "boundsHeight": 1080,
+              "alignment": 0
+            }
+          },
+          {
+            "name": "My Microphone",
+            "inputKind": "wasapi_input_capture",
+            "zOrder": 5,
+            "enabled": true,
+            "role": "audio",
+            "placeholder": {
+              "kind": "device",
+              "hint": "Select your microphone"
+            },
+            "shared": true
+          },
+          {
+            "name": "Desktop Audio",
+            "inputKind": "wasapi_output_capture",
+            "zOrder": 5,
+            "enabled": true,
+            "role": "audio",
+            "placeholder": {
+              "kind": "device",
+              "hint": "Select the desktop audio device (game / music)"
+            },
+            "shared": true
+          }
+        ],
+        "hotkey": "Ctrl+2"
       },
-      "transform": {
-       "posX": 0,
-       "posY": 0,
-       "boundsType": "OBS_BOUNDS_SCALE_OUTER",
-       "boundsWidth": 1920,
-       "boundsHeight": 1080,
-       "alignment": 0
+      {
+        "name": "BRB",
+        "hotkey": "Ctrl+9",
+        "sources": [
+          {
+            "name": "BRB Screen",
+            "inputKind": "browser_source",
+            "zOrder": 0,
+            "enabled": true,
+            "role": "brb",
+            "transform": {
+              "posX": 0,
+              "posY": 0,
+              "boundsType": "OBS_BOUNDS_STRETCH",
+              "boundsWidth": 1920,
+              "boundsHeight": 1080,
+              "alignment": 0
+            },
+            "browser": {
+              "page": "brb.html?theme=mint",
+              "width": 1920,
+              "height": 1080,
+              "css": "",
+              "rerouteAudio": false
+            }
+          },
+          {
+            "name": "My Microphone",
+            "inputKind": "wasapi_input_capture",
+            "zOrder": 1,
+            "enabled": true,
+            "role": "audio",
+            "placeholder": {
+              "kind": "device",
+              "hint": "Select your microphone"
+            },
+            "shared": true
+          }
+        ]
       }
-     },
-     {
-      "name": "Main Camera",
-      "inputKind": "dshow_input",
-      "zOrder": 1,
-      "enabled": true,
-      "fallbackKinds": [
-       "dshow_video_source"
-      ],
-      "placeholder": {
-       "kind": "device",
-       "hint": "Choose your camera"
-      },
-      "transform": {
-       "posX": 120,
-       "posY": 220,
-       "boundsType": "OBS_BOUNDS_TO_WIDTH",
-       "alignment": 0,
-       "boundsWidth": 820
-      }
-     },
-     {
-      "name": "Guest Camera",
-      "inputKind": "dshow_input",
-      "zOrder": 2,
-      "enabled": true,
-      "fallbackKinds": [
-       "dshow_video_source"
-      ],
-      "placeholder": {
-       "kind": "device",
-       "hint": "Choose your camera"
-      },
-      "transform": {
-       "posX": 980,
-       "posY": 220,
-       "boundsType": "OBS_BOUNDS_TO_WIDTH",
-       "alignment": 0,
-       "boundsWidth": 820
-      }
-     },
-     {
-      "name": "Show Title",
-      "inputKind": "text_gdiplus_v3",
-      "zOrder": 3,
-      "enabled": true,
-      "settings": {
-       "text": "What's on Today - Episode 1",
-       "font": {
-        "face": "Microsoft YaHei",
-        "size": 40
-       },
-       "color": 4294967295
-      },
-      "fallbackKinds": [
-       "text_ft2_source_v3"
-      ],
-      "transform": {
-       "posX": 60,
-       "posY": 40,
-       "boundsType": "OBS_BOUNDS_NONE",
-       "alignment": 5
-      }
-     },
-     {
-      "name": "My Microphone",
-      "inputKind": "wasapi_input_capture",
-      "zOrder": 4,
-      "enabled": true,
-      "placeholder": {
-       "kind": "device",
-       "hint": "Choose your microphone"
-      },
-      "shared": true
-     }
     ]
-   },
-   {
-    "name": "Starting Soon",
-    "transitionDurationMs": 500,
-    "hotkey": "Ctrl+2",
-    "sources": [
-     {
-      "name": "Background Color",
-      "inputKind": "color_source_v3",
-      "zOrder": 0,
-      "enabled": true,
-      "settings": {
-       "color": 4278650880
-      },
-      "transform": {
-       "posX": 0,
-       "posY": 0,
-       "boundsType": "OBS_BOUNDS_SCALE_OUTER",
-       "boundsWidth": 1920,
-       "boundsHeight": 1080,
-       "alignment": 0
-      }
-     },
-     {
-      "name": "Opening Text",
-      "inputKind": "text_gdiplus_v3",
-      "zOrder": 1,
-      "enabled": true,
-      "settings": {
-       "text": "Starting Soon - Stay Tuned",
-       "font": {
-        "face": "Microsoft YaHei",
-        "size": 72
-       },
-       "color": 4294967295
-      },
-      "fallbackKinds": [
-       "text_ft2_source_v3"
-      ],
-      "transform": {
-       "posX": 960,
-       "posY": 460,
-       "boundsType": "OBS_BOUNDS_NONE",
-       "alignment": 0
-      }
-     }
-    ]
-   }
-  ],
-  "requiresPlugins": [
-   {
-    "id": "audio-monitor",
-    "reason": "Dual-track monitoring and output (optional)"
-   }
-  ]
- },
- {
-  "id": "short-video",
-  "title": "Vertical Short Recording",
-  "summary": "9:16 vertical canvas, centered camera + top/bottom title bars, record shorts or go vertical live directly.",
-  "icon": "📱",
-  "portrait": true,
-  "notes": "Canvas and output are both 1080×1920; ready for vertical short-video platforms. Double-click the top/bottom title text to edit it.",
-  "canvas": {
-   "baseWidth": 1080,
-   "baseHeight": 1920,
-   "outputWidth": 1080,
-   "outputHeight": 1920,
-   "fpsNumerator": 30,
-   "fpsDenominator": 1
   },
-  "transition": "Fade",
-  "transitionDurationMs": 300,
-  "scenes": [
-   {
-    "name": "Recording",
+  {
+    "id": "vtuber-radio",
+    "title": "VTuber · Radio",
+    "summary": "Left-side avatar, warm frame and chat panel for radio, requests and study-with-me.",
+    "icon": "🎧",
+    "portrait": false,
+    "notes": "Pair the requests scene with your own song list page; the chat panel can be a request widget.",
+    "tags": [
+      "vtuber",
+      "radio",
+      "chat"
+    ],
+    "assetPack": "",
+    "minAppVersion": "3.3.0",
+    "canvas": {
+      "baseWidth": 1920,
+      "baseHeight": 1080,
+      "outputWidth": 1920,
+      "outputHeight": 1080,
+      "fpsNumerator": 30,
+      "fpsDenominator": 1
+    },
+    "transition": "Fade",
     "transitionDurationMs": 300,
-    "hotkey": "Ctrl+1",
-    "sources": [
-     {
-      "name": "Background Color",
-      "inputKind": "color_source_v3",
-      "zOrder": 0,
-      "enabled": true,
-      "settings": {
-       "color": 4278190080
+    "scenes": [
+      {
+        "name": "Radio",
+        "sources": [
+          {
+            "name": "Background Color",
+            "inputKind": "color_source_v3",
+            "zOrder": 0,
+            "enabled": true,
+            "role": "bg",
+            "settings": {
+              "color": 4294964198
+            },
+            "transform": {
+              "posX": 0,
+              "posY": 0,
+              "boundsType": "OBS_BOUNDS_STRETCH",
+              "boundsWidth": 1920,
+              "boundsHeight": 1080,
+              "alignment": 0
+            }
+          },
+          {
+            "name": "Decorative Frame",
+            "inputKind": "browser_source",
+            "zOrder": 1,
+            "enabled": true,
+            "role": "frame",
+            "transform": {
+              "posX": 0,
+              "posY": 0,
+              "boundsType": "OBS_BOUNDS_STRETCH",
+              "boundsWidth": 1920,
+              "boundsHeight": 1080,
+              "alignment": 0
+            },
+            "browser": {
+              "page": "frame.html?theme=cocoa",
+              "width": 1920,
+              "height": 1080,
+              "css": "",
+              "rerouteAudio": false
+            }
+          },
+          {
+            "name": "Avatar",
+            "inputKind": "ndi_source",
+            "zOrder": 3,
+            "enabled": true,
+            "role": "avatar",
+            "fallbackKinds": [
+              "spout2_source",
+              "dshow_input",
+              "window_capture"
+            ],
+            "placeholder": {
+              "kind": "tracker",
+              "hint": "Bind it with Live2D Setup, or pick an existing window / NDI source."
+            },
+            "transform": {
+              "posX": 100,
+              "posY": 340,
+              "boundsType": "OBS_BOUNDS_SCALE_INNER",
+              "boundsWidth": 760,
+              "boundsHeight": 720,
+              "alignment": 0
+            }
+          },
+          {
+            "name": "Chat",
+            "inputKind": "browser_source",
+            "zOrder": 4,
+            "enabled": true,
+            "role": "chat",
+            "placeholder": {
+              "kind": "url",
+              "hint": "You can replace this source URL with your own chat widget."
+            },
+            "transform": {
+              "posX": 1440,
+              "posY": 300,
+              "boundsType": "OBS_BOUNDS_SCALE_INNER",
+              "boundsWidth": 420,
+              "boundsHeight": 720,
+              "alignment": 0
+            },
+            "browser": {
+              "page": "chat.html",
+              "width": 420,
+              "height": 720,
+              "css": "body{background:rgba(0,0,0,0);margin:0;overflow:hidden}",
+              "rerouteAudio": false
+            }
+          },
+          {
+            "name": "Radio Title",
+            "inputKind": "text_gdiplus_v3",
+            "zOrder": 6,
+            "enabled": true,
+            "role": "caption",
+            "settings": {
+              "text": "Tonight's Radio",
+              "font": {
+                "face": "Microsoft YaHei UI",
+                "size": 44
+              },
+              "color": 4285221427
+            },
+            "fallbackKinds": [
+              "text_ft2_source_v3"
+            ],
+            "placeholder": {
+              "kind": "text",
+              "hint": "Replace with your title / announcement"
+            },
+            "transform": {
+              "posX": 90,
+              "posY": 60,
+              "boundsType": "OBS_BOUNDS_NONE",
+              "alignment": 5
+            }
+          },
+          {
+            "name": "My Microphone",
+            "inputKind": "wasapi_input_capture",
+            "zOrder": 5,
+            "enabled": true,
+            "role": "audio",
+            "placeholder": {
+              "kind": "device",
+              "hint": "Select your microphone"
+            },
+            "shared": true
+          }
+        ],
+        "hotkey": "Ctrl+1"
       },
-      "transform": {
-       "posX": 0,
-       "posY": 0,
-       "boundsType": "OBS_BOUNDS_SCALE_OUTER",
-       "boundsWidth": 1920,
-       "boundsHeight": 1080,
-       "alignment": 0
+      {
+        "name": "Song Requests",
+        "sources": [
+          {
+            "name": "Background Color",
+            "inputKind": "color_source_v3",
+            "zOrder": 0,
+            "enabled": true,
+            "role": "bg",
+            "settings": {
+              "color": 4294179839
+            },
+            "transform": {
+              "posX": 0,
+              "posY": 0,
+              "boundsType": "OBS_BOUNDS_STRETCH",
+              "boundsWidth": 1920,
+              "boundsHeight": 1080,
+              "alignment": 0
+            }
+          },
+          {
+            "name": "Decorative Frame",
+            "inputKind": "browser_source",
+            "zOrder": 1,
+            "enabled": true,
+            "role": "frame",
+            "transform": {
+              "posX": 0,
+              "posY": 0,
+              "boundsType": "OBS_BOUNDS_STRETCH",
+              "boundsWidth": 1920,
+              "boundsHeight": 1080,
+              "alignment": 0
+            },
+            "browser": {
+              "page": "frame.html?theme=mint",
+              "width": 1920,
+              "height": 1080,
+              "css": "",
+              "rerouteAudio": false
+            }
+          },
+          {
+            "name": "Avatar",
+            "inputKind": "ndi_source",
+            "zOrder": 3,
+            "enabled": true,
+            "role": "avatar",
+            "fallbackKinds": [
+              "spout2_source",
+              "dshow_input",
+              "window_capture"
+            ],
+            "placeholder": {
+              "kind": "tracker",
+              "hint": "Bind it with Live2D Setup, or pick an existing window / NDI source."
+            },
+            "transform": {
+              "posX": 100,
+              "posY": 340,
+              "boundsType": "OBS_BOUNDS_SCALE_INNER",
+              "boundsWidth": 760,
+              "boundsHeight": 720,
+              "alignment": 0
+            }
+          },
+          {
+            "name": "Chat",
+            "inputKind": "browser_source",
+            "zOrder": 4,
+            "enabled": true,
+            "role": "chat",
+            "placeholder": {
+              "kind": "url",
+              "hint": "You can replace this source URL with your own chat widget."
+            },
+            "transform": {
+              "posX": 1440,
+              "posY": 300,
+              "boundsType": "OBS_BOUNDS_SCALE_INNER",
+              "boundsWidth": 420,
+              "boundsHeight": 720,
+              "alignment": 0
+            },
+            "browser": {
+              "page": "chat.html",
+              "width": 420,
+              "height": 720,
+              "css": "body{background:rgba(0,0,0,0);margin:0;overflow:hidden}",
+              "rerouteAudio": false
+            }
+          },
+          {
+            "name": "My Microphone",
+            "inputKind": "wasapi_input_capture",
+            "zOrder": 5,
+            "enabled": true,
+            "role": "audio",
+            "placeholder": {
+              "kind": "device",
+              "hint": "Select your microphone"
+            },
+            "shared": true
+          }
+        ],
+        "hotkey": "Ctrl+2"
+      },
+      {
+        "name": "BRB",
+        "hotkey": "Ctrl+9",
+        "sources": [
+          {
+            "name": "BRB Screen",
+            "inputKind": "browser_source",
+            "zOrder": 0,
+            "enabled": true,
+            "role": "brb",
+            "transform": {
+              "posX": 0,
+              "posY": 0,
+              "boundsType": "OBS_BOUNDS_STRETCH",
+              "boundsWidth": 1920,
+              "boundsHeight": 1080,
+              "alignment": 0
+            },
+            "browser": {
+              "page": "brb.html?theme=cocoa",
+              "width": 1920,
+              "height": 1080,
+              "css": "",
+              "rerouteAudio": false
+            }
+          },
+          {
+            "name": "My Microphone",
+            "inputKind": "wasapi_input_capture",
+            "zOrder": 1,
+            "enabled": true,
+            "role": "audio",
+            "placeholder": {
+              "kind": "device",
+              "hint": "Select your microphone"
+            },
+            "shared": true
+          }
+        ]
       }
-     },
-     {
-      "name": "Webcam (Center)",
-      "inputKind": "dshow_input",
-      "zOrder": 1,
-      "enabled": true,
-      "fallbackKinds": [
-       "dshow_video_source"
-      ],
-      "placeholder": {
-       "kind": "device",
-       "hint": "Choose your camera"
-      },
-      "transform": {
-       "posX": 200,
-       "posY": 240,
-       "boundsType": "OBS_BOUNDS_TO_WIDTH",
-       "alignment": 0,
-       "boundsWidth": 680
-      }
-     },
-     {
-      "name": "Top Title",
-      "inputKind": "text_gdiplus_v3",
-      "zOrder": 2,
-      "enabled": true,
-      "settings": {
-       "text": "Short Video Title",
-       "font": {
-        "face": "Microsoft YaHei",
-        "size": 52
-       },
-       "color": 4294967295
-      },
-      "fallbackKinds": [
-       "text_ft2_source_v3"
-      ],
-      "transform": {
-       "posX": 540,
-       "posY": 100,
-       "boundsType": "OBS_BOUNDS_NONE",
-       "alignment": 0
-      }
-     },
-     {
-      "name": "Bottom Caption",
-      "inputKind": "text_gdiplus_v3",
-      "zOrder": 3,
-      "enabled": true,
-      "settings": {
-       "text": "Like and follow if you enjoy",
-       "font": {
-        "face": "Microsoft YaHei",
-        "size": 40
-       },
-       "color": 4294967295
-      },
-      "fallbackKinds": [
-       "text_ft2_source_v3"
-      ],
-      "transform": {
-       "posX": 540,
-       "posY": 1750,
-       "boundsType": "OBS_BOUNDS_NONE",
-       "alignment": 0
-      }
-     },
-     {
-      "name": "My Microphone",
-      "inputKind": "wasapi_input_capture",
-      "zOrder": 4,
-      "enabled": true,
-      "placeholder": {
-       "kind": "device",
-       "hint": "Choose your microphone"
-      },
-      "shared": true
-     }
     ]
-   },
-   {
-    "name": "Outro",
-    "transitionDurationMs": 500,
-    "hotkey": "Ctrl+2",
-    "sources": [
-     {
-      "name": "Background Color",
-      "inputKind": "color_source_v3",
-      "zOrder": 0,
-      "enabled": true,
-      "settings": {
-       "color": 4278650880
-      },
-      "transform": {
-       "posX": 0,
-       "posY": 0,
-       "boundsType": "OBS_BOUNDS_SCALE_OUTER",
-       "boundsWidth": 1920,
-       "boundsHeight": 1080,
-       "alignment": 0
-      }
-     },
-     {
-      "name": "Outro Text",
-      "inputKind": "text_gdiplus_v3",
-      "zOrder": 1,
-      "enabled": true,
-      "settings": {
-       "text": "Thanks for Watching - See You Next Time",
-       "font": {
-        "face": "Microsoft YaHei",
-        "size": 64
-       },
-       "color": 4294967295
-      },
-      "fallbackKinds": [
-       "text_ft2_source_v3"
-      ],
-      "transform": {
-       "posX": 540,
-       "posY": 900,
-       "boundsType": "OBS_BOUNDS_NONE",
-       "alignment": 0
-      }
-     }
-    ]
-   }
-  ],
-  "requiresPlugins": [
-   {
-    "id": "aitum-vertical",
-    "reason": "Vertical dual-canvas recording"
-   }
-  ]
- },
- {
-  "id": "meeting-teach",
-  "title": "Meeting/Class Multicam",
-  "summary": "Slides fullscreen + speaker PiP + whiteboard camera, great for online classes, demos, and meetings.",
-  "icon": "🎓",
-  "portrait": false,
-  "notes": "Pick the PPT / browser window for the Slide Window with Window Capture; the Whiteboard Closeup needs a second camera or phone mirroring.",
-  "canvas": {
-   "baseWidth": 1920,
-   "baseHeight": 1080,
-   "outputWidth": 1920,
-   "outputHeight": 1080,
-   "fpsNumerator": 30,
-   "fpsDenominator": 1
   },
-  "transition": "Fade",
-  "transitionDurationMs": 300,
-  "scenes": [
-   {
-    "name": "Slide Lecture",
+  {
+    "id": "vtuber-debut",
+    "title": "VTuber · Milestone",
+    "summary": "Countdown / main visual / thanks — for new outfits, birthdays and milestones.",
+    "icon": "✨",
+    "portrait": false,
+    "notes": "The countdown page defaults to 10 minutes; change the minutes parameter in the browser source URL.",
+    "tags": [
+      "vtuber",
+      "debut",
+      "show"
+    ],
+    "assetPack": "",
+    "minAppVersion": "3.3.0",
+    "canvas": {
+      "baseWidth": 1920,
+      "baseHeight": 1080,
+      "outputWidth": 1920,
+      "outputHeight": 1080,
+      "fpsNumerator": 30,
+      "fpsDenominator": 1
+    },
+    "transition": "Fade",
     "transitionDurationMs": 300,
-    "hotkey": "Ctrl+1",
-    "sources": [
-     {
-      "name": "Slide Window",
-      "inputKind": "window_capture",
-      "zOrder": 0,
-      "enabled": true,
-      "settings": {
-       "method": 2
+    "scenes": [
+      {
+        "name": "Starting Soon",
+        "sources": [
+          {
+            "name": "Countdown",
+            "inputKind": "browser_source",
+            "zOrder": 0,
+            "enabled": true,
+            "role": "clock",
+            "transform": {
+              "posX": 560,
+              "posY": 240,
+              "boundsType": "OBS_BOUNDS_SCALE_INNER",
+              "boundsWidth": 800,
+              "boundsHeight": 300,
+              "alignment": 0
+            },
+            "browser": {
+              "page": "timer.html?minutes=10&theme=star",
+              "width": 800,
+              "height": 300,
+              "css": "",
+              "rerouteAudio": false
+            }
+          },
+          {
+            "name": "Decorative Frame",
+            "inputKind": "browser_source",
+            "zOrder": 1,
+            "enabled": true,
+            "role": "frame",
+            "transform": {
+              "posX": 0,
+              "posY": 0,
+              "boundsType": "OBS_BOUNDS_STRETCH",
+              "boundsWidth": 1920,
+              "boundsHeight": 1080,
+              "alignment": 0
+            },
+            "browser": {
+              "page": "frame.html?theme=star",
+              "width": 1920,
+              "height": 1080,
+              "css": "",
+              "rerouteAudio": false
+            }
+          },
+          {
+            "name": "Milestone Title",
+            "inputKind": "text_gdiplus_v3",
+            "zOrder": 6,
+            "enabled": true,
+            "role": "caption",
+            "settings": {
+              "text": "Milestone Stream",
+              "font": {
+                "face": "Microsoft YaHei UI",
+                "size": 52
+              },
+              "color": 4294967295
+            },
+            "fallbackKinds": [
+              "text_ft2_source_v3"
+            ],
+            "placeholder": {
+              "kind": "text",
+              "hint": "Replace with your title / announcement"
+            },
+            "transform": {
+              "posX": 70,
+              "posY": 50,
+              "boundsType": "OBS_BOUNDS_NONE",
+              "alignment": 5
+            }
+          }
+        ],
+        "hotkey": "Ctrl+1"
       },
-      "fallbackKinds": [
-       "monitor_capture"
-      ],
-      "placeholder": {
-       "kind": "window",
-       "hint": "Choose the PPT / browser window (WGC capture)"
+      {
+        "name": "Main Visual",
+        "sources": [
+          {
+            "name": "Background Color",
+            "inputKind": "color_source_v3",
+            "zOrder": 0,
+            "enabled": true,
+            "role": "bg",
+            "settings": {
+              "color": 4280950597
+            },
+            "transform": {
+              "posX": 0,
+              "posY": 0,
+              "boundsType": "OBS_BOUNDS_STRETCH",
+              "boundsWidth": 1920,
+              "boundsHeight": 1080,
+              "alignment": 0
+            }
+          },
+          {
+            "name": "Decorative Frame",
+            "inputKind": "browser_source",
+            "zOrder": 1,
+            "enabled": true,
+            "role": "frame",
+            "transform": {
+              "posX": 0,
+              "posY": 0,
+              "boundsType": "OBS_BOUNDS_STRETCH",
+              "boundsWidth": 1920,
+              "boundsHeight": 1080,
+              "alignment": 0
+            },
+            "browser": {
+              "page": "frame.html?theme=star",
+              "width": 1920,
+              "height": 1080,
+              "css": "",
+              "rerouteAudio": false
+            }
+          },
+          {
+            "name": "Avatar",
+            "inputKind": "ndi_source",
+            "zOrder": 3,
+            "enabled": true,
+            "role": "avatar",
+            "fallbackKinds": [
+              "spout2_source",
+              "dshow_input",
+              "window_capture"
+            ],
+            "placeholder": {
+              "kind": "tracker",
+              "hint": "Bind it with Live2D Setup, or pick an existing window / NDI source."
+            },
+            "transform": {
+              "posX": 560,
+              "posY": 40,
+              "boundsType": "OBS_BOUNDS_SCALE_INNER",
+              "boundsWidth": 800,
+              "boundsHeight": 1040,
+              "alignment": 0
+            }
+          },
+          {
+            "name": "Milestone Title",
+            "inputKind": "text_gdiplus_v3",
+            "zOrder": 6,
+            "enabled": true,
+            "role": "caption",
+            "settings": {
+              "text": "Milestone Stream",
+              "font": {
+                "face": "Microsoft YaHei UI",
+                "size": 52
+              },
+              "color": 4294967295
+            },
+            "fallbackKinds": [
+              "text_ft2_source_v3"
+            ],
+            "placeholder": {
+              "kind": "text",
+              "hint": "Replace with your title / announcement"
+            },
+            "transform": {
+              "posX": 70,
+              "posY": 50,
+              "boundsType": "OBS_BOUNDS_NONE",
+              "alignment": 5
+            }
+          }
+        ],
+        "hotkey": "Ctrl+2"
       },
-      "transform": {
-       "posX": 0,
-       "posY": 0,
-       "boundsType": "OBS_BOUNDS_SCALE_OUTER",
-       "boundsWidth": 1920,
-       "boundsHeight": 1080,
-       "alignment": 0
+      {
+        "name": "Thanks",
+        "sources": [
+          {
+            "name": "Thanks Screen",
+            "inputKind": "browser_source",
+            "zOrder": 0,
+            "enabled": true,
+            "role": "ending",
+            "transform": {
+              "posX": 0,
+              "posY": 0,
+              "boundsType": "OBS_BOUNDS_STRETCH",
+              "boundsWidth": 1920,
+              "boundsHeight": 1080,
+              "alignment": 0
+            },
+            "browser": {
+              "page": "ending.html?theme=star",
+              "width": 1920,
+              "height": 1080,
+              "css": "",
+              "rerouteAudio": false
+            }
+          },
+          {
+            "name": "My Microphone",
+            "inputKind": "wasapi_input_capture",
+            "zOrder": 1,
+            "enabled": true,
+            "role": "audio",
+            "placeholder": {
+              "kind": "device",
+              "hint": "Select your microphone"
+            },
+            "shared": true
+          }
+        ],
+        "hotkey": "Ctrl+3"
       }
-     },
-     {
-      "name": "Speaker PiP",
-      "inputKind": "dshow_input",
-      "zOrder": 1,
-      "enabled": true,
-      "fallbackKinds": [
-       "dshow_video_source"
-      ],
-      "placeholder": {
-       "kind": "device",
-       "hint": "Choose your camera"
-      },
-      "transform": {
-       "posX": 1490,
-       "posY": 820,
-       "boundsType": "OBS_BOUNDS_TO_WIDTH",
-       "alignment": 5,
-       "boundsWidth": 380
-      }
-     },
-     {
-      "name": "Course Title",
-      "inputKind": "text_gdiplus_v3",
-      "zOrder": 2,
-      "enabled": true,
-      "settings": {
-       "text": "Course Title - Chapter 1",
-       "font": {
-        "face": "Microsoft YaHei",
-        "size": 40
-       },
-       "color": 4294967295
-      },
-      "fallbackKinds": [
-       "text_ft2_source_v3"
-      ],
-      "transform": {
-       "posX": 60,
-       "posY": 40,
-       "boundsType": "OBS_BOUNDS_NONE",
-       "alignment": 5
-      }
-     },
-     {
-      "name": "My Microphone",
-      "inputKind": "wasapi_input_capture",
-      "zOrder": 3,
-      "enabled": true,
-      "placeholder": {
-       "kind": "device",
-       "hint": "Choose your microphone"
-      },
-      "shared": true
-     },
-     {
-      "name": "Desktop Audio",
-      "inputKind": "wasapi_output_capture",
-      "zOrder": 4,
-      "enabled": true,
-      "placeholder": {
-       "kind": "device",
-       "hint": "Choose desktop / system audio"
-      }
-     }
     ]
-   },
-   {
-    "name": "Speaker Closeup",
+  },
+  {
+    "id": "vtuber-vertical",
+    "title": "VTuber · Vertical",
+    "summary": "1080×1920 vertical layout: upper-body avatar with chat at the bottom for TikTok / Shorts / Reels.",
+    "icon": "📱",
+    "portrait": true,
+    "notes": "This template switches the OBS canvas to 1080×1920; use the Just Chatting template for landscape platforms.",
+    "tags": [
+      "vtuber",
+      "vertical",
+      "chat"
+    ],
+    "assetPack": "",
+    "minAppVersion": "3.3.0",
+    "canvas": {
+      "baseWidth": 1080,
+      "baseHeight": 1920,
+      "outputWidth": 1080,
+      "outputHeight": 1920,
+      "fpsNumerator": 30,
+      "fpsDenominator": 1
+    },
+    "transition": "Fade",
     "transitionDurationMs": 300,
-    "hotkey": "Ctrl+2",
-    "sources": [
-     {
-      "name": "Background Color",
-      "inputKind": "color_source_v3",
-      "zOrder": 0,
-      "enabled": true,
-      "settings": {
-       "color": 4278190080
+    "scenes": [
+      {
+        "name": "Vertical Main",
+        "sources": [
+          {
+            "name": "Background Color",
+            "inputKind": "color_source_v3",
+            "zOrder": 0,
+            "enabled": true,
+            "role": "bg",
+            "settings": {
+              "color": 4294965224
+            },
+            "transform": {
+              "posX": 0,
+              "posY": 0,
+              "boundsType": "OBS_BOUNDS_STRETCH",
+              "boundsWidth": 1080,
+              "boundsHeight": 1920,
+              "alignment": 0
+            }
+          },
+          {
+            "name": "Decorative Frame",
+            "inputKind": "browser_source",
+            "zOrder": 1,
+            "enabled": true,
+            "role": "frame",
+            "transform": {
+              "posX": 0,
+              "posY": 0,
+              "boundsType": "OBS_BOUNDS_STRETCH",
+              "boundsWidth": 1080,
+              "boundsHeight": 1920,
+              "alignment": 0
+            },
+            "browser": {
+              "page": "frame.html?theme=cream",
+              "width": 1080,
+              "height": 1920,
+              "css": "",
+              "rerouteAudio": false
+            }
+          },
+          {
+            "name": "Avatar",
+            "inputKind": "ndi_source",
+            "zOrder": 3,
+            "enabled": true,
+            "role": "avatar",
+            "fallbackKinds": [
+              "spout2_source",
+              "dshow_input",
+              "window_capture"
+            ],
+            "placeholder": {
+              "kind": "tracker",
+              "hint": "Bind it with Live2D Setup, or pick an existing window / NDI source."
+            },
+            "transform": {
+              "posX": 120,
+              "posY": 260,
+              "boundsType": "OBS_BOUNDS_SCALE_INNER",
+              "boundsWidth": 840,
+              "boundsHeight": 900,
+              "alignment": 0
+            }
+          },
+          {
+            "name": "Chat",
+            "inputKind": "browser_source",
+            "zOrder": 4,
+            "enabled": true,
+            "role": "chat",
+            "placeholder": {
+              "kind": "url",
+              "hint": "You can replace this source URL with your own chat widget."
+            },
+            "transform": {
+              "posX": 110,
+              "posY": 1350,
+              "boundsType": "OBS_BOUNDS_SCALE_INNER",
+              "boundsWidth": 860,
+              "boundsHeight": 470,
+              "alignment": 0
+            },
+            "browser": {
+              "page": "chat.html",
+              "width": 860,
+              "height": 470,
+              "css": "body{background:rgba(0,0,0,0);margin:0;overflow:hidden}",
+              "rerouteAudio": false
+            }
+          },
+          {
+            "name": "My Microphone",
+            "inputKind": "wasapi_input_capture",
+            "zOrder": 5,
+            "enabled": true,
+            "role": "audio",
+            "placeholder": {
+              "kind": "device",
+              "hint": "Select your microphone"
+            },
+            "shared": true
+          }
+        ],
+        "hotkey": "Ctrl+1"
       },
-      "transform": {
-       "posX": 0,
-       "posY": 0,
-       "boundsType": "OBS_BOUNDS_SCALE_OUTER",
-       "boundsWidth": 1920,
-       "boundsHeight": 1080,
-       "alignment": 0
-      }
-     },
-     {
-      "name": "Speaker Closeup",
-      "inputKind": "dshow_input",
-      "zOrder": 1,
-      "enabled": true,
-      "fallbackKinds": [
-       "dshow_video_source"
-      ],
-      "placeholder": {
-       "kind": "device",
-       "hint": "Choose your camera"
+      {
+        "name": "Full Screen",
+        "sources": [
+          {
+            "name": "Background Color",
+            "inputKind": "color_source_v3",
+            "zOrder": 0,
+            "enabled": true,
+            "role": "bg",
+            "settings": {
+              "color": 4293916415
+            },
+            "transform": {
+              "posX": 0,
+              "posY": 0,
+              "boundsType": "OBS_BOUNDS_STRETCH",
+              "boundsWidth": 1080,
+              "boundsHeight": 1920,
+              "alignment": 0
+            }
+          },
+          {
+            "name": "Avatar",
+            "inputKind": "ndi_source",
+            "zOrder": 3,
+            "enabled": true,
+            "role": "avatar",
+            "fallbackKinds": [
+              "spout2_source",
+              "dshow_input",
+              "window_capture"
+            ],
+            "placeholder": {
+              "kind": "tracker",
+              "hint": "Bind it with Live2D Setup, or pick an existing window / NDI source."
+            },
+            "transform": {
+              "posX": 0,
+              "posY": 240,
+              "boundsType": "OBS_BOUNDS_SCALE_INNER",
+              "boundsWidth": 1080,
+              "boundsHeight": 1200,
+              "alignment": 0
+            }
+          },
+          {
+            "name": "My Microphone",
+            "inputKind": "wasapi_input_capture",
+            "zOrder": 5,
+            "enabled": true,
+            "role": "audio",
+            "placeholder": {
+              "kind": "device",
+              "hint": "Select your microphone"
+            },
+            "shared": true
+          }
+        ],
+        "hotkey": "Ctrl+2"
       },
-      "transform": {
-       "posX": 0,
-       "posY": 0,
-       "boundsType": "OBS_BOUNDS_SCALE_OUTER",
-       "alignment": 0,
-       "boundsWidth": 1920,
-       "boundsHeight": 1080
+      {
+        "name": "BRB",
+        "hotkey": "Ctrl+9",
+        "sources": [
+          {
+            "name": "BRB Screen",
+            "inputKind": "browser_source",
+            "zOrder": 0,
+            "enabled": true,
+            "role": "brb",
+            "transform": {
+              "posX": 0,
+              "posY": 0,
+              "boundsType": "OBS_BOUNDS_STRETCH",
+              "boundsWidth": 1080,
+              "boundsHeight": 1920,
+              "alignment": 0
+            },
+            "browser": {
+              "page": "brb.html?theme=cream",
+              "width": 1080,
+              "height": 1920,
+              "css": "",
+              "rerouteAudio": false
+            }
+          },
+          {
+            "name": "My Microphone",
+            "inputKind": "wasapi_input_capture",
+            "zOrder": 1,
+            "enabled": true,
+            "role": "audio",
+            "placeholder": {
+              "kind": "device",
+              "hint": "Select your microphone"
+            },
+            "shared": true
+          }
+        ]
       }
-     },
-     {
-      "name": "Speaker Name Bar",
-      "inputKind": "text_gdiplus_v3",
-      "zOrder": 2,
-      "enabled": true,
-      "settings": {
-       "text": "Instructor - Name",
-       "font": {
-        "face": "Microsoft YaHei",
-        "size": 40
-       },
-       "color": 4294967295
-      },
-      "fallbackKinds": [
-       "text_ft2_source_v3"
-      ],
-      "transform": {
-       "posX": 60,
-       "posY": 940,
-       "boundsType": "OBS_BOUNDS_NONE",
-       "alignment": 5
-      }
-     },
-     {
-      "name": "My Microphone",
-      "inputKind": "wasapi_input_capture",
-      "zOrder": 3,
-      "enabled": true,
-      "placeholder": {
-       "kind": "device",
-       "hint": "Choose your microphone"
-      },
-      "shared": true
-     },
-     {
-      "name": "Desktop Audio",
-      "inputKind": "wasapi_output_capture",
-      "zOrder": 4,
-      "enabled": true,
-      "placeholder": {
-       "kind": "device",
-       "hint": "Choose desktop / system audio"
-      }
-     }
     ]
-   },
-   {
-    "name": "Whiteboard Closeup",
+  },
+  {
+    "id": "vtuber-triple",
+    "title": "Start / BRB / End Pack",
+    "summary": "Starting Soon, BRB and Ending scenes that fit any virtual streamer.",
+    "icon": "🌙",
+    "portrait": false,
+    "notes": "Only three scenes — add them to any existing collection as waiting / BRB / ending screens.",
+    "tags": [
+      "vtuber",
+      "triple",
+      "brb",
+      "pack"
+    ],
+    "assetPack": "",
+    "minAppVersion": "3.3.0",
+    "canvas": {
+      "baseWidth": 1920,
+      "baseHeight": 1080,
+      "outputWidth": 1920,
+      "outputHeight": 1080,
+      "fpsNumerator": 30,
+      "fpsDenominator": 1
+    },
+    "transition": "Fade",
     "transitionDurationMs": 300,
-    "hotkey": "Ctrl+3",
-    "sources": [
-     {
-      "name": "Background Color",
-      "inputKind": "color_source_v3",
-      "zOrder": 0,
-      "enabled": true,
-      "settings": {
-       "color": 4278190080
+    "scenes": [
+      {
+        "name": "Starting Soon",
+        "sources": [
+          {
+            "name": "Starting Countdown",
+            "inputKind": "browser_source",
+            "zOrder": 0,
+            "enabled": true,
+            "role": "clock",
+            "transform": {
+              "posX": 560,
+              "posY": 300,
+              "boundsType": "OBS_BOUNDS_SCALE_INNER",
+              "boundsWidth": 800,
+              "boundsHeight": 300,
+              "alignment": 0
+            },
+            "browser": {
+              "page": "timer.html?minutes=5&theme=night",
+              "width": 800,
+              "height": 300,
+              "css": "",
+              "rerouteAudio": false
+            }
+          },
+          {
+            "name": "Decorative Frame",
+            "inputKind": "browser_source",
+            "zOrder": 1,
+            "enabled": true,
+            "role": "frame",
+            "transform": {
+              "posX": 0,
+              "posY": 0,
+              "boundsType": "OBS_BOUNDS_STRETCH",
+              "boundsWidth": 1920,
+              "boundsHeight": 1080,
+              "alignment": 0
+            },
+            "browser": {
+              "page": "frame.html?theme=night",
+              "width": 1920,
+              "height": 1080,
+              "css": "",
+              "rerouteAudio": false
+            }
+          },
+          {
+            "name": "Starting Note",
+            "inputKind": "text_gdiplus_v3",
+            "zOrder": 6,
+            "enabled": true,
+            "role": "caption",
+            "settings": {
+              "text": "Starting Soon",
+              "font": {
+                "face": "Microsoft YaHei UI",
+                "size": 48
+              },
+              "color": 4294967295
+            },
+            "fallbackKinds": [
+              "text_ft2_source_v3"
+            ],
+            "placeholder": {
+              "kind": "text",
+              "hint": "Replace with your title / announcement"
+            },
+            "transform": {
+              "posX": 900,
+              "posY": 200,
+              "boundsType": "OBS_BOUNDS_NONE",
+              "alignment": 0
+            }
+          }
+        ],
+        "hotkey": "Ctrl+1"
       },
-      "transform": {
-       "posX": 0,
-       "posY": 0,
-       "boundsType": "OBS_BOUNDS_SCALE_OUTER",
-       "boundsWidth": 1920,
-       "boundsHeight": 1080,
-       "alignment": 0
-      }
-     },
-     {
-      "name": "Whiteboard Camera",
-      "inputKind": "dshow_input",
-      "zOrder": 1,
-      "enabled": true,
-      "fallbackKinds": [
-       "dshow_video_source"
-      ],
-      "placeholder": {
-       "kind": "device",
-       "hint": "Choose your camera"
+      {
+        "name": "BRB",
+        "sources": [
+          {
+            "name": "BRB Screen",
+            "inputKind": "browser_source",
+            "zOrder": 0,
+            "enabled": true,
+            "role": "brb",
+            "transform": {
+              "posX": 0,
+              "posY": 0,
+              "boundsType": "OBS_BOUNDS_STRETCH",
+              "boundsWidth": 1920,
+              "boundsHeight": 1080,
+              "alignment": 0
+            },
+            "browser": {
+              "page": "brb.html?theme=night",
+              "width": 1920,
+              "height": 1080,
+              "css": "",
+              "rerouteAudio": false
+            }
+          },
+          {
+            "name": "My Microphone",
+            "inputKind": "wasapi_input_capture",
+            "zOrder": 1,
+            "enabled": true,
+            "role": "audio",
+            "placeholder": {
+              "kind": "device",
+              "hint": "Select your microphone"
+            },
+            "shared": true
+          }
+        ],
+        "hotkey": "Ctrl+2"
       },
-      "transform": {
-       "posX": 0,
-       "posY": 0,
-       "boundsType": "OBS_BOUNDS_SCALE_OUTER",
-       "alignment": 0,
-       "boundsWidth": 1920,
-       "boundsHeight": 1080
+      {
+        "name": "Ending",
+        "sources": [
+          {
+            "name": "Ending Screen",
+            "inputKind": "browser_source",
+            "zOrder": 0,
+            "enabled": true,
+            "role": "ending",
+            "transform": {
+              "posX": 0,
+              "posY": 0,
+              "boundsType": "OBS_BOUNDS_STRETCH",
+              "boundsWidth": 1920,
+              "boundsHeight": 1080,
+              "alignment": 0
+            },
+            "browser": {
+              "page": "ending.html?theme=night",
+              "width": 1920,
+              "height": 1080,
+              "css": "",
+              "rerouteAudio": false
+            }
+          },
+          {
+            "name": "My Microphone",
+            "inputKind": "wasapi_input_capture",
+            "zOrder": 1,
+            "enabled": true,
+            "role": "audio",
+            "placeholder": {
+              "kind": "device",
+              "hint": "Select your microphone"
+            },
+            "shared": true
+          }
+        ],
+        "hotkey": "Ctrl+3"
       }
-     },
-     {
-      "name": "My Microphone",
-      "inputKind": "wasapi_input_capture",
-      "zOrder": 2,
-      "enabled": true,
-      "placeholder": {
-       "kind": "device",
-       "hint": "Choose your microphone"
-      },
-      "shared": true
-     },
-     {
-      "name": "Desktop Audio",
-      "inputKind": "wasapi_output_capture",
-      "zOrder": 3,
-      "enabled": true,
-      "placeholder": {
-       "kind": "device",
-       "hint": "Choose desktop / system audio"
-      }
-     }
     ]
-   }
-  ]
- }
+  }
 ]

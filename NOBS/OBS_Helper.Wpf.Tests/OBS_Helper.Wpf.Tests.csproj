@@ -127,6 +127,23 @@
     <!-- V3.1.0 提词器：数值归一化 / 滚动 / 镜像 / 脚本分段 / 场景匹配（纯 BCL） -->
     <Compile Include="..\OBS_Helper.Wpf\Services\Shell\TeleprompterCore.cs" Link="Linked\Shell\TeleprompterCore.cs" />
     <Compile Include="..\OBS_Helper.Wpf\Models\Shell\TeleprompterSettings.cs" Link="Linked\Shell\TeleprompterSettings.cs" />
+    <!-- V3.3.0 无障碍 / 老年模式：模式组合 → 有效令牌（纯 BCL） -->
+    <Compile Include="..\OBS_Helper.Wpf\Services\Appearance\UiProfileCore.cs" Link="Linked\Appearance\UiProfileCore.cs" />
+    <!-- V3.3.0 虚拟直播间：overlay 页面白名单 / URL / 浏览器源设置 / 检查清单 / 模板校验（纯 BCL） -->
+    <Compile Include="..\OBS_Helper.Wpf\Services\Live\RoomOverlayCore.cs" Link="Linked\Live\RoomOverlayCore.cs" />
+    <!-- V3.3.0 Live2D：模型校验 / 布局 / VTS 协议 / 采集选择（纯 BCL） -->
+    <Compile Include="..\OBS_Helper.Wpf\Models\Live\Live2DModels.cs" Link="Linked\Live\Live2DModels.cs" />
+    <Compile Include="..\OBS_Helper.Wpf\Services\Live\Live2DModelCore.cs" Link="Linked\Live\Live2DModelCore.cs" />
+    <Compile Include="..\OBS_Helper.Wpf\Services\Live\VtsProtocolCore.cs" Link="Linked\Live\VtsProtocolCore.cs" />
+    <Compile Include="..\OBS_Helper.Wpf\Services\Live\Live2DCaptureCore.cs" Link="Linked\Live\Live2DCaptureCore.cs" />
+    <!-- V3.3.0 开播引导：平台模式 / 推流码遮罩 / 状态解析 / 错误分类 + 第三方客户端探测（纯 BCL） -->
+    <Compile Include="..\OBS_Helper.Wpf\Models\Live\LivePlatform.cs" Link="Linked\Live\LivePlatform.cs" />
+    <Compile Include="..\OBS_Helper.Wpf\Services\Live\GoLiveCore.cs" Link="Linked\Live\GoLiveCore.cs" />
+    <Compile Include="..\OBS_Helper.Wpf\Services\Live\CompanionAppCore.cs" Link="Linked\Live\CompanionAppCore.cs" />
+    <!-- V3.3.0 插件广场：版本 / 资产选择 / zip 安全 / PE 架构 / GitHub 解析（纯 BCL） -->
+    <Compile Include="..\OBS_Helper.Wpf\Models\Plugins\PluginInstallManifest.cs" Link="Linked\Plugins\PluginInstallManifest.cs" />
+    <Compile Include="..\OBS_Helper.Wpf\Services\Plugins\PluginInstallCore.cs" Link="Linked\Plugins\PluginInstallCore.cs" />
+    <Compile Include="..\OBS_Helper.Wpf\Services\Plugins\GitHubSearchCore.cs" Link="Linked\Plugins\GitHubSearchCore.cs" />
   </ItemGroup>
 
   <ItemGroup>
@@ -143,6 +160,11 @@
     <None Include="..\OBS_Helper.Wpf\Assets\scene_templates.json" Link="Assets\scene_templates.json"
           CopyToOutputDirectory="PreserveNewest" />
     <None Include="..\OBS_Helper.Wpf\Assets\scene_templates.en-US.json" Link="Assets\scene_templates.en-US.json"
+          CopyToOutputDirectory="PreserveNewest" />
+    <!-- V3.3.0：开播平台目录也要能直接读文件（资产自洽性测试） -->
+    <None Include="..\OBS_Helper.Wpf\Assets\platforms.json" Link="Assets\platforms.json"
+          CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\OBS_Helper.Wpf\Assets\platforms.en-US.json" Link="Assets\platforms.en-US.json"
           CopyToOutputDirectory="PreserveNewest" />
     <None Include="..\OBS_Helper.Wpf\Assets\troubleshooting.md" Link="Assets\troubleshooting.md"
           CopyToOutputDirectory="PreserveNewest" />

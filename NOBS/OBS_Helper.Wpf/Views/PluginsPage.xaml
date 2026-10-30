@@ -20,9 +20,12 @@
         </StackPanel>
 
         <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center" Margin="18,0,0,0">
+          <Button x:Name="CatalogUpdateButton" Style="{StaticResource GhostButton}" Padding="10,6"
+                  Content="{DynamicResource Loc.plugin.catalog.update}" Click="OnCatalogUpdateClick" />
           <TextBox x:Name="SearchBox" Style="{StaticResource AppTextBox}"
-                   Width="200" Padding="10,6"
+                   Width="200" Padding="10,6" Margin="8,0,0,0"
                    ToolTip="{DynamicResource Loc.plugin.searchPlaceholder}"
+                   AutomationProperties.Name="{DynamicResource Loc.plugin.searchPlaceholder}"
                    TextChanged="OnSearchTextChanged" />
         </StackPanel>
       </Grid>
@@ -55,6 +58,60 @@
           <TextBlock x:Name="HealthHintText" Style="{StaticResource MutedText}" Margin="0,6,0,0"
                      TextWrapping="Wrap" Visibility="Collapsed" />
           <StackPanel x:Name="HealthList" Visibility="Collapsed" />
+        </StackPanel>
+      </Border>
+
+      <!-- ============================================ 一键安装与管理（V3.3.0） -->
+      <Border x:Name="InstallPanel" Style="{StaticResource Card}" Margin="0,14,0,0">
+        <StackPanel>
+          <TextBlock Text="{DynamicResource Loc.plugin.managed.title}" Style="{StaticResource SectionTitle}" />
+          <TextBlock Style="{StaticResource MutedText}" Margin="0,5,0,0" TextWrapping="Wrap"
+                     Text="{DynamicResource Loc.plugin.managed.desc}" />
+          <StackPanel x:Name="ManagedHost" Margin="0,8,0,0" />
+          <TextBlock x:Name="ManagedEmptyText" Style="{StaticResource CaptionText}" Margin="0,4,0,0"
+                     Text="{DynamicResource Loc.plugin.managed.empty}" />
+
+          <Border Style="{StaticResource HLine}" Margin="0,14,0,0" />
+
+          <TextBlock Text="{DynamicResource Loc.plugin.github.title}" Style="{StaticResource SectionTitle}" />
+          <TextBlock Style="{StaticResource MutedText}" Margin="0,5,0,0" TextWrapping="Wrap"
+                     Text="{DynamicResource Loc.plugin.github.desc}" />
+          <TextBlock Style="{StaticResource CaptionText}" Margin="0,5,0,0" TextWrapping="Wrap"
+                     Foreground="{DynamicResource WarnBrush}"
+                     Text="{DynamicResource Loc.plugin.github.warning}" />
+
+          <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
+            <TextBox x:Name="RepoBox" Style="{StaticResource AppTextBox}" Width="280"
+                     ToolTip="{DynamicResource Loc.plugin.github.placeholder}"
+                     AutomationProperties.Name="{DynamicResource Loc.plugin.github.placeholder}" />
+            <Button x:Name="RepoQueryButton" Style="{StaticResource SecondaryButton}" Margin="10,0,0,0"
+                    Content="{DynamicResource Loc.plugin.github.query}" Click="OnQueryRepoClick" />
+            <Button Style="{StaticResource GhostButton}" Margin="10,0,0,0"
+                    Content="{DynamicResource Loc.plugin.github.openSearch}" Click="OnOpenGitHubSearchClick" />
+          </StackPanel>
+
+          <TextBlock x:Name="RepoStatusText" Style="{StaticResource CaptionText}" Margin="0,8,0,0"
+                     TextWrapping="Wrap" AutomationProperties.LiveSetting="Polite" />
+          <StackPanel x:Name="AssetHost" Margin="0,8,0,0" />
+
+          <!-- GitHub 原生搜索：搜 topic:obs-plugin，结果可直接查看 Release 并安装（V3.3.0） -->
+          <Border Style="{StaticResource HLine}" Margin="0,14,0,0" />
+
+          <TextBlock Text="{DynamicResource Loc.plugin.github.searchTitle}" Style="{StaticResource SectionTitle}" />
+          <TextBlock Style="{StaticResource MutedText}" Margin="0,0,0,8" TextWrapping="Wrap"
+                     Text="{DynamicResource Loc.plugin.github.searchDesc}" />
+
+          <StackPanel Orientation="Horizontal">
+            <TextBox x:Name="GitHubSearchBox" Style="{StaticResource AppTextBox}" Width="280"
+                     ToolTip="{DynamicResource Loc.plugin.github.searchPlaceholder}"
+                     AutomationProperties.Name="{DynamicResource Loc.plugin.github.searchPlaceholder}" />
+            <Button x:Name="GitHubSearchButton" Style="{StaticResource SecondaryButton}" Margin="10,0,0,0"
+                    Content="{DynamicResource Loc.plugin.github.searchButton}" Click="OnGitHubSearchClick" />
+          </StackPanel>
+
+          <TextBlock x:Name="GitHubSearchStatusText" Style="{StaticResource CaptionText}" Margin="0,8,0,0"
+                     TextWrapping="Wrap" AutomationProperties.LiveSetting="Polite" />
+          <StackPanel x:Name="GitHubResultsHost" Margin="0,8,0,0" />
         </StackPanel>
       </Border>
 

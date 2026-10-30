@@ -38,14 +38,13 @@
 
 | 版本类型 | 文件 | 分支 |
 | --- | --- | --- |
-| 正式版 `V3.1.1` | `NOBS/RELEASE_NOTES_v3.1.1.md` | `master`（不得只写在 dev） |
-| DEV 版 `01` | `NOBS/RELEASE_NOTES_DEV_01.md` | `dev` |
+| 正式版 `V3.3.0` | `NOBS/RELEASE_NOTES_v3.3.0.md` | `master` |
 
 - 文件名与 tag 的对应关系（CI 会**去掉 tag 开头的 `V`** 再找文件）：
-  tag `V3.1.1` → 先找 `NOBS/RELEASE_NOTES_DEV_3.1.1.md`，再找 **`NOBS/RELEASE_NOTES_v3.1.1.md`**，
+  tag `V3.3.0` → 找 **`NOBS/RELEASE_NOTES_v3.3.0.md`**，
   最后兼容 `NOBS/RELEASE_NOTES_3.1.1.md`；tag `01` → `NOBS/RELEASE_NOTES_DEV_01.md`；
 - 为避免歧义，正式版统一用 **`RELEASE_NOTES_v<版本>.md`**（小写 v），DEV 用 `RELEASE_NOTES_DEV_<编号>.md`；
-- 正式版发布说明只放 `master`；DEV 发布说明只放 `dev`（见 [`BRANCH_AND_DOC_RULES.md`](BRANCH_AND_DOC_RULES.md)）。
+- V3.3.0 起 `dev` 分支已删除，发布说明只放 `master`（见 [`BRANCH_AND_DOC_RULES.md`](BRANCH_AND_DOC_RULES.md)）。
 
 ## 4. 发版流程（与内容有关的部分）
 
@@ -63,7 +62,7 @@
 - ❌ 只写「详见 README / 详见发布说明」而不写更新内容；
 - ❌ 把内部重构清单当作用户更新说明；
 - ❌ 正文里的文件名 / 版本号与实际产物不一致；
-- ❌ 正式版发布说明只提交在 `dev` 分支。
+- ❌ 发布说明只提交在已停用的 DEV 分支。
 
 ## 6. 提交前检查清单
 

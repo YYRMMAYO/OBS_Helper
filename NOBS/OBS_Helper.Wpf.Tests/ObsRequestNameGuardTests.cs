@@ -100,6 +100,12 @@ public class ObsRequestNameGuardTests
         ["GetAuthRequired"] = "v4.9 握手请求（判断是否需要密码）",
         ["ExecuteBatch"] = "客户端伪请求：一次 socket 往返里跑多条子请求（obs-websocket v5 的 ExecuteBatch，v4 由客户端自行展开）",
         ["CallBatch"] = "客户端伪请求（旧协议批处理入口）",
+        // V3.3.0：VTube Studio 的公开 WebSocket API（不是 obs-websocket；见 Services/Live/VTubeStudioClient.cs）
+        ["AuthenticationRequest"] = "VTube Studio 公开 API：用已保存 token 鉴权",
+        ["AuthenticationTokenRequest"] = "VTube Studio 公开 API：首次授权申请 token",
+        ["ModelsRequest"] = "VTube Studio 公开 API：列出可用模型",
+        ["ModelLoadRequest"] = "VTube Studio 公开 API：按 modelID 加载模型",
+        ["VTSFolderInfoRequest"] = "VTube Studio 公开 API：读取模型目录名",
         // 注：ToggleRecordPause 是官方名，已在上表；这里不重复豁免
     };
 

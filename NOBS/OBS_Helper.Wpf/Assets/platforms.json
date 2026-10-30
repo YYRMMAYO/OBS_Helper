@@ -1,0 +1,236 @@
+{
+  "version": "3.3.0",
+  "verifiedAt": "2026-10-25",
+  "platforms": [
+    {
+      "id": "bilibili",
+      "name": "哔哩哔哩（B 站）",
+      "region": "cn",
+      "mode": "direct",
+      "officialUrl": "https://link.bilibili.com/p/center/index",
+      "helpUrl": "https://link.bilibili.com/p/help/index#/tools-tutorial",
+      "notes": "在「直播间管理 → 开播设置」复制 rtmp 地址与直播码，填入下方两栏即可直推；直播姬作为回退方案。",
+      "streamKeyHint": "直播码（stream key）",
+      "verifiedAt": "2026-10-25",
+      "companions": ["bilibili-livehime"]
+    },
+    {
+      "id": "douyin",
+      "name": "抖音",
+      "region": "cn",
+      "mode": "virtualcam",
+      "officialUrl": "https://streamingtool.douyin.com/",
+      "helpUrl": "https://streamingtool.douyin.com/docs/guide_yr6qkl09",
+      "notes": "抖音不提供面向普通主播的通用推流码：启动 OBS 虚拟摄像头后，在直播伴侣里添加「摄像头」素材并选择 OBS Virtual Camera。",
+      "streamKeyHint": "",
+      "verifiedAt": "2026-10-25",
+      "companions": ["douyin-live"]
+    },
+    {
+      "id": "kuaishou",
+      "name": "快手",
+      "region": "cn",
+      "mode": "direct",
+      "officialUrl": "https://live.kuaishou.com/",
+      "helpUrl": "",
+      "notes": "后台提供推流地址与密钥时可按直推处理；入口随版本变化，使用前请以官方页面为准（本条目尚未逐项核验）。",
+      "streamKeyHint": "推流密钥",
+      "verifiedAt": "",
+      "companions": []
+    },
+    {
+      "id": "wechat-channels",
+      "name": "微信视频号",
+      "region": "cn",
+      "mode": "manual",
+      "officialUrl": "https://channels.weixin.qq.com/",
+      "helpUrl": "",
+      "notes": "视频号目前在微信 / 视频号助手内开播，推流能力仅对部分账号开放；请按官方客户端提示操作，本工具不提供自动化。",
+      "streamKeyHint": "",
+      "verifiedAt": "",
+      "companions": []
+    },
+    {
+      "id": "xiaohongshu",
+      "name": "小红书",
+      "region": "cn",
+      "mode": "manual",
+      "officialUrl": "https://creator.xiaohongshu.com/",
+      "helpUrl": "",
+      "notes": "开播入口在创作服务平台；推流能力按账号开放，未核验前请以官方页面为准。",
+      "streamKeyHint": "",
+      "verifiedAt": "",
+      "companions": []
+    },
+    {
+      "id": "youtube",
+      "name": "YouTube",
+      "region": "global",
+      "mode": "direct",
+      "officialUrl": "https://studio.youtube.com/",
+      "helpUrl": "https://support.google.com/youtube/answer/2907883",
+      "notes": "YouTube Studio → 直播 → 流密钥；频道可能需要验证或等待 24 小时才能开播。",
+      "streamKeyHint": "Stream key",
+      "verifiedAt": "2026-10-25",
+      "companions": []
+    },
+    {
+      "id": "twitch",
+      "name": "Twitch",
+      "region": "global",
+      "mode": "direct",
+      "officialUrl": "https://dashboard.twitch.tv/",
+      "helpUrl": "https://help.twitch.tv/s/article/twitch-streaming-software",
+      "notes": "Creator Dashboard → 设置 → 流 → 主串流密钥；部分账号需要开启两步验证。",
+      "streamKeyHint": "Primary stream key",
+      "verifiedAt": "2026-10-25",
+      "companions": []
+    },
+    {
+      "id": "kick",
+      "name": "Kick",
+      "region": "global",
+      "mode": "direct",
+      "officialUrl": "https://kick.com/dashboard/settings/stream",
+      "helpUrl": "https://help.kick.com/",
+      "notes": "Dashboard → Settings → Stream → Stream URL / Stream Key。",
+      "streamKeyHint": "Stream key",
+      "verifiedAt": "2026-10-25",
+      "companions": []
+    },
+    {
+      "id": "facebook",
+      "name": "Facebook Live",
+      "region": "global",
+      "mode": "direct",
+      "officialUrl": "https://www.facebook.com/live/producer",
+      "helpUrl": "https://www.facebook.com/help/",
+      "notes": "Live Producer → 串流密钥；部分账号需要先完成直播权限审核。",
+      "streamKeyHint": "Persistent stream key",
+      "verifiedAt": "2026-10-25",
+      "companions": []
+    },
+    {
+      "id": "trovo",
+      "name": "Trovo",
+      "region": "global",
+      "mode": "direct",
+      "officialUrl": "https://trovo.live/",
+      "helpUrl": "https://help.trovo.live/",
+      "notes": "创作者后台 → 直播设置 → 串流密钥。",
+      "streamKeyHint": "Stream key",
+      "verifiedAt": "2026-10-25",
+      "companions": []
+    },
+    {
+      "id": "niconico",
+      "name": "ニコニコ生放送",
+      "region": "global",
+      "mode": "direct",
+      "officialUrl": "https://live.nicovideo.jp/",
+      "helpUrl": "https://help.nicovideo.jp/",
+      "notes": "生放送后台 → 配信設定 获取 rtmp 地址与串流密钥。",
+      "streamKeyHint": "配信キー",
+      "verifiedAt": "2026-10-25",
+      "companions": []
+    },
+    {
+      "id": "afreecatv",
+      "name": "AfreecaTV / SOOP",
+      "region": "global",
+      "mode": "direct",
+      "officialUrl": "https://www.sooplive.co.kr/",
+      "helpUrl": "https://help.sooplive.co.kr/",
+      "notes": "主播中心 → 放送设置 → 串流密钥。",
+      "streamKeyHint": "Stream key",
+      "verifiedAt": "2026-10-25",
+      "companions": []
+    },
+    {
+      "id": "tiktok",
+      "name": "TikTok LIVE",
+      "region": "global",
+      "mode": "virtualcam",
+      "officialUrl": "https://www.tiktok.com/live/",
+      "helpUrl": "https://support.tiktok.com/",
+      "notes": "TikTok LIVE Studio 可通过摄像头源使用 OBS 虚拟摄像头；地区 / 年龄 / 粉丝门槛按账号而定。",
+      "streamKeyHint": "",
+      "verifiedAt": "",
+      "companions": ["tiktok-live-studio"]
+    },
+    {
+      "id": "custom-rtmp",
+      "name": "自定义 RTMP",
+      "region": "global",
+      "mode": "direct",
+      "officialUrl": "",
+      "helpUrl": "",
+      "notes": "任何提供 rtmp:// 或 rtmps:// 地址与密钥的服务都能用（自建服务器、企业直播等）。",
+      "streamKeyHint": "串流密钥",
+      "verifiedAt": "2026-10-25",
+      "companions": []
+    },
+    {
+      "id": "instagram",
+      "name": "Instagram Live",
+      "region": "global",
+      "mode": "manual",
+      "officialUrl": "https://www.instagram.com/",
+      "helpUrl": "https://help.instagram.com/",
+      "notes": "Instagram 直播目前主要在移动端发起，桌面推流能力按账号开放；本工具只提供手动引导。",
+      "streamKeyHint": "",
+      "verifiedAt": "",
+      "companions": []
+    },
+    {
+      "id": "x",
+      "name": "X（Twitter）",
+      "region": "global",
+      "mode": "manual",
+      "officialUrl": "https://x.com/",
+      "helpUrl": "https://help.x.com/",
+      "notes": "X 的直播入口依赖第三方制作工具；未核验前不作为一键直推支持。",
+      "streamKeyHint": "",
+      "verifiedAt": "",
+      "companions": []
+    }
+  ],
+  "companions": [
+    {
+      "id": "douyin-live",
+      "name": "抖音直播伴侣",
+      "processNames": ["直播伴侣", "LiveCompanion", "DouyinLive"],
+      "installDirectories": ["%ProgramFiles%\\douyin\\直播伴侣", "%ProgramFiles(x86)%\\douyin\\直播伴侣"],
+      "uninstallNames": ["抖音直播伴侣", "Douyin Live Companion"],
+      "downloadUrl": "https://www.douyin.com/falcon/webcast_openpc/pages/streamingtool_download/index.html",
+      "helpUrl": "https://streamingtool.douyin.com/docs/guide_yr6qkl09"
+    },
+    {
+      "id": "bilibili-livehime",
+      "name": "哔哩哔哩直播姬",
+      "processNames": ["livehime", "LiveHime"],
+      "installDirectories": ["%ProgramFiles%\\bilibili\\livehime", "%ProgramFiles(x86)%\\bilibili\\livehime"],
+      "uninstallNames": ["哔哩哔哩直播姬", "Bilibili LiveHime"],
+      "downloadUrl": "https://live.bilibili.com/liveHime",
+      "helpUrl": "https://link.bilibili.com/p/help/index#/tools-tutorial"
+    },
+    {
+      "id": "tiktok-live-studio",
+      "name": "TikTok LIVE Studio",
+      "processNames": ["TikTok LIVE Studio", "TikTokLiveStudio"],
+      "installDirectories": ["%ProgramFiles%\\TikTok LIVE Studio", "%LocalAppData%\\Programs\\TikTok LIVE Studio"],
+      "uninstallNames": ["TikTok LIVE Studio"],
+      "downloadUrl": "https://www.tiktok.com/live/studio",
+      "helpUrl": "https://support.tiktok.com/"
+    },
+    {
+      "id": "vtube-studio",
+      "name": "VTube Studio",
+      "processNames": ["VTube Studio", "VTubeStudio"],
+      "installDirectories": ["%ProgramFiles(x86)%\\Steam\\steamapps\\common\\VTube Studio"],
+      "uninstallNames": ["VTube Studio"],
+      "downloadUrl": "https://store.steampowered.com/app/1325860/VTube_Studio/",
+      "helpUrl": "https://github.com/DenchiSoft/VTubeStudio"
+    }
+  ]
+}

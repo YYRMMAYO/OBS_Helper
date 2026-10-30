@@ -92,6 +92,11 @@
     M5,10 H8 A2.5,2.5 0 0 1 13,10 H19 V12 A2.5,2.5 0 0 1 19,17 V20 H5 Z
   </StreamGeometry>
 
+  <!-- 虚拟直播（V3.3.0）：星芒 + 小星，表示「形象 / 开播」 -->
+  <StreamGeometry x:Key="IconGeomVirtualLive" PresentationOptions:Freeze="True">
+    M10,4 L11.6,8.4 L16,10 L11.6,11.6 L10,16 L8.4,11.6 L4,10 L8.4,8.4 Z M17.5,14 L18.3,16.2 L20.5,17 L18.3,17.8 L17.5,20 L16.7,17.8 L14.5,17 L16.7,16.2 Z
+  </StreamGeometry>
+
   <!-- 控制台：显示器 -->
   <StreamGeometry x:Key="IconGeomConsole" PresentationOptions:Freeze="True">
     M4,5 H20 V16 H4 Z M9,20 H15 M12,16 V20

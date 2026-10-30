@@ -50,7 +50,24 @@ public static class AppServices
     // 录制档案与收尾流水线（V3.0 / D3）：登记 / 重命名 / 批量转 MP4 / 打点章节
     private static readonly Lazy<RecordingArchiveService> _archive = new(() => new RecordingArchiveService(Store));
     private static readonly Lazy<ObsResetService> _obsReset = new(() => new ObsResetService(ObsPaths, ObsBackups, Obs));
-    private static readonly Lazy<SceneTemplateService> _templates = new(() => new SceneTemplateService(Obs, ObsPaths));
+    private static readonly Lazy<SceneTemplateService> _templates = new(() =>
+    {
+        var service = new SceneTemplateService(Obs, ObsPaths);
+        // V3.3.0：虚拟直播间的 browser 页面在落地时解析成本地回环 URL
+        service.SourceSettingsResolver = src => Rooms.ResolveSourceSettings(src);
+        return service;
+    });
+    // 虚拟直播间的本地 overlay 服务（V3.3.0）：只绑回环、随机端口、随机 token
+    private static readonly Lazy<Services.Live.RoomService> _rooms =
+        new(() => new Services.Live.RoomService());
+    // Live2D 一键配置（V3.3.0）：模型校验 + 采集源 + VTS 公开 API
+    private static readonly Lazy<Services.Live.Live2DSetupService> _live2d =
+        new(() => new Services.Live.Live2DSetupService(Obs));
+    // 开播引导（V3.3.0）：平台目录 + 直推 / 虚拟摄像头 + 第三方客户端探测
+    private static readonly Lazy<Services.Live.PlatformCatalogService> _platforms =
+        new(() => new Services.Live.PlatformCatalogService());
+    private static readonly Lazy<Services.Live.GoLiveService> _goLive =
+        new(() => new Services.Live.GoLiveService(Obs, Host));
     // 录前自检（C1，只读）：读 OBS 配置检查录制格式 / 路径 / 编码器 / 音频设置
     private static readonly Lazy<PreflightCheckService> _preflight = new(() => new PreflightCheckService(ObsPaths));
     // 自检清单按本机实测回填（V3.0 / D4）
@@ -82,6 +99,13 @@ public static class AppServices
     private static readonly Lazy<PluginReleaseService> _pluginReleases = new(() => new PluginReleaseService());
     private static readonly Lazy<PluginWatchService> _pluginWatch =
         new(() => new PluginWatchService(Store, () => _pluginCatalog.Value.GetData(), _pluginReleases.Value));
+    // 插件一键安装 / 管理（V3.3.0）：状态清单 + 事务安装 + GitHub 搜索
+    private static readonly Lazy<PluginStateStore> _pluginState =
+        new(() => new PluginStateStore(System.IO.Path.Combine(HostBridge.AppDataDirectory, "plugins")));
+    private static readonly Lazy<PluginInstallService> _pluginInstall =
+        new(() => new PluginInstallService(PluginState));
+    private static readonly Lazy<GitHubSearchService> _pluginSearch =
+        new(() => new GitHubSearchService(tokenProvider: () => Host.GetSecretAsync("github.token")));
 
     // 后台 / 遥控能力
     private static readonly Lazy<TrayService> _tray = new(() => new TrayService(Obs, Store));
@@ -158,6 +182,18 @@ public static class AppServices
     public static MachineProfileService MachineProfile => _machineProfile.Value;
     public static ObsResetService ObsReset => _obsReset.Value;
     public static SceneTemplateService Templates => _templates.Value;
+
+    /// <summary>虚拟直播间服务（V3.3.0）：本地 overlay 页面与模板筛选。</summary>
+    public static Services.Live.RoomService Rooms => _rooms.Value;
+
+    /// <summary>Live2D 一键配置（V3.3.0）。</summary>
+    public static Services.Live.Live2DSetupService Live2D => _live2d.Value;
+
+    /// <summary>开播平台目录（V3.3.0）。</summary>
+    public static Services.Live.PlatformCatalogService Platforms => _platforms.Value;
+
+    /// <summary>开播编排（V3.3.0）：直推 / 虚拟摄像头 / 客户端探测。</summary>
+    public static Services.Live.GoLiveService GoLive => _goLive.Value;
     public static PreflightCheckService Preflight => _preflight.Value;
     public static RecordingToolsService RecordingTools => _recTools.Value;
     /// <summary>一键部署录制环境（V2.9.3）。</summary>
@@ -179,6 +215,15 @@ public static class AppServices
     public static LocalPluginScanner PluginScanner => _pluginScanner.Value;
     public static PluginReleaseService PluginReleases => _pluginReleases.Value;
     public static PluginWatchService PluginWatch => _pluginWatch.Value;
+
+    /// <summary>插件安装状态（V3.3.0）：installed.json / downloads / backups。</summary>
+    public static PluginStateStore PluginState => _pluginState.Value;
+
+    /// <summary>插件事务安装（V3.3.0）。</summary>
+    public static PluginInstallService PluginInstall => _pluginInstall.Value;
+
+    /// <summary>GitHub 搜索 / Release 查询（V3.3.0，带缓存与限频冷却）。</summary>
+    public static GitHubSearchService PluginSearch => _pluginSearch.Value;
     public static ObsToolRegistry Tools => _tools.Value;
     public static LocalDiagnosticEngine LocalEngine => _localEngine.Value;
     public static CloudDiagnosticEngine CloudEngine => _cloudEngine.Value;
@@ -313,6 +358,7 @@ public static class AppServices
             Problems.Reload();
             if (_pluginCatalog.IsValueCreated) PluginCatalog.Reload();
             if (_templates.IsValueCreated) Templates.Reload();
+            if (_platforms.IsValueCreated) Platforms.Reload();
             // 切到英文时，英文那份的节流状态文件是全新的，这次调用会真的联网拉一次英文资产。
             Kb.RefreshCurrentLanguageAsync().FireAndForget("KB", "语言切换后刷新内容");
         }
@@ -327,6 +373,11 @@ public static class AppServices
     {
         try { if (_wallpapers.IsValueCreated) Wallpapers.Dispose(); } catch (Exception ex) { FileLogger.Warn("Shutdown", $"Wallpapers.Dispose 失败: {ex.Message}"); }
         try { if (_teleprompter.IsValueCreated) Teleprompter.Dispose(); } catch (Exception ex) { FileLogger.Warn("Shutdown", $"Teleprompter.Dispose 失败: {ex.Message}"); }
+        // V3.3.0：释放 overlay 本地端口（未启动过就不必碰它）
+        try { if (_rooms.IsValueCreated) Rooms.Dispose(); } catch (Exception ex) { FileLogger.Warn("Shutdown", $"Rooms.Dispose 失败: {ex.Message}"); }
+        try { if (_live2d.IsValueCreated) Live2D.DisposeAsync().AsTask().GetAwaiter().GetResult(); } catch (Exception ex) { FileLogger.Warn("Shutdown", $"Live2D.Dispose 失败: {ex.Message}"); }
+        try { if (_pluginInstall.IsValueCreated) PluginInstall.Dispose(); } catch (Exception ex) { FileLogger.Warn("Shutdown", $"PluginInstall.Dispose 失败: {ex.Message}"); }
+        try { if (_pluginSearch.IsValueCreated) PluginSearch.Dispose(); } catch (Exception ex) { FileLogger.Warn("Shutdown", $"PluginSearch.Dispose 失败: {ex.Message}"); }
         try { Mini.Stop(); } catch (Exception ex) { FileLogger.Warn("Shutdown", $"Mini.Stop 失败: {ex.Message}"); }
         try { AutoSwitcher.Stop(); } catch (Exception ex) { FileLogger.Warn("Shutdown", $"AutoSwitcher.Stop 失败: {ex.Message}"); }
         try { Hotkeys.Dispose(); } catch (Exception ex) { FileLogger.Warn("Shutdown", $"Hotkeys.Dispose 失败: {ex.Message}"); }

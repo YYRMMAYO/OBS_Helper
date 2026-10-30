@@ -39,6 +39,13 @@ public sealed class SceneTemplateService
         _paths = paths;
     }
 
+    /// <summary>
+    /// 来源设置的二级解析器（V3.3.0）：虚拟直播间的 <c>browser</c> 页面需要在这一步换成
+    /// 带回环 token 的本地 URL；返回 null 表示沿用模板自带的 settings。
+    /// 用委托而不是直接依赖 RoomService，是为了让「模板落地」保持可单独测试、也不引入循环依赖。
+    /// </summary>
+    public Func<TemplateSource, JsonObject?>? SourceSettingsResolver { get; set; }
+
     /// <summary>数据加载失败时的错误信息（供 UI 展示）。</summary>
     public string? LoadError => _loadError;
 
@@ -262,6 +269,27 @@ public sealed class SceneTemplateService
             notes.Add(Strings.T("scene.apply.transitionOverrideFailed", scene.Name, Describe(ovOk)));
     }
 
+    /// <summary>
+    /// 取来源的设置：先问 <see cref="SourceSettingsResolver"/>（虚拟直播间的 overlay URL），
+    /// 没有自定义结果时沿用模板自带 settings。解析器抛错不阻断落地（记占位提示）。
+    /// </summary>
+    private JsonObject ResolveInputSettings(TemplateSource src)
+    {
+        if (SourceSettingsResolver is not null)
+        {
+            try
+            {
+                var custom = SourceSettingsResolver(src);
+                if (custom is not null) return custom;
+            }
+            catch (Exception ex)
+            {
+                FileLogger.Warn("Templates", $"来源「{src.Name}」的自定义设置解析失败（沿用模板设置）：{ex.Message}");
+            }
+        }
+        return src.Settings ?? new JsonObject();
+    }
+
     /// <summary>落地后切到模板的第一个场景作为主场景。</summary>
     private async Task SwitchToFirstSceneAsync(SceneTemplate tpl, CancellationToken ct)
     {
@@ -336,7 +364,7 @@ public sealed class SceneTemplateService
             sceneName,
             inputName = src.Name,
             inputKind = kind,
-            inputSettings = src.Settings ?? new JsonObject(),
+            inputSettings = ResolveInputSettings(src),
             sceneItemEnabled = src.Enabled
         }, ct);
 

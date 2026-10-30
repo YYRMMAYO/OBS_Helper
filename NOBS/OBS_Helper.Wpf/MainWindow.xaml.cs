@@ -49,6 +49,7 @@ public partial class MainWindow : Window
             [Routes.Diagnostic] = (NavDiagnostic, "page.diagnostic.title", "page.diagnostic.subtitle"),
             [Routes.Setup] = (NavSetup, "page.setup.title", "page.setup.subtitle"),
             [Routes.Templates] = (NavTemplates, "page.templates.title", "page.templates.subtitle"),
+            [Routes.VirtualLive] = (NavVirtualLive, "page.virtuallive.title", "page.virtuallive.subtitle"),
             [Routes.Plugins] = (NavPlugins, "page.plugins.title", "page.plugins.subtitle"),
             [Routes.Toolbox] = (NavToolbox, "page.toolbox.title", "page.toolbox.subtitle"),
             [Routes.Console] = (NavConsole, "page.console.title", "page.console.subtitle"),
@@ -83,7 +84,57 @@ public partial class MainWindow : Window
         AppServices.Localization.Changed += OnLanguageChanged;
         // 内容资产回退（V3.0 / E5）：登记处一变就刷新提示条（首次加载资产是异步的）
         FallbackNotice.Changed += OnFallbackNoticeChanged;
+        // V3.3.0：无障碍 / 老年模式开关会改变跳转链接与导航尺寸（令牌经 Apply 生效）
+        AppServices.Appearance.Changed += OnAppearanceChanged;
         BuildOnboardingDots();
+        ApplyUiProfileChrome();
+    }
+
+    /// <summary>按当前界面令牌刷新主窗口自己的无障碍外观（跳转链接显隐）。</summary>
+    private void ApplyUiProfileChrome()
+    {
+        try
+        {
+            SkipLinkButton.Visibility = AppServices.Appearance.CurrentUiProfile.ShowSkipLink
+                ? Visibility.Visible
+                : Visibility.Collapsed;
+        }
+        catch (Exception ex)
+        {
+            FileLogger.Warn("A11y", $"刷新无障碍外观失败：{ex.Message}");
+        }
+    }
+
+    private void OnAppearanceChanged()
+    {
+        // Changed 可能来自后台线程（系统主题事件）；统一回到 UI 线程处理
+        Dispatcher.BeginInvoke(new Action(ApplyUiProfileChrome));
+    }
+
+    /// <summary>
+    /// 「跳到主内容」：把键盘焦点交给当前页面里第一个可聚焦控件。
+    /// 找不到可聚焦控件时退回页面上最后一个可用入口（顶栏设置按钮），不让焦点掉到窗口外。
+    /// </summary>
+    private void OnSkipLinkClick(object sender, RoutedEventArgs e)
+    {
+        if (PageHost.Content is DependencyObject root && FocusFirst(root)) return;
+        NavSettings.Focus();
+    }
+
+    private static bool FocusFirst(DependencyObject root)
+    {
+        if (root is Control c && c.Focusable && c.IsTabStop && c.IsVisible && c.IsEnabled)
+        {
+            return c.Focus();
+        }
+
+        var count = VisualTreeHelper.GetChildrenCount(root);
+        for (var i = 0; i < count; i++)
+        {
+            var child = VisualTreeHelper.GetChild(root, i);
+            if (FocusFirst(child)) return true;
+        }
+        return false;
     }
 
     private void RegisterRoutes()
@@ -94,6 +145,7 @@ public partial class MainWindow : Window
         _nav.Register(Routes.Diagnostic, () => new DiagnosticPage());
         _nav.Register(Routes.Setup, () => new SetupPage());
         _nav.Register(Routes.Templates, () => new TemplatePage());
+        _nav.Register(Routes.VirtualLive, () => new VirtualLivePage());
         _nav.Register(Routes.Plugins, () => new PluginsPage());
         _nav.Register(Routes.Toolbox, () => new ToolboxPage());
         _nav.Register(Routes.Console, () => new ConsolePage());
@@ -240,6 +292,12 @@ public partial class MainWindow : Window
     /// <summary>当前展示到第几步（0 基）。</summary>
     private int _onboardingStep;
 
+    /// <summary>切步方向：+1 下一步、-1 上一步（决定内容滑入方向）。</summary>
+    private int _onboardingDirection = 1;
+
+    /// <summary>是否减少动画（系统设置 + 应用模式组合后的有效值）。</summary>
+    private bool UiReduceMotion => AppServices.Appearance.ReduceMotionEffective;
+
     /// <summary>首启时更新检查被引导推迟；引导结束后补跑一次。</summary>
     private bool _updateCheckDeferredUntilOnboarding;
 
@@ -261,7 +319,9 @@ public partial class MainWindow : Window
                 Margin = new Thickness(4, 0, 4, 0),
                 // 未选中态：用次要文字色的低透明度，深浅主题下都能与卡片底拉开层次
                 // （本应用没有 TextDisabledBrush 这类专用资源，避免为此新增色板项）
-                Opacity = IdleDotOpacity
+                Opacity = IdleDotOpacity,
+                RenderTransform = new ScaleTransform(1, 1),
+                RenderTransformOrigin = new Point(0.5, 0.5)
             };
             dot.SetResourceReference(System.Windows.Shapes.Shape.FillProperty, "MutedBrush");
             _onboardingDots.Add(dot);
@@ -289,25 +349,11 @@ public partial class MainWindow : Window
     private void ShowOnboarding()
     {
         _onboardingStep = 0;
+        _onboardingDirection = 1;
         RenderOnboardingStep();
 
         OnboardingLayer.Visibility = Visibility.Visible;
-
-        if (AppServices.Appearance.Settings.ReduceMotion)
-        {
-            // 无障碍「减少动画」：直接以终态显示（属性被动画持有期间直赋值无效，先清动画）
-            OnboardingLayer.BeginAnimation(UIElement.OpacityProperty, null);
-            OnboardingLayer.Opacity = 1;
-            FocusOnboardingPrimaryButton();
-            return;
-        }
-
-        OnboardingLayer.Opacity = 0;
-        OnboardingLayer.BeginAnimation(UIElement.OpacityProperty,
-            new DoubleAnimation(0, 1, TimeSpan.FromMilliseconds(180))
-            {
-                EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
-            });
+        AnimateOnboardingEntrance();
         FocusOnboardingPrimaryButton();
     }
 
@@ -357,7 +403,10 @@ public partial class MainWindow : Window
         BuildOnboardingLinks(step);
         ShowStepTargetPage(step);
 
-        AnimateOnboardingText();
+        // V3.3.0：切步动画（内容滑入 + 当前圆点脉冲 + 进度条推进）
+        AnimateOnboardingStepContent();
+        AnimateActiveDot();
+        UpdateOnboardingProgress();
     }
 
     /// <summary>路由名 → 主窗口路由表里的页面标题（取不到时回退路由名本身）。</summary>
@@ -442,25 +491,140 @@ public partial class MainWindow : Window
         }
     }
 
-    /// <summary>步骤文字淡入（每次切步都重播，给「翻页」以视觉反馈）。</summary>
-    private void AnimateOnboardingText()
+    // ------------------------------------------------------------ 引导动画（V3.3.0）
+
+    /// <summary>
+    /// 入场：遮罩淡入 + 卡片从下方 28 px 滑入并轻微放大 + 品牌点脉冲。
+    /// 「减少动画」下直接以终态显示（属性被动画持有期间直赋值无效，先清动画）。
+    /// </summary>
+    private void AnimateOnboardingEntrance()
     {
-        if (AppServices.Appearance.Settings.ReduceMotion)
+        ResetOnboardingTransforms();
+
+        if (UiReduceMotion)
         {
-            OnbStepTitle.BeginAnimation(UIElement.OpacityProperty, null);
-            OnbStepDesc.BeginAnimation(UIElement.OpacityProperty, null);
-            OnbStepTitle.Opacity = 1;
-            OnbStepDesc.Opacity = 1;
+            OnboardingLayer.BeginAnimation(UIElement.OpacityProperty, null);
+            OnboardingLayer.Opacity = 1;
             return;
         }
 
-        var fade = new DoubleAnimation(0, 1, TimeSpan.FromMilliseconds(160))
-        {
-            EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
-        };
-        OnbStepTitle.BeginAnimation(UIElement.OpacityProperty, fade);
-        OnbStepDesc.BeginAnimation(UIElement.OpacityProperty, fade);
+        var ease = new CubicEase { EasingMode = EasingMode.EaseOut };
+        OnboardingLayer.Opacity = 0;
+        OnboardingLayer.BeginAnimation(UIElement.OpacityProperty,
+            new DoubleAnimation(0, 1, TimeSpan.FromMilliseconds(220)) { EasingFunction = ease });
+
+        OnbCardTranslate.BeginAnimation(TranslateTransform.YProperty,
+            new DoubleAnimation(28, 0, TimeSpan.FromMilliseconds(420)) { EasingFunction = ease });
+        OnbCardScale.BeginAnimation(ScaleTransform.ScaleXProperty,
+            new DoubleAnimation(0.955, 1, TimeSpan.FromMilliseconds(420)) { EasingFunction = ease });
+        OnbCardScale.BeginAnimation(ScaleTransform.ScaleYProperty,
+            new DoubleAnimation(0.955, 1, TimeSpan.FromMilliseconds(420)) { EasingFunction = ease });
+
+        var pulse = new DoubleAnimationUsingKeyFrames();
+        pulse.KeyFrames.Add(new EasingDoubleKeyFrame(0.2, KeyTime.FromTimeSpan(TimeSpan.Zero)));
+        pulse.KeyFrames.Add(new EasingDoubleKeyFrame(1.25, KeyTime.FromTimeSpan(TimeSpan.FromMilliseconds(260))));
+        pulse.KeyFrames.Add(new EasingDoubleKeyFrame(1.0, KeyTime.FromTimeSpan(TimeSpan.FromMilliseconds(460))));
+        OnbSparkScale.BeginAnimation(ScaleTransform.ScaleXProperty, pulse);
+        OnbSparkScale.BeginAnimation(ScaleTransform.ScaleYProperty, pulse);
     }
+
+    /// <summary>清掉动画并把变换恢复为基准值（重播 / 退出后再次进入都靠它）。</summary>
+    private void ResetOnboardingTransforms()
+    {
+        OnbCardTranslate.BeginAnimation(TranslateTransform.YProperty, null);
+        OnbCardScale.BeginAnimation(ScaleTransform.ScaleXProperty, null);
+        OnbCardScale.BeginAnimation(ScaleTransform.ScaleYProperty, null);
+        OnbContentTranslate.BeginAnimation(TranslateTransform.XProperty, null);
+        OnbSparkScale.BeginAnimation(ScaleTransform.ScaleXProperty, null);
+        OnbSparkScale.BeginAnimation(ScaleTransform.ScaleYProperty, null);
+        OnbContent.BeginAnimation(UIElement.OpacityProperty, null);
+
+        OnbCardTranslate.Y = 0;
+        OnbCardScale.ScaleX = 1;
+        OnbCardScale.ScaleY = 1;
+        OnbContentTranslate.X = 0;
+        OnbContent.Opacity = 1;
+        OnbSparkScale.ScaleX = 1;
+        OnbSparkScale.ScaleY = 1;
+    }
+
+    /// <summary>切步：内容按方向横向滑入 + 淡入（前进向右、后退向左）。</summary>
+    private void AnimateOnboardingStepContent()
+    {
+        if (UiReduceMotion)
+        {
+            OnbContentTranslate.BeginAnimation(TranslateTransform.XProperty, null);
+            OnbContent.BeginAnimation(UIElement.OpacityProperty, null);
+            OnbContentTranslate.X = 0;
+            OnbContent.Opacity = 1;
+            return;
+        }
+
+        var from = _onboardingDirection >= 0 ? 22 : -22;
+        var ease = new CubicEase { EasingMode = EasingMode.EaseOut };
+
+        OnbContentTranslate.BeginAnimation(TranslateTransform.XProperty, null);
+        OnbContentTranslate.X = from;
+        OnbContentTranslate.BeginAnimation(TranslateTransform.XProperty,
+            new DoubleAnimation(from, 0, TimeSpan.FromMilliseconds(240)) { EasingFunction = ease });
+
+        OnbContent.BeginAnimation(UIElement.OpacityProperty, null);
+        OnbContent.Opacity = 0;
+        OnbContent.BeginAnimation(UIElement.OpacityProperty,
+            new DoubleAnimation(0, 1, TimeSpan.FromMilliseconds(220)) { EasingFunction = ease });
+    }
+
+    /// <summary>当前步骤圆点做一次轻微的「弹一下」，给「翻页」一个明确的视觉落点。</summary>
+    private void AnimateActiveDot()
+    {
+        if (_onboardingStep < 0 || _onboardingStep >= _onboardingDots.Count) return;
+        if (_onboardingDots[_onboardingStep].RenderTransform is not ScaleTransform scale) return;
+
+        scale.BeginAnimation(ScaleTransform.ScaleXProperty, null);
+        scale.BeginAnimation(ScaleTransform.ScaleYProperty, null);
+
+        if (UiReduceMotion)
+        {
+            scale.ScaleX = 1.2;
+            scale.ScaleY = 1.2;
+            return;
+        }
+
+        var pulse = new DoubleAnimationUsingKeyFrames();
+        pulse.KeyFrames.Add(new EasingDoubleKeyFrame(0.65, KeyTime.FromTimeSpan(TimeSpan.Zero)));
+        pulse.KeyFrames.Add(new EasingDoubleKeyFrame(1.35, KeyTime.FromTimeSpan(TimeSpan.FromMilliseconds(130))));
+        pulse.KeyFrames.Add(new EasingDoubleKeyFrame(1.0, KeyTime.FromTimeSpan(TimeSpan.FromMilliseconds(240))));
+        scale.BeginAnimation(ScaleTransform.ScaleXProperty, pulse);
+        scale.BeginAnimation(ScaleTransform.ScaleYProperty, pulse);
+    }
+
+    /// <summary>进度条推进到当前步骤（按轨道实际宽度计算，窗口缩放后仍正确）。</summary>
+    private void UpdateOnboardingProgress()
+    {
+        if (OnbProgressTrack.ActualWidth <= 0) return;
+
+        var ratio = OnboardingGuide.StepCount <= 1
+            ? 1.0
+            : (_onboardingStep + 1) / (double)OnboardingGuide.StepCount;
+        var target = Math.Round(OnbProgressTrack.ActualWidth * ratio, 1);
+
+        if (UiReduceMotion)
+        {
+            OnbProgressFill.BeginAnimation(FrameworkElement.WidthProperty, null);
+            OnbProgressFill.Width = target;
+            return;
+        }
+
+        var from = OnbProgressFill.ActualWidth;
+        OnbProgressFill.BeginAnimation(FrameworkElement.WidthProperty,
+            new DoubleAnimation(from, target, TimeSpan.FromMilliseconds(260))
+            {
+                EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
+            });
+    }
+
+    private void OnOnboardingProgressSizeChanged(object sender, SizeChangedEventArgs e)
+        => UpdateOnboardingProgress();
 
     /// <summary>结束引导（走完最后一步或点「跳过」）：记下已完成并淡出。</summary>
     private void FinishOnboarding()
@@ -484,7 +648,7 @@ public partial class MainWindow : Window
             ResumeDeferredUpdateCheck();
         }
 
-        if (AppServices.Appearance.Settings.ReduceMotion)
+        if (UiReduceMotion)
         {
             OnboardingLayer.BeginAnimation(UIElement.OpacityProperty, null);
             OnboardingLayer.Opacity = 1;
@@ -492,7 +656,12 @@ public partial class MainWindow : Window
             return;
         }
 
-        var fadeOut = new DoubleAnimation(1, 0, TimeSpan.FromMilliseconds(140));
+        // V3.3.0：退场与入场对称 —— 卡片轻微下沉 + 整体淡出
+        var ease = new CubicEase { EasingMode = EasingMode.EaseIn };
+        OnbCardTranslate.BeginAnimation(TranslateTransform.YProperty,
+            new DoubleAnimation(0, 16, TimeSpan.FromMilliseconds(170)) { EasingFunction = ease });
+
+        var fadeOut = new DoubleAnimation(1, 0, TimeSpan.FromMilliseconds(160)) { EasingFunction = ease };
         fadeOut.Completed += (_, _) => AfterHide();
         OnboardingLayer.BeginAnimation(UIElement.OpacityProperty, fadeOut);
     }
@@ -513,12 +682,14 @@ public partial class MainWindow : Window
             return;
         }
 
+        _onboardingDirection = 1;
         _onboardingStep = OnboardingGuide.Next(_onboardingStep);
         RenderOnboardingStep();
     }
 
     private void OnbBackBtn_Click(object sender, RoutedEventArgs e)
     {
+        _onboardingDirection = -1;
         _onboardingStep = OnboardingGuide.Back(_onboardingStep);
         RenderOnboardingStep();
     }
@@ -668,6 +839,9 @@ public partial class MainWindow : Window
             (Routes.Diagnostic, null),
             (Routes.Setup, null),
             (Routes.Templates, null),
+            (Routes.VirtualLive, "avatar"),
+            (Routes.VirtualLive, "room"),
+            (Routes.VirtualLive, "golive"),
             (Routes.Plugins, null),
             (Routes.Toolbox, null),
             (Routes.Console, null),
@@ -1094,6 +1268,7 @@ public partial class MainWindow : Window
         App.OnboardingResetRequested -= OnOnboardingResetRequested;
         AppServices.Localization.Changed -= OnLanguageChanged;
         FallbackNotice.Changed -= OnFallbackNoticeChanged;
+        AppServices.Appearance.Changed -= OnAppearanceChanged;
         AppServices.Wallpapers.Notice -= OnWallpaperNotice;
         StateChanged -= OnWallpaperPauseChanged;
         Activated -= OnWallpaperPauseChanged;

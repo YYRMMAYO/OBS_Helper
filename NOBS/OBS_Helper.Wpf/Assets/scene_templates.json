@@ -2570,5 +2570,1540 @@
         ]
       }
     ]
+  },
+  {
+    "id": "vtuber-chat",
+    "title": "虚拟主播 · 杂谈",
+    "summary": "半身形象 + 聊天框 + 装饰边框，聊天、杂谈、歌回开箱即用。",
+    "icon": "🎀",
+    "portrait": false,
+    "notes": "形象位默认按 NDI / Spout / 虚拟摄像头 / 窗口采集依次回退；麦克风与桌面音频已跨场景复用。",
+    "tags": [
+      "vtuber",
+      "chat",
+      "cute"
+    ],
+    "assetPack": "",
+    "minAppVersion": "3.3.0",
+    "canvas": {
+      "baseWidth": 1920,
+      "baseHeight": 1080,
+      "outputWidth": 1920,
+      "outputHeight": 1080,
+      "fpsNumerator": 30,
+      "fpsDenominator": 1
+    },
+    "transition": "淡入淡出",
+    "transitionDurationMs": 300,
+    "scenes": [
+      {
+        "name": "杂谈",
+        "sources": [
+          {
+            "name": "背景色",
+            "inputKind": "color_source_v3",
+            "zOrder": 0,
+            "enabled": true,
+            "role": "bg",
+            "settings": {
+              "color": 4294965224
+            },
+            "transform": {
+              "posX": 0,
+              "posY": 0,
+              "boundsType": "OBS_BOUNDS_STRETCH",
+              "boundsWidth": 1920,
+              "boundsHeight": 1080,
+              "alignment": 0
+            }
+          },
+          {
+            "name": "装饰边框",
+            "inputKind": "browser_source",
+            "zOrder": 1,
+            "enabled": true,
+            "role": "frame",
+            "transform": {
+              "posX": 0,
+              "posY": 0,
+              "boundsType": "OBS_BOUNDS_STRETCH",
+              "boundsWidth": 1920,
+              "boundsHeight": 1080,
+              "alignment": 0
+            },
+            "browser": {
+              "page": "frame.html?theme=cream",
+              "width": 1920,
+              "height": 1080,
+              "css": "",
+              "rerouteAudio": false
+            }
+          },
+          {
+            "name": "虚拟形象",
+            "inputKind": "ndi_source",
+            "zOrder": 3,
+            "enabled": true,
+            "role": "avatar",
+            "fallbackKinds": [
+              "spout2_source",
+              "dshow_input",
+              "window_capture"
+            ],
+            "placeholder": {
+              "kind": "tracker",
+              "hint": "由「Live2D 一键配置」绑定，或选择已有窗口 / NDI 来源"
+            },
+            "transform": {
+              "posX": 1110,
+              "posY": 330,
+              "boundsType": "OBS_BOUNDS_SCALE_INNER",
+              "boundsWidth": 720,
+              "boundsHeight": 700,
+              "alignment": 0
+            }
+          },
+          {
+            "name": "聊天框",
+            "inputKind": "browser_source",
+            "zOrder": 4,
+            "enabled": true,
+            "role": "chat",
+            "placeholder": {
+              "kind": "url",
+              "hint": "可把本来源的 URL 换成你自己的聊天 widget"
+            },
+            "transform": {
+              "posX": 1430,
+              "posY": 330,
+              "boundsType": "OBS_BOUNDS_SCALE_INNER",
+              "boundsWidth": 430,
+              "boundsHeight": 700,
+              "alignment": 0
+            },
+            "browser": {
+              "page": "chat.html",
+              "width": 430,
+              "height": 700,
+              "css": "body{background:rgba(0,0,0,0);margin:0;overflow:hidden}",
+              "rerouteAudio": false
+            }
+          },
+          {
+            "name": "标题",
+            "inputKind": "text_gdiplus_v3",
+            "zOrder": 6,
+            "enabled": true,
+            "role": "caption",
+            "settings": {
+              "text": "欢迎来到直播间",
+              "font": {
+                "face": "微软雅黑",
+                "size": 46
+              },
+              "color": 4282003781
+            },
+            "fallbackKinds": [
+              "text_ft2_source_v3"
+            ],
+            "placeholder": {
+              "kind": "text",
+              "hint": "替换成你的标题 / 公告"
+            },
+            "transform": {
+              "posX": 70,
+              "posY": 40,
+              "boundsType": "OBS_BOUNDS_NONE",
+              "alignment": 5
+            }
+          },
+          {
+            "name": "我的麦克风",
+            "inputKind": "wasapi_input_capture",
+            "zOrder": 5,
+            "enabled": true,
+            "role": "audio",
+            "placeholder": {
+              "kind": "device",
+              "hint": "选择你的麦克风"
+            },
+            "shared": true
+          }
+        ],
+        "hotkey": "Ctrl+1"
+      },
+      {
+        "name": "全屏互动",
+        "sources": [
+          {
+            "name": "背景色",
+            "inputKind": "color_source_v3",
+            "zOrder": 0,
+            "enabled": true,
+            "role": "bg",
+            "settings": {
+              "color": 4293916415
+            },
+            "transform": {
+              "posX": 0,
+              "posY": 0,
+              "boundsType": "OBS_BOUNDS_STRETCH",
+              "boundsWidth": 1920,
+              "boundsHeight": 1080,
+              "alignment": 0
+            }
+          },
+          {
+            "name": "装饰边框",
+            "inputKind": "browser_source",
+            "zOrder": 1,
+            "enabled": true,
+            "role": "frame",
+            "transform": {
+              "posX": 0,
+              "posY": 0,
+              "boundsType": "OBS_BOUNDS_STRETCH",
+              "boundsWidth": 1920,
+              "boundsHeight": 1080,
+              "alignment": 0
+            },
+            "browser": {
+              "page": "frame.html?theme=mint",
+              "width": 1920,
+              "height": 1080,
+              "css": "",
+              "rerouteAudio": false
+            }
+          },
+          {
+            "name": "虚拟形象",
+            "inputKind": "ndi_source",
+            "zOrder": 3,
+            "enabled": true,
+            "role": "avatar",
+            "fallbackKinds": [
+              "spout2_source",
+              "dshow_input",
+              "window_capture"
+            ],
+            "placeholder": {
+              "kind": "tracker",
+              "hint": "由「Live2D 一键配置」绑定，或选择已有窗口 / NDI 来源"
+            },
+            "transform": {
+              "posX": 560,
+              "posY": 40,
+              "boundsType": "OBS_BOUNDS_SCALE_INNER",
+              "boundsWidth": 800,
+              "boundsHeight": 1000,
+              "alignment": 0
+            }
+          },
+          {
+            "name": "我的麦克风",
+            "inputKind": "wasapi_input_capture",
+            "zOrder": 5,
+            "enabled": true,
+            "role": "audio",
+            "placeholder": {
+              "kind": "device",
+              "hint": "选择你的麦克风"
+            },
+            "shared": true
+          },
+          {
+            "name": "桌面音频",
+            "inputKind": "wasapi_output_capture",
+            "zOrder": 5,
+            "enabled": true,
+            "role": "audio",
+            "placeholder": {
+              "kind": "device",
+              "hint": "选择桌面音频设备（游戏 / 音乐）"
+            },
+            "shared": true
+          }
+        ],
+        "hotkey": "Ctrl+2"
+      },
+      {
+        "name": "暂离",
+        "hotkey": "Ctrl+9",
+        "sources": [
+          {
+            "name": "暂离画面",
+            "inputKind": "browser_source",
+            "zOrder": 0,
+            "enabled": true,
+            "role": "brb",
+            "transform": {
+              "posX": 0,
+              "posY": 0,
+              "boundsType": "OBS_BOUNDS_STRETCH",
+              "boundsWidth": 1920,
+              "boundsHeight": 1080,
+              "alignment": 0
+            },
+            "browser": {
+              "page": "brb.html?theme=cream",
+              "width": 1920,
+              "height": 1080,
+              "css": "",
+              "rerouteAudio": false
+            }
+          },
+          {
+            "name": "我的麦克风",
+            "inputKind": "wasapi_input_capture",
+            "zOrder": 1,
+            "enabled": true,
+            "role": "audio",
+            "placeholder": {
+              "kind": "device",
+              "hint": "选择你的麦克风"
+            },
+            "shared": true
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "vtuber-game",
+    "title": "虚拟主播 · 游戏",
+    "summary": "游戏画面 + 右下角半身形象 + 聊天框，1080p60。",
+    "icon": "🎮",
+    "portrait": false,
+    "notes": "全屏游戏场景只保留游戏画面与音频；需要露脸时切回「游戏」场景。",
+    "tags": [
+      "vtuber",
+      "game",
+      "chat"
+    ],
+    "assetPack": "",
+    "minAppVersion": "3.3.0",
+    "canvas": {
+      "baseWidth": 1920,
+      "baseHeight": 1080,
+      "outputWidth": 1920,
+      "outputHeight": 1080,
+      "fpsNumerator": 60,
+      "fpsDenominator": 1
+    },
+    "transition": "淡入淡出",
+    "transitionDurationMs": 300,
+    "scenes": [
+      {
+        "name": "游戏",
+        "sources": [
+          {
+            "name": "背景色",
+            "inputKind": "color_source_v3",
+            "zOrder": 0,
+            "enabled": true,
+            "role": "bg",
+            "settings": {
+              "color": 4279243804
+            },
+            "transform": {
+              "posX": 0,
+              "posY": 0,
+              "boundsType": "OBS_BOUNDS_STRETCH",
+              "boundsWidth": 1920,
+              "boundsHeight": 1080,
+              "alignment": 0
+            }
+          },
+          {
+            "name": "游戏画面",
+            "inputKind": "game_capture",
+            "zOrder": 2,
+            "enabled": true,
+            "role": "bg",
+            "fallbackKinds": [
+              "window_capture",
+              "monitor_capture"
+            ],
+            "placeholder": {
+              "kind": "window",
+              "hint": "选择游戏窗口或显示器"
+            },
+            "transform": {
+              "posX": 0,
+              "posY": 0,
+              "boundsType": "OBS_BOUNDS_STRETCH",
+              "boundsWidth": 1920,
+              "boundsHeight": 1080,
+              "alignment": 0
+            }
+          },
+          {
+            "name": "装饰边框",
+            "inputKind": "browser_source",
+            "zOrder": 1,
+            "enabled": true,
+            "role": "frame",
+            "transform": {
+              "posX": 0,
+              "posY": 0,
+              "boundsType": "OBS_BOUNDS_STRETCH",
+              "boundsWidth": 1920,
+              "boundsHeight": 1080,
+              "alignment": 0
+            },
+            "browser": {
+              "page": "frame.html?theme=mint",
+              "width": 1920,
+              "height": 1080,
+              "css": "",
+              "rerouteAudio": false
+            }
+          },
+          {
+            "name": "虚拟形象",
+            "inputKind": "ndi_source",
+            "zOrder": 3,
+            "enabled": true,
+            "role": "avatar",
+            "fallbackKinds": [
+              "spout2_source",
+              "dshow_input",
+              "window_capture"
+            ],
+            "placeholder": {
+              "kind": "tracker",
+              "hint": "由「Live2D 一键配置」绑定，或选择已有窗口 / NDI 来源"
+            },
+            "transform": {
+              "posX": 1460,
+              "posY": 700,
+              "boundsType": "OBS_BOUNDS_SCALE_INNER",
+              "boundsWidth": 400,
+              "boundsHeight": 380,
+              "alignment": 0
+            }
+          },
+          {
+            "name": "聊天框",
+            "inputKind": "browser_source",
+            "zOrder": 4,
+            "enabled": true,
+            "role": "chat",
+            "placeholder": {
+              "kind": "url",
+              "hint": "可把本来源的 URL 换成你自己的聊天 widget"
+            },
+            "transform": {
+              "posX": 1460,
+              "posY": 120,
+              "boundsType": "OBS_BOUNDS_SCALE_INNER",
+              "boundsWidth": 380,
+              "boundsHeight": 560,
+              "alignment": 0
+            },
+            "browser": {
+              "page": "chat.html",
+              "width": 380,
+              "height": 560,
+              "css": "body{background:rgba(0,0,0,0);margin:0;overflow:hidden}",
+              "rerouteAudio": false
+            }
+          },
+          {
+            "name": "我的麦克风",
+            "inputKind": "wasapi_input_capture",
+            "zOrder": 5,
+            "enabled": true,
+            "role": "audio",
+            "placeholder": {
+              "kind": "device",
+              "hint": "选择你的麦克风"
+            },
+            "shared": true
+          },
+          {
+            "name": "桌面音频",
+            "inputKind": "wasapi_output_capture",
+            "zOrder": 5,
+            "enabled": true,
+            "role": "audio",
+            "placeholder": {
+              "kind": "device",
+              "hint": "选择桌面音频设备（游戏 / 音乐）"
+            },
+            "shared": true
+          }
+        ],
+        "hotkey": "Ctrl+1"
+      },
+      {
+        "name": "全屏游戏",
+        "sources": [
+          {
+            "name": "游戏画面",
+            "inputKind": "game_capture",
+            "zOrder": 2,
+            "enabled": true,
+            "role": "bg",
+            "fallbackKinds": [
+              "window_capture",
+              "monitor_capture"
+            ],
+            "placeholder": {
+              "kind": "window",
+              "hint": "选择游戏窗口或显示器"
+            },
+            "transform": {
+              "posX": 0,
+              "posY": 0,
+              "boundsType": "OBS_BOUNDS_STRETCH",
+              "boundsWidth": 1920,
+              "boundsHeight": 1080,
+              "alignment": 0
+            }
+          },
+          {
+            "name": "我的麦克风",
+            "inputKind": "wasapi_input_capture",
+            "zOrder": 5,
+            "enabled": true,
+            "role": "audio",
+            "placeholder": {
+              "kind": "device",
+              "hint": "选择你的麦克风"
+            },
+            "shared": true
+          },
+          {
+            "name": "桌面音频",
+            "inputKind": "wasapi_output_capture",
+            "zOrder": 5,
+            "enabled": true,
+            "role": "audio",
+            "placeholder": {
+              "kind": "device",
+              "hint": "选择桌面音频设备（游戏 / 音乐）"
+            },
+            "shared": true
+          }
+        ],
+        "hotkey": "Ctrl+2"
+      },
+      {
+        "name": "暂离",
+        "hotkey": "Ctrl+9",
+        "sources": [
+          {
+            "name": "暂离画面",
+            "inputKind": "browser_source",
+            "zOrder": 0,
+            "enabled": true,
+            "role": "brb",
+            "transform": {
+              "posX": 0,
+              "posY": 0,
+              "boundsType": "OBS_BOUNDS_STRETCH",
+              "boundsWidth": 1920,
+              "boundsHeight": 1080,
+              "alignment": 0
+            },
+            "browser": {
+              "page": "brb.html?theme=mint",
+              "width": 1920,
+              "height": 1080,
+              "css": "",
+              "rerouteAudio": false
+            }
+          },
+          {
+            "name": "我的麦克风",
+            "inputKind": "wasapi_input_capture",
+            "zOrder": 1,
+            "enabled": true,
+            "role": "audio",
+            "placeholder": {
+              "kind": "device",
+              "hint": "选择你的麦克风"
+            },
+            "shared": true
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "vtuber-radio",
+    "title": "虚拟主播 · 电台",
+    "summary": "左侧半身 + 暖色边框 + 聊天框，适合电台、点歌与陪伴学习。",
+    "icon": "🎧",
+    "portrait": false,
+    "notes": "点歌场景适合搭配自己的歌单页面；聊天框可换成点歌 widget。",
+    "tags": [
+      "vtuber",
+      "radio",
+      "chat"
+    ],
+    "assetPack": "",
+    "minAppVersion": "3.3.0",
+    "canvas": {
+      "baseWidth": 1920,
+      "baseHeight": 1080,
+      "outputWidth": 1920,
+      "outputHeight": 1080,
+      "fpsNumerator": 30,
+      "fpsDenominator": 1
+    },
+    "transition": "淡入淡出",
+    "transitionDurationMs": 300,
+    "scenes": [
+      {
+        "name": "电台",
+        "sources": [
+          {
+            "name": "背景色",
+            "inputKind": "color_source_v3",
+            "zOrder": 0,
+            "enabled": true,
+            "role": "bg",
+            "settings": {
+              "color": 4294964198
+            },
+            "transform": {
+              "posX": 0,
+              "posY": 0,
+              "boundsType": "OBS_BOUNDS_STRETCH",
+              "boundsWidth": 1920,
+              "boundsHeight": 1080,
+              "alignment": 0
+            }
+          },
+          {
+            "name": "装饰边框",
+            "inputKind": "browser_source",
+            "zOrder": 1,
+            "enabled": true,
+            "role": "frame",
+            "transform": {
+              "posX": 0,
+              "posY": 0,
+              "boundsType": "OBS_BOUNDS_STRETCH",
+              "boundsWidth": 1920,
+              "boundsHeight": 1080,
+              "alignment": 0
+            },
+            "browser": {
+              "page": "frame.html?theme=cocoa",
+              "width": 1920,
+              "height": 1080,
+              "css": "",
+              "rerouteAudio": false
+            }
+          },
+          {
+            "name": "虚拟形象",
+            "inputKind": "ndi_source",
+            "zOrder": 3,
+            "enabled": true,
+            "role": "avatar",
+            "fallbackKinds": [
+              "spout2_source",
+              "dshow_input",
+              "window_capture"
+            ],
+            "placeholder": {
+              "kind": "tracker",
+              "hint": "由「Live2D 一键配置」绑定，或选择已有窗口 / NDI 来源"
+            },
+            "transform": {
+              "posX": 100,
+              "posY": 340,
+              "boundsType": "OBS_BOUNDS_SCALE_INNER",
+              "boundsWidth": 760,
+              "boundsHeight": 720,
+              "alignment": 0
+            }
+          },
+          {
+            "name": "聊天框",
+            "inputKind": "browser_source",
+            "zOrder": 4,
+            "enabled": true,
+            "role": "chat",
+            "placeholder": {
+              "kind": "url",
+              "hint": "可把本来源的 URL 换成你自己的聊天 widget"
+            },
+            "transform": {
+              "posX": 1440,
+              "posY": 300,
+              "boundsType": "OBS_BOUNDS_SCALE_INNER",
+              "boundsWidth": 420,
+              "boundsHeight": 720,
+              "alignment": 0
+            },
+            "browser": {
+              "page": "chat.html",
+              "width": 420,
+              "height": 720,
+              "css": "body{background:rgba(0,0,0,0);margin:0;overflow:hidden}",
+              "rerouteAudio": false
+            }
+          },
+          {
+            "name": "电台标题",
+            "inputKind": "text_gdiplus_v3",
+            "zOrder": 6,
+            "enabled": true,
+            "role": "caption",
+            "settings": {
+              "text": "今晚电台 · 点歌中",
+              "font": {
+                "face": "微软雅黑",
+                "size": 44
+              },
+              "color": 4285221427
+            },
+            "fallbackKinds": [
+              "text_ft2_source_v3"
+            ],
+            "placeholder": {
+              "kind": "text",
+              "hint": "替换成你的标题 / 公告"
+            },
+            "transform": {
+              "posX": 90,
+              "posY": 60,
+              "boundsType": "OBS_BOUNDS_NONE",
+              "alignment": 5
+            }
+          },
+          {
+            "name": "我的麦克风",
+            "inputKind": "wasapi_input_capture",
+            "zOrder": 5,
+            "enabled": true,
+            "role": "audio",
+            "placeholder": {
+              "kind": "device",
+              "hint": "选择你的麦克风"
+            },
+            "shared": true
+          }
+        ],
+        "hotkey": "Ctrl+1"
+      },
+      {
+        "name": "点歌",
+        "sources": [
+          {
+            "name": "背景色",
+            "inputKind": "color_source_v3",
+            "zOrder": 0,
+            "enabled": true,
+            "role": "bg",
+            "settings": {
+              "color": 4294179839
+            },
+            "transform": {
+              "posX": 0,
+              "posY": 0,
+              "boundsType": "OBS_BOUNDS_STRETCH",
+              "boundsWidth": 1920,
+              "boundsHeight": 1080,
+              "alignment": 0
+            }
+          },
+          {
+            "name": "装饰边框",
+            "inputKind": "browser_source",
+            "zOrder": 1,
+            "enabled": true,
+            "role": "frame",
+            "transform": {
+              "posX": 0,
+              "posY": 0,
+              "boundsType": "OBS_BOUNDS_STRETCH",
+              "boundsWidth": 1920,
+              "boundsHeight": 1080,
+              "alignment": 0
+            },
+            "browser": {
+              "page": "frame.html?theme=mint",
+              "width": 1920,
+              "height": 1080,
+              "css": "",
+              "rerouteAudio": false
+            }
+          },
+          {
+            "name": "虚拟形象",
+            "inputKind": "ndi_source",
+            "zOrder": 3,
+            "enabled": true,
+            "role": "avatar",
+            "fallbackKinds": [
+              "spout2_source",
+              "dshow_input",
+              "window_capture"
+            ],
+            "placeholder": {
+              "kind": "tracker",
+              "hint": "由「Live2D 一键配置」绑定，或选择已有窗口 / NDI 来源"
+            },
+            "transform": {
+              "posX": 100,
+              "posY": 340,
+              "boundsType": "OBS_BOUNDS_SCALE_INNER",
+              "boundsWidth": 760,
+              "boundsHeight": 720,
+              "alignment": 0
+            }
+          },
+          {
+            "name": "聊天框",
+            "inputKind": "browser_source",
+            "zOrder": 4,
+            "enabled": true,
+            "role": "chat",
+            "placeholder": {
+              "kind": "url",
+              "hint": "可把本来源的 URL 换成你自己的聊天 widget"
+            },
+            "transform": {
+              "posX": 1440,
+              "posY": 300,
+              "boundsType": "OBS_BOUNDS_SCALE_INNER",
+              "boundsWidth": 420,
+              "boundsHeight": 720,
+              "alignment": 0
+            },
+            "browser": {
+              "page": "chat.html",
+              "width": 420,
+              "height": 720,
+              "css": "body{background:rgba(0,0,0,0);margin:0;overflow:hidden}",
+              "rerouteAudio": false
+            }
+          },
+          {
+            "name": "我的麦克风",
+            "inputKind": "wasapi_input_capture",
+            "zOrder": 5,
+            "enabled": true,
+            "role": "audio",
+            "placeholder": {
+              "kind": "device",
+              "hint": "选择你的麦克风"
+            },
+            "shared": true
+          }
+        ],
+        "hotkey": "Ctrl+2"
+      },
+      {
+        "name": "暂离",
+        "hotkey": "Ctrl+9",
+        "sources": [
+          {
+            "name": "暂离画面",
+            "inputKind": "browser_source",
+            "zOrder": 0,
+            "enabled": true,
+            "role": "brb",
+            "transform": {
+              "posX": 0,
+              "posY": 0,
+              "boundsType": "OBS_BOUNDS_STRETCH",
+              "boundsWidth": 1920,
+              "boundsHeight": 1080,
+              "alignment": 0
+            },
+            "browser": {
+              "page": "brb.html?theme=cocoa",
+              "width": 1920,
+              "height": 1080,
+              "css": "",
+              "rerouteAudio": false
+            }
+          },
+          {
+            "name": "我的麦克风",
+            "inputKind": "wasapi_input_capture",
+            "zOrder": 1,
+            "enabled": true,
+            "role": "audio",
+            "placeholder": {
+              "kind": "device",
+              "hint": "选择你的麦克风"
+            },
+            "shared": true
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "vtuber-debut",
+    "title": "虚拟主播 · 纪念回",
+    "summary": "开播倒计时 / 主视觉 / 感谢三幕，适合新衣装、生日与纪念回。",
+    "icon": "✨",
+    "portrait": false,
+    "notes": "倒计时页面自带 10 分钟计时，可在浏览器源地址里改 minutes。",
+    "tags": [
+      "vtuber",
+      "debut",
+      "show"
+    ],
+    "assetPack": "",
+    "minAppVersion": "3.3.0",
+    "canvas": {
+      "baseWidth": 1920,
+      "baseHeight": 1080,
+      "outputWidth": 1920,
+      "outputHeight": 1080,
+      "fpsNumerator": 30,
+      "fpsDenominator": 1
+    },
+    "transition": "淡入淡出",
+    "transitionDurationMs": 300,
+    "scenes": [
+      {
+        "name": "开播等待",
+        "sources": [
+          {
+            "name": "倒计时",
+            "inputKind": "browser_source",
+            "zOrder": 0,
+            "enabled": true,
+            "role": "clock",
+            "transform": {
+              "posX": 560,
+              "posY": 240,
+              "boundsType": "OBS_BOUNDS_SCALE_INNER",
+              "boundsWidth": 800,
+              "boundsHeight": 300,
+              "alignment": 0
+            },
+            "browser": {
+              "page": "timer.html?minutes=10&theme=star",
+              "width": 800,
+              "height": 300,
+              "css": "",
+              "rerouteAudio": false
+            }
+          },
+          {
+            "name": "装饰边框",
+            "inputKind": "browser_source",
+            "zOrder": 1,
+            "enabled": true,
+            "role": "frame",
+            "transform": {
+              "posX": 0,
+              "posY": 0,
+              "boundsType": "OBS_BOUNDS_STRETCH",
+              "boundsWidth": 1920,
+              "boundsHeight": 1080,
+              "alignment": 0
+            },
+            "browser": {
+              "page": "frame.html?theme=star",
+              "width": 1920,
+              "height": 1080,
+              "css": "",
+              "rerouteAudio": false
+            }
+          },
+          {
+            "name": "纪念回标题",
+            "inputKind": "text_gdiplus_v3",
+            "zOrder": 6,
+            "enabled": true,
+            "role": "caption",
+            "settings": {
+              "text": "纪念回 · 即将开始",
+              "font": {
+                "face": "微软雅黑",
+                "size": 52
+              },
+              "color": 4294967295
+            },
+            "fallbackKinds": [
+              "text_ft2_source_v3"
+            ],
+            "placeholder": {
+              "kind": "text",
+              "hint": "替换成你的标题 / 公告"
+            },
+            "transform": {
+              "posX": 70,
+              "posY": 50,
+              "boundsType": "OBS_BOUNDS_NONE",
+              "alignment": 5
+            }
+          }
+        ],
+        "hotkey": "Ctrl+1"
+      },
+      {
+        "name": "主视觉",
+        "sources": [
+          {
+            "name": "背景色",
+            "inputKind": "color_source_v3",
+            "zOrder": 0,
+            "enabled": true,
+            "role": "bg",
+            "settings": {
+              "color": 4280950597
+            },
+            "transform": {
+              "posX": 0,
+              "posY": 0,
+              "boundsType": "OBS_BOUNDS_STRETCH",
+              "boundsWidth": 1920,
+              "boundsHeight": 1080,
+              "alignment": 0
+            }
+          },
+          {
+            "name": "装饰边框",
+            "inputKind": "browser_source",
+            "zOrder": 1,
+            "enabled": true,
+            "role": "frame",
+            "transform": {
+              "posX": 0,
+              "posY": 0,
+              "boundsType": "OBS_BOUNDS_STRETCH",
+              "boundsWidth": 1920,
+              "boundsHeight": 1080,
+              "alignment": 0
+            },
+            "browser": {
+              "page": "frame.html?theme=star",
+              "width": 1920,
+              "height": 1080,
+              "css": "",
+              "rerouteAudio": false
+            }
+          },
+          {
+            "name": "虚拟形象",
+            "inputKind": "ndi_source",
+            "zOrder": 3,
+            "enabled": true,
+            "role": "avatar",
+            "fallbackKinds": [
+              "spout2_source",
+              "dshow_input",
+              "window_capture"
+            ],
+            "placeholder": {
+              "kind": "tracker",
+              "hint": "由「Live2D 一键配置」绑定，或选择已有窗口 / NDI 来源"
+            },
+            "transform": {
+              "posX": 560,
+              "posY": 40,
+              "boundsType": "OBS_BOUNDS_SCALE_INNER",
+              "boundsWidth": 800,
+              "boundsHeight": 1040,
+              "alignment": 0
+            }
+          },
+          {
+            "name": "纪念回标题",
+            "inputKind": "text_gdiplus_v3",
+            "zOrder": 6,
+            "enabled": true,
+            "role": "caption",
+            "settings": {
+              "text": "纪念回 · 即将开始",
+              "font": {
+                "face": "微软雅黑",
+                "size": 52
+              },
+              "color": 4294967295
+            },
+            "fallbackKinds": [
+              "text_ft2_source_v3"
+            ],
+            "placeholder": {
+              "kind": "text",
+              "hint": "替换成你的标题 / 公告"
+            },
+            "transform": {
+              "posX": 70,
+              "posY": 50,
+              "boundsType": "OBS_BOUNDS_NONE",
+              "alignment": 5
+            }
+          }
+        ],
+        "hotkey": "Ctrl+2"
+      },
+      {
+        "name": "感谢",
+        "sources": [
+          {
+            "name": "感谢画面",
+            "inputKind": "browser_source",
+            "zOrder": 0,
+            "enabled": true,
+            "role": "ending",
+            "transform": {
+              "posX": 0,
+              "posY": 0,
+              "boundsType": "OBS_BOUNDS_STRETCH",
+              "boundsWidth": 1920,
+              "boundsHeight": 1080,
+              "alignment": 0
+            },
+            "browser": {
+              "page": "ending.html?theme=star",
+              "width": 1920,
+              "height": 1080,
+              "css": "",
+              "rerouteAudio": false
+            }
+          },
+          {
+            "name": "我的麦克风",
+            "inputKind": "wasapi_input_capture",
+            "zOrder": 1,
+            "enabled": true,
+            "role": "audio",
+            "placeholder": {
+              "kind": "device",
+              "hint": "选择你的麦克风"
+            },
+            "shared": true
+          }
+        ],
+        "hotkey": "Ctrl+3"
+      }
+    ]
+  },
+  {
+    "id": "vtuber-vertical",
+    "title": "虚拟主播 · 竖屏",
+    "summary": "1080×1920 竖屏：上半身形象 + 底部聊天，适合抖音 / Shorts / Reels。",
+    "icon": "📱",
+    "portrait": true,
+    "notes": "竖屏模板会把 OBS 画布切成 1080×1920；横屏平台请改用「杂谈」模板。",
+    "tags": [
+      "vtuber",
+      "vertical",
+      "chat"
+    ],
+    "assetPack": "",
+    "minAppVersion": "3.3.0",
+    "canvas": {
+      "baseWidth": 1080,
+      "baseHeight": 1920,
+      "outputWidth": 1080,
+      "outputHeight": 1920,
+      "fpsNumerator": 30,
+      "fpsDenominator": 1
+    },
+    "transition": "淡入淡出",
+    "transitionDurationMs": 300,
+    "scenes": [
+      {
+        "name": "竖屏主画面",
+        "sources": [
+          {
+            "name": "背景色",
+            "inputKind": "color_source_v3",
+            "zOrder": 0,
+            "enabled": true,
+            "role": "bg",
+            "settings": {
+              "color": 4294965224
+            },
+            "transform": {
+              "posX": 0,
+              "posY": 0,
+              "boundsType": "OBS_BOUNDS_STRETCH",
+              "boundsWidth": 1080,
+              "boundsHeight": 1920,
+              "alignment": 0
+            }
+          },
+          {
+            "name": "装饰边框",
+            "inputKind": "browser_source",
+            "zOrder": 1,
+            "enabled": true,
+            "role": "frame",
+            "transform": {
+              "posX": 0,
+              "posY": 0,
+              "boundsType": "OBS_BOUNDS_STRETCH",
+              "boundsWidth": 1080,
+              "boundsHeight": 1920,
+              "alignment": 0
+            },
+            "browser": {
+              "page": "frame.html?theme=cream",
+              "width": 1080,
+              "height": 1920,
+              "css": "",
+              "rerouteAudio": false
+            }
+          },
+          {
+            "name": "虚拟形象",
+            "inputKind": "ndi_source",
+            "zOrder": 3,
+            "enabled": true,
+            "role": "avatar",
+            "fallbackKinds": [
+              "spout2_source",
+              "dshow_input",
+              "window_capture"
+            ],
+            "placeholder": {
+              "kind": "tracker",
+              "hint": "由「Live2D 一键配置」绑定，或选择已有窗口 / NDI 来源"
+            },
+            "transform": {
+              "posX": 120,
+              "posY": 260,
+              "boundsType": "OBS_BOUNDS_SCALE_INNER",
+              "boundsWidth": 840,
+              "boundsHeight": 900,
+              "alignment": 0
+            }
+          },
+          {
+            "name": "聊天框",
+            "inputKind": "browser_source",
+            "zOrder": 4,
+            "enabled": true,
+            "role": "chat",
+            "placeholder": {
+              "kind": "url",
+              "hint": "可把本来源的 URL 换成你自己的聊天 widget"
+            },
+            "transform": {
+              "posX": 110,
+              "posY": 1350,
+              "boundsType": "OBS_BOUNDS_SCALE_INNER",
+              "boundsWidth": 860,
+              "boundsHeight": 470,
+              "alignment": 0
+            },
+            "browser": {
+              "page": "chat.html",
+              "width": 860,
+              "height": 470,
+              "css": "body{background:rgba(0,0,0,0);margin:0;overflow:hidden}",
+              "rerouteAudio": false
+            }
+          },
+          {
+            "name": "我的麦克风",
+            "inputKind": "wasapi_input_capture",
+            "zOrder": 5,
+            "enabled": true,
+            "role": "audio",
+            "placeholder": {
+              "kind": "device",
+              "hint": "选择你的麦克风"
+            },
+            "shared": true
+          }
+        ],
+        "hotkey": "Ctrl+1"
+      },
+      {
+        "name": "全屏",
+        "sources": [
+          {
+            "name": "背景色",
+            "inputKind": "color_source_v3",
+            "zOrder": 0,
+            "enabled": true,
+            "role": "bg",
+            "settings": {
+              "color": 4293916415
+            },
+            "transform": {
+              "posX": 0,
+              "posY": 0,
+              "boundsType": "OBS_BOUNDS_STRETCH",
+              "boundsWidth": 1080,
+              "boundsHeight": 1920,
+              "alignment": 0
+            }
+          },
+          {
+            "name": "虚拟形象",
+            "inputKind": "ndi_source",
+            "zOrder": 3,
+            "enabled": true,
+            "role": "avatar",
+            "fallbackKinds": [
+              "spout2_source",
+              "dshow_input",
+              "window_capture"
+            ],
+            "placeholder": {
+              "kind": "tracker",
+              "hint": "由「Live2D 一键配置」绑定，或选择已有窗口 / NDI 来源"
+            },
+            "transform": {
+              "posX": 0,
+              "posY": 240,
+              "boundsType": "OBS_BOUNDS_SCALE_INNER",
+              "boundsWidth": 1080,
+              "boundsHeight": 1200,
+              "alignment": 0
+            }
+          },
+          {
+            "name": "我的麦克风",
+            "inputKind": "wasapi_input_capture",
+            "zOrder": 5,
+            "enabled": true,
+            "role": "audio",
+            "placeholder": {
+              "kind": "device",
+              "hint": "选择你的麦克风"
+            },
+            "shared": true
+          }
+        ],
+        "hotkey": "Ctrl+2"
+      },
+      {
+        "name": "暂离",
+        "hotkey": "Ctrl+9",
+        "sources": [
+          {
+            "name": "暂离画面",
+            "inputKind": "browser_source",
+            "zOrder": 0,
+            "enabled": true,
+            "role": "brb",
+            "transform": {
+              "posX": 0,
+              "posY": 0,
+              "boundsType": "OBS_BOUNDS_STRETCH",
+              "boundsWidth": 1080,
+              "boundsHeight": 1920,
+              "alignment": 0
+            },
+            "browser": {
+              "page": "brb.html?theme=cream",
+              "width": 1080,
+              "height": 1920,
+              "css": "",
+              "rerouteAudio": false
+            }
+          },
+          {
+            "name": "我的麦克风",
+            "inputKind": "wasapi_input_capture",
+            "zOrder": 1,
+            "enabled": true,
+            "role": "audio",
+            "placeholder": {
+              "kind": "device",
+              "hint": "选择你的麦克风"
+            },
+            "shared": true
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "vtuber-triple",
+    "title": "开播 / 暂离 / 下播三件套",
+    "summary": "Starting Soon、BRB、Ending 三幕，任何虚拟主播都能直接套用。",
+    "icon": "🌙",
+    "portrait": false,
+    "notes": "只有三幕，适合放在任何现有场景集合里当「等待 / 暂离 / 结束」补充。",
+    "tags": [
+      "vtuber",
+      "triple",
+      "brb",
+      "pack"
+    ],
+    "assetPack": "",
+    "minAppVersion": "3.3.0",
+    "canvas": {
+      "baseWidth": 1920,
+      "baseHeight": 1080,
+      "outputWidth": 1920,
+      "outputHeight": 1080,
+      "fpsNumerator": 30,
+      "fpsDenominator": 1
+    },
+    "transition": "淡入淡出",
+    "transitionDurationMs": 300,
+    "scenes": [
+      {
+        "name": "Starting Soon",
+        "sources": [
+          {
+            "name": "开播倒计时",
+            "inputKind": "browser_source",
+            "zOrder": 0,
+            "enabled": true,
+            "role": "clock",
+            "transform": {
+              "posX": 560,
+              "posY": 300,
+              "boundsType": "OBS_BOUNDS_SCALE_INNER",
+              "boundsWidth": 800,
+              "boundsHeight": 300,
+              "alignment": 0
+            },
+            "browser": {
+              "page": "timer.html?minutes=5&theme=night",
+              "width": 800,
+              "height": 300,
+              "css": "",
+              "rerouteAudio": false
+            }
+          },
+          {
+            "name": "装饰边框",
+            "inputKind": "browser_source",
+            "zOrder": 1,
+            "enabled": true,
+            "role": "frame",
+            "transform": {
+              "posX": 0,
+              "posY": 0,
+              "boundsType": "OBS_BOUNDS_STRETCH",
+              "boundsWidth": 1920,
+              "boundsHeight": 1080,
+              "alignment": 0
+            },
+            "browser": {
+              "page": "frame.html?theme=night",
+              "width": 1920,
+              "height": 1080,
+              "css": "",
+              "rerouteAudio": false
+            }
+          },
+          {
+            "name": "开播提示",
+            "inputKind": "text_gdiplus_v3",
+            "zOrder": 6,
+            "enabled": true,
+            "role": "caption",
+            "settings": {
+              "text": "即将开播",
+              "font": {
+                "face": "微软雅黑",
+                "size": 48
+              },
+              "color": 4294967295
+            },
+            "fallbackKinds": [
+              "text_ft2_source_v3"
+            ],
+            "placeholder": {
+              "kind": "text",
+              "hint": "替换成你的标题 / 公告"
+            },
+            "transform": {
+              "posX": 900,
+              "posY": 200,
+              "boundsType": "OBS_BOUNDS_NONE",
+              "alignment": 0
+            }
+          }
+        ],
+        "hotkey": "Ctrl+1"
+      },
+      {
+        "name": "BRB",
+        "sources": [
+          {
+            "name": "暂离画面",
+            "inputKind": "browser_source",
+            "zOrder": 0,
+            "enabled": true,
+            "role": "brb",
+            "transform": {
+              "posX": 0,
+              "posY": 0,
+              "boundsType": "OBS_BOUNDS_STRETCH",
+              "boundsWidth": 1920,
+              "boundsHeight": 1080,
+              "alignment": 0
+            },
+            "browser": {
+              "page": "brb.html?theme=night",
+              "width": 1920,
+              "height": 1080,
+              "css": "",
+              "rerouteAudio": false
+            }
+          },
+          {
+            "name": "我的麦克风",
+            "inputKind": "wasapi_input_capture",
+            "zOrder": 1,
+            "enabled": true,
+            "role": "audio",
+            "placeholder": {
+              "kind": "device",
+              "hint": "选择你的麦克风"
+            },
+            "shared": true
+          }
+        ],
+        "hotkey": "Ctrl+2"
+      },
+      {
+        "name": "Ending",
+        "sources": [
+          {
+            "name": "下播画面",
+            "inputKind": "browser_source",
+            "zOrder": 0,
+            "enabled": true,
+            "role": "ending",
+            "transform": {
+              "posX": 0,
+              "posY": 0,
+              "boundsType": "OBS_BOUNDS_STRETCH",
+              "boundsWidth": 1920,
+              "boundsHeight": 1080,
+              "alignment": 0
+            },
+            "browser": {
+              "page": "ending.html?theme=night",
+              "width": 1920,
+              "height": 1080,
+              "css": "",
+              "rerouteAudio": false
+            }
+          },
+          {
+            "name": "我的麦克风",
+            "inputKind": "wasapi_input_capture",
+            "zOrder": 1,
+            "enabled": true,
+            "role": "audio",
+            "placeholder": {
+              "kind": "device",
+              "hint": "选择你的麦克风"
+            },
+            "shared": true
+          }
+        ],
+        "hotkey": "Ctrl+3"
+      }
+    ]
   }
 ]

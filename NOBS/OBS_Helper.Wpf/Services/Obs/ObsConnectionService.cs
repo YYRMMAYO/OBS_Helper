@@ -697,6 +697,28 @@ public sealed class ObsConnectionService : IAsyncDisposable
     public Task<ObsRequestResult> StartVirtualCamAsync() => _client.RequestAsync("StartVirtualCam");
     public Task<ObsRequestResult> StopVirtualCamAsync() => _client.RequestAsync("StopVirtualCam");
 
+    // -------------------------------------------------------------- 开播引导（V3.3.0 / P0-4）
+
+    /// <summary>
+    /// 写入推流服务设置（v5 的 <c>SetStreamServiceSettings</c>）。
+    /// 请求体由 <c>GoLiveCore.BuildStreamServiceSettings</c> 构造；<b>密钥绝不写日志</b>。
+    /// v4（Win7 兼容构建）没有等价能力，调用方（GoLiveService）会先做版本门禁。
+    /// </summary>
+    public Task<ObsRequestResult> SetStreamServiceSettingsAsync(object settings, CancellationToken ct = default)
+        => _client.RequestAsync("SetStreamServiceSettings", settings, ct);
+
+    /// <summary>读取推流服务原始设置。调用方只判「有没有填」，不得保留密钥。</summary>
+    public Task<ObsRequestResult> GetStreamServiceSettingsRawAsync(CancellationToken ct = default)
+        => _client.RequestAsync("GetStreamServiceSettings", null, ct);
+
+    /// <summary>读取推流状态原始响应（<c>GoLiveCore.ParseStreamStatus</c> 负责归一化）。</summary>
+    public Task<ObsRequestResult> GetStreamStatusRawAsync(CancellationToken ct = default)
+        => _client.RequestAsync("GetStreamStatus", null, ct);
+
+    /// <summary>读取虚拟摄像头原始状态。</summary>
+    public Task<ObsRequestResult> GetVirtualCamStatusRawAsync(CancellationToken ct = default)
+        => _client.RequestAsync("GetVirtualCamStatus", null, ct);
+
     // -------------------------------------------------------------- 音画同步偏移（V3.0 / D7）
 
     /// <summary>

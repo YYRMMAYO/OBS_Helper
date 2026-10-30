@@ -97,4 +97,22 @@
   <Duration x:Key="MotionDuration">0:0:0.16</Duration>
   <sys:Boolean x:Key="ReduceMotion">False</sys:Boolean>
 
+  <!--
+    V3.3.0 无障碍 / 老年模式布局令牌：静态默认值在这里，运行时由 AppearanceService.Apply()
+    按 UiProfileCore 的组合结果覆盖。页面只引用这些键，不自己判断模式。
+  -->
+  <GridLength x:Key="NavWidth">212</GridLength>
+  <sys:Double x:Key="NavItemMinHeight">34</sys:Double>
+  <Thickness x:Key="NavItemPadding">9,7,9,7</Thickness>
+  <sys:Double x:Key="ControlMinHeight">30</sys:Double>
+  <sys:Double x:Key="ButtonMinSize">0</sys:Double>
+  <Thickness x:Key="CardPadding">16</Thickness>
+  <Thickness x:Key="FocusThickness">2</Thickness>
+  <sys:Double x:Key="FocusOffset">1</sys:Double>
+  <sys:Double x:Key="LineHeightFactor">1.35</sys:Double>
+  <sys:Boolean x:Key="ShowSkipLink">False</sys:Boolean>
+  <sys:Boolean x:Key="UiSimplifyLayout">False</sys:Boolean>
+  <sys:Boolean x:Key="UiAssistMode">False</sys:Boolean>
+  <sys:String x:Key="UiDensity">compact</sys:String>
+
 </ResourceDictionary>

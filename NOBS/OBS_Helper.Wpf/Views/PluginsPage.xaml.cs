@@ -4,6 +4,8 @@ using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
 using System.Windows.Threading;
+using OBS_Helper.Wpf.Controls;
+using OBS_Helper.Wpf.Models.Plugins;
 using OBS_Helper.Wpf.Navigation;
 using OBS_Helper.Wpf.Services;
 using OBS_Helper.Wpf.Services.Plugins;
@@ -173,6 +175,9 @@ public partial class PluginsPage : UserControl, INavigationAware
         // V3.0：只读缓存拿不到时，后台取**一次**快照再刷新提示 ——
         // 绝不 Start() 常驻采样（那会让 1 秒计时器活到进程退出，用户只是看了一眼插件列表）。
         await RefreshAiBudgetHintAsync();
+
+        // V3.3.0：应用管理的已安装插件（installed.json）
+        RefreshManagedList();
     }
 
     /// <summary>
@@ -404,6 +409,39 @@ public partial class PluginsPage : UserControl, INavigationAware
     /// </summary>
     private void OnSearchTextChanged(object sender, TextChangedEventArgs e) => _searchDebouncer.Debounce(RenderList);
 
+    /// <summary>
+    /// 手动检查插件目录更新（V3.3.0）：走与知识库相同的热更新通道；
+    /// 有新版本就写盘并立即重建列表，没有则给出「已是最新」。
+    /// </summary>
+    private async void OnCatalogUpdateClick(object sender, RoutedEventArgs e)
+    {
+        CatalogUpdateButton.IsEnabled = false;
+        try
+        {
+            var (updated, version, message) = await AppServices.Kb.RefreshPluginsAsync(manual: true);
+            if (updated)
+            {
+                AppServices.PluginCatalog.Reload();
+                _builtVersion = "";
+                _builtLang = "";
+                await OnNavigatedToAsync(null);
+                AppServices.Toast.Show(Strings.T("plugin.catalog.updated", version ?? ""), "ok");
+            }
+            else
+            {
+                AppServices.Toast.Show(message ?? Strings.T("plugin.catalog.upToDate"), "info");
+            }
+        }
+        catch (Exception ex)
+        {
+            AppServices.Toast.Show(Strings.T("plugin.catalog.failed", ex.Message), "danger");
+        }
+        finally
+        {
+            CatalogUpdateButton.IsEnabled = true;
+        }
+    }
+
     // ---------------------------------------------------------- 本机体检（P0-1）
 
     private async Task EnsureScanAsync(bool force)
@@ -448,6 +486,357 @@ public partial class PluginsPage : UserControl, INavigationAware
     }
 
     private void OnRescanClick(object sender, RoutedEventArgs e) => _ = EnsureScanAsync(force: true);
+
+    // ============================================================ 一键安装与管理（V3.3.0）
+
+    /// <summary>已安装（本应用管理）列表：版本、路径、回滚、卸载。</summary>
+    private void RefreshManagedList()
+    {
+        ManagedHost.Children.Clear();
+
+        IReadOnlyList<PluginInstallEntry> installed;
+        try
+        {
+            installed = AppServices.PluginInstall.Installed;
+        }
+        catch (Exception ex)
+        {
+            ManagedHost.Children.Add(InstallLine(Strings.T("plugin.managed.readFailed", ex.Message), "WarnBrush"));
+            ManagedEmptyText.Visibility = Visibility.Collapsed;
+            return;
+        }
+
+        ManagedEmptyText.Visibility = installed.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
+
+        foreach (var entry in installed.OrderBy(e => e.Name, StringComparer.CurrentCultureIgnoreCase))
+        {
+            var box = new StackPanel { Margin = new Thickness(0, 0, 0, 12) };
+
+            var title = new TextBlock
+            {
+                Text = $"{entry.Name}  ·  v{entry.Version}" + (entry.Curated ? "" : "  " + Strings.T("plugin.managed.unverifiedBadge")),
+                FontWeight = FontWeights.SemiBold,
+                TextWrapping = TextWrapping.Wrap
+            };
+            title.SetResourceReference(TextBlock.FontSizeProperty, "FontSizeSm");
+            title.SetResourceReference(TextBlock.ForegroundProperty, "TextBrush");
+            box.Children.Add(title);
+
+            var path = new TextBlock
+            {
+                Text = entry.InstallDirectory,
+                TextWrapping = TextWrapping.Wrap,
+                Margin = new Thickness(0, 2, 0, 0)
+            };
+            path.SetResourceReference(TextBlock.FontSizeProperty, "FontSizeXs");
+            path.SetResourceReference(TextBlock.ForegroundProperty, "MutedBrush");
+            box.Children.Add(path);
+
+            var actions = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 6, 0, 0) };
+
+            var rollback = new Button
+            {
+                Content = Strings.T("plugin.managed.rollback"),
+                Style = (Style)Application.Current.Resources["SecondaryButton"],
+                IsEnabled = AppServices.PluginInstall.Store.ListBackups(entry.Id).Count > 0
+            };
+            rollback.Click += async (_, _) => await RollbackAsync(entry);
+            actions.Children.Add(rollback);
+
+            var uninstall = new Button
+            {
+                Content = Strings.T("plugin.managed.uninstall"),
+                Style = (Style)Application.Current.Resources["GhostButton"],
+                Margin = new Thickness(10, 0, 0, 0)
+            };
+            uninstall.Click += async (_, _) => await UninstallAsync(entry);
+            actions.Children.Add(uninstall);
+
+            box.Children.Add(actions);
+            ManagedHost.Children.Add(box);
+        }
+    }
+
+    private async Task RollbackAsync(PluginInstallEntry entry)
+    {
+        if (!ConfirmDialog.Show(
+                Strings.T("plugin.managed.rollbackTitle"),
+                Strings.T("plugin.managed.rollbackConfirm", entry.Name, entry.Version),
+                Strings.T("plugin.managed.rollback"), Strings.T("common.cancel"), danger: true))
+            return;
+
+        var result = await AppServices.PluginInstall.RollbackAsync(entry.Id, CancellationToken.None);
+        if (result.Ok)
+        {
+            AppServices.Toast.Show(Strings.T("plugin.managed.rollbackDone", entry.Name), "ok");
+            RefreshManagedList();
+        }
+        else
+        {
+            AppServices.Toast.Show(InstallError(result.ErrorCode), "danger");
+        }
+    }
+
+    private async Task UninstallAsync(PluginInstallEntry entry)
+    {
+        if (!ConfirmDialog.Show(
+                Strings.T("plugin.managed.uninstallTitle"),
+                Strings.T("plugin.managed.uninstallConfirm", entry.Name, entry.InstallDirectory),
+                Strings.T("plugin.managed.uninstall"), Strings.T("common.cancel"), danger: true))
+            return;
+
+        var result = await AppServices.PluginInstall.UninstallAsync(entry.Id, CancellationToken.None);
+        if (result.Ok)
+        {
+            AppServices.Toast.Show(Strings.T("plugin.managed.uninstallDone", entry.Name), "ok");
+            RefreshManagedList();
+        }
+        else
+        {
+            AppServices.Toast.Show(InstallError(result.ErrorCode), "danger");
+        }
+    }
+
+    /// <summary>查询 owner/repo 的最新 Release，挑出可安装资产。</summary>
+    private async void OnQueryRepoClick(object sender, RoutedEventArgs e)
+        => await QueryRepoAsync(RepoBox.Text);
+
+    /// <summary>查询某个 owner/repo 的最新 Release 并给出安装入口（仓库输入框与 GitHub 搜索结果共用）。</summary>
+    private async Task QueryRepoAsync(string input)
+    {
+        AssetHost.Children.Clear();
+        RepoStatusText.Text = "";
+
+        if (!PluginInstallCore.TryParseOwnerRepo(input, out var slug))
+        {
+            RepoStatusText.Text = Strings.T("plugin.github.badRepo");
+            return;
+        }
+
+        RepoQueryButton.IsEnabled = false;
+        RepoStatusText.Text = Strings.T("plugin.github.querying", slug);
+        try
+        {
+            var (version, assets, error) = await AppServices.PluginSearch
+                .GetLatestReleaseAsync(slug, CancellationToken.None);
+
+            if (error.Length > 0)
+            {
+                RepoStatusText.Text = NetError(error);
+                return;
+            }
+
+            var asset = PluginInstallCore.SelectAsset(assets);
+            if (asset is null)
+            {
+                RepoStatusText.Text = Strings.T("plugin.github.noAsset", slug);
+                return;
+            }
+
+            RepoStatusText.Text = Strings.T("plugin.github.found", slug, version, asset.Name,
+                Math.Max(1, asset.Size / 1024 / 1024));
+
+            var install = new Button
+            {
+                Content = Strings.T("plugin.github.install", asset.Name),
+                Style = (Style)Application.Current.Resources["PrimaryButton"]
+            };
+            install.Click += async (_, _) => await InstallAssetAsync(slug, version, asset);
+            AssetHost.Children.Add(install);
+        }
+        catch (Exception ex)
+        {
+            RepoStatusText.Text = Strings.T("plugin.github.queryFailed", ex.Message);
+        }
+        finally
+        {
+            RepoQueryButton.IsEnabled = true;
+        }
+    }
+
+    /// <summary>
+    /// GitHub 原生搜索（V3.3.0）：搜 <c>topic:obs-plugin</c>，结果可以直接「查看最新版本」→ 安装。
+    /// 搜索 API 额度低（10 次/分钟），因此只在点击时请求，服务层自带 5 分钟缓存与 60 秒冷却。
+    /// </summary>
+    private async void OnGitHubSearchClick(object sender, RoutedEventArgs e)
+    {
+        var query = GitHubSearchBox.Text.Trim();
+        GitHubResultsHost.Children.Clear();
+        GitHubSearchStatusText.Text = Strings.T("plugin.github.searching", query);
+        GitHubSearchButton.IsEnabled = false;
+        try
+        {
+            var (repos, error) = await AppServices.PluginSearch.SearchAsync(query, CancellationToken.None);
+            if (error.Length > 0)
+            {
+                GitHubSearchStatusText.Text = NetError(error);
+                return;
+            }
+
+            if (repos.Count == 0)
+            {
+                GitHubSearchStatusText.Text = Strings.T("plugin.github.searchEmpty", query);
+                return;
+            }
+
+            GitHubSearchStatusText.Text = Strings.T("plugin.github.searchCount", repos.Count);
+            foreach (var repo in repos)
+                GitHubResultsHost.Children.Add(BuildGitHubResultRow(repo));
+        }
+        catch (Exception ex)
+        {
+            GitHubSearchStatusText.Text = Strings.T("plugin.github.searchFailed", ex.Message);
+        }
+        finally
+        {
+            GitHubSearchButton.IsEnabled = true;
+        }
+    }
+
+    private FrameworkElement BuildGitHubResultRow(GitHubRepoResult repo)
+    {
+        var box = new StackPanel { Margin = new Thickness(0, 0, 0, 10) };
+
+        var title = new TextBlock
+        {
+            Text = repo.FullName,
+            FontWeight = FontWeights.SemiBold,
+            TextWrapping = TextWrapping.Wrap
+        };
+        title.SetResourceReference(TextBlock.FontSizeProperty, "FontSizeSm");
+        title.SetResourceReference(TextBlock.ForegroundProperty, "TextBrush");
+        box.Children.Add(title);
+
+        var meta = new TextBlock
+        {
+            Text = Strings.T("plugin.github.repoMeta",
+                repo.Stars, string.IsNullOrWhiteSpace(repo.License) ? Strings.T("common.unknown") : repo.License,
+                repo.PushedAt.Length >= 10 ? repo.PushedAt[..10] : repo.PushedAt),
+            TextWrapping = TextWrapping.Wrap,
+            Margin = new Thickness(0, 2, 0, 0)
+        };
+        meta.SetResourceReference(TextBlock.FontSizeProperty, "FontSizeXs");
+        meta.SetResourceReference(TextBlock.ForegroundProperty, "MutedBrush");
+        box.Children.Add(meta);
+
+        if (!string.IsNullOrWhiteSpace(repo.Description))
+        {
+            var desc = new TextBlock
+            {
+                Text = repo.Description,
+                TextWrapping = TextWrapping.Wrap,
+                Margin = new Thickness(0, 3, 0, 0)
+            };
+            desc.SetResourceReference(TextBlock.FontSizeProperty, "FontSizeSm");
+            desc.SetResourceReference(TextBlock.ForegroundProperty, "MutedBrush");
+            box.Children.Add(desc);
+        }
+
+        var actions = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 6, 0, 0) };
+
+        var view = new Button
+        {
+            Content = Strings.T("plugin.github.viewRelease"),
+            Style = (Style)Application.Current.Resources["SecondaryButton"]
+        };
+        view.Click += async (_, _) =>
+        {
+            RepoBox.Text = repo.FullName;
+            await QueryRepoAsync(repo.FullName);
+        };
+        actions.Children.Add(view);
+
+        if (!string.IsNullOrWhiteSpace(repo.HtmlUrl))
+        {
+            var open = new Button
+            {
+                Content = Strings.T("plugin.github.openRepo"),
+                Style = (Style)Application.Current.Resources["LinkButton"],
+                Margin = new Thickness(10, 0, 0, 0),
+                Tag = repo.HtmlUrl
+            };
+            open.Click += async (_, _) => await AppServices.Host.OpenExternalAsync(repo.HtmlUrl);
+            actions.Children.Add(open);
+        }
+
+        box.Children.Add(actions);
+        return box;
+    }
+
+    private async Task InstallAssetAsync(string slug, string version, PluginReleaseAsset asset)
+    {
+        if (PluginInstallService.IsObsRunning())
+        {
+            AppServices.Toast.Show(InstallError("PLUGIN_OBS_RUNNING"), "warn");
+            return;
+        }
+
+        // 任意仓库 = 未经验证的第三方代码：强警告 + 明确确认，不做「静默安装」
+        if (!ConfirmDialog.Show(
+                Strings.T("plugin.github.confirmTitle"),
+                Strings.T("plugin.github.confirmMessage", slug, version, asset.Name),
+                Strings.T("plugin.github.confirmOk"), Strings.T("common.cancel"),
+                danger: true, icon: "⚠", irreversible: true))
+            return;
+
+        var request = new PluginInstallRequest
+        {
+            Id = PluginInstallCore.SafeSlug(slug.Replace('/', '-')),
+            Name = slug,
+            Version = version,
+            SourceRepo = slug,
+            Asset = asset,
+            Scope = "user",
+            Curated = false,
+            ExpectedSha256 = asset.Digest
+        };
+
+        var progress = new Progress<PluginInstallProgress>(p =>
+        {
+            RepoStatusText.Text = Strings.T("plugin.install.stage." + p.Stage);
+        });
+
+        RepoStatusText.Text = Strings.T("plugin.github.installing");
+        var result = await AppServices.PluginInstall.InstallAsync(request, progress, CancellationToken.None);
+
+        if (result.Ok)
+        {
+            RepoStatusText.Text = Strings.T("plugin.github.installed", slug, version);
+            AppServices.Toast.Show(RepoStatusText.Text, "ok");
+            RefreshManagedList();
+        }
+        else
+        {
+            RepoStatusText.Text = InstallError(result.ErrorCode);
+            AppServices.Toast.Show(RepoStatusText.Text, "danger");
+        }
+    }
+
+    private async void OnOpenGitHubSearchClick(object sender, RoutedEventArgs e)
+        => await AppServices.Host.OpenExternalAsync(
+            "https://github.com/search?q=topic%3Aobs-plugin&type=repositories");
+
+    private static string InstallError(string? code)
+    {
+        if (string.IsNullOrWhiteSpace(code)) return Strings.T("plugin.install.err.unknown");
+        var clean = code.StartsWith("PLUGIN_", StringComparison.OrdinalIgnoreCase) ? code[7..] : code;
+        return Strings.T("plugin.install.err." + clean.ToLowerInvariant().Replace('_', '.'));
+    }
+
+    private static string NetError(string? code)
+    {
+        if (string.IsNullOrWhiteSpace(code)) return Strings.T("plugin.install.err.unknown");
+        var clean = code.StartsWith("NET_", StringComparison.OrdinalIgnoreCase) ? code[4..] : code;
+        return Strings.T("net.err." + clean.ToLowerInvariant().Replace('_', '.'));
+    }
+
+    private static TextBlock InstallLine(string text, string brushKey)
+    {
+        var tb = new TextBlock { Text = text, TextWrapping = TextWrapping.Wrap };
+        tb.SetResourceReference(TextBlock.FontSizeProperty, "FontSizeSm");
+        tb.SetResourceReference(TextBlock.ForegroundProperty, brushKey);
+        return tb;
+    }
 
     private void OnToggleHealthClick(object sender, RoutedEventArgs e)
     {
@@ -642,7 +1031,13 @@ public partial class PluginsPage : UserControl, INavigationAware
                 ? items
                 : items.Where(p =>
                         p.Name.Contains(query, StringComparison.OrdinalIgnoreCase) ||
-                        p.Desc.Contains(query, StringComparison.OrdinalIgnoreCase))
+                        p.Desc.Contains(query, StringComparison.OrdinalIgnoreCase) ||
+                        p.Id.Contains(query, StringComparison.OrdinalIgnoreCase) ||
+                        p.Repo.Contains(query, StringComparison.OrdinalIgnoreCase) ||
+                        p.Badge.Contains(query, StringComparison.OrdinalIgnoreCase) ||
+                        p.MaintainNote.Contains(query, StringComparison.OrdinalIgnoreCase) ||
+                        category.Label.Contains(query, StringComparison.Ordinal) ||
+                        p.Dlls.Any(d => d.Contains(query, StringComparison.OrdinalIgnoreCase)))
                     .ToList();
 
             if (filtered.Count > 0) yield return (category, filtered);

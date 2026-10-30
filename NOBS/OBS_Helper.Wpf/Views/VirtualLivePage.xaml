@@ -1,0 +1,238 @@
+<UserControl x:Class="OBS_Helper.Wpf.Views.VirtualLivePage"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+  <ScrollViewer Style="{StaticResource PageScroll}">
+    <StackPanel Margin="22,18,22,26">
+
+      <!-- 页面说明：与插件广场 / 工具箱一致的「一段说明 + 内容卡」结构 -->
+      <TextBlock Style="{StaticResource MutedText}" TextWrapping="Wrap"
+                 Text="{DynamicResource Loc.vlive.intro}" />
+
+      <!-- Tab 用 App 统一的分段按钮，而不是 WPF 默认 TabControl（默认样式与全站不一致） -->
+      <WrapPanel x:Name="TabBar" Margin="0,12,0,0">
+        <RadioButton x:Name="AvatarTab" GroupName="VLiveTabs" Style="{StaticResource SegmentButton}"
+                     Content="{DynamicResource Loc.vlive.tab.avatar}" Checked="OnTabChecked" />
+        <RadioButton x:Name="RoomTab" GroupName="VLiveTabs" Style="{StaticResource SegmentButton}"
+                     Content="{DynamicResource Loc.vlive.tab.room}" Checked="OnTabChecked" />
+        <RadioButton x:Name="GoLiveTab" GroupName="VLiveTabs" Style="{StaticResource SegmentButton}"
+                     Content="{DynamicResource Loc.vlive.tab.golive}" Checked="OnTabChecked" />
+      </WrapPanel>
+
+      <Border Style="{StaticResource HLine}" Margin="0,1,0,14" />
+
+      <!-- ============================================================ 形象（Live2D） -->
+      <StackPanel x:Name="AvatarPanel">
+
+        <!-- 环境体检：沿用插件页「体检面板」的观感（SoftPanel + 标题行 + 指标表） -->
+        <Border Style="{StaticResource SoftPanel}" Padding="16,14">
+          <StackPanel>
+            <Grid>
+              <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+              </Grid.ColumnDefinitions>
+              <TextBlock Grid.Column="0" Text="{DynamicResource Loc.vlive.env.title}"
+                         Style="{StaticResource SectionTitle}" Margin="0" VerticalAlignment="Center" />
+              <Button x:Name="RefreshEnvButton" Grid.Column="1" Style="{StaticResource LinkButton}"
+                      Content="{DynamicResource Loc.vlive.env.refresh}" Click="OnRefreshEnvClick" />
+            </Grid>
+
+            <TextBlock Style="{StaticResource CaptionText}" Margin="0,6,0,0" TextWrapping="Wrap"
+                       Text="{DynamicResource Loc.vlive.env.desc}" />
+
+            <Grid Margin="0,12,0,0">
+              <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="140" />
+                <ColumnDefinition Width="*" />
+              </Grid.ColumnDefinitions>
+              <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+              </Grid.RowDefinitions>
+
+              <TextBlock Grid.Row="0" Grid.Column="0" Style="{StaticResource MutedText}"
+                         Text="{DynamicResource Loc.vlive.env.obs}" Margin="0,0,12,7" />
+              <TextBlock x:Name="ObsStateText" Grid.Row="0" Grid.Column="1" Style="{StaticResource BodyText}"
+                         Margin="0,0,0,7" Text="—" />
+
+              <TextBlock Grid.Row="1" Grid.Column="0" Style="{StaticResource MutedText}"
+                         Text="{DynamicResource Loc.vlive.env.vts}" Margin="0,0,12,7" />
+              <TextBlock x:Name="VtsStateText" Grid.Row="1" Grid.Column="1" Style="{StaticResource BodyText}"
+                         Margin="0,0,0,7" Text="—" />
+
+              <TextBlock Grid.Row="2" Grid.Column="0" Style="{StaticResource MutedText}"
+                         Text="{DynamicResource Loc.vlive.env.capture}" Margin="0,0,12,7" />
+              <TextBlock x:Name="CaptureStateText" Grid.Row="2" Grid.Column="1" Style="{StaticResource BodyText}"
+                         Margin="0,0,0,7" Text="—" TextWrapping="Wrap" />
+
+              <TextBlock Grid.Row="3" Grid.Column="0" Style="{StaticResource MutedText}"
+                         Text="{DynamicResource Loc.vlive.env.canvas}" Margin="0,0,12,0" />
+              <TextBlock x:Name="CanvasStateText" Grid.Row="3" Grid.Column="1" Style="{StaticResource BodyText}"
+                         Text="—" />
+            </Grid>
+          </StackPanel>
+        </Border>
+
+        <Border Style="{StaticResource Card}" Margin="0,14,0,0">
+          <StackPanel>
+            <TextBlock Text="{DynamicResource Loc.vlive.setup.title}" Style="{StaticResource SectionTitle}" />
+
+            <TextBlock x:Name="ModelPathText" Style="{StaticResource CaptionText}" Margin="0,0,0,2"
+                       TextWrapping="Wrap" Text="{DynamicResource Loc.vlive.model.none}" />
+
+            <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
+              <Button x:Name="ChooseModelButton" Style="{StaticResource SecondaryButton}"
+                      Content="{DynamicResource Loc.vlive.model.choose}" Click="OnChooseModelClick" />
+            </StackPanel>
+
+            <TextBlock Style="{StaticResource MutedText}" Margin="0,14,0,6"
+                       Text="{DynamicResource Loc.vlive.layout}" />
+            <ComboBox x:Name="LayoutCombo" Style="{StaticResource AppComboBox}" Width="240"
+                      HorizontalAlignment="Left" />
+
+            <StackPanel Orientation="Horizontal" Margin="0,14,0,0">
+              <Button x:Name="ApplyLive2DButton" Style="{StaticResource PrimaryButton}" IsEnabled="False"
+                      Content="{DynamicResource Loc.vlive.apply}" Click="OnApplyLive2DClick" />
+              <Button x:Name="LoadVtsButton" Style="{StaticResource SecondaryButton}" Margin="10,0,0,0"
+                      Content="{DynamicResource Loc.vlive.vts.load}" Click="OnLoadVtsClick" />
+            </StackPanel>
+
+            <TextBlock x:Name="Live2DStatusText" Margin="0,12,0,0" TextWrapping="Wrap"
+                       Style="{StaticResource BodyText}"
+                       AutomationProperties.LiveSetting="Polite" />
+            <StackPanel x:Name="Live2DStatusList" Margin="0,8,0,0" />
+          </StackPanel>
+        </Border>
+
+        <Border Style="{StaticResource SoftPanel}" Margin="0,14,0,0" Padding="14,12">
+          <TextBlock Style="{StaticResource CaptionText}" TextWrapping="Wrap"
+                     Text="{DynamicResource Loc.vlive.live2d.boundary}" />
+        </Border>
+      </StackPanel>
+
+      <!-- ============================================================ 直播间（模板） -->
+      <StackPanel x:Name="RoomPanel" Visibility="Collapsed">
+        <TextBlock Style="{StaticResource MutedText}" TextWrapping="Wrap"
+                   Text="{DynamicResource Loc.vlive.room.intro}" />
+
+        <StackPanel x:Name="RoomList" Margin="0,12,0,0" />
+
+        <Border x:Name="ChecklistPanel" Style="{StaticResource Card}" Margin="0,14,0,0"
+                Visibility="Collapsed">
+          <StackPanel>
+            <TextBlock Text="{DynamicResource Loc.vlive.checklist.title}" Style="{StaticResource SectionTitle}" />
+            <TextBlock x:Name="ChecklistIntroText" Style="{StaticResource MutedText}" Margin="0,6,0,0"
+                       TextWrapping="Wrap" />
+            <StackPanel x:Name="ChecklistList" Margin="0,8,0,0" />
+          </StackPanel>
+        </Border>
+      </StackPanel>
+
+      <!-- ============================================================ 开播（平台引导） -->
+      <StackPanel x:Name="GoLivePanel" Visibility="Collapsed">
+        <TextBlock Style="{StaticResource MutedText}" TextWrapping="Wrap"
+                   Text="{DynamicResource Loc.vlive.golive.intro}" />
+
+        <Border Style="{StaticResource SoftPanel}" Margin="0,12,0,0" Padding="16,14">
+          <StackPanel>
+            <TextBlock Style="{StaticResource MutedText}" Margin="0,0,0,7"
+                       Text="{DynamicResource Loc.vlive.golive.platform}" />
+            <ComboBox x:Name="PlatformCombo" Style="{StaticResource AppComboBox}" Width="320"
+                      HorizontalAlignment="Left" SelectionChanged="OnPlatformChanged" />
+          </StackPanel>
+        </Border>
+
+        <Border Style="{StaticResource Card}" Margin="0,14,0,0">
+          <StackPanel>
+            <Grid>
+              <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+              </Grid.ColumnDefinitions>
+              <TextBlock x:Name="PlatformNameText" Grid.Column="0"
+                         Style="{StaticResource SectionTitle}" Margin="0" Text="—" />
+              <TextBlock x:Name="PlatformMetaText" Grid.Column="1" Style="{StaticResource CaptionText}"
+                         VerticalAlignment="Center" TextWrapping="Wrap" />
+            </Grid>
+            <TextBlock x:Name="PlatformNotesText" Style="{StaticResource MutedText}" Margin="0,8,0,0"
+                       TextWrapping="Wrap" />
+            <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
+              <Button x:Name="OpenOfficialButton" Style="{StaticResource SecondaryButton}"
+                      Content="{DynamicResource Loc.vlive.golive.official}" Click="OnOpenOfficialClick" />
+              <Button x:Name="OpenHelpButton" Style="{StaticResource GhostButton}" Margin="10,0,0,0"
+                      Content="{DynamicResource Loc.vlive.golive.help}" Click="OnOpenHelpClick" />
+            </StackPanel>
+          </StackPanel>
+        </Border>
+
+        <!-- 直推 -->
+        <Border x:Name="DirectPanel" Style="{StaticResource Card}" Margin="0,14,0,0"
+                Visibility="Collapsed">
+          <StackPanel>
+            <TextBlock Text="{DynamicResource Loc.vlive.golive.direct}" Style="{StaticResource SectionTitle}" />
+            <TextBlock Style="{StaticResource CaptionText}" Margin="0,0,0,2" TextWrapping="Wrap"
+                       Text="{DynamicResource Loc.vlive.golive.directDesc}" />
+
+            <TextBlock Style="{StaticResource MutedText}" Margin="0,12,0,6"
+                       Text="{DynamicResource Loc.vlive.golive.server}" />
+            <TextBox x:Name="ServerBox" Style="{StaticResource AppTextBox}"
+                     Tag="{DynamicResource Loc.vlive.golive.serverPlaceholder}"
+                     AutomationProperties.Name="{DynamicResource Loc.vlive.golive.server}" />
+
+            <TextBlock Style="{StaticResource MutedText}" Margin="0,10,0,6"
+                       Text="{DynamicResource Loc.vlive.golive.key}" />
+            <PasswordBox x:Name="KeyBox" Style="{StaticResource AppPasswordBox}"
+                         AutomationProperties.Name="{DynamicResource Loc.vlive.golive.key}"
+                         PasswordChanged="OnKeyChanged" />
+            <TextBlock x:Name="KeyMaskText" Style="{StaticResource CaptionText}" Margin="0,4,0,0"
+                       Text="{DynamicResource Loc.vlive.golive.keyEmpty}" />
+
+            <CheckBox x:Name="RememberKeySwitch" Style="{StaticResource AppSwitch}" Margin="0,12,0,0"
+                      Content="{DynamicResource Loc.vlive.golive.remember}" />
+            <TextBlock Style="{StaticResource CaptionText}" Margin="52,5,0,0" TextWrapping="Wrap"
+                       Text="{DynamicResource Loc.vlive.golive.rememberDesc}" />
+
+            <StackPanel Orientation="Horizontal" Margin="0,14,0,0">
+              <Button x:Name="StartDirectButton" Style="{StaticResource PrimaryButton}"
+                      Content="{DynamicResource Loc.vlive.golive.start}" Click="OnStartDirectClick" />
+              <Button x:Name="StopDirectButton" Style="{StaticResource SecondaryButton}" Margin="10,0,0,0"
+                      Content="{DynamicResource Loc.vlive.golive.stop}" Click="OnStopDirectClick" />
+            </StackPanel>
+          </StackPanel>
+        </Border>
+
+        <!-- 虚拟摄像头 -->
+        <Border x:Name="VcamPanel" Style="{StaticResource Card}" Margin="0,14,0,0"
+                Visibility="Collapsed">
+          <StackPanel>
+            <TextBlock Text="{DynamicResource Loc.vlive.golive.vcam}" Style="{StaticResource SectionTitle}" />
+            <TextBlock x:Name="VcamGuideText" Style="{StaticResource MutedText}" Margin="0,6,0,0"
+                       TextWrapping="Wrap" />
+            <StackPanel Orientation="Horizontal" Margin="0,12,0,0">
+              <Button x:Name="StartVcamButton" Style="{StaticResource PrimaryButton}"
+                      Content="{DynamicResource Loc.vlive.golive.vcamStart}" Click="OnStartVcamClick" />
+              <Button x:Name="StopVcamButton" Style="{StaticResource SecondaryButton}" Margin="10,0,0,0"
+                      Content="{DynamicResource Loc.vlive.golive.vcamStop}" Click="OnStopVcamClick" />
+            </StackPanel>
+
+            <TextBlock x:Name="CompanionTitle" Style="{StaticResource MutedText}" Margin="0,14,0,0"
+                       Text="{DynamicResource Loc.vlive.golive.companions}" TextWrapping="Wrap" />
+            <StackPanel x:Name="CompanionList" Margin="0,6,0,0" />
+          </StackPanel>
+        </Border>
+
+        <TextBlock x:Name="GoLiveStatusText" Margin="0,12,0,0" TextWrapping="Wrap"
+                   Style="{StaticResource BodyText}"
+                   AutomationProperties.LiveSetting="Polite" />
+        <StackPanel x:Name="GoLiveSteps" Margin="0,8,0,0" />
+
+        <Border Style="{StaticResource SoftPanel}" Margin="0,14,0,0" Padding="14,12">
+          <TextBlock Style="{StaticResource CaptionText}" TextWrapping="Wrap"
+                     Text="{DynamicResource Loc.vlive.golive.boundary}" />
+        </Border>
+      </StackPanel>
+    </StackPanel>
+  </ScrollViewer>
+</UserControl>

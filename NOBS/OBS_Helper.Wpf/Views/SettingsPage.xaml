@@ -195,6 +195,29 @@
           <TextBlock Style="{StaticResource CaptionText}" Margin="52,5,0,0"
                      Text="{DynamicResource Loc.settings.appearance.reduceMotionDesc}" />
 
+          <!-- ============================================ 无障碍 / 老年模式（V3.3.0） -->
+          <Border Style="{StaticResource HLine}" Margin="0,14,0,0" />
+
+          <CheckBox x:Name="AccessibilityModeSwitch" Style="{StaticResource AppSwitch}"
+                    Content="{DynamicResource Loc.settings.a11y.mode}"
+                    Checked="OnAccessibilityModeToggled" Unchecked="OnAccessibilityModeToggled" />
+          <TextBlock Style="{StaticResource CaptionText}" Margin="52,5,0,0" TextWrapping="Wrap"
+                     Text="{DynamicResource Loc.settings.a11y.modeDesc}" />
+
+          <CheckBox x:Name="ElderModeSwitch" Style="{StaticResource AppSwitch}"
+                    Content="{DynamicResource Loc.settings.a11y.elder}"
+                    Margin="0,14,0,0" Checked="OnElderModeToggled" Unchecked="OnElderModeToggled" />
+          <TextBlock Style="{StaticResource CaptionText}" Margin="52,5,0,0" TextWrapping="Wrap"
+                     Text="{DynamicResource Loc.settings.a11y.elderDesc}" />
+
+          <StackPanel Orientation="Horizontal" Margin="52,12,0,0">
+            <Button x:Name="ResetUiProfileButton" Style="{StaticResource GhostButton}"
+                    Content="{DynamicResource Loc.settings.a11y.reset}" Padding="12,6"
+                    Click="OnResetUiProfileClick" />
+            <TextBlock x:Name="UiProfileSummaryText" Style="{StaticResource CaptionText}"
+                       Margin="12,0,0,0" VerticalAlignment="Center" />
+          </StackPanel>
+
           <!-- 彩蛋开关（V3.1.0 / §12.3）：默认开启，可关闭；无声音、不干扰录制 -->
           <CheckBox x:Name="EasterEggSwitch" Style="{StaticResource AppSwitch}"
                     Content="{DynamicResource Loc.settings.appearance.easterEgg}"
@@ -826,6 +849,16 @@
             <Button Content="{DynamicResource Loc.settings.about.officialAnalyzer}" Style="{StaticResource LinkButton}"
                     Tag="https://obsproject.com/analyzer" Click="OnOpenLink" />
           </StackPanel>
+
+          <Border Style="{StaticResource HLine}" />
+
+          <!-- 开源组件与许可（V3.3.0）：列表由代码构建，仓库名 / 许可证 / 用途都由静态数据驱动 -->
+          <TextBlock Text="{DynamicResource Loc.settings.about.oss.title}" Style="{StaticResource SectionTitle}" />
+          <TextBlock Style="{StaticResource MutedText}" Margin="0,4,0,8" TextWrapping="Wrap"
+                     Text="{DynamicResource Loc.settings.about.oss.desc}" />
+          <StackPanel x:Name="OssList" />
+          <TextBlock Style="{StaticResource CaptionText}" Margin="0,8,0,0" TextWrapping="Wrap"
+                     Text="{DynamicResource Loc.settings.about.oss.boundary}" />
 
           <Border Style="{StaticResource HLine}" />
 

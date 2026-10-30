@@ -194,7 +194,7 @@
   <Style x:Key="BaseButton" TargetType="Button">
     <Setter Property="FontSize" Value="{DynamicResource FontSizeBase}" />
     <Setter Property="Padding" Value="14,7" />
-    <Setter Property="MinHeight" Value="34" />
+    <Setter Property="MinHeight" Value="{DynamicResource ControlMinHeight}" />
     <Setter Property="Cursor" Value="Hand" />
     <Setter Property="HorizontalContentAlignment" Value="Center" />
     <Setter Property="VerticalContentAlignment" Value="Center" />
@@ -215,7 +215,7 @@
           <ControlTemplate.Triggers>
             <Trigger Property="IsKeyboardFocused" Value="True">
               <Setter TargetName="Bd" Property="BorderBrush" Value="{DynamicResource BrandBrush}" />
-              <Setter TargetName="Bd" Property="BorderThickness" Value="1.5" />
+              <Setter TargetName="Bd" Property="BorderThickness" Value="{DynamicResource FocusThickness}" />
             </Trigger>
             <Trigger Property="IsEnabled" Value="False">
               <Setter TargetName="Bd" Property="Opacity" Value="0.40" />
@@ -362,11 +362,14 @@
     <Setter Property="Foreground" Value="{DynamicResource MutedBrush}" />
     <Setter Property="FontSize" Value="{DynamicResource FontSizeBase}" />
     <Setter Property="Margin" Value="6,1" />
+    <!-- V3.3.0：导航项高度 / 内边距走令牌，老年模式与系统大字下自动变大 -->
+    <Setter Property="MinHeight" Value="{DynamicResource NavItemMinHeight}" />
+    <Setter Property="Padding" Value="{DynamicResource NavItemPadding}" />
     <Setter Property="Template">
       <Setter.Value>
         <ControlTemplate TargetType="RadioButton">
           <Border x:Name="Bd" Background="Transparent" CornerRadius="{DynamicResource CornerRadiusSm}"
-                  Padding="9,7">
+                  Padding="{TemplateBinding Padding}" MinHeight="{TemplateBinding MinHeight}">
             <StackPanel Orientation="Horizontal">
               <!-- 矢量图标：描边色跟随主题（Muted），选中切品牌色；Tag 为空时宽度为 0 不占位 -->
               <Path x:Name="Icon" Data="{TemplateBinding Tag}" Stretch="Uniform"
@@ -377,7 +380,8 @@
               <TextBlock x:Name="Label" Text="{TemplateBinding Content}"
                          VerticalAlignment="Center"
                          FontSize="{TemplateBinding FontSize}"
-                         Foreground="{TemplateBinding Foreground}" />
+                         Foreground="{TemplateBinding Foreground}"
+                         TextWrapping="Wrap" />
             </StackPanel>
           </Border>
           <ControlTemplate.Triggers>
@@ -392,7 +396,7 @@
             </Trigger>
             <Trigger Property="IsKeyboardFocused" Value="True">
               <Setter TargetName="Bd" Property="BorderBrush" Value="{DynamicResource BrandBrush}" />
-              <Setter TargetName="Bd" Property="BorderThickness" Value="2" />
+              <Setter TargetName="Bd" Property="BorderThickness" Value="{DynamicResource FocusThickness}" />
             </Trigger>
           </ControlTemplate.Triggers>
         </ControlTemplate>

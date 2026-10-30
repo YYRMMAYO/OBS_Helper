@@ -24,7 +24,8 @@
 
   <Grid>
     <Grid.ColumnDefinitions>
-      <ColumnDefinition Width="212" />
+      <!-- V3.3.0：侧栏宽度走令牌（老年模式 / 系统大字下自动加宽） -->
+      <ColumnDefinition Width="{DynamicResource NavWidth}" />
       <ColumnDefinition Width="*" />
     </Grid.ColumnDefinitions>
 
@@ -74,6 +75,7 @@
             <RadioButton x:Name="NavDiagnostic" Style="{StaticResource NavTabButton}" Content="{DynamicResource Loc.nav.diagnostic}"   Tag="{StaticResource IconGeomDiagnostic}" Checked="OnNavChecked" />
             <RadioButton x:Name="NavSetup"      Style="{StaticResource NavTabButton}" Content="{DynamicResource Loc.nav.setup}"   Tag="{StaticResource IconGeomSetup}"      Checked="OnNavChecked" />
             <RadioButton x:Name="NavTemplates" Style="{StaticResource NavTabButton}" Content="{DynamicResource Loc.nav.templates}"   Tag="{StaticResource IconGeomTemplates}" Checked="OnNavChecked" />
+            <RadioButton x:Name="NavVirtualLive" Style="{StaticResource NavTabButton}" Content="{DynamicResource Loc.nav.virtuallive}" Tag="{StaticResource IconGeomVirtualLive}" Checked="OnNavChecked" />
             <RadioButton x:Name="NavPlugins"   Style="{StaticResource NavTabButton}" Content="{DynamicResource Loc.nav.plugins}"   Tag="{StaticResource IconGeomPlugins}" Checked="OnNavChecked" />
             <RadioButton x:Name="NavToolbox"   Style="{StaticResource NavTabButton}" Content="{DynamicResource Loc.nav.toolbox}" Tag="{StaticResource IconGeomSetup}" Checked="OnNavChecked" />
             <RadioButton x:Name="NavConsole"    Style="{StaticResource NavTabButton}" Content="{DynamicResource Loc.nav.console}" Tag="{StaticResource IconGeomConsole}"    Checked="OnNavChecked" />
@@ -150,6 +152,16 @@
       <ContentControl x:Name="PageHost" Grid.Row="1" Focusable="False" />
 
       <!--
+        「跳到主内容」链接（V3.3.0 / 无障碍模式）：键盘 / 读屏用户不必每次 Tab 穿过 13 个导航项。
+        默认隐藏，由 AppearanceService 的 ShowSkipLink 令牌控制；点击后把焦点交给页面里第一个可聚焦控件。
+      -->
+      <Button x:Name="SkipLinkButton" Grid.Row="1" HorizontalAlignment="Left" VerticalAlignment="Top"
+              Margin="16,6,0,0" Style="{StaticResource LinkButton}" Visibility="Collapsed"
+              Content="{DynamicResource Loc.a11y.skipToContent}"
+              AutomationProperties.HelpText="{DynamicResource Loc.a11y.skipToContentHint}"
+              Click="OnSkipLinkClick" />
+
+      <!--
         内容资产回退提示条（V3.0 / E5）：英文内容资产缺失时会静默回退成中文，
         以前只在日志里留 WARN、界面上什么都不说 —— 英文用户只会觉得「怎么一半是中文」。
         这里给一条可关闭的提示，明确说是哪几块内容受了影响。
@@ -208,11 +220,32 @@
               CornerRadius="{DynamicResource CornerRadiusLg}"
               Effect="{DynamicResource CardShadowStrong}"
               Width="500" Padding="26,22"
-              HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="0,0,20,20">
-        <StackPanel>
-          <TextBlock Text="{DynamicResource Loc.onb.welcomeTitle}" FontWeight="SemiBold"
-                     FontSize="{DynamicResource FontSizeXl}"
-                     Foreground="{DynamicResource TextBrush}" />
+              HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="0,0,20,20"
+              RenderTransformOrigin="0.5,1">
+        <!-- V3.3.0：入场 / 切步 / 退场动画都作用在变换上，不改变布局 -->
+        <Border.RenderTransform>
+          <TransformGroup>
+            <ScaleTransform x:Name="OnbCardScale" ScaleX="1" ScaleY="1" />
+            <TranslateTransform x:Name="OnbCardTranslate" X="0" Y="0" />
+          </TransformGroup>
+        </Border.RenderTransform>
+        <StackPanel x:Name="OnbContent">
+          <StackPanel.RenderTransform>
+            <TranslateTransform x:Name="OnbContentTranslate" X="0" Y="0" />
+          </StackPanel.RenderTransform>
+
+          <StackPanel Orientation="Horizontal">
+            <Border x:Name="OnbSpark" Width="10" Height="10" CornerRadius="5"
+                    Background="{DynamicResource BrandBrush}" VerticalAlignment="Center"
+                    Margin="0,0,9,0" RenderTransformOrigin="0.5,0.5">
+              <Border.RenderTransform>
+                <ScaleTransform x:Name="OnbSparkScale" ScaleX="1" ScaleY="1" />
+              </Border.RenderTransform>
+            </Border>
+            <TextBlock Text="{DynamicResource Loc.onb.welcomeTitle}" FontWeight="SemiBold"
+                       FontSize="{DynamicResource FontSizeXl}"
+                       Foreground="{DynamicResource TextBrush}" />
+          </StackPanel>
           <TextBlock Text="{DynamicResource Loc.app.tagline}"
                      Margin="0,6,0,0" TextWrapping="Wrap"
                      FontSize="{DynamicResource FontSizeSm}"
@@ -246,6 +279,14 @@
           <!-- 进度指示：圆点数量在代码里按 OnboardingGuide.Steps 动态生成 -->
           <StackPanel x:Name="OnbDots" Orientation="Horizontal"
                       HorizontalAlignment="Center" Margin="0,16,0,0" />
+
+          <!-- V3.3.0：进度条（与圆点互补，动画随切步推进） -->
+          <Border x:Name="OnbProgressTrack" Height="3" Margin="0,10,0,0" CornerRadius="1.5"
+                  Background="{DynamicResource Surface3Brush}"
+                  SizeChanged="OnOnboardingProgressSizeChanged">
+            <Border x:Name="OnbProgressFill" Width="0" HorizontalAlignment="Left"
+                    CornerRadius="1.5" Background="{DynamicResource BrandBrush}" />
+          </Border>
 
           <TextBlock x:Name="OnbStepCounter" Text="" HorizontalAlignment="Center"
                      Margin="0,8,0,0"

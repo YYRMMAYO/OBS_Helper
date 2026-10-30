@@ -1,0 +1,236 @@
+{
+  "version": "3.3.0",
+  "verifiedAt": "2026-10-25",
+  "platforms": [
+    {
+      "id": "bilibili",
+      "name": "Bilibili",
+      "region": "cn",
+      "mode": "direct",
+      "officialUrl": "https://link.bilibili.com/p/center/index",
+      "helpUrl": "https://link.bilibili.com/p/help/index#/tools-tutorial",
+      "notes": "Copy the RTMP address and stream key from Stream Settings, then paste them below for direct streaming; LiveHime is the fallback.",
+      "streamKeyHint": "Stream key",
+      "verifiedAt": "2026-10-25",
+      "companions": ["bilibili-livehime"]
+    },
+    {
+      "id": "douyin",
+      "name": "Douyin",
+      "region": "cn",
+      "mode": "virtualcam",
+      "officialUrl": "https://streamingtool.douyin.com/",
+      "helpUrl": "https://streamingtool.douyin.com/docs/guide_yr6qkl09",
+      "notes": "Douyin does not offer a general RTMP key: start the OBS virtual camera, then add a camera source in Live Companion and choose OBS Virtual Camera.",
+      "streamKeyHint": "",
+      "verifiedAt": "2026-10-25",
+      "companions": ["douyin-live"]
+    },
+    {
+      "id": "kuaishou",
+      "name": "Kuaishou",
+      "region": "cn",
+      "mode": "direct",
+      "officialUrl": "https://live.kuaishou.com/",
+      "helpUrl": "",
+      "notes": "Use direct streaming when your dashboard provides a server and key; the entry point changes between versions, so confirm on the official page (not individually verified).",
+      "streamKeyHint": "Stream key",
+      "verifiedAt": "",
+      "companions": []
+    },
+    {
+      "id": "wechat-channels",
+      "name": "WeChat Channels",
+      "region": "cn",
+      "mode": "manual",
+      "officialUrl": "https://channels.weixin.qq.com/",
+      "helpUrl": "",
+      "notes": "Channels currently goes live inside WeChat / Channels Assistant and streaming access is limited; follow the official client. This app does not automate it.",
+      "streamKeyHint": "",
+      "verifiedAt": "",
+      "companions": []
+    },
+    {
+      "id": "xiaohongshu",
+      "name": "Xiaohongshu",
+      "region": "cn",
+      "mode": "manual",
+      "officialUrl": "https://creator.xiaohongshu.com/",
+      "helpUrl": "",
+      "notes": "The live entry is in the creator platform; streaming access depends on the account. Confirm on the official page before relying on it.",
+      "streamKeyHint": "",
+      "verifiedAt": "",
+      "companions": []
+    },
+    {
+      "id": "youtube",
+      "name": "YouTube",
+      "region": "global",
+      "mode": "direct",
+      "officialUrl": "https://studio.youtube.com/",
+      "helpUrl": "https://support.google.com/youtube/answer/2907883",
+      "notes": "YouTube Studio → Go Live → Stream key. Your channel may need verification or a 24-hour wait before streaming is enabled.",
+      "streamKeyHint": "Stream key",
+      "verifiedAt": "2026-10-25",
+      "companions": []
+    },
+    {
+      "id": "twitch",
+      "name": "Twitch",
+      "region": "global",
+      "mode": "direct",
+      "officialUrl": "https://dashboard.twitch.tv/",
+      "helpUrl": "https://help.twitch.tv/s/article/twitch-streaming-software",
+      "notes": "Creator Dashboard → Settings → Stream → Primary stream key. Some accounts require two-factor authentication.",
+      "streamKeyHint": "Primary stream key",
+      "verifiedAt": "2026-10-25",
+      "companions": []
+    },
+    {
+      "id": "kick",
+      "name": "Kick",
+      "region": "global",
+      "mode": "direct",
+      "officialUrl": "https://kick.com/dashboard/settings/stream",
+      "helpUrl": "https://help.kick.com/",
+      "notes": "Dashboard → Settings → Stream → Stream URL / Stream Key.",
+      "streamKeyHint": "Stream key",
+      "verifiedAt": "2026-10-25",
+      "companions": []
+    },
+    {
+      "id": "facebook",
+      "name": "Facebook Live",
+      "region": "global",
+      "mode": "direct",
+      "officialUrl": "https://www.facebook.com/live/producer",
+      "helpUrl": "https://www.facebook.com/help/",
+      "notes": "Live Producer → Stream key. Some accounts must pass a live permission review first.",
+      "streamKeyHint": "Persistent stream key",
+      "verifiedAt": "2026-10-25",
+      "companions": []
+    },
+    {
+      "id": "trovo",
+      "name": "Trovo",
+      "region": "global",
+      "mode": "direct",
+      "officialUrl": "https://trovo.live/",
+      "helpUrl": "https://help.trovo.live/",
+      "notes": "Creator dashboard → Stream settings → Stream key.",
+      "streamKeyHint": "Stream key",
+      "verifiedAt": "2026-10-25",
+      "companions": []
+    },
+    {
+      "id": "niconico",
+      "name": "Niconico Live",
+      "region": "global",
+      "mode": "direct",
+      "officialUrl": "https://live.nicovideo.jp/",
+      "helpUrl": "https://help.nicovideo.jp/",
+      "notes": "Broadcast settings provide the RTMP address and stream key.",
+      "streamKeyHint": "Stream key",
+      "verifiedAt": "2026-10-25",
+      "companions": []
+    },
+    {
+      "id": "afreecatv",
+      "name": "AfreecaTV / SOOP",
+      "region": "global",
+      "mode": "direct",
+      "officialUrl": "https://www.sooplive.co.kr/",
+      "helpUrl": "https://help.sooplive.co.kr/",
+      "notes": "Streamer center → Broadcast settings → Stream key.",
+      "streamKeyHint": "Stream key",
+      "verifiedAt": "2026-10-25",
+      "companions": []
+    },
+    {
+      "id": "tiktok",
+      "name": "TikTok LIVE",
+      "region": "global",
+      "mode": "virtualcam",
+      "officialUrl": "https://www.tiktok.com/live/",
+      "helpUrl": "https://support.tiktok.com/",
+      "notes": "TikTok LIVE Studio can use the OBS virtual camera as a camera source; region, age and follower requirements depend on the account.",
+      "streamKeyHint": "",
+      "verifiedAt": "",
+      "companions": ["tiktok-live-studio"]
+    },
+    {
+      "id": "custom-rtmp",
+      "name": "Custom RTMP",
+      "region": "global",
+      "mode": "direct",
+      "officialUrl": "",
+      "helpUrl": "",
+      "notes": "Any service that gives you an rtmp:// or rtmps:// address and key works here (self-hosted, enterprise streaming, etc.).",
+      "streamKeyHint": "Stream key",
+      "verifiedAt": "2026-10-25",
+      "companions": []
+    },
+    {
+      "id": "instagram",
+      "name": "Instagram Live",
+      "region": "global",
+      "mode": "manual",
+      "officialUrl": "https://www.instagram.com/",
+      "helpUrl": "https://help.instagram.com/",
+      "notes": "Instagram Live is initiated mainly on mobile and desktop streaming access is account-dependent; this app only provides manual guidance.",
+      "streamKeyHint": "",
+      "verifiedAt": "",
+      "companions": []
+    },
+    {
+      "id": "x",
+      "name": "X (Twitter)",
+      "region": "global",
+      "mode": "manual",
+      "officialUrl": "https://x.com/",
+      "helpUrl": "https://help.x.com/",
+      "notes": "X live requires third-party production tools; it is not offered as one-click direct streaming here.",
+      "streamKeyHint": "",
+      "verifiedAt": "",
+      "companions": []
+    }
+  ],
+  "companions": [
+    {
+      "id": "douyin-live",
+      "name": "Douyin Live Companion",
+      "processNames": ["直播伴侣", "LiveCompanion", "DouyinLive"],
+      "installDirectories": ["%ProgramFiles%\\douyin\\直播伴侣", "%ProgramFiles(x86)%\\douyin\\直播伴侣"],
+      "uninstallNames": ["抖音直播伴侣", "Douyin Live Companion"],
+      "downloadUrl": "https://www.douyin.com/falcon/webcast_openpc/pages/streamingtool_download/index.html",
+      "helpUrl": "https://streamingtool.douyin.com/docs/guide_yr6qkl09"
+    },
+    {
+      "id": "bilibili-livehime",
+      "name": "Bilibili LiveHime",
+      "processNames": ["livehime", "LiveHime"],
+      "installDirectories": ["%ProgramFiles%\\bilibili\\livehime", "%ProgramFiles(x86)%\\bilibili\\livehime"],
+      "uninstallNames": ["哔哩哔哩直播姬", "Bilibili LiveHime"],
+      "downloadUrl": "https://live.bilibili.com/liveHime",
+      "helpUrl": "https://link.bilibili.com/p/help/index#/tools-tutorial"
+    },
+    {
+      "id": "tiktok-live-studio",
+      "name": "TikTok LIVE Studio",
+      "processNames": ["TikTok LIVE Studio", "TikTokLiveStudio"],
+      "installDirectories": ["%ProgramFiles%\\TikTok LIVE Studio", "%LocalAppData%\\Programs\\TikTok LIVE Studio"],
+      "uninstallNames": ["TikTok LIVE Studio"],
+      "downloadUrl": "https://www.tiktok.com/live/studio",
+      "helpUrl": "https://support.tiktok.com/"
+    },
+    {
+      "id": "vtube-studio",
+      "name": "VTube Studio",
+      "processNames": ["VTube Studio", "VTubeStudio"],
+      "installDirectories": ["%ProgramFiles(x86)%\\Steam\\steamapps\\common\\VTube Studio"],
+      "uninstallNames": ["VTube Studio"],
+      "downloadUrl": "https://store.steampowered.com/app/1325860/VTube_Studio/",
+      "helpUrl": "https://github.com/DenchiSoft/VTubeStudio"
+    }
+  ]
+}

@@ -27,13 +27,12 @@
   这属于仅测试期依赖，不影响主程序。）
 - 仓库根目录下的其它目录不属于当前 Windows 端维护主线，改动请聚焦 `NOBS/`。
 
-### 分支与文档：正式版文档放 `master`，DEV 文档放 `dev`
+### 分支与文档：只维护 `master`
 
-- **正式版** README / 发布说明（`V3.1.1` 这类 `V主.次.修`）只能先落 `master`，**不得只提交在 dev**；
-- **DEV 专属**内容（`01`、`02` … 编号说明、未发布特性、DEV 发布说明、实验记录）只放 `dev`；
-- 两条分支的 README **共享模块保持一致**（导航、功能、安装、更新、捐赠、许可），dev 只多「DEV 测试通道 / DEV 0X 新增」段落；
-- 改共享章节时**先改 master，再同步 dev**，不要在 dev 单独改写后不回流；
-- 完整归属表、检查清单与同步命令见 [`docs/BRANCH_AND_DOC_RULES.md`](docs/BRANCH_AND_DOC_RULES.md)；
+- **V3.3.0 起 `dev` 分支已删除**：README、发布说明与全部文档只维护 `master` 一份；
+- 正式版版本号使用 `V主.次.修`（例如 `V3.3.0`），发布说明放仓库根 `RELEASE_NOTES_v<版本>.md`；
+- 历史 `01`、`02`… 的 DEV 标签仍保留在 Release 页，但不再产生新的 DEV 构建；
+- 完整归属表与发布检查见 [`docs/BRANCH_AND_DOC_RULES.md`](docs/BRANCH_AND_DOC_RULES.md)；
 - **每个 Release 必须写清「新增了什么 / 修复了什么」**，结构与验收见 [`docs/RELEASE_RULES.md`](docs/RELEASE_RULES.md)。
 
 ## 2. 代码组织：纯逻辑放 `*Core.cs`
@@ -214,15 +213,14 @@ The project is released under the [MIT License](LICENSE); your contribution is l
 - Other directories in the repository root are not part of the current Windows mainline. Keep
   changes focused on `NOBS/`.
 
-### Branches and docs: stable docs live on `master`, DEV-only docs live on `dev`
+### Branches and docs: only `master` is maintained
 
-- **Stable** READMEs and release notes (`V3.1.1`-style `Vmajor.minor.patch`) must land on `master` first and must
-  **never exist only on dev**;
-- **DEV-only** material (build numbers `01`, `02`…, unreleased features, DEV release notes, experiment logs) lives on `dev`;
-- Shared README modules (navigation, features, install, updates, donate, license) stay **identical on both branches**;
-  dev only adds the "DEV channel / DEV 0X" sections;
-- Change shared sections on **master first, then sync to dev** — never rewrite them on dev without merging back;
-- The full ownership table, checklist and sync commands are in [`docs/BRANCH_AND_DOC_RULES.md`](docs/BRANCH_AND_DOC_RULES.md) (Chinese);
+- **The `dev` branch was deleted in V3.3.0**; READMEs, release notes and every document are maintained
+  on `master` only;
+- Stable versions use `Vmajor.minor.patch` (e.g. `V3.3.0`) and release notes live at
+  `RELEASE_NOTES_v<version>.md` in the repository root;
+- Historical DEV tags (`01`, `02`…) remain on the Releases page, but no new DEV builds are produced;
+- The full ownership table and release checklist are in [`docs/BRANCH_AND_DOC_RULES.md`](docs/BRANCH_AND_DOC_RULES.md) (Chinese);
 - **Every release must state what was added or fixed** — see [`docs/RELEASE_RULES.md`](docs/RELEASE_RULES.md) (Chinese).
 
 ## 2. Code organization: pure logic goes in `*Core.cs`

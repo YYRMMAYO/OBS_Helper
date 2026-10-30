@@ -39,6 +39,20 @@ public sealed class SceneTemplate
 
     /// <summary>推荐 / 依赖的插件（V2.2 P2-2）：落地前对照本机体检结果标注是否已装，缺失给跳转。</summary>
     public List<TemplatePluginRequirement> RequiresPlugins { get; set; } = new();
+
+    // ------------------------------------------------------------ 虚拟直播间（V3.3.0）
+
+    /// <summary>
+    /// 标签（V3.3.0）：<c>vtuber</c> / <c>chat</c> / <c>game</c> / <c>radio</c> / <c>debut</c> / <c>vertical</c>。
+    /// 模板页与「虚拟直播」页按标签筛选；旧模板没有这个字段时为空列表（行为不变）。
+    /// </summary>
+    public List<string> Tags { get; set; } = new();
+
+    /// <summary>资产包 id（V3.3.0）：预留给内嵌画风资产包；当前模板只依赖本地 overlay 页面。</summary>
+    public string AssetPack { get; set; } = "";
+
+    /// <summary>最低应用版本（V3.3.0）：低于它的客户端不展示该模板（空串 = 不限制）。</summary>
+    public string MinAppVersion { get; set; } = "";
 }
 
 /// <summary>模板对一个插件的依赖（当前均为可选推荐：缺失不阻断落地，仅提示）。</summary>
@@ -97,6 +111,37 @@ public sealed class TemplateSource
     /// 滤镜设置里机器相关的键在捕获阶段就已剔除（见 <c>SceneTemplateCaptureCore.SanitizeSettings</c>）。
     /// </summary>
     public List<TemplateFilter> Filters { get; set; } = new();
+
+    // ------------------------------------------------------------ 虚拟直播间（V3.3.0）
+
+    /// <summary>
+    /// 角色（V3.3.0）：<c>avatar</c> / <c>chat</c> / <c>frame</c> / <c>bg</c> / <c>audio</c> /
+    /// <c>caption</c> / <c>alert</c> / <c>brb</c> / <c>ending</c> / <c>clock</c>。
+    /// 落地后检查清单与 Live2D 绑定都靠它定位「形象位 / 聊天位」；旧模板为空串。
+    /// </summary>
+    public string Role { get; set; } = "";
+
+    /// <summary>
+    /// 本地 overlay 浏览器源（V3.3.0）：<c>page</c> 是应用内置页面（chat.html / frame.html …），
+    /// 落地时由 <c>RoomOverlayServer</c> 解析成带回环 token 的 http 地址。
+    /// </summary>
+    public BrowserSpec? Browser { get; set; }
+}
+
+/// <summary>本地 overlay 浏览器源规格（V3.3.0）。</summary>
+public sealed class BrowserSpec
+{
+    /// <summary>内置页面名（可带查询参数），如 <c>chat.html</c> / <c>frame.html?theme=cream</c>。</summary>
+    public string Page { get; set; } = "";
+
+    public int Width { get; set; } = 1920;
+    public int Height { get; set; } = 1080;
+
+    /// <summary>注入到页面的 CSS（覆盖默认样式；留空用页面自带样式）。</summary>
+    public string Css { get; set; } = "";
+
+    /// <summary>是否把页面音频转发到 OBS 音轨（默认 false，避免与麦克风双声）。</summary>
+    public bool RerouteAudio { get; set; }
 }
 
 /// <summary>模板里的一个滤镜（V3.0 / D6）。</summary>

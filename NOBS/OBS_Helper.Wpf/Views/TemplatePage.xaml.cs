@@ -227,6 +227,9 @@ public partial class TemplatePage : UserControl, INavigationAware
         var counts = new WrapPanel { Margin = new Thickness(0, 0, 0, 6) };
         if (t.IsMine)
             counts.Children.Add(BuildPill(Strings.T("mytemplate.badge"), "BrandBrush"));
+        // V3.3.0：虚拟主播模板在通用模板页也给一枚徽标，避免用户找不到
+        if (t.Tags.Any(x => string.Equals(x, "vtuber", StringComparison.OrdinalIgnoreCase)))
+            counts.Children.Add(BuildPill(Strings.T("template.vtuberBadge"), "BrandBrush"));
         counts.Children.Add(BuildPill(Strings.T("template.sceneCount", t.Scenes.Count), ""));
         var totalSources = t.Scenes.Sum(s => s.Sources.Count);
         var placeholders = t.Scenes.Sum(s => s.Sources.Count(x => x.Placeholder is not null));

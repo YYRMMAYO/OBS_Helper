@@ -2,10 +2,9 @@
 
 <img src="../assets/banner.svg" alt="OBS Helper — 面向直播新手的 OBS 排障工具" width="100%"/>
 
-**当前版本：V3.1.1** —— 提词器手动上下移动（工具栏 / 拖动文字 / 滚轮 / 键盘）与窗口位置微调，
-并修掉「自动滚到末尾只剩空白」；同时包含 V3.1.0 的个性化壁纸库与轮播、一键启动 OBS 并自动开录、
-场景联动 / 点击穿透、倒计时与录像命名模板、静音提醒、UI 令牌与彩蛋。
-详见 [`RELEASE_NOTES_v3.1.1.md`](RELEASE_NOTES_v3.1.1.md)。
+**当前版本：V3.3.0** —— 「虚拟直播」工作台：Live2D 形象一键配置、6 套虚拟直播间模板、
+国内 + 国外平台开播引导、插件广场一键安装 / 回滚 / GitHub 导入，以及无障碍模式与老年模式。
+详见 [`RELEASE_NOTES_v3.3.0.md`](RELEASE_NOTES_v3.3.0.md)。
 
 > **本文档是 Windows 原生 WPF 版的开发向完整文档，随源码一起放在 `NOBS/`**；仓库根的 [`README.md`](../README.md) 是面向用户的完整说明（功能 · 使用 · 安装），本文档额外保留质量基线、逐版本发布说明与代码清单。
 > **当前维护的源码在本目录的 [`OBS_Helper.Wpf/`](OBS_Helper.Wpf/)**；macOS 壳与旧版共享前端仅存档。
@@ -14,11 +13,11 @@
 [![平台](https://img.shields.io/badge/Platform-Windows_7_SP1%2B_%2F_10_%2F_11-0078D6.svg)]()
 [![.NET](https://img.shields.io/badge/.NET-10_%2F_6-512BD4.svg)]()
 [![技术栈](https://img.shields.io/badge/Stack-WPF_%2F_C%23-239120.svg)]()
-[![版本](https://img.shields.io/badge/Release-3.1.1-38bdf8.svg)](https://github.com/YYRMMAYO/OBS_Helper/releases)
+[![版本](https://img.shields.io/badge/Release-3.3.0-38bdf8.svg)](https://github.com/YYRMMAYO/OBS_Helper/releases)
 [![OBS](https://img.shields.io/badge/OBS-32.2.2-302E31.svg)](https://github.com/obsproject/obs-studio/releases)
 [![离线可用](https://img.shields.io/badge/offline--first-2ea44f.svg)]()
 [![增量更新](https://img.shields.io/badge/Incremental%20Update-2.5MB-7dd3fc.svg)]()
-[![测试](https://img.shields.io/badge/Tests-1345%20passed-2ea44f.svg)]()
+[![测试](https://img.shields.io/badge/Tests-1508%20passed-2ea44f.svg)]()
 [![许可](https://img.shields.io/badge/License-MIT-green.svg)](../LICENSE)
 
 [English](README.en.md) · **简体中文**
@@ -26,7 +25,7 @@
 </div>
 
 > **默认分支 `master` 是正式版（稳定通道）**：功能收敛、经过完整回归与发布验证，适合日常直播 / 录制。
-> `dev` 分支是 DEV 测试通道（`01`、`02`、`03` …，**不带字母 V**），更超前也可能不稳定，只从 dev Release 页更新。
+> **V3.3.0 起 DEV 测试分支已删除**：正式版直接走 `master`，历史 `01`/`02`/`03` 标签仍保留在 Release 页，但不再产生新的 DEV 构建。
 
 **OBS帮助助手**（V2.9.6 前的名字是「OBS 排障助手」，同一个软件、同一条升级链路）是面向直播新手的 OBS Studio 排障工具：**纯离线可用**——212 条问题的知识库、排障指引、日志分析规则全部内嵌在程序里，不联网也能查；连上 OBS 之后还能远程控制场景、录制与推流，并做一键体检。
 
@@ -38,7 +37,7 @@
 
 ---
 
-**目录**：[版本通道](#版本通道正式版与-dev-测试版) · [宣传视频](#宣传视频) · [V3.1.1 新增](#v311-新增) · [V3.1.0 新增](#v310-新增) · [更早版本](#v300-新增) · [亮点](#亮点) · [功能](#功能) · [智能诊断](#智能诊断) · [隐私与安全](#隐私与安全) · [安装与更新](#安装与更新) · [构建](#构建) · [工程结构](#工程结构) · [质量基线](#质量基线) · [已知边界](#已知边界) · [文档](#文档) · [捐赠支持](#捐赠支持) · [许可](#许可)
+**目录**：[版本通道](#版本通道正式版与-dev-测试版) · [宣传视频](#宣传视频) · [V3.3.0 新增](#v330-新增) · [V3.1.1 新增](#v311-新增) · [V3.1.0 新增](#v310-新增) · [更早版本](#v300-新增) · [亮点](#亮点) · [功能](#功能) · [智能诊断](#智能诊断) · [隐私与安全](#隐私与安全) · [安装与更新](#安装与更新) · [构建](#构建) · [工程结构](#工程结构) · [质量基线](#质量基线) · [已知边界](#已知边界) · [文档](#文档) · [捐赠支持](#捐赠支持) · [许可](#许可)
 
 ---
 
@@ -46,12 +45,12 @@
 
 | 通道 | 版本号样式 | 定位 | 更新来源 |
 | --- | --- | --- | --- |
-| **正式版**（`master`） | `V3.1.1` | **稳定优先**：功能收敛、经过完整回归与发布验证，适合日常直播 / 录制 | 正式 Release 页 · 蓝奏云 · 应用内增量更新 |
+| **正式版**（`master`） | `V3.3.0` | **稳定优先**：功能收敛、经过完整回归与发布验证，适合日常直播 / 录制 | 正式 Release 页 · 蓝奏云 · 应用内增量更新 |
 | **DEV 测试版**（`dev`） | `01`、`02`、`03` …（**不带字母 V**） | **更超前**：开发中的功能先落到这里，**可能包含不稳定功能**、行为变更与已知缺陷 | **只**从 **dev Release 页** 检查更新 |
 
 - **DEV 为什么单独走一条通道**：DEV 的编号是自增的**构建序号**（每出一个 dev 构建 +1，由 dev 分支的通道实现维护），
   和正式版的 `V主.次.修` 没有可比性。因此 DEV 构建**只认 `01` 这类纯数字 tag**、
-  正式版**只认 `V3.1.1` 这类 tag** —— 两类 tag 挂在同一个仓库里，也不会互相被当成新版本；
+  正式版**只认 `V3.3.0` 这类 tag** —— 两类 tag 挂在同一个仓库里，也不会互相被当成新版本；
 - **DEV 版目前不出安装包、不走蓝奏云**：更新提示只把你引导到 dev Release 页（`/releases/tag/0X`）；
   正式版的增量更新、蓝奏云镜像与安装包全部按原样服务正式版用户；
 - **选哪条**：想要稳就用正式版；愿意帮忙试新功能、并且能接受「这个版本可能坏」再装 DEV 版。
@@ -76,6 +75,19 @@
 </div>
 
 ---
+
+## V3.3.0 新增
+
+> 完整说明见 [`RELEASE_NOTES_v3.3.0.md`](RELEASE_NOTES_v3.3.0.md)。
+
+- **虚拟直播工作台**（一级导航「虚拟直播」）：形象（Live2D）/ 直播间（模板）/ 开播（平台引导）三个 Tab，把「从零到开播」串成一条路径。
+- **Live2D 一键配置**：模型安全校验（拒绝目录穿越 / 符号链接 / 可执行文件）→ 目录清单 SHA-256 → VTube Studio 公开 WebSocket API（鉴权 / 加载模型）→ OBS 采集源（NDI → Spout2 → 虚拟摄像头 → 窗口采集）→ 布局预设。
+- **虚拟直播间**：6 套模板（杂谈 / 游戏 / 电台 / 纪念回 / 竖屏 / 三件套）+ 本地 overlay（聊天框、边框、BRB、Ending、倒计时，回环 + 随机 token + CSP）+ 应用后检查清单。
+- **开播引导**：16 个国内外平台目录（直推 / 虚拟摄像头 / 仅图文）；直推走「写入 → 复核 → 开播 → 确认」；推流码只进内存，可选加密保存。
+- **插件广场**：事务安装（哈希 / 架构 / OBS 关闭校验 / 备份回滚）、已安装管理、GitHub `owner/repo` 导入（强警告 + 用户确认），不静默安装。
+- **无障碍模式 / 老年模式**：模式组合 → 全局令牌（字号、密度、焦点、导航宽度、跳转链接），系统减少动画与文本缩放作为下限。
+- **安全与合规**：本地 HTTP 只绑回环；zip slip / 符号链接 / 可执行脚本在解压前拒绝；PE 架构校验；密钥不落日志。
+- **开源署名**：README、仓库介绍与软件「关于」界面列出所用开源项目与许可证，见 [`docs/OPEN_SOURCE_ATTRIBUTION.md`](docs/OPEN_SOURCE_ATTRIBUTION.md)。
 
 ## V3.1.1 新增
 
@@ -103,7 +115,7 @@
 **测试**
 
 - 新增 4 项单元测试：滚动终点、拖动位移、窗口移动夹取、脚本末尾空行；
-- 全量 1345 项单元测试连续 3 轮通过，双构建（net10.0-windows / net6.0-windows）+ 自检 + 静态检查全绿。
+- 全量 1508 项单元测试连续 3 轮通过，双构建（net10.0-windows / net6.0-windows）+ 自检 + 静态检查全绿。
 
 ## V3.1.0 新增
 
@@ -331,7 +343,7 @@
 
 - **国际化：中文 / English 即时切换（默认中文）**。界面、托盘菜单与通知、报错提示、
   日志分析规则与结论、各类体检结论、诊断报告与导出内容全部双语，
-  **截至 V3.1.1 为 2393 条**文案键（V2.9.2 时为 1670 条，此后每版都在加；
+  **截至 V3.3.0 为 2682 条**文案键（V2.9.2 时为 1670 条，此后每版都在加；
   可用 `python scripts/check_docs.py` 实测当前值）。
   切换沿用换肤那套已经跑熟的机制（文案整体写进 `Application.Resources`，XAML 用
   `{DynamicResource Loc.*}` 引用），因此**与换主题一样即时生效、不用重启**；
@@ -575,7 +587,7 @@ NOBS/
     Assets/                problems[.en-US].json / plugins[.en-US].json / scene_templates[.en-US].json /
                            troubleshooting[.en-US].md（中英并列，内嵌种子）、feedback_qr.png、图标
   OBS_Helper.Wpf/OBS_Helper_Setup.iss  Inno Setup 脚本（按 TFM 传 MinVersion / 输出名，UTF-8 带 BOM）
-  OBS_Helper.Wpf.Tests/    1345 项单测（直接链接纯逻辑源文件，不引用整个 WPF 工程）
+  OBS_Helper.Wpf.Tests/    1508 项单测（直接链接纯逻辑源文件，不引用整个 WPF 工程）
   build.ps1                Windows 构建与打包脚本（双目标：安装包 / 便携 / 增量包 / 清单 / 内容资产）
   scripts/verify_delta.py  增量包发布校验工具（模拟升级 + 全文件 SHA-256 比对）
 ```
@@ -604,10 +616,10 @@ XAML 一律用 `DynamicResource`（主题键直接用、文案键写作 `Loc.<�
 
 ## 质量基线
 
-- **1345 项单元测试全部通过**（V3.1.1 发布时；V3.0.0 时为 1209 项。覆盖壁纸校验 / 迁移 / 轮播、
+- **1508 项单元测试全部通过**（V3.1.1 发布时；V3.0.0 时为 1209 项。覆盖壁纸校验 / 迁移 / 轮播、
   连接错误分类与重试策略、首次同意与倒计时归一化、提词器数值与场景匹配、命名模板净化与冲突、
-  静音提醒阈值与防重复）；Headless 自检 26 项全部 PASS，
-  且**主构建与 Win7 兼容构建各跑一次**（18 条路由用例（覆盖 17 条路由）+ 8 项非路由检查：新手引导覆盖层（含逐步跳转校验）、迷你小窗
+  静音提醒阈值与防重复）；Headless 自检 29 项全部 PASS，
+  且**主构建与 Win7 兼容构建各跑一次**（21 条路由用例（覆盖 18 条路由）+ 8 项非路由检查：新手引导覆盖层（含逐步跳转校验）、迷你小窗
   + 文案资源解析 + 语言切换往返 + 逐页语言重放 + 内容回退提示条 + D7 连接态护栏 + 双构建协议分支）；
 - V3.0.0 新增的测试盯的是本轮最容易「静默失效」的地方：v5 与 v4 的请求名（用官方协议表守卫，
   写错即红）、变换字段形状（v5 扁平裁剪 vs v4 嵌套裁剪，两边各有断言）、深拷贝字段保全、
@@ -628,7 +640,7 @@ XAML 一律用 `DynamicResource`（主题键直接用、文案键写作 `Loc.<�
 
 ## 已知边界
 
-- Windows 7 **真机未验证**：兼容构建的本机自检（.NET 6 桌面运行时）26 项全过、安装包 MinVersion 也正确下发，
+- Windows 7 **真机未验证**：兼容构建的本机自检（.NET 6 桌面运行时）29 项全过、安装包 MinVersion 也正确下发，
   但**没有在真实 Windows 7 机器上装过、跑过**；旧协议（obs-websocket 4.x）握手**未对真实 OBS 27 验证过**；
 - 英译**未对着英文版 OBS 逐条核对菜单路径的逐字一致性**，也未经母语者校订
   （技术准确、术语统一，但不等于出版级地道）；
@@ -678,3 +690,21 @@ XAML 一律用 `DynamicResource`（主题键直接用、文案键写作 `Loc.<�
 ## 许可
 
 MIT，见 [LICENSE](../LICENSE)。
+
+### 开源组件与许可
+
+本项目基于以下开源项目与公开协议开发，在此致谢（完整清单、许可证与边界见
+[`docs/OPEN_SOURCE_ATTRIBUTION.md`](docs/OPEN_SOURCE_ATTRIBUTION.md)）：
+
+| 项目 | 许可证 | 用途 | 边界 |
+|---|---|---|---|
+| [OBS Studio](https://github.com/obsproject/obs-studio) | GPL-2.0 | 被控制的目标软件 | 只做外部集成，不捆绑、不修改 |
+| [obs-websocket](https://github.com/obsproject/obs-websocket) | GPL-2.0 | 场景 / 录制 / 推流 / 虚拟摄像头控制 | 按公开协议自行实现 C# 客户端，不复制代码 |
+| [VTube Studio API](https://github.com/DenchiSoft/VTubeStudio) | MIT | Live2D 模型加载 / 鉴权 | 只使用公开 WebSocket API，不注入进程 |
+| [.NET / WPF](https://github.com/dotnet/wpf) | MIT | 桌面运行时与 UI 框架 | 自包含发布，运行时随包携带 |
+| [xUnit](https://github.com/xunit/xunit) | Apache-2.0 | 单元测试 | 仅测试工程，不进发布物 |
+| [DistroAV](https://github.com/DistroAV/DistroAV) / [obs-spout2-plugin](https://github.com/Off-World-Live/obs-spout2-plugin) | GPL-2.0 | Live2D 的 NDI / Spout2 采集 | 只做外部可选插件引导，不复制、不捆绑 |
+| [Watt Toolkit](https://github.com/BeyondDimension/SteamTools) | GPL-3.0 | GitHub 加速 | 只检测 / 启动 / 引导，不修改其配置 |
+
+> Live2D Cubism SDK 为专有许可，本项目**不包含**、**不分发**任何 Cubism 运行时或示例模型；
+> 用户自备的模型归用户所有。主程序仍以 **MIT** 许可发布。

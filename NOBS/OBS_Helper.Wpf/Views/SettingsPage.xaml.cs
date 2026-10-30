@@ -7,6 +7,7 @@ using OBS_Helper.Wpf.Errors;
 using OBS_Helper.Wpf.Models.Shell;
 using OBS_Helper.Wpf.Navigation;
 using OBS_Helper.Wpf.Services;
+using OBS_Helper.Wpf.Services.Appearance;
 using OBS_Helper.Wpf.Services.Ai;
 using OBS_Helper.Wpf.Services.ObsConfig;
 using OBS_Helper.Wpf.Services.Recording;
@@ -31,6 +32,54 @@ public partial class SettingsPage : UserControl, INavigationAware
     public SettingsPage()
     {
         InitializeComponent();
+        BuildOssList();
+    }
+
+    /// <summary>
+    /// 开源组件与许可（V3.3.0）：关于界面必须能直接看到「用了谁的代码 / 协议、什么许可证」。
+    /// 只列真正影响本项目的项目；GPL 项目一律只做外部集成，不复制代码。
+    /// </summary>
+    private static readonly (string Name, string License, string Url, string UsageKey)[] OssCredits =
+    {
+        ("OBS Studio", "GPL-2.0", "https://github.com/obsproject/obs-studio", "settings.about.oss.usage.external"),
+        ("obs-websocket", "GPL-2.0", "https://github.com/obsproject/obs-websocket", "settings.about.oss.usage.protocol"),
+        ("VTube Studio API", "MIT", "https://github.com/DenchiSoft/VTubeStudio", "settings.about.oss.usage.protocol"),
+        (".NET / WPF", "MIT", "https://github.com/dotnet/wpf", "settings.about.oss.usage.runtime"),
+        ("xUnit", "Apache-2.0", "https://github.com/xunit/xunit", "settings.about.oss.usage.test"),
+        ("DistroAV", "GPL-2.0", "https://github.com/DistroAV/DistroAV", "settings.about.oss.usage.external"),
+        ("obs-spout2-plugin", "GPL-2.0", "https://github.com/Off-World-Live/obs-spout2-plugin", "settings.about.oss.usage.external"),
+        ("Watt Toolkit", "GPL-3.0", "https://github.com/BeyondDimension/SteamTools", "settings.about.oss.usage.guidance")
+    };
+
+    private void BuildOssList()
+    {
+        OssList.Children.Clear();
+        foreach (var credit in OssCredits)
+        {
+            var row = new WrapPanel { Margin = new Thickness(0, 0, 0, 6) };
+
+            var label = new TextBlock
+            {
+                Text = $"{credit.Name} · {credit.License} · {Strings.T(credit.UsageKey)}",
+                TextWrapping = TextWrapping.Wrap,
+                VerticalAlignment = VerticalAlignment.Center
+            };
+            label.SetResourceReference(TextBlock.FontSizeProperty, "FontSizeSm");
+            label.SetResourceReference(TextBlock.ForegroundProperty, "TextBrush");
+            row.Children.Add(label);
+
+            var open = new Button
+            {
+                Content = Strings.T("settings.about.oss.open"),
+                Style = (Style)Application.Current.Resources["LinkButton"],
+                Margin = new Thickness(8, 0, 0, 0),
+                Tag = credit.Url
+            };
+            open.Click += OnOpenLink;
+            row.Children.Add(open);
+
+            OssList.Children.Add(row);
+        }
     }
 
     public async Task OnNavigatedToAsync(object? parameter)
@@ -95,6 +144,11 @@ public partial class SettingsPage : UserControl, INavigationAware
             HighContrastSwitch.IsChecked = ap.Settings.HighContrast;
             ReduceMotionSwitch.IsChecked = ap.Settings.ReduceMotion;
             EasterEggSwitch.IsChecked = ap.Settings.EasterEggEnabled;
+
+            // V3.3.0 无障碍 / 老年模式
+            AccessibilityModeSwitch.IsChecked = ap.AccessibilityMode;
+            ElderModeSwitch.IsChecked = ap.ElderMode;
+            SyncUiProfileSummary();
 
             BuildAccentSwatches();
             BuildLanguageSwitcher();
@@ -849,6 +903,60 @@ public partial class SettingsPage : UserControl, INavigationAware
     {
         if (_syncing) return;
         AppServices.Appearance.SetReduceMotion(ReduceMotionSwitch.IsChecked == true);
+    }
+
+    // ------------------------------------------------------------ 无障碍 / 老年模式（V3.3.0）
+
+    private void OnAccessibilityModeToggled(object sender, RoutedEventArgs e)
+    {
+        if (_syncing) return;
+        AppServices.Appearance.SetAccessibilityMode(AccessibilityModeSwitch.IsChecked == true);
+        SyncUiProfileSummary();
+    }
+
+    private void OnElderModeToggled(object sender, RoutedEventArgs e)
+    {
+        if (_syncing) return;
+        AppServices.Appearance.SetElderMode(ElderModeSwitch.IsChecked == true);
+        SyncUiProfileSummary();
+    }
+
+    private void OnResetUiProfileClick(object sender, RoutedEventArgs e)
+    {
+        AppServices.Appearance.ResetUiProfile();
+        _syncing = true;
+        try
+        {
+            AccessibilityModeSwitch.IsChecked = false;
+            ElderModeSwitch.IsChecked = false;
+        }
+        finally
+        {
+            _syncing = false;
+        }
+        SyncUiProfileSummary();
+        AppServices.Toast.Show(Strings.T("settings.a11y.resetDone"), "ok");
+    }
+
+    /// <summary>模式摘要（字号 / 密度 / 布局）：让用户看到「模式到底改了什么」。</summary>
+    private void SyncUiProfileSummary()
+    {
+        try
+        {
+            var profile = AppServices.Appearance.CurrentUiProfile;
+            UiProfileSummaryText.Text = Strings.T(
+                "settings.a11y.summary",
+                Math.Round(profile.FontScale * 100),
+                Strings.T("settings.a11y.density." + UiProfileCore.DensityKey(profile.Density)),
+                Strings.T(profile.Layout == UiLayoutMode.Simplified
+                    ? "settings.a11y.layout.simplified"
+                    : "settings.a11y.layout.full"));
+        }
+        catch (Exception ex)
+        {
+            UiProfileSummaryText.Text = "";
+            FileLogger.Warn("A11y", $"刷新界面模式摘要失败：{ex.Message}");
+        }
     }
 
     private void OnEasterEggToggled(object sender, RoutedEventArgs e)

@@ -5,6 +5,7 @@ using System.Windows.Media;
 using System.Windows.Media.Effects;
 using System.Windows.Media.Imaging;
 using Microsoft.Win32;
+using OBS_Helper.Wpf.Services.Appearance;
 using OBS_Helper.Wpf.Services.Host;
 
 namespace OBS_Helper.Wpf.Services;
@@ -109,6 +110,28 @@ public sealed class AppearanceSettings
     /// <summary>品牌强调色 key（见 AccentScheme.Catalog），默认青瓷绿。</summary>
     [JsonPropertyName("accent")]
     public string Accent { get; set; } = "teal";
+
+    // ------------------------------------------------------------ 无障碍 / 老年模式（V3.3.0）
+
+    /// <summary>无障碍模式：字号下限 +15%、焦点始终可见、减少动画、显示跳转链接等。</summary>
+    [JsonPropertyName("a11yMode")]
+    public bool AccessibilityMode { get; set; }
+
+    /// <summary>老年模式：1.3× 字号 + 宽大密度 + 简化布局。可选预设，不推断年龄。</summary>
+    [JsonPropertyName("elderMode")]
+    public bool ElderMode { get; set; }
+
+    /// <summary>用户显式选择的密度（"compact" / "comfortable" / "spacious"）；空串表示跟随模式预设。</summary>
+    [JsonPropertyName("density")]
+    public string Density { get; set; } = "";
+
+    /// <summary>用户显式选择的减少动画（"on" / "off"）；空串表示跟随模式预设与系统设置。</summary>
+    [JsonPropertyName("reduceMotionOverride")]
+    public string ReduceMotionOverride { get; set; } = "";
+
+    /// <summary>用户显式选择的布局（"full" / "simplified"）；空串表示跟随模式预设。</summary>
+    [JsonPropertyName("layoutMode")]
+    public string LayoutMode { get; set; } = "";
 }
 
 /// <summary>
@@ -365,6 +388,93 @@ public sealed class AppearanceService : IDisposable
     public void SetReduceMotion(bool on)
     {
         Settings.ReduceMotion = on;
+        // V3.3.0：显式设置优先于「无障碍 / 老年模式」的预设（预设只改默认值）
+        Settings.ReduceMotionOverride = on ? "on" : "off";
+        SaveAndApply();
+    }
+
+    // ------------------------------------------------------------ 无障碍 / 老年模式（V3.3.0）
+
+    /// <summary>无障碍模式是否开启。</summary>
+    public bool AccessibilityMode => Settings.AccessibilityMode;
+
+    /// <summary>老年模式是否开启。</summary>
+    public bool ElderMode => Settings.ElderMode;
+
+    /// <summary>当前生效的界面令牌（字号 / 密度 / 焦点 / 导航宽度…）。</summary>
+    public UiProfileTokens CurrentUiProfile => UiProfileCore.Compute(BuildUiProfileInput());
+
+    /// <summary>实际生效的「减少动画」（系统设置与模式预设都算下限）。</summary>
+    public bool ReduceMotionEffective => CurrentUiProfile.ReduceMotion;
+
+    private UiProfileInput BuildUiProfileInput() => new()
+    {
+        AccessibilityMode = Settings.AccessibilityMode,
+        ElderMode = Settings.ElderMode,
+        SystemTextScale = SystemTextScaleFactor,
+        SystemReduceMotion = IsSystemReduceMotion,
+        FontScaleKey = Settings.FontScale,
+        DensityKey = Settings.Density,
+        ReduceMotionOverride = Settings.ReduceMotionOverride switch
+        {
+            "on" => true,
+            "off" => false,
+            // 老配置没有 override 字段：ReduceMotion=true 视为显式开启，false 视为未设置
+            _ => Settings.ReduceMotion ? true : null
+        },
+        LayoutKey = Settings.LayoutMode
+    };
+
+    /// <summary>
+    /// 系统「显示动画」开关的反面。WPF 不直接暴露「减少动画」，只能读 ClientAreaAnimation：
+    /// 系统关闭动画时它为 false。读不到按「不减少」处理，不让异常把外观初始化打断。
+    /// </summary>
+    public static bool IsSystemReduceMotion
+    {
+        get
+        {
+            try { return !SystemParameters.ClientAreaAnimation; }
+            catch (Exception) { return false; }
+        }
+    }
+
+    /// <summary>切换无障碍模式。</summary>
+    public void SetAccessibilityMode(bool on)
+    {
+        Settings.AccessibilityMode = on;
+        SaveAndApply();
+    }
+
+    /// <summary>切换老年模式（可选预设，不推断年龄）。</summary>
+    public void SetElderMode(bool on)
+    {
+        Settings.ElderMode = on;
+        SaveAndApply();
+    }
+
+    /// <summary>设置密度（显式选择优先于模式预设）。</summary>
+    public void SetDensity(UiDensity density)
+    {
+        Settings.Density = UiProfileCore.DensityKey(density);
+        SaveAndApply();
+    }
+
+    /// <summary>设置布局形态（显式选择优先于模式预设）。</summary>
+    public void SetLayoutMode(UiLayoutMode mode)
+    {
+        Settings.LayoutMode = UiProfileCore.LayoutKey(mode);
+        SaveAndApply();
+    }
+
+    /// <summary>恢复默认：关闭两个模式，清空所有单项覆盖（字号 / 高对比等仍保留用户原值）。</summary>
+    public void ResetUiProfile()
+    {
+        Settings.AccessibilityMode = false;
+        Settings.ElderMode = false;
+        Settings.Density = "";
+        Settings.LayoutMode = "";
+        Settings.ReduceMotionOverride = "";
+        Settings.ReduceMotion = false;
         SaveAndApply();
     }
 
@@ -549,6 +659,9 @@ public sealed class AppearanceService : IDisposable
         // V3.0：高对比 = 应用内开关 OR 系统高对比主题（见 HighContrastEffective 的注释）
         var hc = HighContrastEffective;
         _lastSystemHighContrast = IsSystemHighContrast;
+        // V3.3.0：无障碍 / 老年模式的组合结果 —— 字号、密度、焦点、导航宽度都从这里取，
+        // 页面不再各自判断模式（避免「模式打架」与两套互相矛盾的规则）。
+        var profile = CurrentUiProfile;
 
         // ---- 品牌色（v2.7.1 强调色体系）：由用户在设置页选择，浅 / 深色各一套色阶。
         // BrandBrush 既作主按钮背景（配 BrandForegroundBrush 反衬文字），也大量用作
@@ -632,26 +745,19 @@ public sealed class AppearanceService : IDisposable
         res["SpacingMd"] = 12.0;
         res["SpacingLg"] = 16.0;
         res["SpacingXl"] = 24.0;
-        res["MotionFast"] = Settings.ReduceMotion
+        res["MotionFast"] = profile.ReduceMotion
             ? new Duration(TimeSpan.Zero)
             : new Duration(TimeSpan.FromMilliseconds(100));
-        res["MotionSlow"] = Settings.ReduceMotion
+        res["MotionSlow"] = profile.ReduceMotion
             ? new Duration(TimeSpan.Zero)
             : new Duration(TimeSpan.FromMilliseconds(300));
 
         // ---- 字号档位
         //
-        // V3.0 无障碍：再乘一次 Windows「辅助功能 → 文本大小」的缩放系数。
-        // 应用内档位最大 1.28×，对低视力用户常常不够；系统那个滑块是他们已经习惯的入口，
-        // 这里跟随它（钳到 1.0~2.0，避免极端值把界面撑破），用户仍可用应用内档位微调。
-        var f = FontScale switch
-        {
-            AppFontScale.Sm => 0.92,
-            AppFontScale.Lg => 1.12,
-            AppFontScale.Xl => 1.28,
-            _ => 1.0
-        };
-        f *= SystemTextScaleFactor;
+        // V3.3.0：字号由 UiProfileCore 统一算出 —— 用户档位 → 无障碍 / 老年模式下限 →
+        // Windows「辅助功能 → 文本大小」的缩放（系统是下限，不是上限）。
+        // 应用内档位最大 1.28×，对低视力用户常常不够；模式打开后至少 1.15× / 1.30×。
+        var f = profile.FontScale;
         res["FontScaleFactor"] = f;
         res["FontSizeXs"] = Math.Round(11 * f, 1);
         res["FontSizeSm"] = Math.Round(12.5 * f, 1);
@@ -662,10 +768,28 @@ public sealed class AppearanceService : IDisposable
         res["FontSizeH1"] = Math.Round(28 * f, 1);
 
         // ---- 动画时长：减少动画时直接归零，样式里的 Duration 统一引用它
-        res["MotionDuration"] = Settings.ReduceMotion
+        res["MotionDuration"] = profile.ReduceMotion
             ? new Duration(TimeSpan.Zero)
             : new Duration(TimeSpan.FromMilliseconds(160));
-        res["ReduceMotion"] = Settings.ReduceMotion;
+        res["ReduceMotion"] = profile.ReduceMotion;
+
+        // ---- 无障碍 / 老年模式的布局令牌（V3.3.0 / P0-1）
+        // 页面与样式只引用这些键，不再各写一套 if；切换模式后 DynamicResource 即时生效。
+        res["NavWidth"] = new GridLength(profile.NavWidth);
+        res["NavItemMinHeight"] = profile.NavItemMinHeight;
+        res["NavItemPadding"] = new Thickness(
+            profile.NavItemPaddingX, profile.NavItemPaddingY,
+            profile.NavItemPaddingX, profile.NavItemPaddingY);
+        res["ControlMinHeight"] = profile.ControlMinHeight;
+        res["ButtonMinSize"] = profile.ButtonMinSize;
+        res["CardPadding"] = new Thickness(profile.CardPadding);
+        res["FocusThickness"] = new Thickness(profile.FocusThickness);
+        res["FocusOffset"] = profile.FocusOffset;
+        res["LineHeightFactor"] = profile.LineHeightFactor;
+        res["ShowSkipLink"] = profile.ShowSkipLink;
+        res["UiSimplifyLayout"] = profile.Layout == UiLayoutMode.Simplified;
+        res["UiAssistMode"] = profile.AnyAssistMode;
+        res["UiDensity"] = UiProfileCore.DensityKey(profile.Density);
 
         // ---- 【自定义背景 v1.10】内容区背景：默认跟随主题；可选纯色 / 本地图片。
         // 高对比模式强制回退默认底，保证可读性优先于个性化。

@@ -4,7 +4,7 @@
 
 **OBS Helper · OBS帮助助手** — an OBS troubleshooting / recording / streaming assistant for streamers who are just getting started (native Windows WPF)
 
-**Current release: V3.1.1** (stable) · DEV test builds: `01`, `02`, `03` …
+**Current release: V3.3.0** (stable) · the DEV test channel is retired (the `dev` branch was deleted in V3.3.0)
 
 **Focus of this release**: the teleprompter's manual up/down movement is complete (toolbar / dragging the text / mouse wheel / keyboard) plus finer window positioning, and auto-scroll no longer ends on a blank screen. See [`NOBS/RELEASE_NOTES_v3.1.1.md`](NOBS/RELEASE_NOTES_v3.1.1.md) for details.
 
@@ -16,7 +16,7 @@
 [![OBS](https://img.shields.io/badge/OBS-32.2.2-302E31.svg)](https://github.com/obsproject/obs-studio/releases)
 [![offline-first](https://img.shields.io/badge/offline--first-2ea44f.svg)]()
 [![Incremental Update](https://img.shields.io/badge/Incremental%20Update-2.5MB-7dd3fc.svg)]()
-[![Tests](https://img.shields.io/badge/Tests-1345%20passed-2ea44f.svg)]()
+[![Tests](https://img.shields.io/badge/Tests-1508%20passed-2ea44f.svg)]()
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
 **English** · [简体中文](README.md)
@@ -24,9 +24,9 @@
 </div>
 
 > **The default branch of this repository is `master` (stable channel)**: settled features, full regression and release verification — the right choice for everyday streaming and recording.
-> The `dev` branch is the DEV test channel (`01`, `02`, `03`…, **no leading V**): further ahead and potentially unstable; update it only from the dev Releases page.
+> **The DEV test branch was deleted in V3.3.0**: stable releases go straight from `master`; historical `01`/`02`/`03` tags remain on the Releases page, but no new DEV builds are produced.
 
-**OBS Helper** (known as 「OBS 排障助手」 before V2.9.6 — the same app on the same upgrade path) is an OBS Studio troubleshooting and recording assistant for streamers who are just getting started: **it works fully offline** — the 212-entry knowledge base, the troubleshooting guide and the log-analysis rules are all embedded in the app, so they are searchable without a connection; once connected to the local OBS you also get one-click health checks, remote control of scenes / recording / streaming, and recording-environment deployment. **Since V2.9.4** the whole journey from "configure OBS" to "start recording" fits into one card on the home page; **since V3.1.0** OBS can also be launched and recording started with one click when it is not running; **V3.1.1** completes the teleprompter's manual up/down movement and window nudging.
+**OBS Helper** (known as 「OBS 排障助手」 before V2.9.6 — the same app on the same upgrade path) is an OBS Studio troubleshooting and recording assistant for streamers who are just getting started: **it works fully offline** — the 212-entry knowledge base, the troubleshooting guide and the log-analysis rules are all embedded in the app, so they are searchable without a connection; once connected to the local OBS you also get one-click health checks, remote control of scenes / recording / streaming, and recording-environment deployment. **Since V2.9.4** the whole journey from "configure OBS" to "start recording" fits into one card on the home page; **since V3.1.0** OBS can also be launched and recording started with one click when it is not running; **V3.1.1** completed the teleprompter's manual up/down movement and window nudging; **V3.3.0** adds the **Virtual Live** workspace (Live2D avatar · 6 room templates · 16-platform go-live guidance), one-click plugin install / rollback / GitHub search, and Accessibility / Elder modes.
 
 This is the **native WPF rewrite** of the original Blazor WebAssembly + WebView2 version (source in [`NOBS/`](NOBS/)): feature-for-feature parity, but the browser engine is gone — a cold start goes straight to the window, it ships as a self-contained single folder, and it needs neither WebView2 nor a .NET runtime install. **Since V2.9.2 the UI switches between Chinese and English instantly**, and **since V2.9.3 even the bundled offline content is bilingual** (the 212-entry knowledge base / 57-entry plugin catalog / 12 scene templates / the whole troubleshooting guide are translated, and follow the language switch immediately); **since V2.2 there is a built-in plugin square** (57 curated plugins plus a read-only local health check; the v1.4 catalog has been fully re-audited); **since V2.1 updates are incremental and the knowledge base updates independently**.
 
@@ -38,7 +38,7 @@ This is the **native WPF rewrite** of the original Blazor WebAssembly + WebView2
 
 ---
 
-**Contents**: [Start here](#start-here) · [5-minute quick start](#5-minute-quick-start) · [Highlights at a glance](#highlights-at-a-glance) · [Features](#features) · [Smart diagnostics engine](#smart-diagnostics-engine) · [Release channels: stable vs DEV](#release-channels-stable-vs-dev) · [What's new in V3.1.1](#whats-new-in-v311) · [Version history](#version-history) · [Privacy & security](#privacy--security) · [Installation & updates](#installation--updates) · [Build](#build) · [Project structure](#project-structure) · [Quality baseline & known limits](#quality-baseline--known-limits) · [Promo video](#promo-video) · [Donate](#donate) · [License](#license)
+**Contents**: [Start here](#start-here) · [5-minute quick start](#5-minute-quick-start) · [Highlights at a glance](#highlights-at-a-glance) · [Features](#features) · [Smart diagnostics engine](#smart-diagnostics-engine) · [Release channels: stable vs DEV](#release-channels-stable-vs-dev) · [What's new in V3.3.0](#whats-new-in-v330) · [What's new in V3.1.1](#whats-new-in-v311) · [Version history](#version-history) · [Privacy & security](#privacy--security) · [Installation & updates](#installation--updates) · [Build](#build) · [Project structure](#project-structure) · [Quality baseline & known limits](#quality-baseline--known-limits) · [Promo video](#promo-video) · [Donate](#donate) · [License](#license)
 
 ---
 
@@ -165,12 +165,24 @@ When the cloud / free engine fails it **falls back to the local engine automatic
 
 | Channel | Version style | What it is | Where updates come from |
 | --- | --- | --- | --- |
-| **Stable** (`master`) | `V3.1.1` | **Stable first**: settled features, full regression and release verification — the right choice for everyday streaming / recording | The regular Releases page · the Lanzou mirror · in-app incremental updates |
-| **DEV (test)** (`dev`) | `01`, `02`, `03` … (**no leading V**) | **Further ahead**: work in progress lands here first and **may include unstable features**, behaviour changes and known bugs | **Only** the **dev Releases page** |
+| **Stable** (`master`) | `V3.3.0` | **Stable first**: settled features, full regression and release verification — the right choice for everyday streaming / recording | The regular Releases page · the Lanzou mirror · in-app incremental updates |
+| ~~DEV (test) (`dev`)~~ | ~~`01`, `02`, `03` …~~ | **Retired in V3.3.0**: the branch is deleted and no new builds are produced | Historical Releases only |
 
-- **Why DEV has its own channel**: DEV numbering is an auto-incrementing **build number** (+1 for every dev build, maintained by the dev branch's channel implementation) and is not comparable to the stable `Vmajor.minor.patch` scheme. A DEV build therefore **only recognises plain-number tags such as `01`**, and a stable build **only recognises tags such as `V3.1.1`** — even though both kinds of tag live in the same repository, neither channel mistakes the other for a newer version;
+- **Why DEV has its own channel**: DEV numbering is an auto-incrementing **build number** (+1 for every dev build, maintained by the dev branch's channel implementation) and is not comparable to the stable `Vmajor.minor.patch` scheme. A DEV build therefore **only recognises plain-number tags such as `01`**, and a stable build **only recognises tags such as `V3.3.0`** — even though both kinds of tag live in the same repository, neither channel mistakes the other for a newer version;
 - **DEV builds are not packaged and do not use the Lanzou mirror yet**: the update prompt only points you at the dev Releases page (`/releases/tag/0X`); the stable channel's incremental updates, Lanzou mirror and installers keep serving stable users exactly as before;
 - **Which one should you pick?** Use stable if you want stability; take DEV if you are happy to help test early features and can live with a build that may break. For DEV issues, go through *Help & feedback* as usual and put `DEV 0X` (e.g. `DEV 03`) in the description so it is easier to locate.
+
+## What's new in V3.3.0
+
+> Full details: [`RELEASE_NOTES_v3.3.0.md`](NOBS/RELEASE_NOTES_v3.3.0.md).
+
+- **Virtual Live workspace**: a top-level entry with Avatar (Live2D) / Room (templates) / Go live (platform guidance) tabs.
+- **Live2D setup**: model safety checks (path traversal / symlinks / executables), SHA-256 manifest, VTube Studio public WebSocket API (auth / model load), OBS capture (NDI → Spout2 → virtual camera → window capture) and layout presets.
+- **Virtual rooms**: 6 templates + local overlay pages (chat, frame, BRB, ending, countdown; loopback + random token + CSP) and an after-apply checklist.
+- **Go-live guidance**: 16 platforms (direct / virtual camera / manual); direct streaming does write → verify → start → confirm; stream keys stay in memory unless explicitly remembered.
+- **Plugin marketplace**: transactional install (SHA-256 / x64 PE / OBS closed / backup & rollback), installed management, `owner/repo` import, native GitHub search (topic:obs-plugin) and a one-click catalog update.
+- **Accessibility / Elder modes**: mode composition → global tokens (text, density, focus, sidebar width, skip link), with system reduce-motion and text scaling as the floor.
+- **Open-source attribution**: README, repository intro and the in-app About page list projects and licenses; see [`NOBS/docs/OPEN_SOURCE_ATTRIBUTION.md`](NOBS/docs/OPEN_SOURCE_ATTRIBUTION.md).
 
 ## What's new in V3.1.1
 
@@ -196,7 +208,7 @@ When the cloud / free engine fails it **falls back to the local engine automatic
 **Tests and release**
 
 - 4 new unit tests: scroll end, drag offset, window-move clamping and trailing blank lines in the script;
-- The full suite of **1345 unit tests** passed three rounds in a row, with both builds (`net10.0-windows` / `net6.0-windows`) + the 26-item headless self-test + static checks all green;
+- The full suite of **1508 unit tests** passed three rounds in a row, with both builds (`net10.0-windows` / `net6.0-windows`) + the 29-item headless self-test + static checks all green;
 - Full details and known limits are in [`NOBS/RELEASE_NOTES_v3.1.1.md`](NOBS/RELEASE_NOTES_v3.1.1.md).
 
 ## Privacy & security
@@ -335,7 +347,7 @@ Strings assembled in code are refreshed by `LocalizationService` broadcasting an
 
 ## Quality baseline & known limits
 
-- **All 1345 unit tests pass** (at the V3.1.1 release: three full rounds in a row + dual-target builds + headless self-test + static checks); the test project links the pure-logic source files directly instead of referencing the whole WPF project;
+- **All 1508 unit tests pass** (V3.3.0: three full rounds in a row + dual-target builds + headless self-test + static checks); the test project links the pure-logic source files directly instead of referencing the whole WPF project;
 - **All 26 headless self-test items PASS** (18 route cases across 17 routes plus 8 non-route checks: the first-run tutorial overlay (including step-by-step navigation checks), the mini window, string-resource resolution, a language-switch round trip, per-page language replay, the content-fallback banner, the D7 connection-state guard and protocol branches for both builds), **run once for the main build and once for the Win7-compatible build**;
 - CI additionally gates on XAML resource references, zh/en string-key parity, accessibility static checks, the headless self-test and an end-to-end delta-package upgrade (full-file SHA-256 comparison); [`NOBS/docs/reviews/`](NOBS/docs/reviews/) keeps per-perspective review records that honestly mark which conclusions have machine evidence and which were only checked by hand;
 - **Known limits**: ① Windows 7 has not been verified on real hardware (only that the target framework compiles and the installer's MinVersion is set correctly), and the legacy protocol (obs-websocket 4.x) has not been verified against a real OBS 27; ② the English translation has not been proofread by a native speaker, nor have the English OBS menu paths been checked one by one; ③ both one-click deployment channels are implemented against the protocol / key names and covered by unit tests, but have never been run end-to-end against a real OBS; ④ accessibility stops at code-level adaptation + static checks, with no NVDA / Narrator testing (see [`ACCESSIBILITY.md`](ACCESSIBILITY.md)); ⑤ release artifacts are not code-signed, so SmartScreen may warn about an unknown publisher; ⑥ .NET 6 no longer receives security updates — the compatible build is the fallback for when you *must* run Windows 7; on a new machine use the main build.
@@ -344,6 +356,7 @@ Strings assembled in code are refreshed by `LocalizationService` broadcasting an
 
 | Version | Highlights | Release notes |
 | --- | --- | --- |
+| **V3.3.0** | Virtual Live workspace (Live2D / room templates / platform go-live), one-click plugin install and GitHub search, Accessibility / Elder modes, open-source attribution | [`RELEASE_NOTES_v3.3.0.md`](NOBS/RELEASE_NOTES_v3.3.0.md) |
 | **V3.1.1** | Teleprompter manual up/down movement (toolbar / drag / wheel / keyboard), window nudging, scroll-end fix | [`RELEASE_NOTES_v3.1.1.md`](NOBS/RELEASE_NOTES_v3.1.1.md) |
 | **V3.1.0** | Wallpaper library with slideshow, one-click OBS launch + record, teleprompter, recording-name templates / mic alerts / replay save | [`RELEASE_NOTES_v3.1.0.md`](NOBS/RELEASE_NOTES_v3.1.0.md) |
 | **V3.0.0** | Transactional data safety, accessibility, Win7-compatible build, My Templates and My Knowledge Base | [`RELEASE_NOTES_v3.0.0.md`](NOBS/RELEASE_NOTES_v3.0.0.md) |
@@ -396,3 +409,23 @@ If this tool saved you some troubleshooting time, you can buy the author a coffe
 ## License
 
 MIT — see [LICENSE](LICENSE).
+
+### Open-source components
+
+This project is built on the following open-source projects and public protocols.
+See [`NOBS/docs/OPEN_SOURCE_ATTRIBUTION.md`](NOBS/docs/OPEN_SOURCE_ATTRIBUTION.md) for the full list,
+licenses and boundaries.
+
+| Project | License | Use | Boundary |
+|---|---|---|---|
+| [OBS Studio](https://github.com/obsproject/obs-studio) | GPL-2.0 | Target application being controlled | External integration only; not bundled or modified |
+| [obs-websocket](https://github.com/obsproject/obs-websocket) | GPL-2.0 | Scene / recording / streaming / virtual camera control | Independent C# client written from the public protocol; no code copied |
+| [VTube Studio API](https://github.com/DenchiSoft/VTubeStudio) | MIT | Live2D model loading / authentication | Public WebSocket API only; no process injection |
+| [.NET / WPF](https://github.com/dotnet/wpf) | MIT | Desktop runtime and UI framework | Self-contained publish; runtime ships with the app |
+| [xUnit](https://github.com/xunit/xunit) | Apache-2.0 | Unit tests | Test project only; not shipped |
+| [DistroAV](https://github.com/DistroAV/DistroAV) / [obs-spout2-plugin](https://github.com/Off-World-Live/obs-spout2-plugin) | GPL-2.0 | NDI / Spout2 capture for Live2D | Optional external plugins; no code copied or bundled |
+| [Watt Toolkit](https://github.com/BeyondDimension/SteamTools) | GPL-3.0 | GitHub acceleration | Detection / launch / guidance only; never modifies its config |
+
+> The Live2D Cubism SDK is proprietary. This project does **not** include or redistribute any
+> Cubism runtime or sample model; models provided by users remain theirs. The main application
+> stays under the **MIT** license.

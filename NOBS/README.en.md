@@ -31,8 +31,8 @@
 </div>
 
 > **The default branch `master` is the stable channel**: fully regression-tested and verified before release —
-> the right choice for everyday streaming and recording. The `dev` branch carries DEV test builds
-> (`01`, `02`, `03`…, **no leading V**): further ahead, potentially unstable, and updated only from the dev Releases page.
+> the right choice for everyday streaming and recording. There are only two release channels: **V series**
+> (`Vmajor.minor.patch`, e.g. `V3.5.3`) and **X series** (`X` + `MMdd`, e.g. `X1031`). There is no DEV test branch or test tag.
 
 > **What is it?** OBS Helper is a native **Windows (WPF)** desktop app that helps you get unstuck with OBS Studio — find a fix for that weird stutter, analyze your OBS logs, or control scenes, recording and streaming right from a hotkey or a tiny always-on-top window. The entire knowledge base, troubleshooting guide and log-analysis rules are **embedded in the app**: everything works with **zero internet connection**.
 >
@@ -51,18 +51,20 @@
 > **V2.9.1 fixes the knowledge-base raw channel** (both GitHub-raw URLs were missing the repository's leading `NOBS/` segment, so they had always returned 404 and every check silently fell back to the Release asset — a commit now really does reach every install, and non-2xx responses are logged), turns the **first-run tutorial into a guided tour that navigates the UI** for you, and adds **official OBS download entries** (obsproject.com / the official GitHub releases, plus a direct link to the current stable Windows installer resolved via the GitHub API — official hosts only, so fake "download sites" don't get a chance). See [RELEASE_NOTES_v2.9.1.md](RELEASE_NOTES_v2.9.1.md) (Chinese).
 ---
 
-## Release channels: stable vs DEV
+## Release channels: V series vs X series
 
-There are two channels for the same app — pick the one that matches how much "new" you want:
+There are two release channels for the same app:
 
 | Channel | Version style | What it is | Where updates come from |
 | --- | --- | --- | --- |
-| **Stable** | `V3.5.3` | **Stable first**: settled features, full regression and release verification — the right choice for everyday streaming / recording | The regular Releases page · the Lanzou mirror · in-app incremental updates |
-| **DEV (test)** | `01`, `02`, `03` … (**no leading V**) | **Further ahead**: work in progress lands here first and **may include unstable features**, behaviour changes and known bugs | **Only** the **dev Releases page** |
+| **V series** (`master`) | `V3.5.3` | **Stable first**: settled features, full regression and release verification — the right choice for everyday streaming / recording | The regular Releases page · the Lanzou mirror · in-app incremental updates |
+| **X series** (`master`) | `X1031` / `X1031Y2` / `X1031Y3` | **Independent major line**: `X` + `MMdd` date codes and the X-specific icon; updates only look at `X` tags | X-series Releases · in-app update |
 
-- **Why DEV has its own channel**: DEV builds are numbered by an auto-incrementing **build number**, which is not comparable to the stable `Vmajor.minor.patch` scheme. A DEV build therefore **only recognises plain-number tags (`01`)**, and a stable build **only recognises `V3.5.3`-style tags** — even though both kinds of tag live in the same repository, neither channel mistakes the other for a newer version.
-- **DEV builds are not packaged and do not use the Lanzou mirror yet**: the update prompt only points you at the dev Releases page (`/releases/tag/0X`). Incremental updates, the Lanzou mirror and installers keep serving stable users exactly as before.
-- **Which one should you pick?** Use stable for day-to-day work; take DEV if you want early features and can live with the occasional broken build. Please report DEV issues through *Help & feedback* and put `DEV 0X` (e.g. `DEV 03`) in the description.
+- **Both series share features and the data folder**: install folder, assembly name and `%LocalAppData%\OBS_Helper` are unchanged, so the upgrade path is identical.
+- **Channel filtering happens in the parser**: V builds only recognise `V3.5.3`-style tags; X builds only recognise `X1031`-style tags. They never mistake one another for a newer version.
+- **X version rule**: the four digits after `X` are an `MMdd` date (`X1031` = October 31). A second release on the same day appends `Y1`, `Y2`, `Y3`…; update checks compare the date first, then the Y revision, so `X1031Y2 > X1031` and `X1101 > X1031Y99`.
+- **X update prompt**: when an update is found, the dialog fetches this release's notes from GitHub and shows them in place; a failed fetch never blocks checking or downloading.
+- **There is no DEV test channel**: no `dev` branch, no plain-number test tags and no test-only release assets.
 
 ## V3.5.3 highlights
 

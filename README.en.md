@@ -24,7 +24,7 @@
 </div>
 
 > **The default branch of this repository is `master` (stable channel)**: settled features, full regression and release verification — the right choice for everyday streaming and recording.
-> **The DEV test branch was deleted in V3.3.0**: stable releases go straight from `master`; historical `01`/`02`/`03` tags remain on the Releases page, but no new DEV builds are produced.
+> **There are only two release channels: V series and X series.** V releases use `Vmajor.minor.patch` (such as `V3.5.3`); X releases use `X` + an `MMdd` date code (such as `X1031`). There is no DEV test branch or test tag.
 
 **OBS Helper** (known as 「OBS 排障助手」 before V2.9.6 — the same app on the same upgrade path) is an OBS Studio troubleshooting and recording assistant for streamers who are just getting started: **it works fully offline** — the 208-entry knowledge base, the troubleshooting guide and the log-analysis rules are all embedded in the app, so they are searchable without a connection; once connected to the local OBS you also get one-click health checks, remote control of scenes / recording / streaming, and recording-environment deployment. **Since V2.9.4** the whole journey from "configure OBS" to "start recording" fits into one card on the home page; **since V3.1.0** OBS can also be launched and recording started with one click when it is not running; **V3.1.1** completed the teleprompter's manual up/down movement and window nudging; **V3.3.0** adds the **Virtual Live** workspace (Live2D avatar · 6 room templates · 16-platform go-live guidance), one-click plugin install / rollback / GitHub search, and Accessibility / Elder modes; **V3.4.0** brings the phone into the streaming workflow: QR remote / monitor / teleprompter / fill light / file upload, phone as a Wi-Fi camera and microphone, plus chat aggregation, local live captions, review/clips, multi-platform relay, MIDI/lighting and team collaboration.
 
@@ -38,7 +38,7 @@ This is the **native WPF rewrite** of the original Blazor WebAssembly + WebView2
 
 ---
 
-**Contents**: [Start here](#start-here) · [5-minute quick start](#5-minute-quick-start) · [Highlights at a glance](#highlights-at-a-glance) · [Features](#features) · [Smart diagnostics engine](#smart-diagnostics-engine) · [Release channels: stable vs DEV](#release-channels-stable-vs-dev) · [What's new in V3.5.3](#whats-new-in-v353) · [What's new in V3.5.2](#whats-new-in-v352) · [What's new in V3.5.1](#whats-new-in-v351) · [What's new in V3.5.0](#whats-new-in-v350) · [X1031](#x1031) · [What's new in V3.3.0](#whats-new-in-v330) · [What's new in V3.1.1](#whats-new-in-v311) · [Version history](#version-history) · [Privacy & security](#privacy--security) · [Installation & updates](#installation--updates) · [Build](#build) · [Project structure](#project-structure) · [Quality baseline & known limits](#quality-baseline--known-limits) · [Promo video](#promo-video) · [Donate](#donate) · [License](#license)
+**Contents**: [Start here](#start-here) · [5-minute quick start](#5-minute-quick-start) · [Highlights at a glance](#highlights-at-a-glance) · [Features](#features) · [Smart diagnostics engine](#smart-diagnostics-engine) · [Release channels: V series vs X series](#release-channels-v-series-vs-x-series) · [What's new in V3.5.3](#whats-new-in-v353) · [What's new in V3.5.2](#whats-new-in-v352) · [What's new in V3.5.1](#whats-new-in-v351) · [What's new in V3.5.0](#whats-new-in-v350) · [X1031](#x1031) · [What's new in V3.3.0](#whats-new-in-v330) · [What's new in V3.1.1](#whats-new-in-v311) · [Version history](#version-history) · [Privacy & security](#privacy--security) · [Installation & updates](#installation--updates) · [Build](#build) · [Project structure](#project-structure) · [Quality baseline & known limits](#quality-baseline--known-limits) · [Promo video](#promo-video) · [Donate](#donate) · [License](#license)
 
 ---
 
@@ -51,7 +51,6 @@ This is the **native WPF rewrite** of the original Blazor WebAssembly + WebView2
 | Read the developer-oriented full documentation (quality baseline · release history · code inventory) | [`NOBS/README.md`](NOBS/README.md) |
 | Full documentation in Chinese | [`README.md`](README.md) · [`NOBS/README.md`](NOBS/README.md) |
 | What changed in this release | [`NOBS/RELEASE_NOTES_v3.5.3.md`](NOBS/RELEASE_NOTES_v3.5.3.md) |
-| DEV test channel numbering and update rules | [`NOBS/docs/DEV_CHANNEL.md`](NOBS/docs/DEV_CHANNEL.md) |
 | Before editing docs: which documents belong on master, which on dev | [`docs/BRANCH_AND_DOC_RULES.md`](docs/BRANCH_AND_DOC_RULES.md) |
 | Report a bug / disclose a security vulnerability | [Issues](https://github.com/YYRMMAYO/OBS_Helper/issues) · [SECURITY.md](SECURITY.md) |
 | License | [LICENSE](LICENSE) (MIT) |

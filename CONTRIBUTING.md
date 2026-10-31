@@ -29,10 +29,9 @@
 
 ### 分支与文档：只维护 `master`
 
-- **V3.3.0 起 `dev` 分支已删除**：README、发布说明与全部文档只维护 `master` 一份；
+- **仓库只维护 `master` 一个分支，只有 V / X 两个发布系列，没有 DEV 测试通道**：README、发布说明与全部文档只维护 `master` 一份；
 - **V3.5.0 起同时维护 V / X 两个发布系列**：V 使用 `V主.次.修`（如 `V3.5.0`），X 使用 `X` + `MMdd` 日期码（如 `X1031` = 10 月 31 日）；同一天再版追加 `Y1`、`Y2`、`Y3`…（如 `X1031Y2`）。两者共用功能与数据目录，但更新检查只认各自标签，X 系列先比日期再比 Y 序号；
 - 发布说明放 `NOBS/RELEASE_NOTES_v<版本>.md` 或 `NOBS/RELEASE_NOTES_x<日期码>.md`；X 系列同日再版的 `X1031Y2` 与 `X1031` 共用 `RELEASE_NOTES_x1031.md`；
-- 历史 `01`、`02`… 的 DEV 标签仍保留在 Release 页，但不再产生新的 DEV 构建；
 - 完整归属表与发布检查见 [`docs/BRANCH_AND_DOC_RULES.md`](docs/BRANCH_AND_DOC_RULES.md)；
 - **每个 Release 必须写清「新增了什么 / 修复了什么」**，结构与验收见 [`docs/RELEASE_RULES.md`](docs/RELEASE_RULES.md)。
 
@@ -223,11 +222,10 @@ The project is released under the [MIT License](LICENSE); your contribution is l
 
 ### Branches and docs: only `master` is maintained
 
-- **The `dev` branch was deleted in V3.3.0**; READMEs, release notes and every document are maintained
-  on `master` only;
-- Stable versions use `Vmajor.minor.patch` (e.g. `V3.3.0`) and release notes live at
+- **Only `master` is maintained, with exactly two release series (V and X) and no DEV test channel**;
+  READMEs, release notes and every document are maintained on `master` only;
+- Stable versions use `Vmajor.minor.patch` (e.g. `V3.5.3`) and release notes live at
   `RELEASE_NOTES_v<version>.md` in the repository root;
-- Historical DEV tags (`01`, `02`…) remain on the Releases page, but no new DEV builds are produced;
 - The full ownership table and release checklist are in [`docs/BRANCH_AND_DOC_RULES.md`](docs/BRANCH_AND_DOC_RULES.md) (Chinese);
 - **Every release must state what was added or fixed** — see [`docs/RELEASE_RULES.md`](docs/RELEASE_RULES.md) (Chinese).
 

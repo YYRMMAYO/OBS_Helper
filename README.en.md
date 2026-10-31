@@ -178,6 +178,63 @@ Connect to OBS and run a one-click health check. Three engines are available:
 
 When the cloud / free engine fails it **falls back to the local engine automatically** and explains why in the result. The free tier is a single-turn ordinary conversation (no knowledge-base tool calls); for multi-turn deep troubleshooting or more frequent use, plug in your own cloud API.
 
+## Self-integration guide
+
+> Principle: if the app already ships an import entry or a protocol address, the steps are here; if a capability needs code changes or a self-hosted server, only its boundary is stated — no step-by-step instructions.
+
+### Twitch / YouTube viewer counts (manual)
+
+- **What is automatic**: only Bilibili fills in viewer popularity from its public heartbeat. Twitch / YouTube are not scraped, and the app never stores platform tokens or signs in for you.
+- **Manual steps**: read the current / peak viewer count from the platform dashboard or official API (Twitch Helix `streams`, YouTube Data API `videos.liveStreamingDetails`), then open **Insights → session metrics**, change **Peak viewers** to the real number and click **Generate report**.
+- **Boundaries**: platforms count viewers differently, so the numbers cannot simply be added into one total; their APIs have quotas, review and ToS limits.
+
+### Local theme packages (bring your own JSON)
+
+The app only imports **local JSON theme packages** and switches versions; there is no online catalog, author signing or download service.
+
+1. Put the theme files in a local folder: only `.css` / `.html` / `.png` / `.jpg` / `.webp` / `.json` / `.woff2` are accepted, and every path must be a safe relative path (no `..`, no absolute paths).
+2. Compute each SHA-256: `Get-FileHash .\theme.css -Algorithm SHA256 | Select-Object -ExpandProperty Hash`.
+3. Open **Automation & ecosystem → Theme market**, paste the manifest JSON, fill in **Theme source folder**, then click **Validate package → Apply theme**; a failure names the file and the reason.
+4. **Apply theme** copies the package to `%LocalAppData%\OBS_Helper\themes\<id>\<version>` and marks it as current; **Roll back theme** returns to the previous version, and **Open theme folder** opens the directory.
+
+```json
+{
+  "id": "my-theme",
+  "name": "My theme",
+  "version": "1.0.0",
+  "author": "your-name",
+  "files": [
+    { "path": "theme.css", "sha256": "<64-hex digest>", "size": 1234 }
+  ]
+}
+```
+
+- **Boundaries**: a hash mismatch, an unsafe path or a disallowed extension is rejected; remote code is never executed and the CSP is unchanged. Today this is package management and version switching only — it does not rewrite the UI or overlay styles automatically. Import only packages you trust.
+
+### Real video monitoring: OBS WHIP → MediaMTX → phone browser
+
+This ships in the current build; you only fill in the OBS address once:
+
+1. Install MediaMTX from **Feature Center → Open-source dependencies** or **Phone Link → Phone as camera (Wi-Fi)**, then click **Start camera link**.
+2. Copy the **Low-latency video watch (WebRTC)** URL and the **OBS WHIP publish URL** shown on the page.
+3. OBS 30.2+ → Settings → Output → Service = **WHIP** → Server = the WHIP URL → start streaming.
+4. Open the watch URL in the phone browser: it is a real video stream, not screenshots.
+
+- **Boundaries**: OBS 30.2+, phone and PC on the same LAN, a WebRTC-capable browser and the MediaMTX ports allowed through the firewall (use **Allow through firewall**). Otherwise the app falls back to the original 1–5 fps screenshot monitoring.
+
+### Items without published steps
+
+| Capability | Why there are no steps here | What works today |
+| --- | --- | --- |
+| LLM reply / partner, real AI director | Replacing the local templates / rules with model calls is app-level development, and it also involves billing and content safety | Templates / rules for now; **Settings → AI diagnostic engine** accepts your own cloud key, but it only affects diagnostics |
+| Online theme market | Needs a server, author signing, review and distribution | Local JSON theme packages (above) |
+| Networked team collaboration | Needs accounts, rooms, permissions, audit and a public relay | Local roles + same-LAN phone pairing |
+| Browser as camera / browser publishing | `getUserMedia` needs a trusted HTTPS context; you would also need your own LiveKit / mediasoup or HTTPS reverse proxy, and the app ships neither certificates nor a browser publishing page | Push SRT/RTMP from a phone camera app, or use Larix / OBS Camera |
+| Twitch / YouTube automatic stats | Needs OAuth and platform APIs inside the app — app-level development | Manual entry (above) |
+| Historical caption / speech search | Needs offline transcription and index storage, scheduled for a later version | Recordings are indexed at file level only; content is not read |
+
+> Want to wire it up in code? The project is MIT-licensed; implement it on your own branch and send a PR. When you integrate third-party services, follow their ToS as well.
+
 ## Release channels: V series vs X series
 
 | Channel | Version style | What it is | Where updates come from |
@@ -232,7 +289,7 @@ When the cloud / free engine fails it **falls back to the local engine automatic
 - **Fixed all plugin / dependency one-click downloads failing**: GitHub release assets now 302 to `release-assets.githubusercontent.com`; the old allowlist rejected the final host. The new CDN is allowed, download diagnostics now log host / HTTP status, and regression tests cover it.
 - **Full Feature Center audit**: compared advertised capabilities with the code; 17 items overclaim (phone microphone has no endpoint, "AI reply/director" are templates/rules, theme market is JSON import only, auto-archive needs a manual click, etc.). All are written into the development guide, split into Y3 follow-up and Y4.
 - **Shipped in this build**: one-click dependency UI (whisper / FFmpeg / rclone with auto-fill), whisper model download, phone camera QR / publish detection / firewall rule, Feature Center runtime setup + status chips, Q05 auto-archive, C10 / E06 persistence, MediaMTX WebRTC watch + OBS WHIP URL, and a local recording-file index.
-- **Explicit boundaries**: LLM reply / partner, real AI director, online theme market, networked team collaboration, Twitch / YouTube viewer stats, and browser-as-camera are not wired. The development guide documents the boundaries; self-integration steps are not published.
+- **Explicit boundaries**: LLM reply / partner, real AI director, online theme market, networked team collaboration, automatic Twitch / YouTube stats, and browser-as-camera are not wired. Configuration-only integrations are covered in the [self-integration guide](#self-integration-guide); items that need app-level development are not given step-by-step instructions, and none of them are presented as finished.
 
 ## What's new in X1031Y2
 

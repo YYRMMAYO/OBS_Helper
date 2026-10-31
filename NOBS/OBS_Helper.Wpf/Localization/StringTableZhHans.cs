@@ -15,6 +15,7 @@ internal static class StringTableZhHans
     internal static readonly Dictionary<string, string> Table = new(StringComparer.Ordinal)
     {
         // ------------------------------------------------------------ 品牌 / 通用
+        ["splash.preparing"] = "正在准备界面与服务…",
         ["app.name"] = "OBS帮助助手",
         ["app.brandSubtitle"] = "离线可用 · 数据仅存本机",
         ["app.tagline"] = "直播翻车现场急救箱 · 离线可用 · 数据仅存本机",
@@ -1253,7 +1254,7 @@ internal static class StringTableZhHans
         ["settings.appearance.easterEgg"] = "允许彩蛋",
         ["settings.appearance.easterEggDesc"] = "纯本地、无声音、不干扰录制；关闭后不会再触发任何彩蛋。",
         ["settings.appearance.easterEgg.on"] = "彩蛋已开启。提示：在主窗口试试经典的 ↑↑↓↓←→←→BA。",
-        ["settings.accent.teal"] = "深青",
+        ["settings.accent.teal"] = "雾蓝",
         ["settings.accent.blue"] = "海盐蓝",
         ["settings.accent.sage"] = "鼠尾草绿",
         ["settings.accent.deepteal"] = "深海松石",
@@ -1265,6 +1266,16 @@ internal static class StringTableZhHans
         ["settings.appearance.radius.md"] = "标准",
         ["settings.appearance.radius.lg"] = "大",
         ["settings.appearance.panelOpacity"] = "面板不透明度（图片背景）",
+        ["settings.appearance.fontFamily"] = "界面字体（需系统已安装；推荐均为免费商用字体）",
+        ["settings.appearance.font.system"] = "系统默认（Segoe UI / 微软雅黑）",
+        ["settings.appearance.font.yahei"] = "微软雅黑",
+        ["settings.appearance.font.noto"] = "思源黑体 / Noto Sans SC",
+        ["settings.appearance.font.harmony"] = "HarmonyOS Sans SC",
+        ["settings.appearance.font.misans"] = "MiSans",
+        ["settings.appearance.font.alibaba"] = "阿里巴巴普惠体",
+        ["settings.appearance.font.smiley"] = "得意黑 Smiley Sans",
+        ["settings.appearance.font.lxgw"] = "霞鹜文楷 LXGW WenKai",
+        ["settings.appearance.font.segoe"] = "Segoe UI",
         ["settings.appearance.customHint"] = "圆角影响卡片、按钮与输入框；面板不透明度只在图片背景下生效，越低越能看见壁纸。",
         ["settings.appearance.background"] = "自定义背景",
         ["settings.bg.default"] = "默认",

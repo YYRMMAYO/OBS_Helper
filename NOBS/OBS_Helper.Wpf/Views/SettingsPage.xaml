@@ -254,6 +254,10 @@
                         SelectionChanged="OnPanelOpacityChanged" />
             </StackPanel>
           </Grid>
+          <TextBlock Text="{DynamicResource Loc.settings.appearance.fontFamily}" Style="{StaticResource CaptionText}"
+                     Margin="2,10,0,5" />
+          <ComboBox x:Name="FontFamilyCombo" Style="{StaticResource AppComboBox}"
+                    SelectionChanged="OnFontFamilyChanged" />
           <TextBlock Style="{StaticResource CaptionText}" Margin="2,6,0,0" TextWrapping="Wrap"
                      Text="{DynamicResource Loc.settings.appearance.customHint}" />
 

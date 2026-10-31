@@ -36,9 +36,12 @@
     <ctl:WallpaperLayer Grid.Column="0" Grid.ColumnSpan="2" />
 
     <!-- ============================================ 左侧导航 -->
-    <Border Grid.Column="0" Background="{DynamicResource NavSurfaceBrush}"
+    <Border Grid.Column="0" Background="Transparent"
             BorderBrush="{DynamicResource LineBrush}" BorderThickness="0,0,1,0">
-      <DockPanel>
+      <Grid>
+        <Border Background="{DynamicResource GlassWallpaperBrush}" />
+        <Border Background="{DynamicResource NavTintBrush}" />
+        <DockPanel>
 
         <!-- 品牌区 -->
         <StackPanel DockPanel.Dock="Top" Margin="18,20,18,14">
@@ -100,7 +103,8 @@
             <RadioButton x:Name="NavSettings"   Style="{StaticResource NavTabButton}" Content="{DynamicResource Loc.nav.settings}"   Tag="{StaticResource IconGeomSettings}"   Checked="OnNavChecked" />
           </StackPanel>
         </ScrollViewer>
-      </DockPanel>
+        </DockPanel>
+      </Grid>
     </Border>
 
     <!-- ============================================ 内容区 -->
@@ -111,15 +115,18 @@
       </Grid.RowDefinitions>
 
       <!-- 顶栏 -->
-      <Border Grid.Row="0" Background="{DynamicResource TopBarSurfaceBrush}"
-              BorderBrush="{DynamicResource LineBrush}" BorderThickness="0,0,0,1"
-              Padding="20,11">
+      <Border Grid.Row="0" Background="Transparent"
+              BorderThickness="0"
+              Padding="24,13">
         <Grid>
-          <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="Auto" />
-            <ColumnDefinition Width="*" />
-            <ColumnDefinition Width="Auto" />
-          </Grid.ColumnDefinitions>
+          <Border Background="{DynamicResource GlassWallpaperBrush}" />
+          <Border Background="{DynamicResource TopBarTintBrush}" />
+          <Grid>
+            <Grid.ColumnDefinitions>
+              <ColumnDefinition Width="Auto" />
+              <ColumnDefinition Width="*" />
+              <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
 
           <!--
             图标按钮必须显式给可访问名称（V3.0 / E4）：WPF 对纯图形内容不会自动生成名称，
@@ -147,14 +154,18 @@
 
           <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
             <Button Style="{StaticResource GhostButton}" Content="{DynamicResource Loc.nav.search}"
+                    Foreground="{DynamicResource MutedBrush}"
                     Padding="10,6" Margin="0,0,8,0" Click="OnQuickSearchClick" />
             <ctl:ConnectionBadge x:Name="TopBadge" Margin="0,0,10,0" />
-            <Button Style="{StaticResource SecondaryButton}" Content="{DynamicResource Loc.teleprompter.open}"
+            <Button Style="{StaticResource GhostButton}" Content="{DynamicResource Loc.teleprompter.open}"
+                    Foreground="{DynamicResource TextBrush}"
                     Padding="10,6" Margin="0,0,8,0" Click="OnTeleprompterClick"
                     AutomationProperties.Name="{DynamicResource Loc.teleprompter.open}" />
-            <Button Style="{StaticResource SecondaryButton}" Content="{DynamicResource Loc.nav.settings}"
+            <Button Style="{StaticResource GhostButton}" Content="{DynamicResource Loc.nav.settings}"
+                    Foreground="{DynamicResource TextBrush}"
                     Padding="10,6" Click="OnSettingsClick" />
           </StackPanel>
+          </Grid>
         </Grid>
       </Border>
 

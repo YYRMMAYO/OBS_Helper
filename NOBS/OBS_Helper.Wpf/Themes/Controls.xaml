@@ -27,6 +27,11 @@
   <conv:JoinConverter x:Key="Join" />
   <conv:IndexToNumberConverter x:Key="IndexNumber" />
 
+  <!-- V3.5.0：全局字体，由设置页选择并即时生效 -->
+  <Style TargetType="{x:Type Control}">
+    <Setter Property="FontFamily" Value="{DynamicResource AppFontFamily}" />
+  </Style>
+
   <!-- ============================================================ 文本 -->
 
   <Style x:Key="H1Text" TargetType="TextBlock">
@@ -96,7 +101,7 @@
     <Setter Property="BorderBrush" Value="{DynamicResource LineBrush}" />
     <Setter Property="BorderThickness" Value="1" />
     <Setter Property="CornerRadius" Value="{DynamicResource CornerRadiusLg}" />
-    <Setter Property="Padding" Value="16" />
+    <Setter Property="Padding" Value="{DynamicResource CardPadding}" />
     <Setter Property="Effect" Value="{DynamicResource CardShadow}" />
     <Setter Property="SnapsToDevicePixels" Value="True" />
   </Style>
@@ -109,7 +114,7 @@
   <Style x:Key="SoftPanel" TargetType="Border">
     <Setter Property="Background" Value="{DynamicResource Surface2Brush}" />
     <Setter Property="CornerRadius" Value="{DynamicResource CornerRadiusMd}" />
-    <Setter Property="Padding" Value="12" />
+    <Setter Property="Padding" Value="16" />
   </Style>
 
   <Style x:Key="Pill" TargetType="Border">
@@ -201,7 +206,7 @@
 
   <Style x:Key="BaseButton" TargetType="Button">
     <Setter Property="FontSize" Value="{DynamicResource FontSizeBase}" />
-    <Setter Property="Padding" Value="14,7" />
+    <Setter Property="Padding" Value="16,9" />
     <Setter Property="MinHeight" Value="{DynamicResource ControlMinHeight}" />
     <Setter Property="Cursor" Value="Hand" />
     <Setter Property="HorizontalContentAlignment" Value="Center" />
@@ -210,17 +215,47 @@
     <Setter Property="Template">
       <Setter.Value>
         <ControlTemplate TargetType="Button">
-          <Border x:Name="Bd"
+          <Border x:Name="Bd" RenderTransformOrigin="0.5,0.5"
                   Background="{TemplateBinding Background}"
                   BorderBrush="{TemplateBinding BorderBrush}"
                   BorderThickness="{TemplateBinding BorderThickness}"
-                  CornerRadius="{DynamicResource CornerRadiusMd}"
+                  CornerRadius="{DynamicResource CornerRadiusSm}"
                   Padding="{TemplateBinding Padding}">
+            <Border.RenderTransform>
+              <ScaleTransform x:Name="PressScale" ScaleX="1" ScaleY="1" />
+            </Border.RenderTransform>
             <ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
                               VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
                               RecognizesAccessKey="True" />
           </Border>
           <ControlTemplate.Triggers>
+            <!-- V3.5.0：明显的点击反馈：按下缩到 95%，松开带回弹。 -->
+            <Trigger Property="IsPressed" Value="True">
+              <Trigger.EnterActions>
+                <BeginStoryboard>
+                  <Storyboard>
+                    <DoubleAnimation Storyboard.TargetName="PressScale" Storyboard.TargetProperty="ScaleX"
+                                     To="0.95" Duration="0:0:0.06" />
+                    <DoubleAnimation Storyboard.TargetName="PressScale" Storyboard.TargetProperty="ScaleY"
+                                     To="0.95" Duration="0:0:0.06" />
+                  </Storyboard>
+                </BeginStoryboard>
+              </Trigger.EnterActions>
+              <Trigger.ExitActions>
+                <BeginStoryboard>
+                  <Storyboard>
+                    <DoubleAnimation Storyboard.TargetName="PressScale" Storyboard.TargetProperty="ScaleX"
+                                     To="1" Duration="0:0:0.16">
+                      <DoubleAnimation.EasingFunction><BackEase Amplitude="0.45" EasingMode="EaseOut" /></DoubleAnimation.EasingFunction>
+                    </DoubleAnimation>
+                    <DoubleAnimation Storyboard.TargetName="PressScale" Storyboard.TargetProperty="ScaleY"
+                                     To="1" Duration="0:0:0.16">
+                      <DoubleAnimation.EasingFunction><BackEase Amplitude="0.45" EasingMode="EaseOut" /></DoubleAnimation.EasingFunction>
+                    </DoubleAnimation>
+                  </Storyboard>
+                </BeginStoryboard>
+              </Trigger.ExitActions>
+            </Trigger>
             <Trigger Property="IsKeyboardFocused" Value="True">
               <Setter TargetName="Bd" Property="BorderBrush" Value="{DynamicResource BrandBrush}" />
               <Setter TargetName="Bd" Property="BorderThickness" Value="{DynamicResource FocusThickness}" />
@@ -377,7 +412,11 @@
       <Setter.Value>
         <ControlTemplate TargetType="RadioButton">
           <Border x:Name="Bd" Background="Transparent" CornerRadius="{DynamicResource CornerRadiusSm}"
+                  RenderTransformOrigin="0.5,0.5"
                   Padding="{TemplateBinding Padding}" MinHeight="{TemplateBinding MinHeight}">
+            <Border.RenderTransform>
+              <ScaleTransform x:Name="NavScale" ScaleX="1" ScaleY="1" />
+            </Border.RenderTransform>
             <StackPanel Orientation="Horizontal">
               <!-- 矢量图标：描边色跟随主题（Muted），选中切品牌色；Tag 为空时宽度为 0 不占位 -->
               <Path x:Name="Icon" Data="{TemplateBinding Tag}" Stretch="Uniform"
@@ -395,6 +434,29 @@
           <ControlTemplate.Triggers>
             <Trigger Property="IsMouseOver" Value="True">
               <Setter TargetName="Bd" Property="Background" Value="{DynamicResource Surface3Brush}" />
+            </Trigger>
+            <!-- 导航点击：轻微缩进 + 回弹，选中后底色仍由 IsChecked 接管。 -->
+            <Trigger Property="IsPressed" Value="True">
+              <Trigger.EnterActions>
+                <BeginStoryboard>
+                  <Storyboard>
+                    <DoubleAnimation Storyboard.TargetName="NavScale" Storyboard.TargetProperty="ScaleX" To="0.97" Duration="0:0:0.06" />
+                    <DoubleAnimation Storyboard.TargetName="NavScale" Storyboard.TargetProperty="ScaleY" To="0.97" Duration="0:0:0.06" />
+                  </Storyboard>
+                </BeginStoryboard>
+              </Trigger.EnterActions>
+              <Trigger.ExitActions>
+                <BeginStoryboard>
+                  <Storyboard>
+                    <DoubleAnimation Storyboard.TargetName="NavScale" Storyboard.TargetProperty="ScaleX" To="1" Duration="0:0:0.16">
+                      <DoubleAnimation.EasingFunction><BackEase Amplitude="0.35" EasingMode="EaseOut" /></DoubleAnimation.EasingFunction>
+                    </DoubleAnimation>
+                    <DoubleAnimation Storyboard.TargetName="NavScale" Storyboard.TargetProperty="ScaleY" To="1" Duration="0:0:0.16">
+                      <DoubleAnimation.EasingFunction><BackEase Amplitude="0.35" EasingMode="EaseOut" /></DoubleAnimation.EasingFunction>
+                    </DoubleAnimation>
+                  </Storyboard>
+                </BeginStoryboard>
+              </Trigger.ExitActions>
             </Trigger>
             <Trigger Property="IsChecked" Value="True">
               <Setter TargetName="Bd" Property="Background" Value="{DynamicResource BrandSoftBrush}" />
@@ -423,13 +485,39 @@
         <ControlTemplate TargetType="RadioButton">
           <Border x:Name="Bd" Background="{DynamicResource Surface2Brush}"
                   BorderBrush="{DynamicResource LineBrush}" BorderThickness="1"
-                  CornerRadius="{DynamicResource CornerRadiusSm}"
+                  CornerRadius="{DynamicResource CornerRadiusSm}" RenderTransformOrigin="0.5,0.5"
                   Padding="{TemplateBinding Padding}" Margin="0,0,8,8">
+            <Border.RenderTransform>
+              <ScaleTransform x:Name="SegScale" ScaleX="1" ScaleY="1" />
+            </Border.RenderTransform>
             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
           </Border>
           <ControlTemplate.Triggers>
             <Trigger Property="IsMouseOver" Value="True">
               <Setter TargetName="Bd" Property="BorderBrush" Value="{DynamicResource BrandBrush}" />
+            </Trigger>
+            <!-- 分段按钮点击：缩进 + 回弹，选中态由 IsChecked 接管。 -->
+            <Trigger Property="IsPressed" Value="True">
+              <Trigger.EnterActions>
+                <BeginStoryboard>
+                  <Storyboard>
+                    <DoubleAnimation Storyboard.TargetName="SegScale" Storyboard.TargetProperty="ScaleX" To="0.95" Duration="0:0:0.06" />
+                    <DoubleAnimation Storyboard.TargetName="SegScale" Storyboard.TargetProperty="ScaleY" To="0.95" Duration="0:0:0.06" />
+                  </Storyboard>
+                </BeginStoryboard>
+              </Trigger.EnterActions>
+              <Trigger.ExitActions>
+                <BeginStoryboard>
+                  <Storyboard>
+                    <DoubleAnimation Storyboard.TargetName="SegScale" Storyboard.TargetProperty="ScaleX" To="1" Duration="0:0:0.16">
+                      <DoubleAnimation.EasingFunction><BackEase Amplitude="0.4" EasingMode="EaseOut" /></DoubleAnimation.EasingFunction>
+                    </DoubleAnimation>
+                    <DoubleAnimation Storyboard.TargetName="SegScale" Storyboard.TargetProperty="ScaleY" To="1" Duration="0:0:0.16">
+                      <DoubleAnimation.EasingFunction><BackEase Amplitude="0.4" EasingMode="EaseOut" /></DoubleAnimation.EasingFunction>
+                    </DoubleAnimation>
+                  </Storyboard>
+                </BeginStoryboard>
+              </Trigger.ExitActions>
             </Trigger>
             <!--
               V3.0 无障碍：这两条给纯键盘用户一个**看得见**的焦点。

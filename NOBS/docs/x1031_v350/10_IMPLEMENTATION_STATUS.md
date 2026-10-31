@@ -15,7 +15,8 @@
 | 7 手机改提词稿 | 07 | ✅ | `MobileCore.cs`、`MobileServices.cs`、`TeleprompterService.cs`、`MobilePageAssets.cs` | 单测 |
 | 8 指引更新 | 08 | ✅ | `Assets/troubleshooting*.md` | check_docs |
 | 9 新应用图标（仅 X） | 03 | ✅ | `appicon_x.ico`、`gen_x_appicon.py`、X 提交 | 7 档尺寸单测 |
-| 10 全局背景 / UI 重构 | 02 | ✅ | `MainWindow.xaml`、`Palette.xaml`、`AppearanceService.cs`、`SettingsPage` | 构建 + 自检 |
+| 10 全局背景 / UI 重构 | 02 | ✅ | `MainWindow.xaml`、`Palette.xaml`、`AppearanceService.cs`、`SettingsPage`、`SplashWindow` | 构建 + 自检 |
+| 毛玻璃 / 字体 / 启动动画 | 02 | ✅ | `WallpaperService.cs`（模糊壁纸底）、`AppearanceService.cs`（字体/圆角/透明度）、`SplashWindow` | 构建 + 自检 |
 | 手机连接页 / 功能中心 | 08 | ✅ | `MobileLinkPage`、`FeatureHubPage` | 构建 + 自检 |
 | X/V 通道分离 | 09 | ✅ | `ReleaseChannel.cs`、`UpdateService.cs`、CI | 9 项单测 |
 
@@ -47,5 +48,5 @@
 - 媒体服务仍需 Windows 10+；Win7 只提供 USB 采集卡引导。
 - 未做真机手机配对 / 真机摄像头录制；相关结论以单测、资源检查与桌面端冒烟为准。
 - 虚拟主播模板的 OBS 落地以 JSON 校验与坐标断言为准，未在真机 OBS 逐套截图。
-- 全局背景使用半透明表面，未实现系统级 Acrylic / Mica 背景模糊。
+- 毛玻璃用「壁纸缩小 + 高斯模糊」实现，不是系统级 Acrylic / Mica；字体只引用系统已安装字体，不随包分发。
 - X1031 不含 V3.5.0 的全面 UI 重构、手机连接页重排与功能中心体验优化。

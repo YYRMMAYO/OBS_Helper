@@ -333,6 +333,14 @@ public partial class SettingsPage : UserControl, INavigationAware
                 Content = $"{value * 100:0}%",
                 Tag = value
             });
+
+        FontFamilyCombo.Items.Clear();
+        foreach (var key in new[] { "system", "yahei", "noto", "harmony", "misans", "alibaba", "smiley", "lxgw", "segoe" })
+            FontFamilyCombo.Items.Add(new ComboBoxItem
+            {
+                Content = Strings.T("settings.appearance.font." + key),
+                Tag = key
+            });
     }
 
     private void SyncUiCustomCombos(string? radius, double opacity)
@@ -353,6 +361,13 @@ public partial class SettingsPage : UserControl, INavigationAware
                     PanelOpacityCombo.SelectedItem = item;
                     break;
                 }
+
+            foreach (ComboBoxItem item in FontFamilyCombo.Items)
+                if (item.Tag is string font && string.Equals(font, AppServices.Appearance.Settings.FontFamily ?? "system", StringComparison.OrdinalIgnoreCase))
+                {
+                    FontFamilyCombo.SelectedItem = item;
+                    break;
+                }
         }
         finally
         {
@@ -370,6 +385,12 @@ public partial class SettingsPage : UserControl, INavigationAware
     {
         if (_syncingUiCustom || PanelOpacityCombo.SelectedItem is not ComboBoxItem { Tag: double opacity }) return;
         AppServices.Appearance.SetPanelOpacity(opacity);
+    }
+
+    private void OnFontFamilyChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (_syncingUiCustom || FontFamilyCombo.SelectedItem is not ComboBoxItem { Tag: string key }) return;
+        AppServices.Appearance.SetFontFamily(key);
     }
 
     /// <summary>云端选项没配全时给出提示：此时诊断会静默回退到本地引擎，不提示用户会以为云端已生效。</summary>

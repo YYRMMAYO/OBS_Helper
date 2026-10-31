@@ -12,6 +12,7 @@ internal static class StringTableEnUs
     internal static readonly Dictionary<string, string> Table = new(StringComparer.Ordinal)
     {
         // ------------------------------------------------------------ Brand / common
+        ["splash.preparing"] = "Preparing interface and services…",
         ["app.name"] = "OBS Helper",
         ["app.brandSubtitle"] = "Works offline · data stays on this PC",
         ["app.tagline"] = "First-aid kit for live-stream mishaps · works offline · data stays on this PC",
@@ -1263,6 +1264,16 @@ internal static class StringTableEnUs
         ["settings.appearance.radius.md"] = "Standard",
         ["settings.appearance.radius.lg"] = "Large",
         ["settings.appearance.panelOpacity"] = "Panel opacity (image background)",
+        ["settings.appearance.fontFamily"] = "UI font (must be installed; all suggestions are free for commercial use)",
+        ["settings.appearance.font.system"] = "System default (Segoe UI / Microsoft YaHei)",
+        ["settings.appearance.font.yahei"] = "Microsoft YaHei",
+        ["settings.appearance.font.noto"] = "Noto Sans SC / Source Han Sans",
+        ["settings.appearance.font.harmony"] = "HarmonyOS Sans SC",
+        ["settings.appearance.font.misans"] = "MiSans",
+        ["settings.appearance.font.alibaba"] = "Alibaba PuHuiTi",
+        ["settings.appearance.font.smiley"] = "Smiley Sans",
+        ["settings.appearance.font.lxgw"] = "LXGW WenKai",
+        ["settings.appearance.font.segoe"] = "Segoe UI",
         ["settings.appearance.customHint"] = "Radius affects cards, buttons and inputs. Panel opacity only applies to image backgrounds; lower values let more wallpaper through.",
         ["settings.appearance.background"] = "Custom background",
         ["settings.bg.default"] = "Default",

@@ -308,9 +308,26 @@ public partial class App : Application
         // 语言同理：DynamicResource 的 Loc.* 键要在首帧渲染前就位，否则先闪一帧原始键名
         AppServices.Localization.Initialize();
 
+        // V3.5.0 启动动画：深色品牌面板 + 进度线，主窗口出现后淡出；自检不显示。
+        Views.SplashWindow? splash = null;
+        if (!HeadlessTest && !AppServices.Appearance.Settings.ReduceMotion && Environment.GetEnvironmentVariable("OBS_SELFTEST") != "1")
+        {
+            try
+            {
+                splash = new Views.SplashWindow();
+                splash.Show();
+            }
+            catch (Exception ex)
+            {
+                FileLogger.Warn("Splash", $"启动动画创建失败（已跳过）：{ex.Message}");
+                splash = null;
+            }
+        }
+
         var window = new MainWindow();
         MainWindow = window;
         window.Show();
+        splash?.CloseAfter(TimeSpan.FromMilliseconds(900));
     }
 
     protected override void OnExit(ExitEventArgs e)

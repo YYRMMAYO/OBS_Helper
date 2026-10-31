@@ -103,6 +103,10 @@ public sealed class AppearanceSettings
     [JsonPropertyName("panelOpacity")]
     public double PanelOpacity { get; set; } = 0.88;
 
+    /// <summary>界面字体 key（system / yahei / noto / harmony / misans / alibaba / smiley / lxgw / segoe）。</summary>
+    [JsonPropertyName("fontFamily")]
+    public string FontFamily { get; set; } = "system";
+
     /// <summary>旧设置迁移标记（1 = 已尝试过迁移）。</summary>
     [JsonPropertyName("bgMigrationVersion")]
     public int BackgroundMigrationVersion { get; set; }
@@ -162,9 +166,10 @@ public sealed record AccentScheme(
 {
     public static readonly AccentScheme[] Catalog =
     [
-        new("teal", "#1a6b5a",
-            "#1a6b5a", "#165c4d", "#114a3e", "#ddeee6", "#145244",
-            "#4cc9a8", "#5fd4b8", "#3fbb9a", "#0f2e25", "#82dcc8", "#071e17"),
+        // V3.5.0：默认主色改为低饱和「雾蓝」，与暖中性底更协调；key 保留兼容旧配置。
+        new("teal", "#5B7391",
+            "#5B7391", "#4C6280", "#3F536D", "#EDF1F6", "#33475F",
+            "#9DB4CE", "#B0C4DA", "#8AA3C0", "#1E2A38", "#C2D3E4", "#0B1119"),
         new("blue", "#3d6da0",
             "#3d6da0", "#33608f", "#274c73", "#e3edf7", "#2e567e",
             "#6fa9dc", "#85b9e4", "#5b99cf", "#14273d", "#a3cdf0", "#0a2036"),
@@ -705,6 +710,11 @@ public sealed class AppearanceService : IDisposable
         res["Surface3Brush"] = Frozen(Hex(alpha3, dark ? darkSurface3 : lightSurface3));
         res["NavSurfaceBrush"] = Frozen(Hex(glass ? Math.Min(255, alpha + 12) : 255, dark ? "#121412" : "#FBFBF9"));
         res["TopBarSurfaceBrush"] = Frozen(Hex(glass ? Math.Min(255, alpha + 18) : 255, dark ? "#121412" : "#FBFBF9"));
+        // 毛玻璃底之上再压一层很浅的主题色，保证文字对比度；图片模式下让壁纸透出来。
+        res["NavTintBrush"] = Frozen(Hex(glass ? 126 : 255, dark ? "#121412" : "#FBFBF9"));
+        res["TopBarTintBrush"] = glass
+            ? Frozen(Hex(156, dark ? "#121412" : "#FBFBF9"))
+            : Brushes.Transparent;
         res["TextBrush"] = Frozen(hc ? (dark ? "#ffffff" : "#000000") : (dark ? "#ececf5" : "#1c1d2b"));
         // 【深色对比度 v2.7.1】MutedBrush 深色 #9a9bb0→#a9abbe：在 Surface(#1b1c26) 上
         // 对比度约 6:1 → 7.5:1，弱光 / 低亮度屏幕下的次要文字不再发灰难读。
@@ -792,6 +802,7 @@ public sealed class AppearanceService : IDisposable
         res["FontSizeLg"] = Math.Round(18 * f, 1);
         res["FontSizeXl"] = Math.Round(22 * f, 1);
         res["FontSizeH1"] = Math.Round(28 * f, 1);
+        res["AppFontFamily"] = new FontFamily(ResolveFontFamily(Settings.FontFamily));
 
         // ---- 动画时长：减少动画时直接归零，样式里的 Duration 统一引用它
         res["MotionDuration"] = profile.ReduceMotion
@@ -802,13 +813,14 @@ public sealed class AppearanceService : IDisposable
         // ---- 无障碍 / 老年模式的布局令牌（V3.3.0 / P0-1）
         // 页面与样式只引用这些键，不再各写一套 if；切换模式后 DynamicResource 即时生效。
         res["NavWidth"] = new GridLength(profile.NavWidth);
-        res["NavItemMinHeight"] = profile.NavItemMinHeight;
+        // V3.5.0：整体放松间距，减少「所有元素挤在一起」的视觉疲劳。
+        res["NavItemMinHeight"] = profile.NavItemMinHeight + 6;
         res["NavItemPadding"] = new Thickness(
-            profile.NavItemPaddingX, profile.NavItemPaddingY,
-            profile.NavItemPaddingX, profile.NavItemPaddingY);
-        res["ControlMinHeight"] = profile.ControlMinHeight;
+            profile.NavItemPaddingX + 2, profile.NavItemPaddingY + 3,
+            profile.NavItemPaddingX + 2, profile.NavItemPaddingY + 3);
+        res["ControlMinHeight"] = profile.ControlMinHeight + 4;
         res["ButtonMinSize"] = profile.ButtonMinSize;
-        res["CardPadding"] = new Thickness(profile.CardPadding);
+        res["CardPadding"] = new Thickness(profile.CardPadding + 4);
         res["FocusThickness"] = new Thickness(profile.FocusThickness);
         res["FocusOffset"] = profile.FocusOffset;
         res["LineHeightFactor"] = profile.LineHeightFactor;
@@ -823,6 +835,27 @@ public sealed class AppearanceService : IDisposable
     }
 
     // ------------------------------------------------------------ 自定义背景
+
+    /// <summary>界面字体（V3.5.0 自定义）：只写字体族名，缺失时由系统回退。</summary>
+    private static string ResolveFontFamily(string? key) => (key ?? "").Trim().ToLowerInvariant() switch
+    {
+        "yahei" => "Microsoft YaHei UI, Microsoft YaHei, Segoe UI",
+        "noto" => "Noto Sans SC, Source Han Sans SC, Microsoft YaHei UI",
+        "harmony" => "HarmonyOS Sans SC, Microsoft YaHei UI",
+        "misans" => "MiSans, Microsoft YaHei UI",
+        "alibaba" => "Alibaba PuHuiTi 3.0, Alibaba PuHuiTi, Microsoft YaHei UI",
+        "smiley" => "Smiley Sans, Microsoft YaHei UI",
+        "lxgw" => "LXGW WenKai, Microsoft YaHei UI",
+        "segoe" => "Segoe UI, Microsoft YaHei UI",
+        _ => "Segoe UI, Microsoft YaHei UI",
+    };
+
+    /// <summary>设置界面字体并立即生效。</summary>
+    public void SetFontFamily(string? key)
+    {
+        Settings.FontFamily = string.IsNullOrWhiteSpace(key) ? "system" : key.Trim().ToLowerInvariant();
+        Apply();
+    }
 
     /// <summary>界面圆角预设（V3.5.0 自定义）。</summary>
     private static (int Lg, int Md, int Sm, int Xl) NormalizeUiRadius(string? value) => value switch
@@ -882,6 +915,7 @@ public sealed class AppearanceService : IDisposable
         res["ContentBackgroundImageA"] = null;
         res["ContentBackgroundImageB"] = null;
         res["ContentBackgroundDim"] = Brushes.Transparent;
+        res["GlassWallpaperBrush"] = Brushes.Transparent;
         res["ContentBackgroundOpacity"] = 1.0;
         res["ContentBackgroundBlurRadius"] = 0.0;
         res["ContentBackgroundFadeDuration"] = new Duration(TimeSpan.Zero);

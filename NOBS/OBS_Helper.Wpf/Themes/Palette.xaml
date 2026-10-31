@@ -34,6 +34,10 @@
   <!-- V3.5.0 整窗背景：导航 / 顶栏在图片模式下使用半透明表面，默认模式下由 AppearanceService 写回不透明值。 -->
   <SolidColorBrush PresentationOptions:Freeze="True" x:Key="NavSurfaceBrush" Color="#ffffff" />
   <SolidColorBrush PresentationOptions:Freeze="True" x:Key="TopBarSurfaceBrush" Color="#ffffff" />
+  <SolidColorBrush PresentationOptions:Freeze="True" x:Key="GlassWallpaperBrush" Color="#00000000" />
+  <SolidColorBrush PresentationOptions:Freeze="True" x:Key="NavTintBrush" Color="#ffffff" />
+  <SolidColorBrush PresentationOptions:Freeze="True" x:Key="TopBarTintBrush" Color="#ffffff" />
+  <FontFamily x:Key="AppFontFamily">Segoe UI, Microsoft YaHei UI</FontFamily>
   <SolidColorBrush PresentationOptions:Freeze="True" x:Key="Surface2Brush" Color="#f5f5f1" />
   <SolidColorBrush PresentationOptions:Freeze="True" x:Key="Surface3Brush" Color="#ecece6" />
   <SolidColorBrush PresentationOptions:Freeze="True" x:Key="TextBrush" Color="#1b1b19" />

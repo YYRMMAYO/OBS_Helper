@@ -1,6 +1,7 @@
 using System.IO;
 using System.Windows;
 using System.Windows.Media;
+using System.Windows.Media.Effects;
 using System.Windows.Media.Imaging;
 using System.Windows.Threading;
 using OBS_Helper.Wpf.Localization;
@@ -296,6 +297,7 @@ public sealed class WallpaperService : IDisposable
             res["ContentBackgroundImageA"] = null;
             res["ContentBackgroundImageB"] = null;
             res["ContentBackgroundDim"] = Brushes.Transparent;
+            res["GlassWallpaperBrush"] = Brushes.Transparent;
             return;
         }
 
@@ -313,6 +315,62 @@ public sealed class WallpaperService : IDisposable
             ? new Duration(TimeSpan.Zero)
             : new Duration(TimeSpan.FromMilliseconds(300));
         res["ContentBackgroundDim"] = DimBrush(dim);
+        res["GlassWallpaperBrush"] = BuildGlassBrush(_currentImage, dark) ?? Brushes.Transparent;
+    }
+
+    /// <summary>
+    /// 生成导航 / 顶栏的「毛玻璃」底：把当前壁纸缩小并高斯模糊，再叠一层主题色半透明遮罩。
+    /// 只在壁纸切换 / 主题切换时生成一次，不参与每秒渲染。
+    /// </summary>
+    private static Brush? BuildGlassBrush(ImageSource? source, bool dark)
+    {
+        if (source is not BitmapSource bmp || bmp.PixelWidth <= 0 || bmp.PixelHeight <= 0) return null;
+        const int W = 160, H = 90;
+        try
+        {
+            // DrawingContext 只接受旧的 BitmapEffect；这里把 BlurEffect 挂在 Visual.Effect 上，
+            // 再渲染到 RenderTargetBitmap，效果相同且不会用到已过时的 BitmapEffect API。
+            var visual = new DrawingVisual
+            {
+                Effect = new BlurEffect { Radius = 22, KernelType = KernelType.Gaussian }
+            };
+            using (var dc = visual.RenderOpen())
+            {
+                dc.PushOpacity(0.95);
+                dc.DrawImage(bmp, new Rect(0, 0, W, H));
+                dc.Pop();
+            }
+
+            var rtb = new RenderTargetBitmap(W, H, 96, 96, PixelFormats.Pbgra32);
+            rtb.Render(visual);
+            rtb.Freeze();
+
+            var tint = new SolidColorBrush(dark
+                ? Color.FromArgb(118, 10, 12, 11)
+                : Color.FromArgb(96, 255, 255, 252));
+            tint.Freeze();
+
+            var group = new DrawingGroup();
+            group.Children.Add(new ImageDrawing(rtb, new Rect(0, 0, 1, 1)));
+            group.Children.Add(new GeometryDrawing { Brush = tint, Geometry = new RectangleGeometry(new Rect(0, 0, 1, 1)) });
+            group.Freeze();
+
+            var brush = new DrawingBrush(group)
+            {
+                Stretch = Stretch.Fill,
+                Viewbox = new Rect(0, 0, 1, 1),
+                ViewboxUnits = BrushMappingMode.Absolute,
+                Viewport = new Rect(0, 0, 1, 1),
+                ViewportUnits = BrushMappingMode.RelativeToBoundingBox,
+            };
+            brush.Freeze();
+            return brush;
+        }
+        catch (Exception ex)
+        {
+            FileLogger.Warn("Wallpaper", $"生成毛玻璃底失败，退回半透明表面：{ex.Message}");
+            return null;
+        }
     }
 
     /// <summary>取（并缓存）一张缩略图；设置页的网格使用。</summary>

@@ -30,10 +30,18 @@
 ### 分支与文档：只维护 `master`
 
 - **V3.3.0 起 `dev` 分支已删除**：README、发布说明与全部文档只维护 `master` 一份；
-- 正式版版本号使用 `V主.次.修`（例如 `V3.3.0`），发布说明放仓库根 `RELEASE_NOTES_v<版本>.md`；
+- **V3.5.0 起同时维护 V / X 两个发布系列**：V 使用 `V主.次.修`（如 `V3.5.0`），X 使用日期码（如 `X1031`）。两者共用功能与数据目录，但更新检查只认各自标签；
+- 发布说明放仓库根 `RELEASE_NOTES_v<版本>.md` 或 `NOBS/RELEASE_NOTES_x<日期码>.md`；
 - 历史 `01`、`02`… 的 DEV 标签仍保留在 Release 页，但不再产生新的 DEV 构建；
 - 完整归属表与发布检查见 [`docs/BRANCH_AND_DOC_RULES.md`](docs/BRANCH_AND_DOC_RULES.md)；
 - **每个 Release 必须写清「新增了什么 / 修复了什么」**，结构与验收见 [`docs/RELEASE_RULES.md`](docs/RELEASE_RULES.md)。
+
+### V3.5.0 界面约定
+
+- 新页面只引用外观令牌，不硬编码颜色 / 圆角：`Surface*Brush`、`LineBrush`、`TextBrush`、`MutedBrush`、`BrandBrush`、`CornerRadius*`、`CardPadding`、`FontFamily`（`AppFontFamily`）。
+- 图片背景下导航 / 顶栏使用 `GlassWallpaperBrush` + `NavTintBrush` / `TopBarTintBrush`；不要另造半透明色值。
+- 点击动画统一走 `BaseButton` / `NavTabButton` / `SegmentButton` 的模板触发器；新增动画时长必须使用 `MotionFast` / `MotionSlow`，确保「减少动画」能归零。
+- 新增界面字体只引用系统已安装字体，不随包分发；字体键写入 `AppearanceSettings.FontFamily`，由 `AppearanceService` 统一解析。
 
 ## 2. 代码组织：纯逻辑放 `*Core.cs`
 

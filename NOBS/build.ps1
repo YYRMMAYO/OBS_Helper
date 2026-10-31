@@ -1,7 +1,8 @@
 ﻿<#
   OBS帮助助手（WPF 版，原名 OBS 排障助手）— Windows 构建与打包脚本
   ------------------------------------------------------------
-  版本号以 csproj 的 <Version> 为准（本文件从工程里读，不硬编码，见「前置检查」一节）。
+  版本号默认以 csproj 的 <Version> 为准（本文件从工程里读，不硬编码，见「前置检查」一节）；
+    .\build.ps1 -Version 1031.0.0  # X 系列：X1031 的安装包 / 便携包（同日再版用 1031.2.0）
 
   V2.9.3 起是**双目标**构建（同一份源码，两个 TFM）：
     · net10.0-windows —— 主构建，安装包 MinVersion=10.0，面向 Windows 10 / 11；
@@ -27,11 +28,15 @@
     .\build.ps1 -SkipLegacy     # 只出主构建（快速迭代 / 不关心 Win7 时）
     .\build.ps1 -SingleFile     # 额外产出单文件 exe
     .\build.ps1 -SkipInstaller  # 只出便携包（没装 Inno Setup 时用）
+    .\build.ps1 -Version 1031.0.0  # X 系列：X1031 的安装包 / 便携包（同日再版用 1031.2.0）
 #>
 [CmdletBinding()]
 param(
     [string]$Configuration = "Release",
     [string]$Runtime = "win-x64",
+    # 可选：覆盖 csproj 里的版本号。X 系列用它出包（如 1031.0.0 / 1031.2.0），
+    # 这样 master 上的 csproj 可以继续停留在 V 系列版本，不用为了出 X 包改工程文件。
+    [string]$Version = "",
     [switch]$SingleFile,
     [switch]$SkipInstaller,
     # V2.9.3：跳过 Win7 兼容构建（net6.0-windows）。默认是构建的。
@@ -99,7 +104,18 @@ $ver = "1.0.0"
 $csprojXml = [xml](Get-Content $proj -Raw)
 $verNode = $csprojXml.Project.PropertyGroup.Version | Where-Object { $_ } | Select-Object -First 1
 if ($verNode) { $ver = "$verNode".Trim() }
-Write-Host "版本号：$ver" -ForegroundColor DarkGray
+
+# X 系列：用 -Version 覆盖，不改 csproj（V / X 共用 master 上的同一份工程文件）。
+if (-not [string]::IsNullOrWhiteSpace($Version)) {
+    $ver = $Version.Trim()
+}
+if ($ver -notmatch '^\d+\.\d+(\.\d+){0,2}$') {
+    throw "版本号格式非法：$ver（需要 主.次 或 主.次.修）"
+}
+$verParts = @($ver.Split('.'))
+while ($verParts.Count -lt 4) { $verParts += '0' }
+$fileVer = ($verParts[0..3] -join '.')
+Write-Host "版本号：$ver（FileVersion / AssemblyVersion：$fileVer）" -ForegroundColor DarkGray
 
 New-Item -ItemType Directory -Force -Path $pakeWin | Out-Null
 
@@ -151,7 +167,8 @@ function Publish-Wpf {
     Step "自包含发布 WPF 工程（$Tfm / $Runtime / $Configuration）"
     $args = @(
         "publish", $proj, "-c", $Configuration, "-r", $Runtime, "--self-contained", "true",
-        "-p:PublishSingleFile=false", "-p:TargetFramework=$Tfm"
+        "-p:PublishSingleFile=false", "-p:TargetFramework=$Tfm",
+        "-p:Version=$ver", "-p:FileVersion=$fileVer", "-p:AssemblyVersion=$fileVer"
     )
     # ReadyToRun 对 net6.0 需要 6.0 的 crossgen 包；拿不到就退回非 R2R（只影响启动速度，不影响功能）。
     if ($ReadyToRun) { $args += "-p:PublishReadyToRun=true" }
@@ -413,7 +430,7 @@ if ($SingleFile) {
     # 单独发到 publish-single，避免和上面的多文件产物混在同一目录
     $sfDir = Join-Path $projDir "bin\$Configuration\$tfmModern\$Runtime\publish-single"
     dotnet publish $proj -c $Configuration -r $Runtime --self-contained true `
-        -p:TargetFramework=$tfmModern `
+        -p:TargetFramework=$tfmModern -p:Version=$ver -p:FileVersion=$fileVer -p:AssemblyVersion=$fileVer `
         -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true `
         -p:EnableCompressionInSingleFile=true -p:PublishReadyToRun=true `
         -o $sfDir | Out-Host

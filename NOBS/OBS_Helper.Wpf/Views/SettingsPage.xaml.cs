@@ -1822,7 +1822,7 @@ public partial class SettingsPage : UserControl, INavigationAware
     }
 
     private static string CurrentVersionText(Version? v)
-        => v is null ? "—" : ReleaseChannel.FormatVersion(v).TrimStart('v', 'V');
+        => v is null ? "—" : ReleaseChannel.FormatVersion(v);
 
     private async void OnCheckUpdate(object sender, RoutedEventArgs e)
     {

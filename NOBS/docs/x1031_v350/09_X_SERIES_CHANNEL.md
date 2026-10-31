@@ -13,62 +13,117 @@
 | --- | --- | --- | --- |
 | V | `V3.5.0` | `3.5.0` | `v3.5.0` |
 | X | `X1031` | `1031.0.0` | `X1031` |
+| X（同日再版） | `X1031Y1` | `1031.1.0` | `X1031Y1` |
+| X（同日再版） | `X1031Y2` | `1031.2.0` | `X1031Y2` |
+| X（不同日期） | `X1101` | `1101.0.0` | `X1101` |
 
 规则：
 
-- X 标签格式：`X` + 4 位日期码（`MMdd`），例如 `X1031`；后续可用 `X1101`。
-- 内部版本把日期码作为主版本号，保证 `X1101 > X1031`，且不会与 `3.x` 比较。
-- 版本显示由 `ReleaseChannel.FormatDisplayVersion()` 统一处理，界面不再各自拼接。
-- 安装包 / 便携包文件名仍使用内部版本（`OBS_Helper_Setup_1031.0.0.exe`），
-  Release 标题与 tag 使用 `X1031`，避免破坏构建脚本的 `[version]` 解析。
+- **`X` 后面的四位是日期 `MMdd`**：`X1031` = 10 月 31 日，`X1101` = 11 月 1 日；
+- **同一天再次发版**追加 `Y` + 序号：`X1031Y1`、`X1031Y2`、`X1031Y3`…；
+  `Y0` 与「不带 Y」等价，按非法标签拒绝，避免两个 tag 映射到同一版本；
+- 内部版本把日期码作为**主版本号**、`Y` 序号作为**次版本号**：
+  - `X1031` → `1031.0.0`
+  - `X1031Y2` → `1031.2.0`
+  - `X1101` → `1101.0.0`
+- 因此更新检测天然满足「**先比日期，日期相同再比 Y 序号**」：
+  - `X1031Y2 > X1031`
+  - `X1031Y10 > X1031Y2`
+  - `X1101 > X1031Y99`
+- 日期码必须合法（`01`–`12` 月、`01`–`31` 日；2 月按 29 天放行以兼容闰年），
+  非法标签直接跳过，不影响其他标签；
+- 版本显示由 `ReleaseChannel.FormatVersion()` 统一处理：日期固定补足四位，
+  `X0101` 不会显示成 `X101`；
+- 安装包 / 便携包文件名仍使用内部版本（`OBS_Helper_Setup_1031.0.0.exe`、
+  `OBS_Helper_Setup_1031.2.0.exe`），Release 标题与 tag 使用 `X1031` / `X1031Y2`，
+  避免破坏构建脚本的 `[version]` 解析。
 
-## 3. 编译期通道
+## 3. 当前系列的判定
 
-`OBS_Helper.Wpf.csproj` 增加：
+`ReleaseChannel` 由程序集主版本号判定当前系列：
 
-```xml
-<PropertyGroup Condition="'$(ReleaseChannel)' == 'X'">
-  <DefineConstants>$(DefineConstants);X_SERIES</DefineConstants>
-  <Version>1031.0.0</Version>
-  <FileVersion>1031.0.0.0</FileVersion>
-  <AssemblyVersion>1031.0.0.0</AssemblyVersion>
-  <ApplicationIcon>Assets\appicon_x.ico</ApplicationIcon>
-</PropertyGroup>
+- 主版本号 `>= 100` → X 系列；
+- 否则 → V 系列。
+
+为什么阈值是 100 而不是 1000：X 的主版本号是 `MMdd` 日期码，最早的有效日期
+`0101` 转成整数是 `101`；用 1000 会把 1–9 月的日期误判成 V 系列。
+V 系列目前是 `3.x`，不会与日期码冲突。
+
+## 4. 构建：X 版本不写死进 csproj
+
+`master` 上的 `OBS_Helper.Wpf.csproj` 始终停留在 V 系列版本，X 构建通过版本覆盖完成：
+
+```powershell
+# X1031
+.\NOBS\build.ps1 -Version 1031.0.0
+
+# 同日再版 X1031Y2
+.\NOBS\build.ps1 -Version 1031.2.0
 ```
 
-- 默认（不传 `ReleaseChannel`）为 V 系列。
-- X 构建命令：`dotnet build ... -p:ReleaseChannel=X`。
-- CI 在 `X*` tag 上自动传 `ReleaseChannel=X`。
+`build.ps1` 会把版本传给 `dotnet publish` 的 `Version` / `FileVersion` / `AssemblyVersion`
+三个属性，并用于安装包名、便携包名、增量清单与知识库资产名。
 
-## 4. 更新检查
+CI 在 `X*` tag 上自动解析：
 
-`UpdateService` 增加 `ReleaseChannel` 静态类（纯逻辑、可单测）：
+| tag | `OBS_BUILD_VERSION` |
+| --- | --- |
+| `X1031` | `1031.0.0` |
+| `X1031Y2` | `1031.2.0` |
+| `X1101` | `1101.0.0` |
+
+这样同一份源码在 X 构建（`1031.x.0`）与 V 构建（`3.5.x`）下会自动选中各自通道，
+不需要额外的编译常量，也不需要为了出 X 包改工程文件。
+
+## 5. 更新检查
+
+`ReleaseChannel` 是纯逻辑类（可单测）：
 
 ```csharp
 public enum ReleaseSeries { V, X }
-ReleaseSeries Current;                 // 由 X_SERIES 编译常量决定
-bool IsTagForSeries(string tag);       // V: ^[vV]\d+\.\d+ ; X: ^[xX]\d{4}
-Version? ParseTag(string tag);         // X1031 -> 1031.0.0
+ReleaseSeries Current;                          // 由程序集主版本号判定
+bool IsTagForSeries(string tag, ReleaseSeries); // V: ^[vV]?\d+\.\d+ ; X: ^[xX]\d{4}(Y\d+)?$
+Version? ParseTagForSeries(string tag, ReleaseSeries);
+                                                // X1031 -> 1031.0.0
+                                                // X1031Y2 -> 1031.2.0
 ```
 
-- `ParseLatestVersion` 先按通道过滤，再比较；
+- `ParseLatestVersion` 先按通道过滤，再取 `Version` 最大值；
 - `FindBestRelease` / `FindNamedAssetAsync` 同样按通道过滤；
 - V 通道忽略 X 标签，X 通道忽略 V 标签；
-- 任何无法解析的标签跳过，不影响其他标签。
+- 任何无法解析 / 日期非法的标签跳过，不影响其他标签；
+- 同日再版的 `Y` 序号进入次版本号，`Y10 > Y2`（按数字比较，不是字符串比较）。
 
-## 5. 发布流程
+## 6. 更新弹窗展示 Release 正文（仅 X 系列）
+
+X 系列检测到新版本后，`UpdateDialog` 会在弹窗打开后异步请求
+`/repos/YYRMMAYO/OBS_Helper/releases`，取当前系列最高版本的 Release `body`
+（即 Release 页面正文），用内置 `MarkdownView` 渲染在「本次更新内容」区域。
+
+- 只读展示，不参与版本判断；
+- 拉取超时 / 404 / 网络失败时整块保持隐藏，**不影响检查更新与下载安装**；
+- CI 自动追加在 Release 正文末尾的「资产 SHA-256」表会在展示前裁掉
+  （弹窗的 Markdown 渲染器不支持表格）；
+- V 系列保持原行为，不额外发起这次请求，避免与 V3.5.1 的更新线互相影响。
+
+## 7. 发布流程
 
 1. V3.5.0：更新 csproj / iss 为 `3.5.0` → 提交 → `git tag V3.5.0` → 推送；
-2. X1031：切到 X 通道构建参数 → 更新 csproj / iss 为 `1031.0.0` → 提交 → `git tag X1031` → 推送；
-3. CI：
-   - `on.push.tags` 增加 `X*`；
-   - release job 不再强制 `V` 前缀解析；
-   - 发布说明查找顺序：`RELEASE_NOTES_x1031.md` → `RELEASE_NOTES_vx1031.md`（大小写兼容）；
-   - X tag 构建传 `ReleaseChannel=X`，跳过基于 `[version]` 的增量基准（X 系列首版不做增量）。
+2. X1031：不改 csproj，直接 `.\NOBS\build.ps1 -Version 1031.0.0` 本地出包 →
+   提交文档 → `git tag X1031` → 推送；
+3. 同日再版：`-Version 1031.2.0` → `git tag X1031Y2` → 推送；
+4. CI：
+   - `on.push.tags` 已包含 `X*`；
+   - 从 X tag 解析内部版本并传给 `build.ps1`；
+   - X tag 跳过基于 `[version]` 的增量基准（跨系列版本号不连续）；
+   - 发布说明按日期查找：`X1031` 与 `X1031Y2` 都使用 `NOBS/RELEASE_NOTES_x1031.md`；
+5. 发版后打开 Release 页面核对正文；应用内 X 弹窗展示的就是这份正文。
 
-## 6. 验收
+## 8. 验收
 
-- V 构建：只提示 `V3.5.0`，即使仓库同时存在 `X1031`；
-- X 构建：只提示 `X1101` 之类，不会提示 `V3.6.0`；
-- 两个构建的版本显示、图标、Release 资产名各自正确；
-- `ReleaseChannelTests` 覆盖所有过滤与解析分支。
+- V 构建：只提示 `V3.5.0`，即使仓库同时存在 `X1031` / `X1031Y2`；
+- X 构建：只提示 X 标签，不会提示 `V3.6.0`；
+- 同日更新：已安装 `X1031` 时提示 `X1031Y2`；已安装 `X1031Y2` 时不提示 `X1031`；
+- 日期优先：`X1101` > `X1031Y99`；
+- 更新弹窗能显示 Release 正文；断网 / Release 不存在时弹窗仍可正常下载；
+- `ReleaseSeriesTests` 覆盖标签过滤、日期合法性、Y 序号比较与 Release 正文裁剪。

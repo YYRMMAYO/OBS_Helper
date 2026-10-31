@@ -69,6 +69,33 @@ jobs:
         with:
           dotnet-version: '10.0.x'
 
+      # X 系列 tag 形如 X1031 / X1031Y2：从 tag 推导内部版本（1031.0.0 / 1031.2.0）。
+      # 这样 master 上的 csproj 可以继续停留在 V 系列版本，X 构建也能拿到正确的
+      # 程序集版本、安装包名与更新检测基准，不需要为了出 X 包改工程文件。
+      - name: 解析 X 系列标签版本
+        shell: pwsh
+        run: |
+          if ($env:GITHUB_REF_TYPE -ne 'tag') { Write-Host '非 tag 构建，沿用 csproj 版本'; exit 0 }
+          $tag = $env:GITHUB_REF_NAME
+          if ($tag -notmatch '^[Xx](\d{4})(?:[Yy](\d+))?$') {
+              Write-Host "非 X 系列标签 $tag，沿用 csproj 版本"
+              exit 0
+          }
+          $date = [int]$Matches[1]
+          $month = [int][math]::Floor($date / 100)
+          $day = $date % 100
+          if ($month -lt 1 -or $month -gt 12 -or $day -lt 1 -or $day -gt 31) {
+              throw "X 标签日期非法：$tag（应为 X + MMdd）"
+          }
+          $rev = 0
+          if ($Matches[2]) {
+              $rev = [int]$Matches[2]
+              if ($rev -lt 1) { throw "X 标签 Y 序号非法：$tag（应为 Y1 / Y2 / Y3…）" }
+          }
+          $ver = "$date.$rev.0"
+          "OBS_BUILD_VERSION=$ver" >> $env:GITHUB_ENV
+          Write-Host "X 标签 $tag -> 内部版本 $ver"
+
       - name: Run unit tests
         run: dotnet test NOBS/OBS_Helper.Wpf.Tests/OBS_Helper.Wpf.Tests.csproj -c Release
         shell: pwsh
@@ -216,6 +243,9 @@ jobs:
           # 于是 $Configuration='-Configuration'、$Runtime='Release' → dotnet publish -r Release
           # → NETSDK1083，整条打包流水线在 CI 上直接失败（本地具名传参测不出来）。
           $buildArgs = @{ Configuration = 'Release'; Runtime = 'win-x64' }
+          if ($env:OBS_BUILD_VERSION) {
+              $buildArgs['Version'] = $env:OBS_BUILD_VERSION
+          }
           if ($env:OBS_DELTA_BASE_READY -eq '1' -and $env:OBS_DELTA_BASE_VERSION) {
               $buildArgs['DeltaBaseVersion'] = $env:OBS_DELTA_BASE_VERSION
           }
@@ -470,6 +500,8 @@ jobs:
           # 对应 NOBS/RELEASE_NOTES_v3.1.1.md、RELEASE_NOTES_x1031.md、RELEASE_NOTES_DEV_01.md。
           $version = $tag -replace '^[VvXx]', ''
           $isX = $tag -match '^[Xx]'
+          # X 系列的发布说明按「日期」归档：X1031 与同日再版 X1031Y2 共用 RELEASE_NOTES_x1031.md。
+          if ($isX -and $tag -match '^[Xx](\d{4})') { $version = $Matches[1] }
           $devNotes = Join-Path $ws "NOBS/RELEASE_NOTES_DEV_$version.md"
           $xNotes = Join-Path $ws "NOBS/RELEASE_NOTES_x$version.md"
           $stableNotes = Join-Path $ws "NOBS/RELEASE_NOTES_v$version.md"

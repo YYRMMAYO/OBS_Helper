@@ -6,7 +6,7 @@
 
 **Current release: V3.5.0** — the global background now covers the entire window (navigation, top bar and pages) with translucent surfaces, plus a rebuilt mobile connection page and Feature Center status strip. It also includes GitHub accelerator guidance, merged managed/locally-detected plugins, one-click media server for phone cameras, 10 VTuber templates, a rebuilt mini control window and phone-side teleprompter editing. See [RELEASE_NOTES_v3.5.0.md](RELEASE_NOTES_v3.5.0.md); the first X-series release [X1031](RELEASE_NOTES_x1031.md) ships the new icon without this UI refactor.
 
-> **V / X series**: V releases use `V3.5.0`-style versions; X releases use date-code versions such as `X1031`. Both share features and the data folder, but each channel only checks its own tags: V builds only `V*`, X builds only `X*`.
+> **V / X series**: V releases use `V3.5.0`-style versions; X releases use `X` + `MMdd` date codes such as `X1031`, with `Y1`/`Y2`/`Y3` appended for a second release on the same day. Both share features and the data folder, but each channel only checks its own tags: V builds only `V*`, X builds only `X*`.
 
 > **This is the developer-facing full documentation for the Windows native WPF version and it lives inside `NOBS/`**;
 > the repository-root [`README.md`](../README.md) is the complete user-facing guide (features · usage · installation),
@@ -74,7 +74,8 @@ There are two channels for the same app — pick the one that matches how much "
 
 ## X1031 highlights
 
-- **Independent X channel**: X1031 only checks tags starting with `X`; V3.6.0-style tags are invisible to X users. The UI shows `X1031`.
+- **Independent X channel**: X1031 only checks tags starting with `X`; V3.6.0-style tags are invisible to X users. The UI shows `X1031`, or `X1031Y2` for a same-day re-release. Update checks compare the date first, then the Y revision.
+- **Release notes in the update dialog**: X-series update prompts fetch and show this release's GitHub Release notes; a failed fetch does not affect updating.
 - **New app icon**: black rounded plate with white `OBS`, `helper`, and an overlapping teal arc; window, taskbar, tray and installer use the same mark.
 - **Plugin experience**: GitHub accelerator guidance (Watt Toolkit / Steam++) with a re-check button; the installed list merges “managed by this app” and “detected locally”, so plugins you added to OBS yourself are visible too.
 - **Phone camera**: mediamtx pinned to v1.21.3 with SHA-256 and one-click install; the media server can start before OBS connects, and the source is added automatically afterwards.

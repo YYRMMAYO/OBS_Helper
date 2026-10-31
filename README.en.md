@@ -81,7 +81,7 @@ This is the **native WPF rewrite** of the original Blazor WebAssembly + WebView2
 | **Remote-control OBS** | Scene switching, source visibility, audio mute and volume, record / stream / virtual camera, live stats, scheduled stop, open the recording folder — always at hand through **four entry points: console, system tray, mini window and global hotkeys**; scenes can also switch automatically based on the foreground window title |
 | **Plugin square + local health check** | **57 curated plugins** (8 categories, the v1.4 catalog fully re-audited); cards show maintenance status and link straight to GitHub Releases; a **read-only scan of locally installed plugins** locates the OBS install folder across drives (multi-view registry / every fixed drive / multiple Steam libraries) and covers the OBS 32.x "one folder per plugin" plugin root |
 | **Scene templates and stream setup** | **12 built-in live-room templates** (Gaming Stream / Vertical Live Selling / Duo Co-Stream / Teaching Screen Recording / Radio Idle / Go-Live / BRB / End Pack / Green Screen Background / Selling Dual Camera / Esports Cast / Podcast Talk / Vertical Short Recording / Meeting/Class Multicam) — with OBS connected, one click creates the scenes and sources; when not connected you can export a standard scene-collection JSON. There is also a 6-step go-live walkthrough plus streaming presets for Bilibili / Douyin / Kuaishou / WeChat Channels / Xiaohongshu / YouTube / Twitch and other major platforms |
-| **Chinese / English bilingual** | The interface, tray, notifications, errors, log rules, health-check verdicts and diagnostic reports are all bilingual (**3387 string keys**), **Simplified Chinese by default**, and switching takes effect instantly with no restart; bundled content (knowledge base / templates / plugin catalog / troubleshooting guide) is bilingual too |
+| **Chinese / English bilingual** | The interface, tray, notifications, errors, log rules, health-check verdicts and diagnostic reports are all bilingual (**3388 string keys**), **Simplified Chinese by default**, and switching takes effect instantly with no restart; bundled content (knowledge base / templates / plugin catalog / troubleshooting guide) is bilingual too |
 | **Data safety (the V3.0 focus)** | All writes to user files go through a **transactional channel**: snapshot before writing + atomic replace + read-back verification + rollback on failure; every write resolves the absolute path first and passes an **out-of-bounds guard**; secrets such as OBS passwords and API keys are encrypted and stored separately |
 | **Privacy first** | Preferences contain no credentials at all; passwords and API keys are **double-encrypted** (AES-256-GCM + DPAPI, bound to this machine and this user); the app only goes online when you start an AI diagnostic, and logs are sanitized first; the plugin health check is entirely read-only and its results stay on this machine |
 | **Incremental updates, lighter by design** | The in-app "incremental update" downloads only changed files (a delta between neighbouring versions is usually just a few MB); every file is verified with SHA-256, and on failure it falls back to the full installer automatically; installed builds auto-elevate, swap files and restart. The knowledge base / plugin catalog can be updated separately |
@@ -183,10 +183,12 @@ When the cloud / free engine fails it **falls back to the local engine automatic
 | Channel | Version style | What it is | Where updates come from |
 | --- | --- | --- | --- |
 | **V series** (`master`) | `V3.5.0` | **Stable first**: settled features, full regression and release verification — the right choice for everyday streaming / recording | The regular Releases page · the Lanzou mirror · in-app incremental updates |
-| **X series** (`master`) | `X1031` | **Independent major line**: date-code versions and the X-specific icon; updates only look at `X` tags | X-series Releases · in-app update |
+| **X series** (`master`) | `X1031` / `X1031Y2` | **Independent major line**: `X` + `MMdd` date codes and the X-specific icon; updates only look at `X` tags | X-series Releases · in-app update |
 
 - **Both series share features and the data folder**: install folder, assembly name and `%LocalAppData%\OBS_Helper` are unchanged, so the upgrade path is identical.
 - **Channel filtering happens in the parser**: V builds only recognise `V3.5.0`-style tags; X builds only recognise `X1031`-style tags. They never mistake one another for a newer version.
+- **X version rule**: the four digits after `X` are an `MMdd` date (`X1031` = October 31). A second release on the same day appends `Y1`, `Y2`, `Y3`…; update checks compare the date first, then the Y revision, so `X1031Y2 > X1031` and `X1101 > X1031Y99`.
+- **X update prompt**: when an update is found, the dialog fetches this release's notes from GitHub and shows them in place; a failed fetch never blocks checking or downloading.
 - **X1031 is smaller than V3.5.0**: X1031 contains items 1–9 and the new icon, but not the global background UI refactor, mobile page layout or Feature Center UX work. V3.5.0 contains those UI changes but keeps the original icon as requested.
 
 ## What's new in V3.5.0
@@ -209,7 +211,8 @@ When the cloud / free engine fails it **falls back to the local engine automatic
 
 > Full details: [`NOBS/RELEASE_NOTES_x1031.md`](NOBS/RELEASE_NOTES_x1031.md) (Chinese).
 
-- Independent X channel (only `X*` tags) and the minimal “OBS helper” icon.
+- Independent X channel (only `X*` tags, ordered by date and then the same-day `Yn` revision) and the minimal “OBS helper” icon.
+- The update dialog shows this release's GitHub Release notes; a failed fetch does not affect updating.
 - Shared plugin, phone camera, template, mini window, teleprompter and guide improvements.
 
 ## What's new in V3.4.0

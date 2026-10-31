@@ -18,11 +18,21 @@
 | 10 全局背景 / UI 重构 | 02 | ✅ | `MainWindow.xaml`、`Palette.xaml`、`AppearanceService.cs`、`SettingsPage`、`SplashWindow` | 构建 + 自检 |
 | 毛玻璃 / 字体 / 启动动画 | 02 | ✅ | `WallpaperService.cs`（模糊壁纸底）、`AppearanceService.cs`（字体/圆角/透明度）、`SplashWindow` | 构建 + 自检 |
 | 手机连接页 / 功能中心 | 08 | ✅ | `MobileLinkPage`、`FeatureHubPage` | 构建 + 自检 |
-| X/V 通道分离 | 09 | ✅ | `ReleaseChannel.cs`、`UpdateService.cs`、CI | 9 项单测 |
+| X/V 通道分离（日期 + Y 序号） | 09 | ✅ | `ReleaseChannel.cs`、`UpdateService.cs`、`build.ps1`、CI | 42 项单测 |
+| X 更新弹窗直显 Release 正文 | 09 | ✅ | `UpdateDialog.xaml(.cs)`、`UpdateService.cs`（Release body） | 单测 + 手动 |
 
 ## 2. 三轮自检记录
 
-### X1031（提交 `4bf9b1e`，独立工作区）
+### X1031 重置（日期码 + Y 序号，本地出包）
+
+| 检查 | 结果 |
+| --- | --- |
+| 单元测试 | 1750 / 1750 通过 |
+| 构建 | net10.0-windows / net6.0-windows 均成功 |
+| 资源 / 无障碍 / 文档 | check_resources / check_accessibility / check_docs 全部通过 |
+| 无界面自检 | 36 PASS / 0 FAIL |
+
+### V3.5.0（含全面 UI 重构，历史基线）
 
 | 轮次 | 构建 | 单测 | 资源 / 无障碍 / 文档 | 无界面自检 |
 | --- | --- | --- | --- | --- |
@@ -30,15 +40,7 @@
 | 2 | 成功 | 1729 / 1729 | 全部通过 | 36 PASS / 0 FAIL |
 | 3 | 成功 | 1729 / 1729 | 全部通过 | 36 PASS / 0 FAIL |
 
-### V3.5.0（含全面 UI 重构）
-
-| 轮次 | 构建 | 单测 | 资源 / 无障碍 / 文档 | 无界面自检 |
-| --- | --- | --- | --- | --- |
-| 1 | 成功 | 1729 / 1729 | 全部通过 | 36 PASS / 0 FAIL |
-| 2 | 成功 | 1729 / 1729 | 全部通过 | 36 PASS / 0 FAIL |
-| 3 | 成功 | 1729 / 1729 | 全部通过 | 36 PASS / 0 FAIL |
-
-- 资源检查：47 个 XAML、2670 处引用全部可解析；文案键 3373（中英键集一致）。
+- 资源检查：48 个 XAML、2699 处引用全部可解析；文案键 3388（中英键集一致）。
 - 文档检查：csproj / iss 版本 3.5.0 一致；README / CODEBASE 数字一致。
 - 无界面自检：路由 28 项 + 引导 / 小窗 / 文案 / 语言重放 / 回退提示 / D7 护栏 / 双协议分支，共 36 项。
 

@@ -4,8 +4,8 @@
 > 只放一个标题、只贴资产哈希表、或者只写「详见 README」都算不合格。
 > 用户点开 Release 页面的第一眼，就应该知道这一版值不值得升级。
 
-- 适用范围：正式版 `V主.次.修`，以及 DEV 测试通道的 `01`、`02`、`03` …
-- 唯一事实来源：仓库里的 `NOBS/RELEASE_NOTES_<tag>.md`（正式版）或 `NOBS/RELEASE_NOTES_DEV_<编号>.md`（DEV 版）
+- 适用范围：正式版 `V主.次.修`、X 系列 `X<MMdd>[Y<序号>]`，以及 DEV 测试通道的 `01`、`02`、`03` …
+- 唯一事实来源：仓库里的 `NOBS/RELEASE_NOTES_<tag>.md`（正式版 / X 系列）或 `NOBS/RELEASE_NOTES_DEV_<编号>.md`（DEV 版）
 - 自动化：CI 的 release job 会读取这份文件作为 Release 正文，并在末尾追加资产 SHA-256 表。
   **文件不存在或内容过短时，发版 job 直接失败**，不允许「空说明发版」。
 
@@ -38,18 +38,23 @@
 
 | 版本类型 | 文件 | 分支 |
 | --- | --- | --- |
-| 正式版 `V3.3.0` | `NOBS/RELEASE_NOTES_v3.3.0.md` | `master` |
+| V 正式版 `V3.3.0` | `NOBS/RELEASE_NOTES_v3.3.0.md` | `master` |
+| X 系列 `X1031` | `NOBS/RELEASE_NOTES_x1031.md` | `master` |
+| X 同日再版 `X1031Y2` | 仍为 `NOBS/RELEASE_NOTES_x1031.md`（按日期归档） | `master` |
 
-- 文件名与 tag 的对应关系（CI 会**去掉 tag 开头的 `V`** 再找文件）：
-  tag `V3.3.0` → 找 **`NOBS/RELEASE_NOTES_v3.3.0.md`**，
-  最后兼容 `NOBS/RELEASE_NOTES_3.1.1.md`；tag `01` → `NOBS/RELEASE_NOTES_DEV_01.md`；
+- 文件名与 tag 的对应关系（CI 会**去掉 tag 开头的 `V` / `X`** 再找文件）：
+  - tag `V3.3.0` → **`NOBS/RELEASE_NOTES_v3.3.0.md`**，最后兼容 `NOBS/RELEASE_NOTES_3.1.1.md`；
+  - tag `X1031` / `X1031Y2` → **`NOBS/RELEASE_NOTES_x1031.md`**（X 系列按日期归档，`Y` 序号不单独建文件）；
+  - tag `01` → `NOBS/RELEASE_NOTES_DEV_01.md`；
 - 为避免歧义，正式版统一用 **`RELEASE_NOTES_v<版本>.md`**（小写 v），DEV 用 `RELEASE_NOTES_DEV_<编号>.md`；
 - V3.3.0 起 `dev` 分支已删除，发布说明只放 `master`（见 [`BRANCH_AND_DOC_RULES.md`](BRANCH_AND_DOC_RULES.md)）。
 
 ## 4. 发版流程（与内容有关的部分）
 
 1. 写 / 更新 `NOBS/RELEASE_NOTES_<tag>.md`，按上面 6 个部分自检；
+   X 系列写到按日期命名的文件（如 `X1031Y2` → `RELEASE_NOTES_x1031.md`）；
 2. 确认正文里的版本号、文件名、系统要求与 `csproj` / 安装包一致；
+   X 构建的内部版本由 `build.ps1 -Version` 覆盖（`X1031Y2` → `1031.2.0`），csproj 保持 V 版本；
 3. 提交到对应分支（正式版 → `master`）；
 4. 打 tag 并推送：CI 会用这份文件作为 Release 正文，并追加资产 SHA-256 表；
 5. 发版后打开 Release 页面**逐条核对**：摘要、新增、修复、升级说明是否都在；
@@ -63,6 +68,7 @@
 - ❌ 把内部重构清单当作用户更新说明；
 - ❌ 正文里的文件名 / 版本号与实际产物不一致；
 - ❌ 发布说明只提交在已停用的 DEV 分支。
+- ❌ X 系列同日再版另建 `RELEASE_NOTES_x1031Y2.md`（应按日期共用 `RELEASE_NOTES_x1031.md`）。
 
 ## 6. 提交前检查清单
 

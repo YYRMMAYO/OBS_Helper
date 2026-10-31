@@ -1,6 +1,7 @@
 <Window x:Class="OBS_Helper.Wpf.Controls.UpdateDialog"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:ctl="clr-namespace:OBS_Helper.Wpf.Controls"
         WindowStyle="None"
         AllowsTransparency="True"
         Background="Transparent"
@@ -32,6 +33,23 @@
                  Foreground="{DynamicResource TextBrush}">
         <Run x:Name="CurrentRun" Text="{DynamicResource Loc.update.currentUnknown}" />&#x0a;<Run x:Name="LatestRun" Text="{DynamicResource Loc.update.latestUnknown}" FontWeight="SemiBold" />
       </TextBlock>
+
+      <!-- X 系列：弹窗打开后异步拉取 GitHub Release 正文；失败时整块保持隐藏，不影响更新 -->
+      <Border x:Name="ReleaseNotesPanel" Visibility="Collapsed" Margin="0,14,0,0"
+              Background="{DynamicResource Surface2Brush}"
+              BorderBrush="{DynamicResource LineBrush}" BorderThickness="1"
+              CornerRadius="{DynamicResource CornerRadiusMd}" Padding="14,12">
+        <StackPanel>
+          <TextBlock Text="{DynamicResource Loc.update.notes.title}"
+                     FontSize="{DynamicResource FontSizeSm}" FontWeight="SemiBold"
+                     Foreground="{DynamicResource TextBrush}" />
+          <ScrollViewer MaxHeight="240" Margin="0,8,0,0"
+                        VerticalScrollBarVisibility="Auto"
+                        HorizontalScrollBarVisibility="Disabled">
+            <ctl:MarkdownView x:Name="ReleaseNotesView" SkipTopLevelHeading="True" />
+          </ScrollViewer>
+        </StackPanel>
+      </Border>
 
       <Border Background="{DynamicResource OkSoftBrush}"
               CornerRadius="{DynamicResource CornerRadiusMd}"

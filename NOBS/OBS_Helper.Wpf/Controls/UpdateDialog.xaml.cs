@@ -33,15 +33,19 @@ public partial class UpdateDialog : Window
 
         dlg.CurrentRun.Text = current is null
             ? Strings.T("update.currentUnknown")
-            : Strings.T("update.current", ReleaseChannel.FormatVersion(current).TrimStart('v', 'V'));
+            : Strings.T("update.current", ReleaseChannel.FormatVersion(current));
         dlg.LatestRun.Text = latest is null
             ? Strings.T("update.latestUnknown")
-            : Strings.T("update.latest", ReleaseChannel.FormatVersion(latest).TrimStart('v', 'V'));
-        dlg.TitleText.Text = latest is null ? Strings.T("update.title") : Strings.T("update.dialogTitle", ReleaseChannel.FormatVersion(latest).TrimStart('v', 'V'));
+            : Strings.T("update.latest", ReleaseChannel.FormatVersion(latest));
+        dlg.TitleText.Text = latest is null ? Strings.T("update.title") : Strings.T("update.dialogTitle", ReleaseChannel.FormatVersion(latest));
         dlg.PasswordText.Text = UpdateService.UpdatePassword;
 
         // 展示当前知识库版本（异步刷新，失败静默）
         _ = dlg.RefreshKbStatusAsync();
+
+        // X 系列：弹窗出现后再去 GitHub 拉本版 Release 正文并展示；
+        // 网络失败 / 没有正文都静默跳过，绝不阻塞或影响更新流程。
+        dlg.Loaded += async (_, _) => await dlg.LoadReleaseNotesAsync().ConfigureAwait(true);
 
         // Owner 未显示时 CenterOwner 会退化到屏幕左上，兜底居中屏幕
         if (dlg.Owner is null || !dlg.Owner.IsVisible)
@@ -55,6 +59,29 @@ public partial class UpdateDialog : Window
 
     /// <summary>当前应用版本（用于应用内下载前的版本比较）。</summary>
     private Version? _currentVersion;
+
+    /// <summary>
+    /// X 系列拉取并展示 GitHub Release 正文。只读展示，任何失败都不改变更新按钮 / 下载流程。
+    /// </summary>
+    private async Task LoadReleaseNotesAsync()
+    {
+        if (!ReleaseChannel.IsXSeries) return;
+
+        try
+        {
+            var info = await AppServices.Updates.GetLatestReleaseAsync().ConfigureAwait(true);
+            var body = UpdateService.TrimReleaseBodyForDisplay(info.Body);
+            if (!info.IsOk || string.IsNullOrWhiteSpace(body)) return;
+
+            ReleaseNotesView.Render(body);
+            ReleaseNotesPanel.Visibility = Visibility.Visible;
+        }
+        catch (Exception ex)
+        {
+            // 更新说明是锦上添花：拉取失败只记日志，用户仍可正常更新。
+            FileLogger.Error("Update", $"读取 Release 更新说明失败（不影响更新）：{ex.Message}");
+        }
+    }
 
     private UpdateDialogResult _result = UpdateDialogResult.Later;
 
@@ -131,19 +158,21 @@ public partial class UpdateDialog : Window
                 return;
             }
 
-            // 去掉版本号前头的 "V"（不论大小写）再比较版本大小：
+            // 按当前系列（V / X）解析 Release tag 再比较大小：
             // 最新 Release 不高于当前版本时，没有下载的必要。
-            var latestVersion = UpdateService.ParseVersion(info.Tag);
+            var latestVersion = ReleaseChannel.ParseCurrentTag(info.Tag);
             if (latestVersion is not null && _currentVersion is not null && latestVersion <= _currentVersion)
             {
-                SetGithubStatus(Strings.T("update.notNewer", latestVersion, $"{_currentVersion.Major}.{_currentVersion.Minor}.{_currentVersion.Build}"));
+                SetGithubStatus(Strings.T("update.notNewer",
+                    ReleaseChannel.FormatVersion(latestVersion),
+                    ReleaseChannel.FormatVersion(_currentVersion)));
                 SetDownloading(false);
                 return;
             }
 
             GithubStatusText.Text = latestVersion is null
                 ? Strings.T("update.downloadingTag", info.Tag)
-                : Strings.T("update.downloadingVersion", latestVersion);
+                : Strings.T("update.downloadingVersion", ReleaseChannel.FormatVersion(latestVersion));
 
             var progress = new Progress<(long Received, long? Total)>(p =>
             {
@@ -223,17 +252,17 @@ public partial class UpdateDialog : Window
                 return;
             }
 
-            var target = UpdateService.ParseVersion(info.Tag);
+            var target = ReleaseChannel.ParseCurrentTag(info.Tag);
             if (target is not null && _currentVersion is not null && target <= _currentVersion)
             {
-                SetDeltaStatus(Strings.T("update.deltaNotNewer", target));
+                SetDeltaStatus(Strings.T("update.deltaNotNewer", ReleaseChannel.FormatVersion(target)));
                 SetDownloading(false);
                 return;
             }
 
             SetDeltaStatus(target is null
                 ? Strings.T("update.deltaDownloading")
-                : Strings.T("update.deltaDownloadingVersion", target));
+                : Strings.T("update.deltaDownloadingVersion", ReleaseChannel.FormatVersion(target)));
 
             var progress = new Progress<(long Received, long? Total)>(p =>
             {

@@ -25,7 +25,8 @@
 | --- | --- | --- |
 | 根 `README.md` / `README.en.md` | 仓库根 | 面向用户的完整说明（功能 · 使用 · 安装 · 质量基线 · 许可 / 开源署名）；中英同步 |
 | `NOBS/README.md` / `NOBS/README.en.md` | `NOBS/` | 开发向完整文档（架构 · 质量基线 · 逐版本说明 · 代码清单）；中英同步 |
-| `RELEASE_NOTES_vX.Y.Z.md` | `NOBS/` | 正式版发布说明；版本号与 `csproj` / `.iss` 一致 |
+| `RELEASE_NOTES_vX.Y.Z.md` | `NOBS/` | V 系列正式版发布说明；版本号与 `csproj` / `.iss` 一致 |
+| `RELEASE_NOTES_x<MMdd>.md` | `NOBS/` | X 系列发布说明；`X1031` 与同日再版 `X1031Y2` 共用同一份（按日期归档） |
 | `NOBS/docs/**` | `NOBS/docs/` | 架构、代码清单、设计稿、实现状态、QA 记录 |
 | 根 `docs/**` | 仓库根 | 无障碍、贡献、安全、行为准则、发版规则等社区文档 |
 | 开源署名 | `NOBS/docs/OPEN_SOURCE_ATTRIBUTION.md` | 第三方项目 / 许可证 / 用途边界；README 与「关于」界面同步链接 |
@@ -40,6 +41,7 @@
 4. **每个 Release 必须写清「新增了什么 / 修复了什么」**，结构与验收见
    [`RELEASE_RULES.md`](RELEASE_RULES.md)。
 5. **不回填历史版本说明**：`V3.1.1` 及更早的发布说明按原样保留；新版本另起文件。
+   X 系列按日期归档：`X1031Y2` 与 `X1031` 共用 `RELEASE_NOTES_x1031.md`，不另建 `RELEASE_NOTES_x1031Y2.md`。
 6. **文档里的「已验证 / 未验证」必须如实**：没有实测的能力写「未验证」，
    不把静态检查写成读屏实测。
 

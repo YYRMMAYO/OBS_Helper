@@ -257,6 +257,12 @@ public sealed class UpdateService
 
         /// <summary>GitHub 给出的安装包 SHA-256（形如 <c>sha256:abc…</c>）；拿不到时为空。</summary>
         public string? Digest { get; init; }
+
+        /// <summary>
+        /// Release 正文（GitHub Release 页展示的 Markdown）。X 系列更新弹窗用它展示本版更新内容；
+        /// 取不到时为 null，调用方应静默跳过，不影响更新流程。
+        /// </summary>
+        public string? Body { get; init; }
     }
 
     /// <summary>GitHub Release 上某个命名资产的信息（tag + 下载地址）。失败时 Error 非空。</summary>
@@ -290,7 +296,7 @@ public sealed class UpdateService
             if (best is null)
                 return new GitHubReleaseInfo(null, null, Strings.T("update.noSetupRelease"));
 
-            return new GitHubReleaseInfo(best.Tag, best.AssetUrl, null) { Digest = best.Digest };
+            return new GitHubReleaseInfo(best.Tag, best.AssetUrl, null) { Digest = best.Digest, Body = best.Body };
         }
         catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException or JsonException)
         {
@@ -298,7 +304,7 @@ public sealed class UpdateService
         }
     }
 
-    private sealed record ReleaseCandidate(string Tag, string AssetUrl, string? Digest);
+    private sealed record ReleaseCandidate(string Tag, string AssetUrl, string? Digest, string? Body);
 
     /// <summary>遍历全部 Release，取「版本号最高且确实带安装包资产」的一条；找不到返回 null。</summary>
     private static ReleaseCandidate? FindBestRelease(JsonElement root, ReleaseSeries series)
@@ -307,6 +313,7 @@ public sealed class UpdateService
         string? bestTag = null;
         string? bestAssetUrl = null;
         string? bestDigest = null;
+        string? bestBody = null;
 
         foreach (var rel in root.EnumerateArray())
         {
@@ -326,11 +333,34 @@ public sealed class UpdateService
                 bestTag = tag;
                 bestAssetUrl = asset.Url;
                 bestDigest = asset.Digest;
+                bestBody = rel.TryGetProperty("body", out var bodyProp) ? bodyProp.GetString() : null;
             }
         }
 
         if (bestTag is null || string.IsNullOrEmpty(bestAssetUrl)) return null;
-        return new ReleaseCandidate(bestTag, bestAssetUrl, bestDigest);
+        return new ReleaseCandidate(bestTag, bestAssetUrl, bestDigest, bestBody);
+    }
+
+    /// <summary>
+    /// 把 Release 正文裁剪成适合在更新弹窗里展示的 Markdown：
+    /// 去掉 CI 自动追加的「资产 SHA-256」表（表格不在弹窗的 Markdown 渲染范围内），
+    /// 以及它的分隔线。正文为空时返回空串。
+    /// </summary>
+    internal static string TrimReleaseBodyForDisplay(string? body)
+    {
+        if (string.IsNullOrWhiteSpace(body)) return "";
+
+        var text = body.Replace("\r\n", "\n").Trim();
+
+        // CI 组装 Release 正文时固定追加这两个标记之一（见 .github/workflows/ci.yml）。
+        foreach (var marker in new[] { "\n### 资产 SHA-256", "\n## 资产 SHA-256", "\n### Assets SHA-256" })
+        {
+            var idx = text.IndexOf(marker, StringComparison.OrdinalIgnoreCase);
+            if (idx > 0) text = text[..idx];
+        }
+
+        // 去掉裁剪后可能留下的分隔线 / 空行尾巴
+        return text.TrimEnd('-', ' ', '\t', '\n').TrimEnd();
     }
 
     /// <summary>在 Release 的 assets 里找安装包（OBS_Helper_Setup_*.exe）的下载地址。</summary>

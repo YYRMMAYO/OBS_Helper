@@ -27,7 +27,13 @@ public static class DependencyInstallCore
 
     private static readonly Regex Sha256Pattern = new("^[0-9a-fA-F]{64}$", RegexOptions.CultureInvariant);
 
-    /// <summary>允许下载的 GitHub 官方域名（含 Release 资产重定向域）。</summary>
+    /// <summary>
+    /// 允许下载的 GitHub 官方域名（含 Release 资产重定向域）。
+    ///
+    /// <c>release-assets.githubusercontent.com</c> 是 GitHub 2024 起使用的 Release 资产 CDN；
+    /// 缺少它时，所有 <c>browser_download_url</c> 都会在 302 之后被最终域名校验拒绝。
+    /// 新增域名时同步检查 <c>PluginInstallCore.IsAllowedDownloadHost</c> 与 <c>SidecarCore.AllowedHosts</c>。
+    /// </summary>
     public static readonly string[] AllowedHosts =
     {
         "github.com",
@@ -35,6 +41,7 @@ public static class DependencyInstallCore
         "api.github.com",
         "objects.githubusercontent.com",
         "github-releases.githubusercontent.com",
+        "release-assets.githubusercontent.com",
         "codeload.github.com",
         "raw.githubusercontent.com",
     };

@@ -195,6 +195,8 @@ public class PluginInstallCoreTests
     [Theory]
     [InlineData("github.com", true)]
     [InlineData("objects.githubusercontent.com", true)]
+    [InlineData("github-releases.githubusercontent.com", true)]
+    [InlineData("release-assets.githubusercontent.com", true)]
     [InlineData("evil.example.com", false)]
     [InlineData(null, false)]
     public void DownloadHost_IsWhitelisted(string? host, bool expected)

@@ -48,6 +48,24 @@
 - 资源检查：49 个 XAML、2718 处引用、3459 条中英文案键、14 个分类语义色全部可解析。
 - 文档检查：34 项通过（CODEBASE 未收录 108 个历史文件为非阻塞提示）。
 
+## 1.2 X1031Y3（2026-10-31）
+
+| 需求 | 计划文档 | 状态 | 代码落点 | 验证 |
+| --- | --- | --- | --- | --- |
+| 修复 GitHub Release 资产 302 后最终域名被拒导致的插件/依赖下载失败 | 12 | ✅ | `PluginInstallCore`、`DependencyInstallCore`、`SidecarCore` 白名单；`PluginInstallService`、`DependencyInstallService` 日志 | 1799 单测 + 真实插件安装 + 下载探测 |
+| 下载失败可诊断 | 12 | ✅ | `PluginInstallService`、`DependencyInstallService`（host / HTTP 状态 / 体积 / 异常日志） | 单测 + 日志字段审查 |
+| 功能中心全模块宣传 vs 实现审查 | 12 | ✅ | `12_X1031Y3_FEATURE_CENTER_READINESS.md` | 代码级初审；未验证项已标注 |
+| 依赖一键安装 / whisper 模型 / 摄像头诊断 / 防火墙 | 12 | ⏳ 后续 | 文档已列 Y3 必做，尚未落地 | 不在本版安装包内 |
+| 手机配对第 6 台提示、功能中心状态位、Q05 自动归档 | 12 | ⏳ 后续 | 文档已列 Y3 后续 | 不在本版安装包内 |
+
+### X1031Y3（2026-10-31，三轮）
+
+| 轮次 | 构建 | 单测 | 资源 / 无障碍 / 文档 | 真实下载 |
+| --- | --- | --- | --- | --- |
+| 1 | `dotnet test OBS_Helper.slnx -c Release` 成功 | 1799 / 1799 | check_resources / check_accessibility / check_docs 通过（CODEBASE 108 项非阻塞提示） | — |
+| 2 | net10 / net6 `publish 1031.2.0` 成功 | 1799 / 1799 | `OBS_SELFTEST=1` 36 PASS / 0 FAIL | — |
+| 3 | 真实服务探针 | 1799 / 1799 | 文档/资源检查通过 | 插件 `exeldro/obs-move-transition` 3.2.1 安装成功（1.69 MB，SHA-256 匹配）；MediaMTX 依赖下载到 49% 因本机网络中止，302 → `release-assets.githubusercontent.com` 后写盘已验证 |
+
 ## 2. 三轮自检记录
 
 ### X1031 重置（日期码 + Y 序号，本地出包）

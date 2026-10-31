@@ -88,6 +88,16 @@ public class DependencyInstallCoreTests
     }
 
     [Theory]
+    [InlineData("https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/ffmpeg.zip", true)]
+    [InlineData("https://release-assets.githubusercontent.com/github-production-release-asset/1/2?sp=r&sig=x", true)]
+    [InlineData("https://objects.githubusercontent.com/github-production-release-asset/1/2", true)]
+    [InlineData("http://github.com/a.zip", false)]
+    [InlineData("https://evil.example.com/a.zip", false)]
+    [InlineData(null, false)]
+    public void IsAllowedAssetUrl_AllowsGitHubReleaseCdn(string? url, bool expected)
+        => Assert.Equal(expected, DependencyInstallCore.IsAllowedAssetUrl(url));
+
+    [Theory]
     [InlineData("../evil.txt")]
     [InlineData("C:/Windows/evil.txt")]
     [InlineData("/etc/passwd")]

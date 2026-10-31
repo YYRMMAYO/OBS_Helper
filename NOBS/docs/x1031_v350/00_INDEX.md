@@ -29,6 +29,7 @@
 | 9 | [`09_X_SERIES_CHANNEL.md`](09_X_SERIES_CHANNEL.md) | X/V 双通道技术规范 | X 系列独立大版本 |
 | 10 | [`10_IMPLEMENTATION_STATUS.md`](10_IMPLEMENTATION_STATUS.md) | 实现状态与三轮自检记录 | 交付验收 |
 | 11 | [`11_X1031Y2_PLUGIN_MANAGEMENT.md`](11_X1031Y2_PLUGIN_MANAGEMENT.md) | X1031Y2：插件 / 依赖应用内拉取、本机插件管理、安全加固与问题库精简 | X1031Y2 |
+| 12 | [`12_X1031Y3_FEATURE_CENTER_READINESS.md`](12_X1031Y3_FEATURE_CENTER_READINESS.md) | X1031Y3：GitHub 资产下载修复、功能中心「前置条件一键化」、全模块宣传 vs 实现审查与 Y3/Y4 排期 | X1031Y3 |
 
 ## 关键原则
 

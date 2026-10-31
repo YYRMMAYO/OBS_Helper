@@ -4,7 +4,7 @@
 
 **OBS Helper · OBS帮助助手** — an OBS troubleshooting / recording / streaming assistant for streamers who are just getting started (native Windows WPF)
 
-**Current release: V3.5.2** (stable) · X series `X1031Y2` available too (in-app plugin / dependency install and local plugin management)
+**Current release: V3.5.2** (stable) · X series `X1031Y3` available too (GitHub release-asset download fix + feature-center readiness guide)
 
 **Focus of this release**: **trustworthy recording / streaming state** — the desktop app and the phone page no longer keep showing “Recording / LIVE” after recording has stopped; the phone status pill distinguishes live from recording; batch status queries now use the correct obs-websocket protocol, so output state and audio levels refresh live again. See [`NOBS/RELEASE_NOTES_v3.5.2.md`](NOBS/RELEASE_NOTES_v3.5.2.md).
 
@@ -183,7 +183,7 @@ When the cloud / free engine fails it **falls back to the local engine automatic
 | Channel | Version style | What it is | Where updates come from |
 | --- | --- | --- | --- |
 | **V series** (`master`) | `V3.5.2` | **Stable first**: settled features, full regression and release verification — the right choice for everyday streaming / recording | The regular Releases page · the Lanzou mirror · in-app incremental updates |
-| **X series** (`master`) | `X1031` / `X1031Y2` | **Independent major line**: `X` + `MMdd` date codes and the X-specific icon; updates only look at `X` tags | X-series Releases · in-app update |
+| **X series** (`master`) | `X1031` / `X1031Y2` / `X1031Y3` | **Independent major line**: `X` + `MMdd` date codes and the X-specific icon; updates only look at `X` tags | X-series Releases · in-app update |
 
 - **Both series share features and the data folder**: install folder, assembly name and `%LocalAppData%\OBS_Helper` are unchanged, so the upgrade path is identical.
 - **Channel filtering happens in the parser**: V builds only recognise `V3.5.2`-style tags; X builds only recognise `X1031`-style tags. They never mistake one another for a newer version.
@@ -224,6 +224,14 @@ When the cloud / free engine fails it **falls back to the local engine automatic
 - **Mini window / teleprompter**: replay, scenes, mute, teleprompter, studio mode and main window; phone-side script editing.
 - **Guide & icons**: a 5-minute setup section in both languages; corrected icon semantics in the Tabler style.
 - **X1031**: the same shared features plus the new icon and the independent X channel, without this UI refactor.
+
+## What's new in X1031Y3
+
+> Full details: [`NOBS/RELEASE_NOTES_x1031.md`](NOBS/RELEASE_NOTES_x1031.md) (Chinese) and [`12_X1031Y3_FEATURE_CENTER_READINESS.md`](NOBS/docs/x1031_v350/12_X1031Y3_FEATURE_CENTER_READINESS.md).
+
+- **Fixed all plugin / dependency one-click downloads failing**: GitHub release assets now 302 to `release-assets.githubusercontent.com`; the old allowlist rejected the final host. The new CDN is allowed, download diagnostics now log host / HTTP status, and regression tests cover it.
+- **Full Feature Center audit**: compared advertised capabilities with the code; 17 items overclaim (phone microphone has no endpoint, "AI reply/director" are templates/rules, theme market is JSON import only, auto-archive needs a manual click, etc.). All are written into the development guide, split into Y3 follow-up and Y4.
+- **Not shipped yet**: one-click dependency UI, whisper model download, phone camera QR / publish detection / one-click firewall rule. These are listed as Y3 must-do in the guide and are not claimed as done.
 
 ## What's new in X1031Y2
 

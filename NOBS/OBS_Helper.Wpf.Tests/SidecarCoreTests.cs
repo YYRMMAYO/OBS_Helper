@@ -49,6 +49,14 @@ public class SidecarCoreTests
         Assert.Contains(errors, e => e.Contains(expected));
     }
 
+    [Fact]
+    public void GitHubReleaseAssetCdnIsAllowed()
+    {
+        var (_, errors) = SidecarCore.Parse(ManifestJson(
+            Entry(url: "https://release-assets.githubusercontent.com/github-production-release-asset/1/2")));
+        Assert.Empty(errors);
+    }
+
     [Theory]
     [InlineData("abc")]
     [InlineData("zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz")]

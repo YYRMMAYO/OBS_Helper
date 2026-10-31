@@ -4,7 +4,7 @@
 
 # OBS Helper · OBS帮助助手
 
-**Current release: V3.5.2** — trustworthy recording / streaming state: the desktop app and the phone page no longer keep showing “Recording / LIVE” after recording stops; the phone status pill distinguishes live from recording; batch status queries now use the correct obs-websocket protocol. See [RELEASE_NOTES_v3.5.2.md](RELEASE_NOTES_v3.5.2.md); the X series `X1031` / `X1031Y2` is available too.
+**Current release: V3.5.2** — trustworthy recording / streaming state: the desktop app and the phone page no longer keep showing “Recording / LIVE” after recording stops; the phone status pill distinguishes live from recording; batch status queries now use the correct obs-websocket protocol. See [RELEASE_NOTES_v3.5.2.md](RELEASE_NOTES_v3.5.2.md); the X series `X1031` / `X1031Y2` / `X1031Y3` is available too.
 
 > **V / X series**: V releases use `V3.5.2`-style versions; X releases use `X` + `MMdd` date codes such as `X1031`, with `Y1`/`Y2`/`Y3` appended for a second release on the same day. Both share features and the data folder, but each channel only checks its own tags: V builds only `V*`, X builds only `X*`.
 
@@ -86,9 +86,15 @@ There are two channels for the same app — pick the one that matches how much "
 - **Shared fixes**: GitHub accelerator guidance, merged installed-plugin sources, one-click media server, 10 VTuber templates, rebuilt mini window, phone teleprompter editing, bilingual guide rewrite and corrected icon semantics.
 - **Verification**: 1,729 unit tests pass; both builds 0 errors; 2,649 resource references across 47 XAML files resolve.
 
+## X1031Y3 highlights
+
+- **Fixed all plugin / dependency one-click downloads failing**: GitHub release assets now 302 to `release-assets.githubusercontent.com`; the old allowlist rejected the final host. The new CDN is allowed in the plugin, dependency and sidecar allowlists, with diagnostics and regression tests.
+- **Full Feature Center audit**: 17 items overclaim (phone microphone has no endpoint, "AI reply/director" are templates/rules, theme market is JSON import only, auto-archive needs a manual click, etc.). All are written into the Y3 guide, split into Y3 follow-up and Y4.
+- **Not shipped yet**: one-click dependency UI, whisper model download, phone camera QR / publish detection / one-click firewall rule. These are listed as Y3 must-do in the guide.
+
 ## X1031 highlights
 
-- **Independent X channel**: X1031 only checks tags starting with `X`; V3.6.0-style tags are invisible to X users. The UI shows `X1031`, or `X1031Y2` for a same-day re-release. Update checks compare the date first, then the Y revision.
+- **Independent X channel**: X1031 only checks tags starting with `X`; V3.6.0-style tags are invisible to X users. The UI shows `X1031`, or `X1031Y2` / `X1031Y3` for same-day re-releases. Update checks compare the date first, then the Y revision.
 - **Release notes in the update dialog**: X-series update prompts fetch and show this release's GitHub Release notes; a failed fetch does not affect updating.
 - **New app icon**: black rounded plate with white `OBS`, `helper`, and an overlapping teal arc; window, taskbar, tray and installer use the same mark.
 - **Plugin experience**: GitHub accelerator guidance (Watt Toolkit / Steam++) with a re-check button; the installed list merges “managed by this app” and “detected locally”, so plugins you added to OBS yourself are visible too.

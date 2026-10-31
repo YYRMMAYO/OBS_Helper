@@ -56,9 +56,16 @@ public sealed class DependencyInstallService
             if (asset is null)
                 return new DependencyInstallResult(false, "dep.error.noAsset", "", version, false);
 
-            if (!DependencyInstallCore.IsAllowedAssetUrl(asset.Url) ||
-                asset.Size > DependencyInstallCore.MaxAssetBytes)
+            if (!DependencyInstallCore.IsAllowedAssetUrl(asset.Url))
+            {
+                FileLogger.Warn("Dependency", $"一键配置被拒绝：资产 URL 不在白名单（host={SafeHost(asset.Url)}）");
                 return new DependencyInstallResult(false, "dep.error.download", "", version, false);
+            }
+            if (asset.Size > DependencyInstallCore.MaxAssetBytes)
+            {
+                FileLogger.Warn("Dependency", $"一键配置被拒绝：资产体积 {asset.Size} 字节超过上限 {DependencyInstallCore.MaxAssetBytes}");
+                return new DependencyInstallResult(false, "dep.error.download", "", version, false);
+            }
 
             tempRoot = Path.Combine(Path.GetTempPath(), "obshelper-dep-" + Guid.NewGuid().ToString("N"));
             Directory.CreateDirectory(tempRoot);
@@ -133,13 +140,24 @@ public sealed class DependencyInstallService
         try
         {
             using var response = await _http.GetAsync(url, HttpCompletionOption.ResponseHeadersRead, ct).ConfigureAwait(false);
-            if (!response.IsSuccessStatusCode) return (false, "");
+            if (!response.IsSuccessStatusCode)
+            {
+                FileLogger.Warn("Dependency", $"依赖下载失败：HTTP {(int)response.StatusCode}，host={SafeHost(url)}");
+                return (false, "");
+            }
 
             if (!DependencyInstallCore.IsAllowedAssetUrl(response.RequestMessage?.RequestUri?.AbsoluteUri))
+            {
+                FileLogger.Warn("Dependency", $"依赖下载被拒绝：重定向后的域名不在白名单（host={response.RequestMessage?.RequestUri?.Host ?? "?"}）");
                 return (false, "");
+            }
 
             var total = response.Content.Headers.ContentLength ?? 0;
-            if (total > DependencyInstallCore.MaxAssetBytes) return (false, "");
+            if (total > DependencyInstallCore.MaxAssetBytes)
+            {
+                FileLogger.Warn("Dependency", $"依赖下载被拒绝：响应体 {total} 字节超过上限 {DependencyInstallCore.MaxAssetBytes}");
+                return (false, "");
+            }
 
             using var hash = IncrementalHash.CreateHash(HashAlgorithmName.SHA256);
             await using var input = await response.Content.ReadAsStreamAsync(ct).ConfigureAwait(false);
@@ -153,6 +171,7 @@ public sealed class DependencyInstallService
                 done += read;
                 if (done > DependencyInstallCore.MaxAssetBytes)
                 {
+                    FileLogger.Warn("Dependency", $"依赖下载被拒绝：实际体积超过上限 {DependencyInstallCore.MaxAssetBytes}");
                     output.Close();
                     TryDelete(destination);
                     return (false, "");
@@ -164,11 +183,16 @@ public sealed class DependencyInstallService
 
             return (true, Convert.ToHexString(hash.GetHashAndReset()).ToLowerInvariant());
         }
-        catch (Exception) when (!ct.IsCancellationRequested)
+        catch (Exception ex) when (!ct.IsCancellationRequested)
         {
+            FileLogger.Warn("Dependency", $"依赖下载失败（host={SafeHost(url)}）：{ex.GetType().Name}: {ex.Message}");
             return (false, "");
         }
     }
+
+    /// <summary>只记录主机名，绝不记录带签名参数的完整资产 URL。</summary>
+    private static string SafeHost(string? url)
+        => Uri.TryCreate(url, UriKind.Absolute, out var uri) ? uri.Host : "?";
 
     private bool IsUnderRoot(string path)
     {

@@ -120,10 +120,16 @@ public sealed class PluginInstallService : IDisposable
                 return new PluginInstallResult(false, "PLUGIN_OBS_RUNNING", request.Id, notes);
 
             if (!TryValidateAssetUrl(request.Asset.Url, out var urlError))
+            {
+                FileLogger.Warn("Plugins", $"安装被拒绝：资产 URL 不在白名单（host={SafeHost(request.Asset.Url)}）");
                 return new PluginInstallResult(false, urlError, request.Id, notes);
+            }
 
             if (request.Asset.Size > PluginInstallCore.MaxAssetBytes)
+            {
+                FileLogger.Warn("Plugins", $"安装被拒绝：资产体积 {request.Asset.Size} 字节超过上限 {PluginInstallCore.MaxAssetBytes}");
                 return new PluginInstallResult(false, "PLUGIN_ASSET_TOO_LARGE", request.Id, notes);
+            }
 
             _store.EnsureDirectories();
             var slug = PluginInstallCore.SafeSlug(request.Id);
@@ -379,14 +385,25 @@ public sealed class PluginInstallService : IDisposable
         try
         {
             using var resp = await _http.GetAsync(url, HttpCompletionOption.ResponseHeadersRead, ct).ConfigureAwait(false);
-            if (!resp.IsSuccessStatusCode) return ("", false);
+            if (!resp.IsSuccessStatusCode)
+            {
+                FileLogger.Warn("Plugins", $"下载插件失败：HTTP {(int)resp.StatusCode}，host={SafeHost(url)}");
+                return ("", false);
+            }
 
             // 重定向后的最终域名也要在白名单里
             var finalHost = resp.RequestMessage?.RequestUri?.Host;
-            if (!PluginInstallCore.IsAllowedDownloadHost(finalHost)) return ("", false);
+            if (!PluginInstallCore.IsAllowedDownloadHost(finalHost))
+            {
+                FileLogger.Warn("Plugins", $"下载插件被拒绝：重定向后的域名不在白名单（host={finalHost ?? "?"}）");
+                return ("", false);
+            }
 
             if (resp.Content.Headers.ContentLength is { } len && len > PluginInstallCore.MaxAssetBytes)
+            {
+                FileLogger.Warn("Plugins", $"下载插件被拒绝：响应体 {len} 字节超过上限 {PluginInstallCore.MaxAssetBytes}");
                 return ("", false);
+            }
 
             using var hash = IncrementalHash.CreateHash(HashAlgorithmName.SHA256);
             await using var input = await resp.Content.ReadAsStreamAsync(ct).ConfigureAwait(false);
@@ -400,6 +417,7 @@ public sealed class PluginInstallService : IDisposable
                 total += read;
                 if (total > PluginInstallCore.MaxAssetBytes)
                 {
+                    FileLogger.Warn("Plugins", $"下载插件被拒绝：实际体积超过上限 {PluginInstallCore.MaxAssetBytes}");
                     output.Close();
                     TryDelete(destination);
                     return ("", false);
@@ -412,11 +430,15 @@ public sealed class PluginInstallService : IDisposable
         }
         catch (Exception ex)
         {
-            FileLogger.Warn("Plugins", $"下载插件失败：{ex.Message}");
+            FileLogger.Warn("Plugins", $"下载插件失败（host={SafeHost(url)}）：{ex.GetType().Name}: {ex.Message}");
             TryDelete(destination);
             return ("", false);
         }
     }
+
+    /// <summary>只记录主机名，绝不记录带签名参数的完整资产 URL。</summary>
+    private static string SafeHost(string? url)
+        => Uri.TryCreate(url, UriKind.Absolute, out var uri) ? uri.Host : "?";
 
     private static void ExtractArchive(ZipArchive archive, string rootPrefix, string staging)
     {

@@ -350,12 +350,21 @@ public static class PluginInstallCore
     public static string BuildLatestReleaseUrl(string ownerRepo)
         => "https://api.github.com/repos/" + ownerRepo + "/releases/latest";
 
-    /// <summary>允许下载的主机（GitHub 官方域名及其资产重定向域）。</summary>
+    /// <summary>
+    /// 允许下载的主机（GitHub 官方域名及其资产重定向域）。
+    ///
+    /// 2024 起 GitHub 的 <c>releases/download</c> 会 302 到
+    /// <c>release-assets.githubusercontent.com</c>（旧行为是 objects.githubusercontent.com），
+    /// 最终域名必须在这里放行，否则所有 Release 资产下载都会在写盘前被拒绝。
+    /// 新增 GitHub 资产域时，同步检查 <c>DependencyInstallCore.AllowedHosts</c>
+    /// 与 <c>SidecarCore.AllowedHosts</c>。
+    /// </summary>
     public static bool IsAllowedDownloadHost(string? host)
     {
         if (string.IsNullOrWhiteSpace(host)) return false;
         var h = host.Trim().ToLowerInvariant();
         return h is "github.com" or "api.github.com" or "objects.githubusercontent.com"
+            or "github-releases.githubusercontent.com" or "release-assets.githubusercontent.com"
             or "codeload.github.com" or "raw.githubusercontent.com";
     }
 

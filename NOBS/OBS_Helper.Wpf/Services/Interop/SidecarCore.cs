@@ -56,12 +56,19 @@ public sealed class SidecarManifest
 /// </summary>
 public static class SidecarCore
 {
-    /// <summary>允许的下载域名（含 GitHub Release 重定向后的 CDN）。</summary>
+    /// <summary>
+    /// 允许的下载域名（含 GitHub Release 重定向后的 CDN）。
+    ///
+    /// <c>release-assets.githubusercontent.com</c> 是 GitHub 2024 起使用的 Release 资产 CDN；
+    /// 清单里直接写资产直链时也必须放行。同步维护点见
+    /// <c>PluginInstallCore.IsAllowedDownloadHost</c> 与 <c>DependencyInstallCore.AllowedHosts</c>。
+    /// </summary>
     public static readonly string[] AllowedHosts =
     {
         "github.com",
         "objects.githubusercontent.com",
         "github-releases.githubusercontent.com",
+        "release-assets.githubusercontent.com",
         "raw.githubusercontent.com",
         "www.gyan.dev",
         "rclone.org",

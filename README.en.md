@@ -4,19 +4,19 @@
 
 **OBS Helper · OBS帮助助手** — an OBS troubleshooting / recording / streaming assistant for streamers who are just getting started (native Windows WPF)
 
-**Current release: V3.3.0** (stable) · the DEV test channel is retired (the `dev` branch was deleted in V3.3.0)
+**Current release: V3.4.0** (stable) · the DEV test channel is retired (the `dev` branch was deleted in V3.3.0)
 
-**Focus of this release**: the teleprompter's manual up/down movement is complete (toolbar / dragging the text / mouse wheel / keyboard) plus finer window positioning, and auto-scroll no longer ends on a blank screen. See [`NOBS/RELEASE_NOTES_v3.1.1.md`](NOBS/RELEASE_NOTES_v3.1.1.md) for details.
+**Focus of this release**: **Phone Link** — pair by QR code and turn your phone into a second screen, a second camera and a second microphone; plus chat aggregation, local live captions, review/clips, multi-platform relay, MIDI/lighting and team collaboration. See [`NOBS/RELEASE_NOTES_v3.4.0.md`](NOBS/RELEASE_NOTES_v3.4.0.md) for details.
 
 [![CI](https://github.com/YYRMMAYO/OBS_Helper/actions/workflows/ci.yml/badge.svg)](https://github.com/YYRMMAYO/OBS_Helper/actions/workflows/ci.yml)
 [![Platform](https://img.shields.io/badge/Platform-Windows_7_SP1%2B_%2F_10_%2F_11-0078D6.svg)]()
 [![.NET](https://img.shields.io/badge/.NET-10_%2F_6-512BD4.svg)]()
 [![Stack](https://img.shields.io/badge/Stack-WPF_%2F_C%23-239120.svg)]()
-[![Release](https://img.shields.io/badge/Release-3.1.1-38bdf8.svg)](https://github.com/YYRMMAYO/OBS_Helper/releases)
+[![Release](https://img.shields.io/badge/Release-3.4.0-38bdf8.svg)](https://github.com/YYRMMAYO/OBS_Helper/releases)
 [![OBS](https://img.shields.io/badge/OBS-32.2.2-302E31.svg)](https://github.com/obsproject/obs-studio/releases)
 [![offline-first](https://img.shields.io/badge/offline--first-2ea44f.svg)]()
 [![Incremental Update](https://img.shields.io/badge/Incremental%20Update-2.5MB-7dd3fc.svg)]()
-[![Tests](https://img.shields.io/badge/Tests-1508%20passed-2ea44f.svg)]()
+[![Tests](https://img.shields.io/badge/Tests-1670%20passed-2ea44f.svg)]()
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
 **English** · [简体中文](README.md)
@@ -26,7 +26,7 @@
 > **The default branch of this repository is `master` (stable channel)**: settled features, full regression and release verification — the right choice for everyday streaming and recording.
 > **The DEV test branch was deleted in V3.3.0**: stable releases go straight from `master`; historical `01`/`02`/`03` tags remain on the Releases page, but no new DEV builds are produced.
 
-**OBS Helper** (known as 「OBS 排障助手」 before V2.9.6 — the same app on the same upgrade path) is an OBS Studio troubleshooting and recording assistant for streamers who are just getting started: **it works fully offline** — the 212-entry knowledge base, the troubleshooting guide and the log-analysis rules are all embedded in the app, so they are searchable without a connection; once connected to the local OBS you also get one-click health checks, remote control of scenes / recording / streaming, and recording-environment deployment. **Since V2.9.4** the whole journey from "configure OBS" to "start recording" fits into one card on the home page; **since V3.1.0** OBS can also be launched and recording started with one click when it is not running; **V3.1.1** completed the teleprompter's manual up/down movement and window nudging; **V3.3.0** adds the **Virtual Live** workspace (Live2D avatar · 6 room templates · 16-platform go-live guidance), one-click plugin install / rollback / GitHub search, and Accessibility / Elder modes.
+**OBS Helper** (known as 「OBS 排障助手」 before V2.9.6 — the same app on the same upgrade path) is an OBS Studio troubleshooting and recording assistant for streamers who are just getting started: **it works fully offline** — the 212-entry knowledge base, the troubleshooting guide and the log-analysis rules are all embedded in the app, so they are searchable without a connection; once connected to the local OBS you also get one-click health checks, remote control of scenes / recording / streaming, and recording-environment deployment. **Since V2.9.4** the whole journey from "configure OBS" to "start recording" fits into one card on the home page; **since V3.1.0** OBS can also be launched and recording started with one click when it is not running; **V3.1.1** completed the teleprompter's manual up/down movement and window nudging; **V3.3.0** adds the **Virtual Live** workspace (Live2D avatar · 6 room templates · 16-platform go-live guidance), one-click plugin install / rollback / GitHub search, and Accessibility / Elder modes; **V3.4.0** brings the phone into the streaming workflow: QR remote / monitor / teleprompter / fill light / file upload, phone as a Wi-Fi camera and microphone, plus chat aggregation, local live captions, review/clips, multi-platform relay, MIDI/lighting and team collaboration.
 
 This is the **native WPF rewrite** of the original Blazor WebAssembly + WebView2 version (source in [`NOBS/`](NOBS/)): feature-for-feature parity, but the browser engine is gone — a cold start goes straight to the window, it ships as a self-contained single folder, and it needs neither WebView2 nor a .NET runtime install. **Since V2.9.2 the UI switches between Chinese and English instantly**, and **since V2.9.3 even the bundled offline content is bilingual** (the 212-entry knowledge base / 57-entry plugin catalog / 12 scene templates / the whole troubleshooting guide are translated, and follow the language switch immediately); **since V2.2 there is a built-in plugin square** (57 curated plugins plus a read-only local health check; the v1.4 catalog has been fully re-audited); **since V2.1 updates are incremental and the knowledge base updates independently**.
 
@@ -38,7 +38,7 @@ This is the **native WPF rewrite** of the original Blazor WebAssembly + WebView2
 
 ---
 
-**Contents**: [Start here](#start-here) · [5-minute quick start](#5-minute-quick-start) · [Highlights at a glance](#highlights-at-a-glance) · [Features](#features) · [Smart diagnostics engine](#smart-diagnostics-engine) · [Release channels: stable vs DEV](#release-channels-stable-vs-dev) · [What's new in V3.3.0](#whats-new-in-v330) · [What's new in V3.1.1](#whats-new-in-v311) · [Version history](#version-history) · [Privacy & security](#privacy--security) · [Installation & updates](#installation--updates) · [Build](#build) · [Project structure](#project-structure) · [Quality baseline & known limits](#quality-baseline--known-limits) · [Promo video](#promo-video) · [Donate](#donate) · [License](#license)
+**Contents**: [Start here](#start-here) · [5-minute quick start](#5-minute-quick-start) · [Highlights at a glance](#highlights-at-a-glance) · [Features](#features) · [Smart diagnostics engine](#smart-diagnostics-engine) · [Release channels: stable vs DEV](#release-channels-stable-vs-dev) · [What's new in V3.4.0](#whats-new-in-v340) · [What's new in V3.3.0](#whats-new-in-v330) · [What's new in V3.1.1](#whats-new-in-v311) · [Version history](#version-history) · [Privacy & security](#privacy--security) · [Installation & updates](#installation--updates) · [Build](#build) · [Project structure](#project-structure) · [Quality baseline & known limits](#quality-baseline--known-limits) · [Promo video](#promo-video) · [Donate](#donate) · [License](#license)
 
 ---
 
@@ -50,7 +50,7 @@ This is the **native WPF rewrite** of the original Blazor WebAssembly + WebView2
 | See what it can do and how to use it first | Read on: [5-minute quick start](#5-minute-quick-start) and [Features](#features) |
 | Read the developer-oriented full documentation (quality baseline · release history · code inventory) | [`NOBS/README.md`](NOBS/README.md) |
 | Full documentation in Chinese | [`README.md`](README.md) · [`NOBS/README.md`](NOBS/README.md) |
-| What changed in this release | [`NOBS/RELEASE_NOTES_v3.1.1.md`](NOBS/RELEASE_NOTES_v3.1.1.md) |
+| What changed in this release | [`NOBS/RELEASE_NOTES_v3.4.0.md`](NOBS/RELEASE_NOTES_v3.4.0.md) |
 | DEV test channel numbering and update rules | [`NOBS/docs/DEV_CHANNEL.md`](NOBS/docs/DEV_CHANNEL.md) |
 | Before editing docs: which documents belong on master, which on dev | [`docs/BRANCH_AND_DOC_RULES.md`](docs/BRANCH_AND_DOC_RULES.md) |
 | Report a bug / disclose a security vulnerability | [Issues](https://github.com/YYRMMAYO/OBS_Helper/issues) · [SECURITY.md](SECURITY.md) |
@@ -71,6 +71,9 @@ This is the **native WPF rewrite** of the original Blazor WebAssembly + WebView2
 | | |
 |---|---|
 | **212 issues, fully offline** | **212 issues built in** (knowledge base v2.2), organised by category; each one contains **symptoms / causes / step-by-step fixes / tips / related issues**; steps can be checked off and progress is remembered automatically. **The knowledge base updates independently** (no need to wait for a release), with one update channel per language |
+| **Phone Link (V3.4.0)** | QR pairing turns a phone into a remote / monitor / teleprompter / fill light / file-transfer device; phone as a Wi-Fi camera and microphone in OBS; up to 3 read-only monitor sessions, multi-cam and remote guest rooms. Every LAN feature is off by default, bound to private addresses and revocable |
+| **Chat / captions / review / clips (V3.4.0)** | Read-only Bilibili / Twitch chat aggregation, overlay, TTS and chat translation; song requests / polls / raffles / gifts / submissions / calendar / AI reply suggestions; local Whisper live captions and bilingual captions; review report, cover candidates and viewer dashboard; highlight clips / vertical export / transcript search |
+| **Quality / distribution / automation (V3.4.0)** | Stream health, composition check, go-live runbook, incident replay, AI director, safety sentinel, AI audio chain, multi-platform relay and rclone archive; MIDI / WLED / plugin signatures / theme market / team / AI co-host |
 | **Smart diagnostics + log analysis** | One-click health check once connected to OBS, with three engines to choose from (local rules / free AI / your own cloud API); results export as Markdown. Log analysis is **offline**: **34 rules + 5 derived determinations + 3 quantitative ratios (42 distinct findings in total)**, logs sanitized before analysis; dropped-frame / crash clues can be linked to a suspect plugin |
 | **Simple recording: one click to start** | One card on the home page, three presets (Quick recording / Meeting / online class / High-bitrate game) — pick one and a single click runs the whole chain: pre-flight check → backup → apply → launch OBS → start recording. While recording it shows the elapsed time and the estimated time left; when you stop you can open the folder or remux to MP4 in one click |
 | **One-click recording environment** | Lists the recording-oriented recommended and current values item by item (recording format / quality / folder / canvas & output / frame rate / sample rate); tick what you want and it **backs up first**, then applies, with one-click rollback. Connected to OBS it goes through obs-websocket and takes effect immediately; if OBS has exited it edits `basic.ini` and **reads it back to verify** |
@@ -78,7 +81,7 @@ This is the **native WPF rewrite** of the original Blazor WebAssembly + WebView2
 | **Remote-control OBS** | Scene switching, source visibility, audio mute and volume, record / stream / virtual camera, live stats, scheduled stop, open the recording folder — always at hand through **four entry points: console, system tray, mini window and global hotkeys**; scenes can also switch automatically based on the foreground window title |
 | **Plugin square + local health check** | **57 curated plugins** (8 categories, the v1.4 catalog fully re-audited); cards show maintenance status and link straight to GitHub Releases; a **read-only scan of locally installed plugins** locates the OBS install folder across drives (multi-view registry / every fixed drive / multiple Steam libraries) and covers the OBS 32.x "one folder per plugin" plugin root |
 | **Scene templates and stream setup** | **12 built-in live-room templates** (Gaming Stream / Vertical Live Selling / Duo Co-Stream / Teaching Screen Recording / Radio Idle / Go-Live / BRB / End Pack / Green Screen Background / Selling Dual Camera / Esports Cast / Podcast Talk / Vertical Short Recording / Meeting/Class Multicam) — with OBS connected, one click creates the scenes and sources; when not connected you can export a standard scene-collection JSON. There is also a 6-step go-live walkthrough plus streaming presets for Bilibili / Douyin / Kuaishou / WeChat Channels / Xiaohongshu / YouTube / Twitch and other major platforms |
-| **Chinese / English bilingual** | The interface, tray, notifications, errors, log rules, health-check verdicts and diagnostic reports are all bilingual (**2393 string keys**), **Simplified Chinese by default**, and switching takes effect instantly with no restart; bundled content (knowledge base / templates / plugin catalog / troubleshooting guide) is bilingual too |
+| **Chinese / English bilingual** | The interface, tray, notifications, errors, log rules, health-check verdicts and diagnostic reports are all bilingual (**3251 string keys**), **Simplified Chinese by default**, and switching takes effect instantly with no restart; bundled content (knowledge base / templates / plugin catalog / troubleshooting guide) is bilingual too |
 | **Data safety (the V3.0 focus)** | All writes to user files go through a **transactional channel**: snapshot before writing + atomic replace + read-back verification + rollback on failure; every write resolves the absolute path first and passes an **out-of-bounds guard**; secrets such as OBS passwords and API keys are encrypted and stored separately |
 | **Privacy first** | Preferences contain no credentials at all; passwords and API keys are **double-encrypted** (AES-256-GCM + DPAPI, bound to this machine and this user); the app only goes online when you start an AI diagnostic, and logs are sanitized first; the plugin health check is entirely read-only and its results stay on this machine |
 | **Incremental updates, lighter by design** | The in-app "incremental update" downloads only changed files (a delta between neighbouring versions is usually just a few MB); every file is verified with SHA-256, and on failure it falls back to the full installer automatically; installed builds auto-elevate, swap files and restart. The knowledge base / plugin catalog can be updated separately |
@@ -141,6 +144,20 @@ This is the **native WPF rewrite** of the original Blazor WebAssembly + WebView2
 - **Get OBS** — the official download page and the official GitHub releases; the app can download the official installer itself (resolve the current stable direct link → validate the official domain → download with progress → launch the installer wizard, **never a silent install**); two alternative routes are Watt Toolkit (formerly Steam++) and the Microsoft Store. All external links are forced to https and restricted to official domains, keeping out impostor packages from "download sites" and "Silver Fox"-style scams.
 - **Help & feedback** — a top-level navigation entry: the feedback-form QR code is embedded in the package and scannable offline; a GitHub Issue entry; **security-reporting guidance** (email / the repository's private Security channel); and a **one-click copy of error materials** (version, OS, OBS connection and scenes, pre-flight result — **no paths, device names or raw logs**).
 
+### Phone Link & live workflow (V3.4.0)
+
+- **Phone as a second screen** — QR pairing (one-time secret, 120-second TTL, token stored only as SHA-256) with viewer / operator / admin roles; the phone can switch scenes, toggle sources, mute / set volume, control recording / replay / virtual camera / studio mode and control the teleprompter.
+- **Phone monitor and fill light** — 480p JPEG preview at 1–5 fps, tally, recording / streaming timers, all stopped when the page is hidden; fill light / colour card / countdown are separate offline pages; file upload up to 50 MB with JPEG/PNG/MP4 magic-byte checks and an explicit confirmation before entering OBS.
+- **Phone as camera / microphone** — Wi-Fi goes through mediamtx + SRT/RTMP and creates the OBS media source and layout automatically; audio travels with the stream and supports a sync offset; when Wi-Fi is unstable the USB route (scrcpy / OBS Camera / Iriun) is explained, with no driver auto-install.
+- **Multi-cam and guests** — 2–4 camera switching / picture-in-picture / split screen; up to 3 read-only monitor sessions; remote guest rooms / permissions / kick / recording consent (browser publishing needs your own HTTPS/SFU).
+
+### Interaction, captions & review (V3.4.0)
+
+- **Chat and interaction** — read-only Bilibili public protocol and Twitch anonymous IRC aggregation with de-duplication / rate limiting / reconnect; overlay (CSP, textContent, 50-message cap); sensitive-word / spam alerts, TTS and chat translation; song requests / polls / raffles / Q&A, gift-triggered scenes, submission review, stream calendar and AI reply suggestions (suggestions only).
+- **Live captions** — WASAPI → VAD → whisper.cpp local transcription, Chinese/English captions into an OBS text source or overlay; bilingual captions and offline phrase translation; voice control with wake word + whitelist + confirmation for destructive actions; audio is not uploaded by default.
+- **Review and clips** — chat / follows / gifts / viewer popularity accumulate in the background; the review page auto-fills and generates a report; cover candidates can be edited / banned-word checked / copied; per-minute viewer dashboard with CSV export / clear; highlight clips, vertical export and transcript search.
+- **Quality, distribution and ecosystem** — stream health, composition / lighting / colour temperature, go-live runbook, incident replay, AI director suggestions, safety sentinel, AI audio chain, multi-platform relay and rclone archive; MIDI / foot pedal, WLED, viewer dashboard, plugin signatures, theme market, team and AI co-host.
+
 ### Personalization, bilingual & accessibility
 
 - **Wallpaper library (V3.1.0)** — multi-image import / locally hosted copies / thumbnail picker / delete / SHA-256 de-duplication, and it survives restarts; fit modes: fill / fit / center / tile; dimming 0–80% (default 15% in light mode / 40% in dark); optional blur; slideshow from 30 seconds to 1 hour in random order with no repeats within a round, paused while the window is minimized / inactive; the old `bgImage` setting is migrated automatically, and missing / corrupt / unsupported files show a visible note and fall back to the default background. High contrast forces wallpapers off; "reduce motion" skips the fades.
@@ -165,12 +182,40 @@ When the cloud / free engine fails it **falls back to the local engine automatic
 
 | Channel | Version style | What it is | Where updates come from |
 | --- | --- | --- | --- |
-| **Stable** (`master`) | `V3.3.0` | **Stable first**: settled features, full regression and release verification — the right choice for everyday streaming / recording | The regular Releases page · the Lanzou mirror · in-app incremental updates |
+| **Stable** (`master`) | `V3.4.0` | **Stable first**: settled features, full regression and release verification — the right choice for everyday streaming / recording | The regular Releases page · the Lanzou mirror · in-app incremental updates |
 | ~~DEV (test) (`dev`)~~ | ~~`01`, `02`, `03` …~~ | **Retired in V3.3.0**: the branch is deleted and no new builds are produced | Historical Releases only |
 
-- **Why DEV has its own channel**: DEV numbering is an auto-incrementing **build number** (+1 for every dev build, maintained by the dev branch's channel implementation) and is not comparable to the stable `Vmajor.minor.patch` scheme. A DEV build therefore **only recognises plain-number tags such as `01`**, and a stable build **only recognises tags such as `V3.3.0`** — even though both kinds of tag live in the same repository, neither channel mistakes the other for a newer version;
+- **Why DEV has its own channel**: DEV numbering is an auto-incrementing **build number** (+1 for every dev build, maintained by the dev branch's channel implementation) and is not comparable to the stable `Vmajor.minor.patch` scheme. A DEV build therefore **only recognises plain-number tags such as `01`**, and a stable build **only recognises tags such as `V3.4.0`** — even though both kinds of tag live in the same repository, neither channel mistakes the other for a newer version;
 - **DEV builds are not packaged and do not use the Lanzou mirror yet**: the update prompt only points you at the dev Releases page (`/releases/tag/0X`); the stable channel's incremental updates, Lanzou mirror and installers keep serving stable users exactly as before;
 - **Which one should you pick?** Use stable if you want stability; take DEV if you are happy to help test early features and can live with a build that may break. For DEV issues, go through *Help & feedback* as usual and put `DEV 0X` (e.g. `DEV 03`) in the description so it is easier to locate.
+
+## What's new in V3.4.0
+
+> Full details: [`RELEASE_NOTES_v3.4.0.md`](NOBS/RELEASE_NOTES_v3.4.0.md).
+
+**Theme: Phone Link — turn your phone into a second screen, a second camera and a second microphone.**
+
+### Phones & multi-device
+- QR pairing, viewer/operator/admin roles, command whitelist, rate limiting and device revocation; every LAN feature is off by default, bound to private addresses and can be switched off at any time.
+- Phone remote: scenes, source visibility, mute/volume, record/replay/virtual camera/studio mode and teleprompter play/speed/font size/mirror.
+- Phone monitor: 480p JPEG at 1–5 fps, tally, recording/streaming timers; stops when the page is hidden; up to 3 read-only sessions.
+- Fill light / colour card / countdown offline pages; file upload (50 MB, JPEG/PNG/MP4 magic-byte checks, enters OBS only after confirmation).
+- Wi-Fi camera: mediamtx + SRT/RTMP → OBS media source, multi-cam layout/switching; phone mic with sync offset; USB guidance.
+- Remote guest room/permissions/kick/recording consent; phone notification/clipboard on screen (Android + ADB only; verification codes and passwords are blocked by default).
+
+### Interaction / captions / clips
+- Read-only Bilibili/Twitch chat aggregation, overlay, sensitive-word/spam alerts, TTS and chat translation.
+- Song requests / polls / raffles / Q&A, gift-triggered scenes, submission review, stream calendar and AI reply suggestions (suggestions only).
+- Local live captions (WASAPI → VAD → whisper.cpp), bilingual captions and voice control (wake word + whitelist + confirmation for destructive actions).
+- Highlight clips / vertical export and transcript search.
+
+### Insights / quality / distribution / ecosystem
+- Session review report, cover candidates, stream health, composition check, go-live runbook and incident replay.
+- AI director, safety sentinel, AI audio chain, multi-platform relay and rclone archive.
+- MIDI/foot pedal, WLED lighting, viewer dashboard, plugin signature checks, theme market, team collaboration and AI co-host.
+- The four module pages (Interaction / Insights / Stream / Automation) share a read-only **Run self-check** that lists each dependency as OK / needs setup / unavailable.
+
+**Compatibility**: main build `net10.0-windows`, Windows 7 compatible build `net6.0-windows`; on Win7, Wi-Fi camera, captions, multicam and relay are explicitly degraded with a reason.
 
 ## What's new in V3.3.0
 
@@ -208,7 +253,7 @@ When the cloud / free engine fails it **falls back to the local engine automatic
 **Tests and release**
 
 - 4 new unit tests: scroll end, drag offset, window-move clamping and trailing blank lines in the script;
-- The full suite of **1508 unit tests** passed three rounds in a row, with both builds (`net10.0-windows` / `net6.0-windows`) + the 29-item headless self-test + static checks all green;
+- The full suite of **1670 unit tests** passed three rounds in a row, with both builds (`net10.0-windows` / `net6.0-windows`) + the 36-item headless self-test + static checks all green;
 - Full details and known limits are in [`NOBS/RELEASE_NOTES_v3.1.1.md`](NOBS/RELEASE_NOTES_v3.1.1.md).
 
 ## Privacy & security
@@ -347,8 +392,8 @@ Strings assembled in code are refreshed by `LocalizationService` broadcasting an
 
 ## Quality baseline & known limits
 
-- **All 1508 unit tests pass** (V3.3.0: three full rounds in a row + dual-target builds + headless self-test + static checks); the test project links the pure-logic source files directly instead of referencing the whole WPF project;
-- **All 26 headless self-test items PASS** (18 route cases across 17 routes plus 8 non-route checks: the first-run tutorial overlay (including step-by-step navigation checks), the mini window, string-resource resolution, a language-switch round trip, per-page language replay, the content-fallback banner, the D7 connection-state guard and protocol branches for both builds), **run once for the main build and once for the Win7-compatible build**;
+- **All 1670 unit tests pass** (V3.4.0: three full rounds in a row + dual-target builds + headless self-test + static checks); the test project links the pure-logic source files directly instead of referencing the whole WPF project;
+- **All 36 headless self-test items PASS** (28 route cases plus 8 non-route checks: the first-run tutorial overlay (including step-by-step navigation checks), the mini window, string-resource resolution, a language-switch round trip, per-page language replay, the content-fallback banner, the D7 connection-state guard and protocol branches for both builds), **run once for the main build and once for the Win7-compatible build**;
 - CI additionally gates on XAML resource references, zh/en string-key parity, accessibility static checks, the headless self-test and an end-to-end delta-package upgrade (full-file SHA-256 comparison); [`NOBS/docs/reviews/`](NOBS/docs/reviews/) keeps per-perspective review records that honestly mark which conclusions have machine evidence and which were only checked by hand;
 - **Known limits**: ① Windows 7 has not been verified on real hardware (only that the target framework compiles and the installer's MinVersion is set correctly), and the legacy protocol (obs-websocket 4.x) has not been verified against a real OBS 27; ② the English translation has not been proofread by a native speaker, nor have the English OBS menu paths been checked one by one; ③ both one-click deployment channels are implemented against the protocol / key names and covered by unit tests, but have never been run end-to-end against a real OBS; ④ accessibility stops at code-level adaptation + static checks, with no NVDA / Narrator testing (see [`ACCESSIBILITY.md`](ACCESSIBILITY.md)); ⑤ release artifacts are not code-signed, so SmartScreen may warn about an unknown publisher; ⑥ .NET 6 no longer receives security updates — the compatible build is the fallback for when you *must* run Windows 7; on a new machine use the main build.
 
@@ -356,6 +401,7 @@ Strings assembled in code are refreshed by `LocalizationService` broadcasting an
 
 | Version | Highlights | Release notes |
 | --- | --- | --- |
+| **V3.4.0** | Phone Link (remote / monitor / teleprompter / fill light / file transfer / Wi-Fi camera / phone mic / multicam / guests), chat aggregation and captions, review/clips, relay/archive, MIDI/lighting/team/AI co-host, four-module self-check | [`RELEASE_NOTES_v3.4.0.md`](NOBS/RELEASE_NOTES_v3.4.0.md) |
 | **V3.3.0** | Virtual Live workspace (Live2D / room templates / platform go-live), one-click plugin install and GitHub search, Accessibility / Elder modes, open-source attribution | [`RELEASE_NOTES_v3.3.0.md`](NOBS/RELEASE_NOTES_v3.3.0.md) |
 | **V3.1.1** | Teleprompter manual up/down movement (toolbar / drag / wheel / keyboard), window nudging, scroll-end fix | [`RELEASE_NOTES_v3.1.1.md`](NOBS/RELEASE_NOTES_v3.1.1.md) |
 | **V3.1.0** | Wallpaper library with slideshow, one-click OBS launch + record, teleprompter, recording-name templates / mic alerts / replay save | [`RELEASE_NOTES_v3.1.0.md`](NOBS/RELEASE_NOTES_v3.1.0.md) |

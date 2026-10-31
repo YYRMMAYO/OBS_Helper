@@ -4,11 +4,8 @@
 
 # OBS Helper · OBS帮助助手
 
-**Current release: V3.1.1** — manual up/down movement for the teleprompter (toolbar, drag, wheel, keyboard)
-plus window nudging, and a fix for auto-scroll ending on a blank screen. Includes everything from V3.1.0:
-managed wallpaper library with slideshow, one-click OBS launch / connect / record, scene-linked teleprompter,
-countdown and recording-name templates, mic-quiet alerts, UI tokens and an easter egg.
-See [RELEASE_NOTES_v3.1.1.md](RELEASE_NOTES_v3.1.1.md) (Chinese).
+**Current release: V3.4.1** — repair release for the phone remote: fixes the blank page caused by an empty i18n payload, restores sessions after refresh, unblocks the live preview (CSP `blob:`), adds light/dark themes and 360px-first layout, and fixes a tray balloon crash plus false "OBS offline" / "stop failed" reports. Also adds a one-click download & setup center for open-source dependencies (FFmpeg, rclone, whisper.cpp, MediaMTX).
+See [RELEASE_NOTES_v3.4.1.md](RELEASE_NOTES_v3.4.1.md) (Chinese).
 
 > **This is the developer-facing full documentation for the Windows native WPF version and it lives inside `NOBS/`**;
 > the repository-root [`README.md`](../README.md) is the complete user-facing guide (features · usage · installation),
@@ -21,11 +18,11 @@ See [RELEASE_NOTES_v3.1.1.md](RELEASE_NOTES_v3.1.1.md) (Chinese).
 [![Platform](https://img.shields.io/badge/Platform-Windows_7_SP1%2B-0078D6.svg)]()
 [![.NET](https://img.shields.io/badge/.NET-10_%2F_6-512BD4.svg)]()
 [![Stack](https://img.shields.io/badge/Stack-WPF_%2F_C%23-239120.svg)]()
-[![Release](https://img.shields.io/badge/Release-3.1.1-38bdf8.svg)](https://github.com/YYRMMAYO/OBS_Helper/releases)
+[![Release](https://img.shields.io/badge/Release-3.4.1-38bdf8.svg)](https://github.com/YYRMMAYO/OBS_Helper/releases)
 [![OBS](https://img.shields.io/badge/OBS-32.2.2-302E31.svg)](https://github.com/obsproject/obs-studio/releases)
 [![Offline](https://img.shields.io/badge/offline--first-2ea44f.svg)]()
 [![Incremental Update](https://img.shields.io/badge/Incremental%20Update-2.5MB-7dd3fc.svg)]()
-[![Tests](https://img.shields.io/badge/Tests-1508%20passed-2ea44f.svg)]()
+[![Tests](https://img.shields.io/badge/Tests-1687%20passed-2ea44f.svg)]()
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](../LICENSE)
 
 **English** · [简体中文](README.md)
@@ -65,6 +62,15 @@ There are two channels for the same app — pick the one that matches how much "
 - **Why DEV has its own channel**: DEV builds are numbered by an auto-incrementing **build number**, which is not comparable to the stable `Vmajor.minor.patch` scheme. A DEV build therefore **only recognises plain-number tags (`01`)**, and a stable build **only recognises `V3.1.1`-style tags** — even though both kinds of tag live in the same repository, neither channel mistakes the other for a newer version.
 - **DEV builds are not packaged and do not use the Lanzou mirror yet**: the update prompt only points you at the dev Releases page (`/releases/tag/0X`). Incremental updates, the Lanzou mirror and installers keep serving stable users exactly as before.
 - **Which one should you pick?** Use stable for day-to-day work; take DEV if you want early features and can live with the occasional broken build. Please report DEV issues through *Help & feedback* and put `DEV 0X` (e.g. `DEV 03`) in the description.
+
+## V3.4.1 highlights
+
+- **Phone page repaired**: the i18n payload is embedded as `{ key: [zh, en] }`; the blank-page failure is gone and a regression test round-trips the injected JSON.
+- **Refresh & reconnect**: the pairing token is persisted (`localStorage`, with `sessionStorage` fallback), so a reload reconnects; missing credentials show a clear "scan again" prompt instead of an empty shell.
+- **Browser compatibility**: safe-area/sticky fallbacks, legacy DOM polyfills, and an ES5 boot watchdog that shows a readable message on old or broken browsers.
+- **Phone UX**: light/dark/system themes (dark is not pure black), 17px typography, 360px-first layout, 44–52px touch targets, live preview via `blob:`, start/stop streaming, prompter nudge.
+- **Reliability**: tray balloons no longer crash on empty text; StopRecord/StopStream treat "already stopped" (OBS 501) as success; mobile errors now distinguish offline / OBS rejection / execution failure.
+- **Open-source dependency center** on the Plugins page: one-click official GitHub Releases and one-click local setup for FFmpeg, rclone, whisper.cpp and MediaMTX.
 
 ## V3.1.1 highlights
 

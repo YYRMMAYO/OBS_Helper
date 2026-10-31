@@ -30,9 +30,9 @@
          程序集名 / exe 名（AssemblyName=OBS_Helper）与数据目录刻意**不变**：
          增量更新、安装目录识别、%LocalAppData%\OBS_Helper 下的用户数据都依赖它，
          改名等于让老用户的数据和升级链路一起断掉。 -->
-    <Version>3.4.0</Version>
-    <FileVersion>3.4.0.0</FileVersion>
-    <AssemblyVersion>3.4.0.0</AssemblyVersion>
+    <Version>3.4.1</Version>
+    <FileVersion>3.4.1.0</FileVersion>
+    <AssemblyVersion>3.4.1.0</AssemblyVersion>
     <AssemblyTitle>OBS帮助助手</AssemblyTitle>
     <Product>OBS帮助助手</Product>
     <Company>OBS Helper</Company>

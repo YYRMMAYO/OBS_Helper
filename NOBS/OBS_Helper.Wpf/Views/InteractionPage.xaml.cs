@@ -31,11 +31,18 @@ public partial class InteractionPage : UserControl, INavigationAware
         PlatformCombo.Items.Add(new ComboBoxItem { Content = Strings.T("chat.bilibili"), Tag = "bilibili" });
         PlatformCombo.Items.Add(new ComboBoxItem { Content = Strings.T("chat.twitch"), Tag = "twitch" });
         PlatformCombo.SelectedIndex = 0;
-        FfmpegBox.Text = AppServices.Sidecars.Manifest.Find("ffmpeg") is { } ff
-            ? AppServices.Sidecars.InstalledExecutable(ff) ?? "" : "";
-        WhisperBox.Text = AppServices.Sidecars.Manifest.Find("whisper") is { } w
-            ? AppServices.Sidecars.InstalledExecutable(w) ?? "" : "";
+        FfmpegBox.Text = StoredOrSidecar("ffmpeg");
+        WhisperBox.Text = StoredOrSidecar("whisper");
         ModelBox.Text = Path.Combine(AppServices.Sidecars.Root, "models", "ggml-base.bin");
+    }
+
+    /// <summary>V3.4.1：优先使用「一键配置」写入的路径，其次 sidecar 安装目录。</summary>
+    private static string StoredOrSidecar(string id)
+    {
+        var stored = AppServices.Store.GetItem("dep." + id + ".path");
+        if (!string.IsNullOrWhiteSpace(stored) && File.Exists(stored)) return stored;
+        var entry = AppServices.Sidecars.Manifest.Find(id);
+        return entry is null ? "" : AppServices.Sidecars.InstalledExecutable(entry) ?? "";
     }
 
     public Task OnNavigatedToAsync(object? parameter)

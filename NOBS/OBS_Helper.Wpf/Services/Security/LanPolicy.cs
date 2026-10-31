@@ -167,7 +167,7 @@ public static class LanPolicy
     /// 页面脚本全部同源内联，因此保留 <c>'unsafe-inline'</c>，但 <c>connect-src 'self'</c> 限制回传目标。
     /// </summary>
     public const string PageCsp =
-        "default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'";
+        "default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'";
 
     /// <summary>overlay CSP：弹幕/字幕 overlay 只允许自身与 data 图片。</summary>
     public const string OverlayCsp =

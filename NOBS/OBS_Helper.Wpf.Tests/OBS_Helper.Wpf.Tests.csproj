@@ -151,6 +151,9 @@
     <Compile Include="..\OBS_Helper.Wpf\Services\Security\WebSocketFrameCore.cs" Link="Linked\Security\WebSocketFrameCore.cs" />
     <Compile Include="..\OBS_Helper.Wpf\Services\Mobile\QrCodeCore.cs" Link="Linked\Mobile\QrCodeCore.cs" />
     <Compile Include="..\OBS_Helper.Wpf\Services\Interop\SidecarCore.cs" Link="Linked\Interop\SidecarCore.cs" />
+    <!-- V3.4.1 开源依赖中心：纯 BCL + SidecarCore，可脱离 WPF 直接测试 -->
+    <Compile Include="..\OBS_Helper.Wpf\Services\Dependencies\DependencyCore.cs" Link="Linked\Dependencies\DependencyCore.cs" />
+    <Compile Include="..\OBS_Helper.Wpf\Services\Dependencies\DependencyService.cs" Link="Linked\Dependencies\DependencyService.cs" />
 
     <!-- V3.4.0 纯逻辑：手机联动 / 弹幕 / 字幕 / 流健康 / 切片 / 复盘 / 自动化 / 多机位 -->
     <Compile Include="..\OBS_Helper.Wpf\Models\Mobile\MobileModels.cs" Link="Linked\Mobile\MobileModels.cs" />

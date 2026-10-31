@@ -241,6 +241,42 @@ public class MobileCoreTests
     }
 
     [Fact]
+    public void TeleprompterCommandsWorkWhenObsIsOffline()
+    {
+        var context = new MobileCommandCore.Context { ObsOnline = false };
+        foreach (var command in new[] { "state.get", "teleprompter.play", "teleprompter.pause", "teleprompter.restart", "teleprompter.speed" })
+        {
+            var request = new MobileCommandRequest { RequestId = "r", Command = command };
+            request.Params["speed"] = System.Text.Json.JsonSerializer.SerializeToElement(5.0);
+            Assert.True(MobileCommandCore.Validate(request, MobileRole.Operator, context, "r").Ok, command);
+        }
+
+        var scene = new MobileCommandRequest { RequestId = "s", Command = "scene.set" };
+        scene.Params["scene"] = System.Text.Json.JsonSerializer.SerializeToElement("主场景");
+        var denied = MobileCommandCore.Validate(scene, MobileRole.Operator, context, "s");
+        Assert.False(denied.Ok);
+        Assert.Equal(FeatureErrors.MobObsOffline, denied.Code);
+
+        Assert.False(MobileCommandCore.RequiresObs("state.get"));
+        Assert.False(MobileCommandCore.RequiresObs("teleprompter.offset"));
+        Assert.True(MobileCommandCore.RequiresObs("scene.set"));
+        Assert.True(MobileCommandCore.RequiresObs("record.toggle"));
+    }
+
+    [Fact]
+    public void NewMobileErrorCodesHaveCopy()
+    {
+        var undefined = OBS_Helper.Wpf.Localization.Strings.T("err.undefined");
+        foreach (var code in new[] { FeatureErrors.MobObsRequestFailed, FeatureErrors.MobCommandFailed })
+        {
+            var text = FeatureErrors.Describe(code);
+            Assert.False(string.IsNullOrWhiteSpace(text), code);
+            Assert.NotEqual(undefined, text);
+            Assert.NotEqual("err." + code, text);
+        }
+    }
+
+    [Fact]
     public void MobileI18nHasBothLanguages()
     {
         foreach (var (key, value) in MobilePageAssets.I18n)
@@ -248,5 +284,52 @@ public class MobileCoreTests
             Assert.False(string.IsNullOrWhiteSpace(value.Zh), key);
             Assert.False(string.IsNullOrWhiteSpace(value.En), key);
         }
+    }
+
+    [Fact]
+    public void MobilePageEmbedsReadableI18n()
+    {
+        // 回归：V3.4.0 把元组字典直接序列化，注入页面的 I18N 全是 {}，导致整页文案为 undefined。
+        var html = MobilePageAssets.AppHtml();
+        var start = html.IndexOf("const I18N = ", StringComparison.Ordinal);
+        Assert.True(start >= 0);
+        start += "const I18N = ".Length;
+        var end = html.IndexOf("\nconst lang", start, StringComparison.Ordinal);
+        Assert.True(end > start);
+        var json = html[start..end].Trim().TrimEnd(';');
+
+        var parsed = System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, string[]>>(json);
+        Assert.NotNull(parsed);
+        Assert.Equal(MobilePageAssets.I18n.Count, parsed!.Count);
+        foreach (var (key, value) in MobilePageAssets.I18n)
+        {
+            Assert.True(parsed.TryGetValue(key, out var pair), key);
+            Assert.Equal(new[] { value.Zh, value.En }, pair);
+        }
+        Assert.DoesNotContain("\":{}", json);
+    }
+
+    [Fact]
+    public void MobilePageShowsServingVersion()
+    {
+        var html = MobilePageAssets.AppHtml("zh-Hans", "3.4.1.0");
+        Assert.Contains("id=\"ver\"", html);
+        Assert.Contains("v3.4.1.0", html);
+        Assert.DoesNotContain("__VERSION__", html);
+        Assert.Contains("i18nReady", html);
+        Assert.Contains("vdev", MobilePageAssets.AppHtml());
+    }
+
+    [Fact]
+    public void MobilePageSupportsThemeSwitchAndStreamStop()
+    {
+        var html = MobilePageAssets.AppHtml();
+        Assert.Contains("id=\"theme\"", html);
+        Assert.Contains("data-theme", html);
+        Assert.Contains("prefers-color-scheme", html);
+        Assert.Contains("obshelper.theme", html);
+        Assert.Contains("\"stream.stop\"", html);
+        Assert.Contains("confirmStopStream", html);
+        Assert.Contains("img-src 'self' data: blob:", LanPolicy.PageCsp);
     }
 }

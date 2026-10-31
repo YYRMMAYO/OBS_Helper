@@ -653,6 +653,21 @@ public sealed class ObsConnectionService : IAsyncDisposable
         }
     }
 
+    /// <summary>连接在线时刷新输出状态；失败返回 false（调用方按原结果处理，不吞真实错误）。</summary>
+    private async Task<bool> TryRefreshOutputsAsync()
+    {
+        if (!IsConnected) return false;
+        try
+        {
+            await RefreshOutputsAsync().ConfigureAwait(false);
+            return true;
+        }
+        catch (Exception)
+        {
+            return false;
+        }
+    }
+
     public async Task RefreshStatsAsync()
     {
         var r = await _client.RequestAsync("GetStats");
@@ -680,7 +695,23 @@ public sealed class ObsConnectionService : IAsyncDisposable
         => _client.RequestAsync("SetCurrentProgramScene", new { sceneName });
 
     public Task<ObsRequestResult> StartRecordAsync() => _client.RequestAsync("StartRecord");
-    public Task<ObsRequestResult> StopRecordAsync() => _client.RequestAsync("StopRecord");
+    public async Task<ObsRequestResult> StopRecordAsync()
+    {
+        var stopped = new ObsRequestResult { Ok = true };
+        if (!RecordStatus.Active
+            && await TryRefreshOutputsAsync().ConfigureAwait(false)
+            && !RecordStatus.Active)
+            return stopped;
+
+        var result = await _client.RequestAsync("StopRecord").ConfigureAwait(false);
+        if (result.Ok) return result;
+
+        // V3.4.1：OBS 在「已经停止 / 正在停止」时可能返回 501 等错误码（状态事件滞后时的竞态）。
+        // 以 OBS 的真实状态为准：刷新后确认已停止，就按成功处理，避免误报「停止失败」。
+        if (await TryRefreshOutputsAsync().ConfigureAwait(false) && !RecordStatus.Active)
+            return stopped;
+        return result;
+    }
     public Task<ObsRequestResult> ToggleRecordPauseAsync() => _client.RequestAsync("ToggleRecordPause");
 
     /// <summary>按当前状态切换录制开关（托盘菜单 / 全局热键共用）。</summary>
@@ -688,7 +719,22 @@ public sealed class ObsConnectionService : IAsyncDisposable
         => RecordStatus.Active ? StopRecordAsync() : StartRecordAsync();
 
     public Task<ObsRequestResult> StartStreamAsync() => _client.RequestAsync("StartStream");
-    public Task<ObsRequestResult> StopStreamAsync() => _client.RequestAsync("StopStream");
+    public async Task<ObsRequestResult> StopStreamAsync()
+    {
+        var stopped = new ObsRequestResult { Ok = true };
+        if (!StreamStatus.Active
+            && await TryRefreshOutputsAsync().ConfigureAwait(false)
+            && !StreamStatus.Active)
+            return stopped;
+
+        var result = await _client.RequestAsync("StopStream").ConfigureAwait(false);
+        if (result.Ok) return result;
+
+        // 与 StopRecordAsync 同理：正在停止 / 已停止时的错误码不代表操作失败。
+        if (await TryRefreshOutputsAsync().ConfigureAwait(false) && !StreamStatus.Active)
+            return stopped;
+        return result;
+    }
 
     /// <summary>按当前状态切换推流开关（托盘菜单 / 全局热键共用）。</summary>
     public Task<ObsRequestResult> ToggleStreamAsync()

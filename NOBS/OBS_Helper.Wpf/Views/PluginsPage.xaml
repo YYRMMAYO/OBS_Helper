@@ -115,6 +115,18 @@
         </StackPanel>
       </Border>
 
+      <!-- ============================================ 开源依赖（V3.4.1） -->
+      <Border x:Name="DependencyPanel" Style="{StaticResource Card}" Margin="0,14,0,0">
+        <StackPanel>
+          <TextBlock Text="{DynamicResource Loc.dep.title}" Style="{StaticResource SectionTitle}" />
+          <TextBlock Style="{StaticResource MutedText}" Margin="0,5,0,0" TextWrapping="Wrap"
+                     Text="{DynamicResource Loc.dep.desc}" />
+          <StackPanel x:Name="DependencyHost" Margin="0,10,0,0" />
+          <TextBlock Style="{StaticResource CaptionText}" Margin="0,8,0,0" TextWrapping="Wrap"
+                     Text="{DynamicResource Loc.dep.hint}" />
+        </StackPanel>
+      </Border>
+
       <!-- 官方 / 社区入口 -->
       <TextBlock Style="{StaticResource SectionTitle}" Text="{DynamicResource Loc.plugin.entries.title}" Margin="2,16,0,8" />
       <WrapPanel x:Name="ResourceHost" />

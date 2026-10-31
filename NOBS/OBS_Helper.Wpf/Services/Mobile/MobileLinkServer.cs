@@ -252,7 +252,8 @@ public sealed class MobileLinkServer : IDisposable
         }
         if (path.StartsWith("/m/", StringComparison.Ordinal) && path.Count(c => c == '/') == 2)
         {
-            await WriteAsync(stream, Html(200, MobilePageAssets.AppHtml(Strings.Current))).ConfigureAwait(false);
+            await WriteAsync(stream, Html(200, MobilePageAssets.AppHtml(Strings.Current,
+                typeof(MobileLinkServer).Assembly.GetName().Version?.ToString(3)))).ConfigureAwait(false);
             return;
         }
         if (path == "/api/events")

@@ -116,9 +116,11 @@ public partial class MobileLinkPage : UserControl, INavigationAware
     private void RefreshServerState()
     {
         var link = AppServices.MobileLink;
-        ServerStateText.Text = link.IsRunning
+        var version = typeof(MobileLinkPage).Assembly.GetName().Version?.ToString(3) ?? "";
+        ServerStateText.Text = (link.IsRunning
             ? Strings.T("mobile.server.running", link.BaseUrl)
-            : Strings.T("mobile.server.stopped");
+            : Strings.T("mobile.server.stopped"))
+            + (version.Length > 0 ? "  ·  v" + version : "");
         StopServerButton.IsEnabled = link.IsRunning;
     }
 

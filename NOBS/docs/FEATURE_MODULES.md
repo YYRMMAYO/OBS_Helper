@@ -38,3 +38,7 @@
 | 虚拟直播与插件 | V3.3.0 | `virtuallive` / `plugins` / `settings` | 7 |
 | 诊断与工具箱 | 常用 | `diagnostic` 等 | 10 |
 | 外观与系统 | 常用 | `settings` / `performance` / `home` | 6 |
+| 开源依赖 | V3.4.1 | `plugins` | 1 |
+
+> V3.4.1 起，手机页的可用性与兼容性修复不单独占模块（属于 `mobile` 模块内改进）；
+> 新增的「开源依赖中心」登记为 `deps` 模块（路由 `plugins`）。

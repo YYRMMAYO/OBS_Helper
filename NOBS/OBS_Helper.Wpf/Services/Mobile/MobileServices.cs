@@ -7,6 +7,7 @@ using System.Text.Json;
 using OBS_Helper.Wpf.Models.Mobile;
 using OBS_Helper.Wpf.Models.Obs;
 using OBS_Helper.Wpf.Models.Shell;
+using OBS_Helper.Wpf.Localization;
 using OBS_Helper.Wpf.Services.Host;
 using OBS_Helper.Wpf.Services.Interop;
 using OBS_Helper.Wpf.Services.Live;
@@ -338,10 +339,13 @@ public sealed class MobileCommandRouter
         {
             response = await DispatchAsync(device, request, requestId, ct).ConfigureAwait(false);
         }
-        catch (Exception)
+        catch (Exception ex)
         {
-            response = MobileCommandResult.Fail(requestId, FeatureErrors.MobObsOffline,
-                FeatureErrors.Describe(FeatureErrors.MobObsOffline));
+            // 真正的异常（提词器保存失败、本地 IO 等）不能伪装成「OBS 未连接」：
+            // 旧实现让任何异常都返回 MOB_OBS_OFFLINE，手机端就出现「明明连着却提示未连接」。
+            FileLogger.Warn("Mobile", $"命令执行失败（{request.Command}）：{ex.Message}");
+            response = MobileCommandResult.Fail(requestId, FeatureErrors.MobCommandFailed,
+                FeatureErrors.Describe(FeatureErrors.MobCommandFailed));
         }
         _idempotency.Put(device.DeviceId, requestId, response);
         if (response.Ok) _sessions.Touch(device.DeviceId);
@@ -478,8 +482,12 @@ public sealed class MobileCommandRouter
     private static MobileCommandResult From(ObsRequestResult result, string requestId)
         => result.Ok
             ? MobileCommandResult.Success(requestId)
-            : MobileCommandResult.Fail(requestId, FeatureErrors.MobObsOffline,
-                result.Comment ?? FeatureErrors.Describe(FeatureErrors.MobObsOffline));
+            : MobileCommandResult.Fail(
+                requestId,
+                FeatureErrors.MobObsRequestFailed,
+                string.IsNullOrWhiteSpace(result.Comment)
+                    ? Strings.T("console.opErrorCode", result.Code)
+                    : result.Comment!);
 
     private static MobileCommandResult Fail(string requestId, string code)
         => MobileCommandResult.Fail(requestId, code, FeatureErrors.Describe(code));

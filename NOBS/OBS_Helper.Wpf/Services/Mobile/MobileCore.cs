@@ -154,7 +154,7 @@ public static class MobileCommandCore
         var def = Find(request.Command);
         if (def is null) return Validation.Fail(FeatureErrors.MobCommandUnknown);
         if (!MobileRoles.Allows(role, def.MinRole)) return Validation.Fail(FeatureErrors.MobRoleDenied);
-        if (!context.ObsOnline && request.Command != StateGet)
+        if (!context.ObsOnline && RequiresObs(request.Command))
             return Validation.Fail(FeatureErrors.MobObsOffline);
 
         bool Has(string name) => request.Params.ContainsKey(name);
@@ -273,6 +273,20 @@ public static class MobileCommandCore
             foreach (var key in _entries.Where(kv => kv.Value.At < cutoff).Select(kv => kv.Key).ToList())
                 _entries.Remove(key);
         }
+    }
+
+    /// <summary>
+    /// 该命令是否必须依赖 OBS 在线（V3.4.1）。
+    ///
+    /// 提词器是应用内能力，OBS 掉线/重连时仍应可播放、调速、翻页；
+    /// 之前把“OBS 在线”当成所有命令的前置条件，会把提词操作误报成「OBS 未连接」。
+    /// </summary>
+    public static bool RequiresObs(string? command)
+    {
+        var c = (command ?? "").Trim().ToLowerInvariant();
+        if (c == StateGet) return false;
+        if (c.StartsWith("teleprompter.", StringComparison.Ordinal)) return false;
+        return true;
     }
 
     public static string NormalizeRequestId(string? id)
@@ -501,6 +515,8 @@ public static class FeatureErrors
     public const string MobRateLimited = "MOB_RATE_LIMITED";
     public const string MobRoleDenied = "MOB_ROLE_DENIED";
     public const string MobObsOffline = "MOB_OBS_OFFLINE";
+    public const string MobObsRequestFailed = "MOB_OBS_REQUEST_FAILED";
+    public const string MobCommandFailed = "MOB_COMMAND_FAILED";
     public const string MobCommandUnknown = "MOB_COMMAND_UNKNOWN";
     public const string MobCommandInvalid = "MOB_COMMAND_INVALID";
     public const string MobPreviewFailed = "MOB_PREVIEW_FAILED";

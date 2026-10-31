@@ -41,6 +41,9 @@ public partial class StreamPage : UserControl, INavigationAware
     private static string ResolveSidecar(string id, string configured)
     {
         if (!string.IsNullOrWhiteSpace(configured)) return configured;
+        // V3.4.1：优先使用「一键配置」写入的路径（重启后仍然有效）。
+        var stored = AppServices.Store.GetItem("dep." + id + ".path");
+        if (!string.IsNullOrWhiteSpace(stored) && File.Exists(stored)) return stored;
         var entry = AppServices.Sidecars.Manifest.Find(id);
         return entry is null ? "" : AppServices.Sidecars.InstalledExecutable(entry) ?? "";
     }

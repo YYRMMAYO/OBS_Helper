@@ -159,7 +159,30 @@ public sealed class TrayService : IDisposable
     /// <summary>托盘通知（录制/推流状态变化、定时到点等）。可在任意线程调用。</summary>
     public void Notify(string title, string text)
     {
-        Post(() => _icon?.ShowBalloonTip(5000, title, text, ToolTipIcon.Info));
+        Post(() => ShowBalloon(5000, title, text));
+    }
+
+    /// <summary>
+    /// 托盘气泡的安全封装（V3.4.1）。
+    ///
+    /// <see cref="NotifyIcon.ShowBalloonTip(int,string,string,ToolTipIcon)"/> 在正文为空时会抛
+    /// <see cref="ArgumentOutOfRangeException"/>（“气球状提示文本必须有非空的值。”），
+    /// 这个异常发生在 UI 线程且无人接住，会直接弹出 .NET 未处理异常对话框并终止程序。
+    /// 这里统一把空正文回退成标题，并吞掉托盘实现自身异常，保证通知失败绝不影响主程序。
+    /// </summary>
+    private void ShowBalloon(int timeout, string title, string? text, ToolTipIcon icon = ToolTipIcon.Info)
+    {
+        var body = string.IsNullOrWhiteSpace(text) ? title : text!;
+        if (string.IsNullOrWhiteSpace(body)) return;
+        var safeTitle = string.IsNullOrWhiteSpace(title) ? body : title;
+        try
+        {
+            _icon?.ShowBalloonTip(timeout, safeTitle, body, icon);
+        }
+        catch (Exception ex)
+        {
+            FileLogger.Warn("Tray", $"托盘气泡显示失败（已忽略）：{ex.Message}");
+        }
     }
 
     /// <summary>存片：先确认回放缓存开着，再发请求；结果用托盘气泡如实反馈（含失败原因）。</summary>
@@ -208,10 +231,9 @@ public sealed class TrayService : IDisposable
     private void OnReplaySaved(string path)
     {
         var name = string.IsNullOrEmpty(path) ? "" : Path.GetFileName(path);
-        Post(() => _icon?.ShowBalloonTip(6000,
+        Post(() => ShowBalloon(6000,
             Strings.T("tray.replaySavedTitle"),
-            name.Length > 0 ? name : Strings.T("tray.replaySavedNoPath"),
-            ToolTipIcon.Info));
+            name.Length > 0 ? name : Strings.T("tray.replaySavedNoPath")));
     }
 
     /// <summary>Obs 状态变化（任意线程触发）→ 刷新托盘。</summary>
@@ -301,19 +323,22 @@ public sealed class TrayService : IDisposable
         if (rec != _lastRecActive)
         {
             _lastRecActive = rec;
-            _icon.ShowBalloonTip(4000, rec ? Strings.T("tray.recordStartedTitle") : Strings.T("tray.recordStoppedTitle"),
-                rec ? Strings.T("tray.recordStartedMessage") : Strings.T("tray.recordStoppedMessage"), ToolTipIcon.Info);
+            ShowBalloon(4000,
+                rec ? Strings.T("tray.recordStartedTitle") : Strings.T("tray.recordStoppedTitle"),
+                rec ? Strings.T("tray.recordStartedMessage") : Strings.T("tray.recordStoppedMessage"));
         }
         if (stream != _lastStreamActive)
         {
             _lastStreamActive = stream;
-            _icon.ShowBalloonTip(4000, stream ? Strings.T("tray.streamStartedTitle") : Strings.T("tray.streamStoppedTitle"),
-                stream ? Strings.T("tray.streamStartedMessage") : Strings.T("tray.streamStoppedMessage"), ToolTipIcon.Info);
+            ShowBalloon(4000,
+                stream ? Strings.T("tray.streamStartedTitle") : Strings.T("tray.streamStoppedTitle"),
+                stream ? Strings.T("tray.streamStartedMessage") : Strings.T("tray.streamStoppedMessage"));
         }
         if (vcam != _lastVcamActive)
         {
             _lastVcamActive = vcam;
-            _icon.ShowBalloonTip(4000, vcam ? Strings.T("tray.vcamOnTitle") : Strings.T("tray.vcamOffTitle"), "", ToolTipIcon.Info);
+            // 正文不能为空（否则 ShowBalloonTip 抛异常）；ShowBalloon 会把空正文回退成标题。
+            ShowBalloon(4000, vcam ? Strings.T("tray.vcamOnTitle") : Strings.T("tray.vcamOffTitle"), "");
         }
     }
 

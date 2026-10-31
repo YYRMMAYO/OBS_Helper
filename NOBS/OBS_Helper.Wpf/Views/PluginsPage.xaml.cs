@@ -8,6 +8,7 @@ using OBS_Helper.Wpf.Controls;
 using OBS_Helper.Wpf.Models.Plugins;
 using OBS_Helper.Wpf.Navigation;
 using OBS_Helper.Wpf.Services;
+using OBS_Helper.Wpf.Services.Dependencies;
 using OBS_Helper.Wpf.Services.Plugins;
 using OBS_Helper.Wpf.Services.Shell;
 
@@ -60,6 +61,30 @@ public partial class PluginsPage : UserControl, INavigationAware
     };
 
     private PluginCatalogData _catalog = new();
+
+    /// <summary>开源依赖中心（V3.4.1）：一键下载 / 一键配置。</summary>
+    private DependencyService? _dependencies;
+
+    private DependencyService Dependencies => _dependencies ??= new DependencyService(
+        new SidecarDependencySource(AppServices.Sidecars),
+        AppServices.Store.GetItem,
+        (key, value) =>
+        {
+            if (string.IsNullOrWhiteSpace(value)) AppServices.Store.RemoveItem(key);
+            else AppServices.Store.SetItem(key, value!);
+        },
+        ApplyDependencyPath,
+        AppServices.Host.OpenExternalAsync);
+
+    /// <summary>把“一键配置”选定的路径立刻接到使用方（持久化由 DependencyService 负责）。</summary>
+    private static void ApplyDependencyPath(string id, string path)
+    {
+        if (string.Equals(id, "ffmpeg", StringComparison.OrdinalIgnoreCase))
+            AppServices.Relay.SetFfmpegPath(path);
+        else if (string.Equals(id, "rclone", StringComparison.OrdinalIgnoreCase))
+            AppServices.ArchiveUpload.SetRclonePath(path);
+        // whisper 由互动页启动字幕时读取设置键；mediamtx 直接复制进 sidecar 目录。
+    }
 
     /// <summary>
     /// 把本机 OBS 版本注入目录条目（V3.0 / D9）。
@@ -148,6 +173,7 @@ public partial class PluginsPage : UserControl, INavigationAware
         }
 
         UpdateCatalogMeta();
+        BuildDependencyPanel();
 
         // 路由参数：插件 id → 切到对应分类、清空筛选，渲染后滚动高亮（P0-2 / P2-2 联动入口）
         _highlightId = parameter as string;
@@ -1677,5 +1703,144 @@ public partial class PluginsPage : UserControl, INavigationAware
                 : uri.Host.Replace("www.", "");
         }
         return url;
+    }
+
+    // ------------------------------------------------------------ 开源依赖（V3.4.1）
+
+    private void BuildDependencyPanel()
+    {
+        DependencyHost.Children.Clear();
+        foreach (var status in Dependencies.Scan())
+            DependencyHost.Children.Add(BuildDependencyRow(status));
+    }
+
+    /// <summary>
+    /// 一行依赖：名称 / 许可证 / 用途 / 当前状态 + 「一键下载」「一键配置」「仓库」。
+    /// 全部用代码构建，文案随语言切换（每次进页重建，不缓存旧语言）。
+    /// </summary>
+    private Border BuildDependencyRow(DependencyStatus status)
+    {
+        var spec = status.Spec;
+        var name = Strings.T("dep.name." + spec.Id);
+
+        var row = new Border { Margin = new Thickness(0, 0, 0, 8) };
+        row.SetResourceReference(FrameworkElement.StyleProperty, "SoftPanel");
+
+        var grid = new Grid();
+        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+
+        var info = new StackPanel { Margin = new Thickness(0, 0, 12, 0) };
+        info.Children.Add(new TextBlock
+        {
+            Text = name + "  ·  " + spec.License,
+            FontWeight = FontWeights.SemiBold,
+            TextWrapping = TextWrapping.Wrap,
+        });
+
+        var desc = new TextBlock { Text = Strings.T("dep.desc." + spec.Id), Margin = new Thickness(0, 3, 0, 0) };
+        desc.SetResourceReference(FrameworkElement.StyleProperty, "MutedText");
+        info.Children.Add(desc);
+
+        var state = new TextBlock
+        {
+            Text = status.Ready
+                ? Strings.T("dep.status.ready") + "  " + status.Path
+                : Strings.T("dep.status.missing"),
+            Margin = new Thickness(0, 5, 0, 0),
+            TextWrapping = TextWrapping.Wrap,
+        };
+        state.SetResourceReference(TextBlock.FontSizeProperty, "FontSizeXs");
+        state.SetResourceReference(TextBlock.ForegroundProperty, status.Ready ? "OkBrush" : "WarnBrush");
+        info.Children.Add(state);
+
+        grid.Children.Add(info);
+
+        var actions = new StackPanel
+        {
+            Orientation = Orientation.Horizontal,
+            VerticalAlignment = VerticalAlignment.Center,
+        };
+
+        var download = new Button { Content = Strings.T("dep.download"), Tag = spec, MinWidth = 92 };
+        download.SetResourceReference(FrameworkElement.StyleProperty, "SecondaryButton");
+        download.Click += OnDependencyDownloadClick;
+        actions.Children.Add(download);
+
+        var configure = new Button
+        {
+            Content = Strings.T("dep.configure"),
+            Tag = spec,
+            MinWidth = 92,
+            Margin = new Thickness(8, 0, 0, 0),
+        };
+        configure.SetResourceReference(FrameworkElement.StyleProperty, "GhostButton");
+        configure.Click += OnDependencyConfigureClick;
+        actions.Children.Add(configure);
+
+        var repo = new Button { Content = Strings.T("dep.repo"), Tag = spec.RepoUrl, Margin = new Thickness(8, 0, 0, 0) };
+        repo.SetResourceReference(FrameworkElement.StyleProperty, "LinkButton");
+        repo.Click += OnOpenLinkClick;
+        actions.Children.Add(repo);
+
+        Grid.SetColumn(actions, 1);
+        grid.Children.Add(actions);
+        row.Child = grid;
+        return row;
+    }
+
+    private async void OnDependencyDownloadClick(object sender, RoutedEventArgs e)
+    {
+        if (sender is not Button button || button.Tag is not DependencySpec spec) return;
+        button.IsEnabled = false;
+        try
+        {
+            var (ok, code) = await Dependencies.DownloadAsync(spec).ConfigureAwait(true);
+            var name = Strings.T("dep.name." + spec.Id);
+            if (ok)
+            {
+                AppServices.Toast.Show(
+                    string.IsNullOrEmpty(code) ? Strings.T("dep.download.done", name) : Strings.T(code), "ok");
+            }
+            else
+            {
+                AppServices.Toast.Show(
+                    Strings.T(string.IsNullOrEmpty(code) ? "dep.download.failed" : code), "warn");
+            }
+            BuildDependencyPanel();
+        }
+        catch (Exception ex)
+        {
+            FileLogger.Warn("Dependency", $"一键下载失败（{spec.Id}）：{ex.Message}");
+            AppServices.Toast.Show(Strings.T("dep.download.failed"), "warn");
+        }
+        finally
+        {
+            button.IsEnabled = true;
+        }
+    }
+
+    private void OnDependencyConfigureClick(object sender, RoutedEventArgs e)
+    {
+        if (sender is not Button button || button.Tag is not DependencySpec spec) return;
+        var name = Strings.T("dep.name." + spec.Id);
+        var found = Dependencies.Detect(spec);
+        if (string.IsNullOrWhiteSpace(found))
+        {
+            var dialog = new Microsoft.Win32.OpenFileDialog
+            {
+                Title = Strings.T("dep.pick.title", name),
+                Filter = Strings.T("dep.pick.filter"),
+                CheckFileExists = true,
+            };
+            if (dialog.ShowDialog() != true) return;
+            found = dialog.FileName;
+        }
+
+        var (ok, code, path) = Dependencies.Configure(spec, found);
+        AppServices.Toast.Show(
+            ok ? Strings.T("dep.configure.done", name, path) : Strings.T(code),
+            ok ? "ok" : "warn");
+        BuildDependencyPanel();
     }
 }

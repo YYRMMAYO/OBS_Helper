@@ -141,6 +141,12 @@ public static class FeatureCatalog
                 new("D09", "feature.D09", "obsconfig"),
                 new("D10", "feature.D10", "guide"),
             }),
+        new("deps", "feature.module.deps.title", "feature.module.deps.desc", "IconGeomSetup",
+            "plugins", "", "V3.4.1", false,
+            new FeatureEntry[]
+            {
+                new("P01", "feature.P01", "plugins"),
+            }),
         new("system", "feature.module.system.title", "feature.module.system.desc", "IconGeomSettings",
             "settings", "", "常用", false,
             new FeatureEntry[]

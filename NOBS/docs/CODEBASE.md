@@ -298,8 +298,8 @@ NOBS/
 | 文件 | 职责 |
 |---|---|
 | `Localization/Strings.cs` | 文案表入口（纯 BCL、零 WPF）：当前语言、`T(key)` / `T(key, args)`、键集、语言标识归一化、缺键回退次序。 |
-| `Localization/StringTableZhHans.cs` | 简体中文文案（默认语言，**3251 条键**，按模块分段）。 |
-| `Localization/StringTableEnUs.cs` | English 文案（**3251 条键**，键集必须与中文表完全一致，有单测钉死）。 |
+| `Localization/StringTableZhHans.cs` | 简体中文文案（默认语言，**3280 条键**，按模块分段）。 |
+| `Localization/StringTableEnUs.cs` | English 文案（**3280 条键**，键集必须与中文表完全一致，有单测钉死）。 |
 | `Localization/ContentAssets.cs` | 随包离线内容的**按语言取资产**统一入口（V2.9.3）：外部缓存 → 当前语言内嵌 → 中文内嵌（最后一级兜底必写 WARN，否则英文用户会「安静地看到中文内容」）。 |
 | `Localization/DataValues.cs` | 数据驱动展示值的**跨语言**判定（severity / level / badge：中文「常见」与英文 `Common` 都认）。 |
 | `Services/LocalizationService.cs` | 语言服务：读 / 写偏好（`prefs.json` 的 `obshelper.language`）、解析首启语言（用户选择 > 安装向导 `language.ini` > 中文）、把整表写进 `Application.Resources`、广播 `Changed`。 |
@@ -364,6 +364,7 @@ NOBS/
 ## V3.4.0 新增源码（按域）
 - `Services/Security/`：LanPolicy、HttpWireCore、WebSocketFrameCore
 - `Services/Mobile/`：QrCodeCore、MobileCore、MobileServices、MobilePageAssets、MobileLinkServer、PhoneCameraCore
+- `Services/Dependencies/`（V3.4.1）：DependencyCore（清单 / 本机查找）、DependencyService（一键下载 / 一键配置）、SidecarDependencySource
 - `Services/Interop/`：SidecarCore、SidecarManager（含 ProcessGuard）
 - `Services/Chat/`：ChatCore、ChatServices
 - `Services/Subtitles/`：AsrCore、AsrServices、VoiceControlService

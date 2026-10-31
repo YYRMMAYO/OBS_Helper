@@ -1,101 +1,174 @@
-# OBS Streaming Troubleshooting Guide
+# OBS Streaming Guide & Troubleshooting
 
-> This guide collects troubleshooting approaches and solutions for the most common OBS problems. If you run into an issue, first run through the "Quick Self-Check" below; if it is still not resolved, use the in-app "🩺 Diagnostics" for smart analysis, or go to the "🎛️ Console" to connect to OBS and check its status live.
+> Applies to V3.5.0 / X1031. Both use the same features; only the update channel differs.
+> Start with “5-minute setup”. If a problem remains, use the in-app **Diagnose** page
+> or connect OBS in **Console** to inspect live state.
 
-## 1. Quick Self-Check First
+## 0. 5-minute setup
 
-Most issues can be solved by checking the following in order:
+1. **Connect OBS**: OBS → Tools → WebSocket Server Settings → enable the server, note the port and
+   password; enter them in Settings → OBS connection. The badge turns green when connected.
+2. **Phone remote**: Mobile → Remote → Generate pairing code → scan the QR code.
+   Phone and PC must be on the same Wi-Fi. If the page does not load, allow `OBS_Helper.exe`
+   on **private networks** in Windows Firewall.
+3. **Apply a scene template**: Templates / Virtual Live → Room → choose a template → Apply to OBS.
+   Then replace camera, microphone and avatar placeholders.
+4. **Record 10 seconds**: Home → Simple recording → start → stop after 10 s → play the file.
+   This catches encoder, disk and permission problems early.
+5. **Teleprompter**: click Teleprompter in the top bar, paste your script, start scrolling.
+   You can edit the script from the phone; the PC updates immediately after saving.
 
-1. Confirm OBS is the **latest official stable release** (not a beta, not a modified build) — get the installer only from the [official download page](https://obsproject.com/zh-cn/download) or the [GitHub releases page](https://github.com/obsproject/obs-studio/releases/latest). OBS is completely free, requires no registration or payment to download, and has no paid version. Fake packages in search-engine ads and "software download sites" often bundle installers and trojans (such as the Silver Fox family); before installing, verify the digital signature is `OBS Project Corporation`.
-2. Run OBS **as administrator** (required for some capture and permission scenarios).
-3. Close resource-hungry background programs (many browser tabs, games, other screen-recording software).
-4. In "Settings → Output", switch the **encoder** back to `x264` / `software (CPU)` first to rule out graphics driver issues.
-5. Open the "🎛️ Console" to confirm whether OBS is actually streaming / recording.
+> Tip: in Settings → Appearance → Background you can use your own image. Since V3.5.0 the
+> background covers the entire window.
 
-## 2. Black Screen / No Signal
+## 1. Quick self-check
 
-- **Display Capture black screen**: right-click the source → "Properties" → check "Use anti-cheat compatibility hook", or switch to "Window Capture / Game Capture".
-- **Game Capture black screen**: run OBS as administrator; set the game to "borderless windowed"; turn off in-game overlays (Discord, Steam, Overwolf).
-- **Capture card black screen**: make sure the resolution / frame rate matches the OBS source settings; try `1920x1080, 60fps` first.
-- **Browser Source black screen**: turn off "Local File" and use a URL instead, or uncheck "Hardware Acceleration" in the source properties.
+1. Use the **official stable OBS** from [obsproject.com](https://obsproject.com/zh-cn/download) or
+   [GitHub releases](https://github.com/obsproject/obs-studio/releases/latest). OBS is free;
+   download-site bundles and “paid versions” are scams. Check the signer
+   `OBS Project Corporation` before installing.
+2. Run OBS as administrator for capture / permission-sensitive sources.
+3. Close heavy background apps (browser tabs, games, other recorders).
+4. In Settings → Output, switch the encoder to `x264` / software to rule out GPU drivers.
+5. Use Console to confirm whether OBS is actually streaming / recording.
 
-> Tip: most black-screen issues relate to "permissions / anti-cheat / hardware acceleration" — check these three first.
+## 2. Black screen / no signal
 
-## 3. Encoding Overload / Stutter and Dropped Frames
+- **Display capture**: enable anti-cheat compatibility, or use Window / Game capture.
+- **Game capture**: run OBS as administrator; use borderless windowed mode; disable overlays
+  (Discord, Steam, Overwolf).
+- **Capture card**: match resolution / frame rate in OBS; try `1920x1080, 60fps` first.
+- **Browser source**: use a URL instead of a local file, or disable hardware acceleration.
+- **Avatar missing**: make sure Live2D / VTube Studio is publishing. Without NDI, capture the
+  VTube Studio window, or use Virtual Live → Avatar → one-click Live2D setup.
 
-Symptom: the status bar shows **dropped frames (rendering / encoding)**, and the picture stutters.
+## 3. Encoding overload / stutter
 
-- Lower the **Output resolution** and **frame rate**: e.g. `1280x720, 30fps`.
-- Lower the **bitrate**: about `2500–4000 kbps` for 720p and `4500–6000 kbps` for 1080p.
-- Choose **hardware encoding** for the encoder (NVENC / AMD / Apple VT) to reduce CPU load.
-- In "Settings → Advanced", turn off extras such as "Dynamic Bitrate" and "Reconnect".
-- Use Task Manager to check whether the CPU / GPU is maxed out; if so, keep lowering the quality.
+- Lower output resolution / frame rate (e.g. `1280x720, 30fps`).
+- Lower bitrate: 720p `2500–4000 kbps`, 1080p `4500–6000 kbps`.
+- Prefer hardware encoders (NVENC / AMD / Intel QSV).
+- Disable dynamic bitrate / repeated retry in advanced settings.
+- Check Task Manager: if CPU / GPU is saturated, lower quality further.
 
 ```text
-Recommended starting config for mid-range PCs:
+Suggested starting point for a mid-range PC:
 Output: 1280x720, 30fps
-Video: encoder NVENC, bitrate 4000, keyframe interval 2s
-Advanced: Color Format NV12, Color Space 709
+Video: NVENC, 4000 kbps, keyframe interval 2s
+Advanced: NV12, color space 709
 ```
 
-## 4. Audio/Video Desync / Crackling
+## 4. Audio drift / crackling
 
-- Set the sample rate to a uniform **48kHz** (keep OBS and the system sound settings consistent).
-- Check desktop audio and microphone separately; crackling is usually caused by a **sample rate mismatch** or a **buffer that is too small**.
-- "Desync" caused by high streaming latency is usually a **network** issue; see the next section.
+- Use **48 kHz** everywhere (OBS and Windows sound settings).
+- Check desktop audio and microphone separately; crackling usually means sample-rate mismatch
+  or too-small buffering.
+- For phone cameras, set an audio sync offset (-500 to 500 ms) in Mobile → Camera.
+- High stream latency is a network problem, not audio.
 
-## 5. Audio Issues
+## 5. Stream fails / times out
 
-- **No microphone sound**: make sure the source is set to the correct device; set the system "Sound → Recording" device as default; unmute.
-- **Echo / feedback**: do not monitor "Desktop Audio" and "Microphone" at the same time; use headphones instead.
-- **Missing desktop audio**: re-add "Audio Output Capture" in the sources.
-
-## 6. Streaming Failure / Connection Timeout
+- Copy server URL and stream key from the platform; never type them by hand.
+- Some platforms (e.g. Douyin) no longer expose RTMP for third-party apps; use their official
+  companion app and feed it OBS via virtual camera / NDI.
+- Prefer RTMPS; port 1935 is often blocked.
+- Allow OBS through firewall / antivirus; test on a phone hotspot.
+- Check `stream` state and connection time in Console.
 
 ```text
 Common errors:
-- Failed to connect to server  → wrong address / key, or the server is unreachable
-- Timed out                    → unstable network, or a firewall blocking 1935 / RTMPS
-- Authentication failed        → wrong Stream Key
+- Failed to connect to server  -> wrong URL / key, or server unreachable
+- Timed out                    -> unstable network, or firewall blocks 1935 / RTMPS
+- Authentication failed        -> wrong stream key
 ```
 
-- Verify the **server address** and the **Stream Key** (copy them from the streaming platform's streaming settings; do not type them by hand).
-- **Platform policy**: some platforms (such as Douyin) no longer provide an OBS / third-party RTMP streaming entry point, and officially only support their own live companion app. In this case it is not a network problem; just use the official tool to go live instead. (To get the OBS picture, forward it to the live companion app via Virtual Camera / NDI.)
-- Prefer **RTMPS** (the platform default) to avoid the 1935 port being blocked.
-- Disable the system firewall / antivirus restrictions on OBS, or switch networks (use a phone hotspot to troubleshoot).
-- Use the "🎛️ Console" to check the `stream` status and connection time.
+## 6. Plugin catalog & GitHub accelerator (new in V3.5.0)
 
-## 7. Locating the Root Cause with "Log Analysis"
+The catalog, search and downloads all use GitHub. On some networks requests hang or fail.
 
-1. Open "📜 Logs".
-2. After reproducing the issue in OBS, export it from OBS "Help → Log Files → Previous Log File" and drag it into this app.
-3. The app will automatically redact and analyze it, giving a **quantified lag ratio** and anomalies, which you can send straight to "🩺 Diagnostics".
+1. Open Plugins; a card at the top explains GitHub acceleration.
+2. Click **Download Watt Toolkit (Steam++)**, install it and enable **GitHub acceleration**.
+3. Return and click **I enabled it — check again**; continue when it says GitHub is reachable.
+4. A third-party accelerator is optional; your own proxy works too. This app never bundles or
+   installs one.
 
-## 8. Checking Live with the "Console"
+**Installed plugins not shown?** Since V3.5.0 the list merges:
 
-The "🎛️ Console" connects to OBS via obs-websocket, letting you view:
+- **Managed by this app**: rollback / uninstall, source and SHA-256 recorded;
+- **Detected locally**: plugins you added to OBS yourself, read-only and never modified.
 
-- the current **Scene** and sources
-- **audio** levels, mute state, and volume
-- **recording / streaming / Virtual Camera** status
-- live **Stats** (frame rate, bitrate, dropped frames, CPU)
+If both are empty, verify the OBS folder in Settings → OBS path.
 
-> Write operations (switching scenes, starting / stopping the stream, etc.) require a second confirmation to avoid accidental clicks.
+## 7. Phone remote & phone camera (reworked in V3.5.0)
 
-## 9. Security and Privacy Tips
+### Remote
 
-- This app is **offline-first** and does not connect to the internet by default; it only makes external requests if you manually enable "Free AI" or "Cloud LLM" in "Settings".
-- Cloud keys are **encrypted and stored by the desktop shell** (Windows DPAPI / macOS Keychain) and never enter the app's memory.
-- Logs are **automatically redacted** (keys, paths, tokens, IPs, etc.) before analysis, so they are safe to use.
+- PC and phone on the same Wi-Fi. The server binds a private address only, is off by default,
+  and can be revoked at any time.
+- “Generate pairing code” starts the server; the QR code is valid for 120 seconds.
+- If the phone cannot open the page, allow `OBS_Helper.exe` on private networks; guest / hotel
+  Wi-Fi often uses client isolation — use a phone hotspot instead.
 
-## 10. Still Can Not Solve It?
+### Phone as camera
 
-- Open "🩺 Diagnostics", enter the symptoms, and get step-by-step suggestions.
-- Check the official documentation:
-  - OBS Knowledge Base (Chinese): https://obsproject.com/zh-cn/kb
-  - Log Analyzer: https://obsproject.com/analyzer
-- Ask on the official OBS forum or community with the "symptoms + log"; attaching the log analysis conclusion will get you help faster.
+Browsers cannot call the camera over plain HTTP on a LAN (secure-context restriction), so use
+an SRT / RTMP publishing app such as Larix Broadcaster:
+
+1. Mobile → Camera → **Download and install** the media server (mediamtx, MIT, ~28 MB).
+2. Click **Start camera link** and note the SRT / RTMP URL.
+3. Paste the full URL (including the random key) into the phone app and start publishing.
+4. If OBS is connected, the app creates a “Phone camera” scene/source automatically.
+   You can also start the media server before OBS; the source is added after OBS connects.
+5. No picture? Confirm the phone is publishing, the URL is complete, the firewall allows
+   `mediamtx.exe`, and the port is free.
+
+> Windows 7 does not support the Wi-Fi camera path; use a USB capture card instead.
+
+## 8. Virtual live templates & Live2D (expanded in V3.5.0)
+
+- Available: chat, gaming, karaoke, study companion, duo collab, hand camera, vertical,
+  anniversary, and starting/BRB/ending pack.
+- Avatar fallback order: **NDI → Spout → camera → window capture**.
+- Without NDI, capture the VTube Studio window and crop it in OBS.
+- Chat / frame overlays are local `127.0.0.1` pages with no network access. Replace the URL
+  with your own chat widget if needed.
+
+## 9. Teleprompter (phone editing is new in V3.5.0)
+
+- Open from the top bar; supports mirror, font size, speed, restart and click-through.
+- On the phone’s Prompt tab, edit the script and press **Save to PC**; the PC updates instantly.
+  **Refresh from PC** discards unsaved phone changes.
+- Previous scripts are backed up to `%LocalAppData%\OBS_Helper\teleprompter\backup-*.txt`
+  (latest 5 kept).
+- Scene changes can scroll to `## Scene name` sections automatically.
+
+## 10. Log analysis
+
+1. Open Logs.
+2. Reproduce the problem, then export OBS → Help → Log Files → Last Log and drop it here.
+3. The app sanitizes secrets and reports quantified latencies / anomalies for Diagnose.
+
+## 11. Console
+
+Console shows current scene and sources, audio levels / mute / volume,
+record / stream / virtual camera state, and live stats (FPS, bitrate, drops, CPU).
+Write actions ask for confirmation.
+
+## 12. Security & privacy
+
+- Offline-first: no outbound requests unless you enable AI or cloud models.
+- Cloud keys are protected with Windows DPAPI.
+- Logs are sanitized (keys, paths, tokens, IPs) before analysis.
+- Phone remote binds private addresses only, is off by default, uses random ports and
+  one-time pairing codes. Phones never receive the OBS password, stream key or API key.
+
+## 13. Still stuck?
+
+- Use Diagnose with the observed symptoms.
+- OBS knowledge base: https://obsproject.com/kb
+- Log analyzer: https://obsproject.com/analyzer
+- When asking in the community, include symptoms + logs; the analysis summary helps.
 
 ---
 
-*This guide is provided with OBS Helper 1.6.0; its content is compiled from the official OBS documentation and community experience.*
+*Provided with OBS Helper V3.5.0 / X1031. Based on OBS documentation, community experience and
+in-project testing.*

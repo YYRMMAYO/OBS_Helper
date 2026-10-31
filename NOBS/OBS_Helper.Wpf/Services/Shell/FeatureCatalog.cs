@@ -29,7 +29,7 @@ public static class FeatureCatalog
     public static readonly FeatureModule[] Modules =
     {
         // ------------------------------------------------------------ 本版新增
-        new("mobile", "feature.module.mobile.title", "feature.module.mobile.desc", "IconGeomConsole",
+        new("mobile", "feature.module.mobile.title", "feature.module.mobile.desc", "IconGeomDeviceMobile",
             "mobile", "remote", CurrentVersion, true,
             new FeatureEntry[]
             {
@@ -46,7 +46,7 @@ public static class FeatureCatalog
                 new("M11", "feature.M11", "mobile", "camera"),
                 new("M12", "feature.M12", "mobile", "multicam"),
             }),
-        new("interaction", "feature.module.interaction.title", "feature.module.interaction.desc", "IconGeomTemplates",
+        new("interaction", "feature.module.interaction.title", "feature.module.interaction.desc", "IconGeomBroadcast",
             "interaction", "", CurrentVersion, false,
             new FeatureEntry[]
             {
@@ -67,7 +67,7 @@ public static class FeatureCatalog
                 new("S06", "feature.S06", "interaction"),
                 new("S10", "feature.S10", "interaction"),
             }),
-        new("insights", "feature.module.insights.title", "feature.module.insights.desc", "IconGeomPerformance",
+        new("insights", "feature.module.insights.title", "feature.module.insights.desc", "IconGeomSparkles",
             "insights", "", CurrentVersion, false,
             new FeatureEntry[]
             {
@@ -75,7 +75,7 @@ public static class FeatureCatalog
                 new("S08", "feature.S08", "insights"),
                 new("E06", "feature.E06", "insights"),
             }),
-        new("stream", "feature.module.stream.title", "feature.module.stream.desc", "IconGeomVirtualLive",
+        new("stream", "feature.module.stream.title", "feature.module.stream.desc", "IconGeomVideo",
             "stream", "", CurrentVersion, false,
             new FeatureEntry[]
             {
@@ -88,7 +88,7 @@ public static class FeatureCatalog
                 new("Q07", "feature.Q07", "stream"),
                 new("Q08", "feature.Q08", "stream"),
             }),
-        new("automation", "feature.module.automation.title", "feature.module.automation.desc", "IconGeomSetup",
+        new("automation", "feature.module.automation.title", "feature.module.automation.desc", "IconGeomRobot",
             "automation", "", CurrentVersion, false,
             new FeatureEntry[]
             {
@@ -102,7 +102,7 @@ public static class FeatureCatalog
             }),
 
         // ------------------------------------------------------------ 常用功能（V3.3.0 及更早）
-        new("recording", "feature.module.recording.title", "feature.module.recording.desc", "IconGeomSetup",
+        new("recording", "feature.module.recording.title", "feature.module.recording.desc", "IconGeomVideo",
             "home", "", "常用", false,
             new FeatureEntry[]
             {
@@ -126,7 +126,7 @@ public static class FeatureCatalog
                 new("V06", "feature.V06", "plugins"),
                 new("V07", "feature.V07", "settings"),
             }),
-        new("tools", "feature.module.tools.title", "feature.module.tools.desc", "IconGeomDiagnostic",
+        new("tools", "feature.module.tools.title", "feature.module.tools.desc", "IconGeomTool",
             "diagnostic", "", "常用", false,
             new FeatureEntry[]
             {
@@ -141,7 +141,7 @@ public static class FeatureCatalog
                 new("D09", "feature.D09", "obsconfig"),
                 new("D10", "feature.D10", "guide"),
             }),
-        new("deps", "feature.module.deps.title", "feature.module.deps.desc", "IconGeomSetup",
+        new("deps", "feature.module.deps.title", "feature.module.deps.desc", "IconGeomPackage",
             "plugins", "", "V3.4.1", false,
             new FeatureEntry[]
             {

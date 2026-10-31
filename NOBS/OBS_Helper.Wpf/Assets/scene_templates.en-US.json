@@ -2655,11 +2655,11 @@
               "hint": "Bind it with Live2D Setup, or pick an existing window / NDI source."
             },
             "transform": {
-              "posX": 1110,
-              "posY": 330,
+              "posX": 120,
+              "posY": 220,
               "boundsType": "OBS_BOUNDS_SCALE_INNER",
-              "boundsWidth": 720,
-              "boundsHeight": 700,
+              "boundsWidth": 760,
+              "boundsHeight": 760,
               "alignment": 0
             }
           },
@@ -2674,11 +2674,11 @@
               "hint": "You can replace this source URL with your own chat widget."
             },
             "transform": {
-              "posX": 1430,
-              "posY": 330,
+              "posX": 1450,
+              "posY": 260,
               "boundsType": "OBS_BOUNDS_SCALE_INNER",
-              "boundsWidth": 430,
-              "boundsHeight": 700,
+              "boundsWidth": 420,
+              "boundsHeight": 760,
               "alignment": 0
             },
             "browser": {
@@ -2711,8 +2711,8 @@
               "hint": "Replace with your title / announcement"
             },
             "transform": {
-              "posX": 70,
-              "posY": 40,
+              "posX": 80,
+              "posY": 60,
               "boundsType": "OBS_BOUNDS_NONE",
               "alignment": 5
             }
@@ -2791,11 +2791,11 @@
               "hint": "Bind it with Live2D Setup, or pick an existing window / NDI source."
             },
             "transform": {
-              "posX": 560,
-              "posY": 40,
+              "posX": 120,
+              "posY": 220,
               "boundsType": "OBS_BOUNDS_SCALE_INNER",
-              "boundsWidth": 800,
-              "boundsHeight": 1000,
+              "boundsWidth": 760,
+              "boundsHeight": 760,
               "alignment": 0
             }
           },
@@ -4103,6 +4103,1471 @@
           }
         ],
         "hotkey": "Ctrl+3"
+      }
+    ]
+  },
+  {
+    "id": "vtuber-karaoke",
+    "title": "VTuber · Karaoke",
+    "summary": "Avatar, lyrics / song request area and chat — for karaoke and BGM streams.",
+    "icon": "♪",
+    "portrait": false,
+    "notes": "Replace the lyrics / requests browser source with your own song request page. Avatar and chat never overlap.",
+    "tags": [
+      "vtuber",
+      "karaoke",
+      "music",
+      "chat"
+    ],
+    "assetPack": "",
+    "minAppVersion": "3.5.0",
+    "canvas": {
+      "baseWidth": 1920,
+      "baseHeight": 1080,
+      "outputWidth": 1920,
+      "outputHeight": 1080,
+      "fpsNumerator": 30,
+      "fpsDenominator": 1
+    },
+    "transition": "Fade",
+    "transitionDurationMs": 300,
+    "scenes": [
+      {
+        "name": "Singing",
+        "sources": [
+          {
+            "name": "Background Color",
+            "inputKind": "color_source_v3",
+            "zOrder": 0,
+            "enabled": true,
+            "role": "bg",
+            "settings": {
+              "color": 4294965224
+            },
+            "transform": {
+              "posX": 0,
+              "posY": 0,
+              "boundsType": "OBS_BOUNDS_STRETCH",
+              "boundsWidth": 1920,
+              "boundsHeight": 1080,
+              "alignment": 0
+            }
+          },
+          {
+            "name": "Decorative Frame",
+            "inputKind": "browser_source",
+            "zOrder": 1,
+            "enabled": true,
+            "role": "frame",
+            "transform": {
+              "posX": 0,
+              "posY": 0,
+              "boundsType": "OBS_BOUNDS_STRETCH",
+              "boundsWidth": 1920,
+              "boundsHeight": 1080,
+              "alignment": 0
+            },
+            "browser": {
+              "page": "frame.html?theme=star",
+              "width": 1920,
+              "height": 1080,
+              "css": "",
+              "rerouteAudio": false
+            }
+          },
+          {
+            "name": "Avatar",
+            "inputKind": "ndi_source",
+            "zOrder": 3,
+            "enabled": true,
+            "role": "avatar",
+            "fallbackKinds": [
+              "spout2_source",
+              "dshow_input",
+              "window_capture"
+            ],
+            "placeholder": {
+              "kind": "tracker",
+              "hint": "Bind it with Live2D Setup, or pick an existing window / NDI source."
+            },
+            "transform": {
+              "posX": 120,
+              "posY": 220,
+              "boundsType": "OBS_BOUNDS_SCALE_INNER",
+              "boundsWidth": 820,
+              "boundsHeight": 820,
+              "alignment": 0
+            }
+          },
+          {
+            "name": "Lyrics / Requests",
+            "inputKind": "browser_source",
+            "zOrder": 4,
+            "enabled": true,
+            "role": "chat",
+            "placeholder": {
+              "kind": "url",
+              "hint": "Replace this URL with your own chat widget."
+            },
+            "transform": {
+              "posX": 1440,
+              "posY": 260,
+              "boundsType": "OBS_BOUNDS_SCALE_INNER",
+              "boundsWidth": 420,
+              "boundsHeight": 700,
+              "alignment": 0
+            },
+            "browser": {
+              "page": "chat.html",
+              "width": 420,
+              "height": 700,
+              "css": "body{background:rgba(0,0,0,0);margin:0;overflow:hidden}",
+              "rerouteAudio": false
+            }
+          },
+          {
+            "name": "Title",
+            "inputKind": "text_gdiplus_v3",
+            "zOrder": 6,
+            "enabled": true,
+            "role": "caption",
+            "settings": {
+              "text": "Karaoke night · taking requests",
+              "font": {
+                "face": "Segoe UI",
+                "size": 46
+              },
+              "color": 4294967295
+            },
+            "fallbackKinds": [
+              "text_ft2_source_v3"
+            ],
+            "placeholder": {
+              "kind": "text",
+              "hint": "Replace with your title / announcement."
+            },
+            "transform": {
+              "posX": 80,
+              "posY": 60,
+              "boundsType": "OBS_BOUNDS_NONE",
+              "alignment": 5
+            }
+          }
+        ]
+      },
+      {
+        "name": "Interlude",
+        "sources": [
+          {
+            "name": "Background Color",
+            "inputKind": "color_source_v3",
+            "zOrder": 0,
+            "enabled": true,
+            "role": "bg",
+            "settings": {
+              "color": 4280950597
+            },
+            "transform": {
+              "posX": 0,
+              "posY": 0,
+              "boundsType": "OBS_BOUNDS_STRETCH",
+              "boundsWidth": 1920,
+              "boundsHeight": 1080,
+              "alignment": 0
+            }
+          },
+          {
+            "name": "Decorative Frame",
+            "inputKind": "browser_source",
+            "zOrder": 1,
+            "enabled": true,
+            "role": "frame",
+            "transform": {
+              "posX": 0,
+              "posY": 0,
+              "boundsType": "OBS_BOUNDS_STRETCH",
+              "boundsWidth": 1920,
+              "boundsHeight": 1080,
+              "alignment": 0
+            },
+            "browser": {
+              "page": "frame.html?theme=star",
+              "width": 1920,
+              "height": 1080,
+              "css": "",
+              "rerouteAudio": false
+            }
+          },
+          {
+            "name": "Avatar",
+            "inputKind": "ndi_source",
+            "zOrder": 3,
+            "enabled": true,
+            "role": "avatar",
+            "fallbackKinds": [
+              "spout2_source",
+              "dshow_input",
+              "window_capture"
+            ],
+            "placeholder": {
+              "kind": "tracker",
+              "hint": "Bind it with Live2D Setup, or pick an existing window / NDI source."
+            },
+            "transform": {
+              "posX": 500,
+              "posY": 180,
+              "boundsType": "OBS_BOUNDS_SCALE_INNER",
+              "boundsWidth": 920,
+              "boundsHeight": 860,
+              "alignment": 0
+            }
+          },
+          {
+            "name": "Lyrics / Requests",
+            "inputKind": "browser_source",
+            "zOrder": 4,
+            "enabled": true,
+            "role": "chat",
+            "placeholder": {
+              "kind": "url",
+              "hint": "Replace this URL with your own chat widget."
+            },
+            "transform": {
+              "posX": 1440,
+              "posY": 300,
+              "boundsType": "OBS_BOUNDS_SCALE_INNER",
+              "boundsWidth": 400,
+              "boundsHeight": 640,
+              "alignment": 0
+            },
+            "browser": {
+              "page": "chat.html",
+              "width": 400,
+              "height": 640,
+              "css": "body{background:rgba(0,0,0,0);margin:0;overflow:hidden}",
+              "rerouteAudio": false
+            }
+          },
+          {
+            "name": "Title",
+            "inputKind": "text_gdiplus_v3",
+            "zOrder": 6,
+            "enabled": true,
+            "role": "caption",
+            "settings": {
+              "text": "Interlude · back in a moment",
+              "font": {
+                "face": "Segoe UI",
+                "size": 44
+              },
+              "color": 4294967295
+            },
+            "fallbackKinds": [
+              "text_ft2_source_v3"
+            ],
+            "placeholder": {
+              "kind": "text",
+              "hint": "Replace with your title / announcement."
+            },
+            "transform": {
+              "posX": 80,
+              "posY": 60,
+              "boundsType": "OBS_BOUNDS_NONE",
+              "alignment": 5
+            }
+          }
+        ]
+      },
+      {
+        "name": "Away",
+        "sources": [
+          {
+            "name": "BRB Screen",
+            "inputKind": "browser_source",
+            "zOrder": 0,
+            "enabled": true,
+            "role": "brb",
+            "transform": {
+              "posX": 0,
+              "posY": 0,
+              "boundsType": "OBS_BOUNDS_STRETCH",
+              "boundsWidth": 1920,
+              "boundsHeight": 1080,
+              "alignment": 0
+            },
+            "browser": {
+              "page": "brb.html?theme=star",
+              "width": 1920,
+              "height": 1080,
+              "css": "",
+              "rerouteAudio": false
+            }
+          },
+          {
+            "name": "My Microphone",
+            "inputKind": "wasapi_input_capture",
+            "zOrder": 5,
+            "enabled": true,
+            "role": "audio",
+            "shared": true,
+            "placeholder": {
+              "kind": "device",
+              "hint": "Choose your microphone."
+            }
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "vtuber-study",
+    "title": "VTuber · Study With Me",
+    "summary": "Pomodoro timer, avatar and chat — for study, drawing and coding streams.",
+    "icon": "☕",
+    "portrait": false,
+    "notes": "The timer page counts down by itself; change minutes in the browser source URL.",
+    "tags": [
+      "vtuber",
+      "study",
+      "focus",
+      "chat"
+    ],
+    "assetPack": "",
+    "minAppVersion": "3.5.0",
+    "canvas": {
+      "baseWidth": 1920,
+      "baseHeight": 1080,
+      "outputWidth": 1920,
+      "outputHeight": 1080,
+      "fpsNumerator": 30,
+      "fpsDenominator": 1
+    },
+    "transition": "Fade",
+    "transitionDurationMs": 300,
+    "scenes": [
+      {
+        "name": "Focus",
+        "sources": [
+          {
+            "name": "Background Color",
+            "inputKind": "color_source_v3",
+            "zOrder": 0,
+            "enabled": true,
+            "role": "bg",
+            "settings": {
+              "color": 4294963430
+            },
+            "transform": {
+              "posX": 0,
+              "posY": 0,
+              "boundsType": "OBS_BOUNDS_STRETCH",
+              "boundsWidth": 1920,
+              "boundsHeight": 1080,
+              "alignment": 0
+            }
+          },
+          {
+            "name": "Decorative Frame",
+            "inputKind": "browser_source",
+            "zOrder": 1,
+            "enabled": true,
+            "role": "frame",
+            "transform": {
+              "posX": 0,
+              "posY": 0,
+              "boundsType": "OBS_BOUNDS_STRETCH",
+              "boundsWidth": 1920,
+              "boundsHeight": 1080,
+              "alignment": 0
+            },
+            "browser": {
+              "page": "frame.html?theme=mint",
+              "width": 1920,
+              "height": 1080,
+              "css": "",
+              "rerouteAudio": false
+            }
+          },
+          {
+            "name": "Avatar",
+            "inputKind": "ndi_source",
+            "zOrder": 3,
+            "enabled": true,
+            "role": "avatar",
+            "fallbackKinds": [
+              "spout2_source",
+              "dshow_input",
+              "window_capture"
+            ],
+            "placeholder": {
+              "kind": "tracker",
+              "hint": "Bind it with Live2D Setup, or pick an existing window / NDI source."
+            },
+            "transform": {
+              "posX": 120,
+              "posY": 240,
+              "boundsType": "OBS_BOUNDS_SCALE_INNER",
+              "boundsWidth": 780,
+              "boundsHeight": 760,
+              "alignment": 0
+            }
+          },
+          {
+            "name": "Chat",
+            "inputKind": "browser_source",
+            "zOrder": 4,
+            "enabled": true,
+            "role": "chat",
+            "placeholder": {
+              "kind": "url",
+              "hint": "Replace this URL with your own chat widget."
+            },
+            "transform": {
+              "posX": 1430,
+              "posY": 300,
+              "boundsType": "OBS_BOUNDS_SCALE_INNER",
+              "boundsWidth": 430,
+              "boundsHeight": 660,
+              "alignment": 0
+            },
+            "browser": {
+              "page": "chat.html",
+              "width": 430,
+              "height": 660,
+              "css": "body{background:rgba(0,0,0,0);margin:0;overflow:hidden}",
+              "rerouteAudio": false
+            }
+          },
+          {
+            "name": "Timer",
+            "inputKind": "browser_source",
+            "zOrder": 5,
+            "enabled": true,
+            "role": "clock",
+            "transform": {
+              "posX": 1440,
+              "posY": 120,
+              "boundsType": "OBS_BOUNDS_SCALE_INNER",
+              "boundsWidth": 360,
+              "boundsHeight": 160,
+              "alignment": 0
+            },
+            "browser": {
+              "page": "timer.html?minutes=25&theme=mint",
+              "width": 360,
+              "height": 160,
+              "css": "",
+              "rerouteAudio": false
+            }
+          },
+          {
+            "name": "Title",
+            "inputKind": "text_gdiplus_v3",
+            "zOrder": 6,
+            "enabled": true,
+            "role": "caption",
+            "settings": {
+              "text": "Focus 25 minutes",
+              "font": {
+                "face": "Segoe UI",
+                "size": 42
+              },
+              "color": 4294967295
+            },
+            "fallbackKinds": [
+              "text_ft2_source_v3"
+            ],
+            "placeholder": {
+              "kind": "text",
+              "hint": "Replace with your title / announcement."
+            },
+            "transform": {
+              "posX": 80,
+              "posY": 60,
+              "boundsType": "OBS_BOUNDS_NONE",
+              "alignment": 5
+            }
+          }
+        ]
+      },
+      {
+        "name": "Break",
+        "sources": [
+          {
+            "name": "Background Color",
+            "inputKind": "color_source_v3",
+            "zOrder": 0,
+            "enabled": true,
+            "role": "bg",
+            "settings": {
+              "color": 4294965224
+            },
+            "transform": {
+              "posX": 0,
+              "posY": 0,
+              "boundsType": "OBS_BOUNDS_STRETCH",
+              "boundsWidth": 1920,
+              "boundsHeight": 1080,
+              "alignment": 0
+            }
+          },
+          {
+            "name": "Decorative Frame",
+            "inputKind": "browser_source",
+            "zOrder": 1,
+            "enabled": true,
+            "role": "frame",
+            "transform": {
+              "posX": 0,
+              "posY": 0,
+              "boundsType": "OBS_BOUNDS_STRETCH",
+              "boundsWidth": 1920,
+              "boundsHeight": 1080,
+              "alignment": 0
+            },
+            "browser": {
+              "page": "frame.html?theme=mint",
+              "width": 1920,
+              "height": 1080,
+              "css": "",
+              "rerouteAudio": false
+            }
+          },
+          {
+            "name": "Avatar",
+            "inputKind": "ndi_source",
+            "zOrder": 3,
+            "enabled": true,
+            "role": "avatar",
+            "fallbackKinds": [
+              "spout2_source",
+              "dshow_input",
+              "window_capture"
+            ],
+            "placeholder": {
+              "kind": "tracker",
+              "hint": "Bind it with Live2D Setup, or pick an existing window / NDI source."
+            },
+            "transform": {
+              "posX": 120,
+              "posY": 240,
+              "boundsType": "OBS_BOUNDS_SCALE_INNER",
+              "boundsWidth": 780,
+              "boundsHeight": 760,
+              "alignment": 0
+            }
+          },
+          {
+            "name": "Chat",
+            "inputKind": "browser_source",
+            "zOrder": 4,
+            "enabled": true,
+            "role": "chat",
+            "placeholder": {
+              "kind": "url",
+              "hint": "Replace this URL with your own chat widget."
+            },
+            "transform": {
+              "posX": 1430,
+              "posY": 300,
+              "boundsType": "OBS_BOUNDS_SCALE_INNER",
+              "boundsWidth": 430,
+              "boundsHeight": 660,
+              "alignment": 0
+            },
+            "browser": {
+              "page": "chat.html",
+              "width": 430,
+              "height": 660,
+              "css": "body{background:rgba(0,0,0,0);margin:0;overflow:hidden}",
+              "rerouteAudio": false
+            }
+          },
+          {
+            "name": "Timer",
+            "inputKind": "browser_source",
+            "zOrder": 5,
+            "enabled": true,
+            "role": "clock",
+            "transform": {
+              "posX": 1440,
+              "posY": 120,
+              "boundsType": "OBS_BOUNDS_SCALE_INNER",
+              "boundsWidth": 360,
+              "boundsHeight": 160,
+              "alignment": 0
+            },
+            "browser": {
+              "page": "timer.html?minutes=5&theme=mint",
+              "width": 360,
+              "height": 160,
+              "css": "",
+              "rerouteAudio": false
+            }
+          },
+          {
+            "name": "Title",
+            "inputKind": "text_gdiplus_v3",
+            "zOrder": 6,
+            "enabled": true,
+            "role": "caption",
+            "settings": {
+              "text": "Break 5 minutes",
+              "font": {
+                "face": "Segoe UI",
+                "size": 42
+              },
+              "color": 4294967295
+            },
+            "fallbackKinds": [
+              "text_ft2_source_v3"
+            ],
+            "placeholder": {
+              "kind": "text",
+              "hint": "Replace with your title / announcement."
+            },
+            "transform": {
+              "posX": 80,
+              "posY": 60,
+              "boundsType": "OBS_BOUNDS_NONE",
+              "alignment": 5
+            }
+          }
+        ]
+      },
+      {
+        "name": "Away",
+        "sources": [
+          {
+            "name": "BRB Screen",
+            "inputKind": "browser_source",
+            "zOrder": 0,
+            "enabled": true,
+            "role": "brb",
+            "transform": {
+              "posX": 0,
+              "posY": 0,
+              "boundsType": "OBS_BOUNDS_STRETCH",
+              "boundsWidth": 1920,
+              "boundsHeight": 1080,
+              "alignment": 0
+            },
+            "browser": {
+              "page": "brb.html?theme=mint",
+              "width": 1920,
+              "height": 1080,
+              "css": "",
+              "rerouteAudio": false
+            }
+          },
+          {
+            "name": "My Microphone",
+            "inputKind": "wasapi_input_capture",
+            "zOrder": 5,
+            "enabled": true,
+            "role": "audio",
+            "shared": true,
+            "placeholder": {
+              "kind": "device",
+              "hint": "Choose your microphone."
+            }
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "vtuber-collab",
+    "title": "VTuber · Duo Collab",
+    "summary": "Two avatars, two name plates and chat — for collabs and guest streams.",
+    "icon": "♡",
+    "portrait": false,
+    "notes": "The duo scene has two NDI slots; without NDI, switch the second source to window / camera capture.",
+    "tags": [
+      "vtuber",
+      "collab",
+      "guest",
+      "chat"
+    ],
+    "assetPack": "",
+    "minAppVersion": "3.5.0",
+    "canvas": {
+      "baseWidth": 1920,
+      "baseHeight": 1080,
+      "outputWidth": 1920,
+      "outputHeight": 1080,
+      "fpsNumerator": 30,
+      "fpsDenominator": 1
+    },
+    "transition": "Fade",
+    "transitionDurationMs": 300,
+    "scenes": [
+      {
+        "name": "Duo Collab",
+        "sources": [
+          {
+            "name": "Background Color",
+            "inputKind": "color_source_v3",
+            "zOrder": 0,
+            "enabled": true,
+            "role": "bg",
+            "settings": {
+              "color": 4294965224
+            },
+            "transform": {
+              "posX": 0,
+              "posY": 0,
+              "boundsType": "OBS_BOUNDS_STRETCH",
+              "boundsWidth": 1920,
+              "boundsHeight": 1080,
+              "alignment": 0
+            }
+          },
+          {
+            "name": "Decorative Frame",
+            "inputKind": "browser_source",
+            "zOrder": 1,
+            "enabled": true,
+            "role": "frame",
+            "transform": {
+              "posX": 0,
+              "posY": 0,
+              "boundsType": "OBS_BOUNDS_STRETCH",
+              "boundsWidth": 1920,
+              "boundsHeight": 1080,
+              "alignment": 0
+            },
+            "browser": {
+              "page": "frame.html?theme=cream",
+              "width": 1920,
+              "height": 1080,
+              "css": "",
+              "rerouteAudio": false
+            }
+          },
+          {
+            "name": "Host Avatar",
+            "inputKind": "ndi_source",
+            "zOrder": 3,
+            "enabled": true,
+            "role": "avatar",
+            "fallbackKinds": [
+              "spout2_source",
+              "dshow_input",
+              "window_capture"
+            ],
+            "placeholder": {
+              "kind": "tracker",
+              "hint": "Bind your Live2D model."
+            },
+            "transform": {
+              "posX": 80,
+              "posY": 200,
+              "boundsType": "OBS_BOUNDS_SCALE_INNER",
+              "boundsWidth": 760,
+              "boundsHeight": 760,
+              "alignment": 0
+            }
+          },
+          {
+            "name": "Guest Avatar",
+            "inputKind": "ndi_source",
+            "zOrder": 3,
+            "enabled": true,
+            "role": "avatar",
+            "fallbackKinds": [
+              "spout2_source",
+              "dshow_input",
+              "window_capture"
+            ],
+            "placeholder": {
+              "kind": "tracker",
+              "hint": "Bind the guest Live2D / camera."
+            },
+            "transform": {
+              "posX": 1080,
+              "posY": 200,
+              "boundsType": "OBS_BOUNDS_SCALE_INNER",
+              "boundsWidth": 760,
+              "boundsHeight": 760,
+              "alignment": 0
+            }
+          },
+          {
+            "name": "Host Label",
+            "inputKind": "browser_source",
+            "zOrder": 4,
+            "enabled": true,
+            "role": "chat",
+            "placeholder": {
+              "kind": "url",
+              "hint": "Replace this URL with your own chat widget."
+            },
+            "transform": {
+              "posX": 80,
+              "posY": 880,
+              "boundsType": "OBS_BOUNDS_SCALE_INNER",
+              "boundsWidth": 880,
+              "boundsHeight": 160,
+              "alignment": 0
+            },
+            "browser": {
+              "page": "chat.html",
+              "width": 880,
+              "height": 160,
+              "css": "body{background:rgba(0,0,0,0);margin:0;overflow:hidden}",
+              "rerouteAudio": false
+            }
+          },
+          {
+            "name": "Guest Label",
+            "inputKind": "browser_source",
+            "zOrder": 4,
+            "enabled": true,
+            "role": "chat",
+            "placeholder": {
+              "kind": "url",
+              "hint": "Replace this URL with your own chat widget."
+            },
+            "transform": {
+              "posX": 960,
+              "posY": 880,
+              "boundsType": "OBS_BOUNDS_SCALE_INNER",
+              "boundsWidth": 880,
+              "boundsHeight": 160,
+              "alignment": 0
+            },
+            "browser": {
+              "page": "chat.html",
+              "width": 880,
+              "height": 160,
+              "css": "body{background:rgba(0,0,0,0);margin:0;overflow:hidden}",
+              "rerouteAudio": false
+            }
+          },
+          {
+            "name": "Title",
+            "inputKind": "text_gdiplus_v3",
+            "zOrder": 6,
+            "enabled": true,
+            "role": "caption",
+            "settings": {
+              "text": "Duo collab · tonight 8 PM",
+              "font": {
+                "face": "Segoe UI",
+                "size": 48
+              },
+              "color": 4294967295
+            },
+            "fallbackKinds": [
+              "text_ft2_source_v3"
+            ],
+            "placeholder": {
+              "kind": "text",
+              "hint": "Replace with your title / announcement."
+            },
+            "transform": {
+              "posX": 80,
+              "posY": 60,
+              "boundsType": "OBS_BOUNDS_NONE",
+              "alignment": 5
+            }
+          },
+          {
+            "name": "My Microphone",
+            "inputKind": "wasapi_input_capture",
+            "zOrder": 5,
+            "enabled": true,
+            "role": "audio",
+            "shared": true,
+            "placeholder": {
+              "kind": "device",
+              "hint": "Choose your microphone."
+            }
+          }
+        ]
+      },
+      {
+        "name": "Host Close-up",
+        "sources": [
+          {
+            "name": "Background Color",
+            "inputKind": "color_source_v3",
+            "zOrder": 0,
+            "enabled": true,
+            "role": "bg",
+            "settings": {
+              "color": 4294963430
+            },
+            "transform": {
+              "posX": 0,
+              "posY": 0,
+              "boundsType": "OBS_BOUNDS_STRETCH",
+              "boundsWidth": 1920,
+              "boundsHeight": 1080,
+              "alignment": 0
+            }
+          },
+          {
+            "name": "Decorative Frame",
+            "inputKind": "browser_source",
+            "zOrder": 1,
+            "enabled": true,
+            "role": "frame",
+            "transform": {
+              "posX": 0,
+              "posY": 0,
+              "boundsType": "OBS_BOUNDS_STRETCH",
+              "boundsWidth": 1920,
+              "boundsHeight": 1080,
+              "alignment": 0
+            },
+            "browser": {
+              "page": "frame.html?theme=cream",
+              "width": 1920,
+              "height": 1080,
+              "css": "",
+              "rerouteAudio": false
+            }
+          },
+          {
+            "name": "Avatar",
+            "inputKind": "ndi_source",
+            "zOrder": 3,
+            "enabled": true,
+            "role": "avatar",
+            "fallbackKinds": [
+              "spout2_source",
+              "dshow_input",
+              "window_capture"
+            ],
+            "placeholder": {
+              "kind": "tracker",
+              "hint": "Bind it with Live2D Setup, or pick an existing window / NDI source."
+            },
+            "transform": {
+              "posX": 340,
+              "posY": 140,
+              "boundsType": "OBS_BOUNDS_SCALE_INNER",
+              "boundsWidth": 1240,
+              "boundsHeight": 820,
+              "alignment": 0
+            }
+          },
+          {
+            "name": "Chat",
+            "inputKind": "browser_source",
+            "zOrder": 4,
+            "enabled": true,
+            "role": "chat",
+            "placeholder": {
+              "kind": "url",
+              "hint": "Replace this URL with your own chat widget."
+            },
+            "transform": {
+              "posX": 1440,
+              "posY": 300,
+              "boundsType": "OBS_BOUNDS_SCALE_INNER",
+              "boundsWidth": 400,
+              "boundsHeight": 640,
+              "alignment": 0
+            },
+            "browser": {
+              "page": "chat.html",
+              "width": 400,
+              "height": 640,
+              "css": "body{background:rgba(0,0,0,0);margin:0;overflow:hidden}",
+              "rerouteAudio": false
+            }
+          },
+          {
+            "name": "Title",
+            "inputKind": "text_gdiplus_v3",
+            "zOrder": 6,
+            "enabled": true,
+            "role": "caption",
+            "settings": {
+              "text": "Host close-up",
+              "font": {
+                "face": "Segoe UI",
+                "size": 46
+              },
+              "color": 4294967295
+            },
+            "fallbackKinds": [
+              "text_ft2_source_v3"
+            ],
+            "placeholder": {
+              "kind": "text",
+              "hint": "Replace with your title / announcement."
+            },
+            "transform": {
+              "posX": 80,
+              "posY": 60,
+              "boundsType": "OBS_BOUNDS_NONE",
+              "alignment": 5
+            }
+          },
+          {
+            "name": "My Microphone",
+            "inputKind": "wasapi_input_capture",
+            "zOrder": 5,
+            "enabled": true,
+            "role": "audio",
+            "shared": true,
+            "placeholder": {
+              "kind": "device",
+              "hint": "Choose your microphone."
+            }
+          }
+        ]
+      },
+      {
+        "name": "Guest Close-up",
+        "sources": [
+          {
+            "name": "Background Color",
+            "inputKind": "color_source_v3",
+            "zOrder": 0,
+            "enabled": true,
+            "role": "bg",
+            "settings": {
+              "color": 4280950597
+            },
+            "transform": {
+              "posX": 0,
+              "posY": 0,
+              "boundsType": "OBS_BOUNDS_STRETCH",
+              "boundsWidth": 1920,
+              "boundsHeight": 1080,
+              "alignment": 0
+            }
+          },
+          {
+            "name": "Decorative Frame",
+            "inputKind": "browser_source",
+            "zOrder": 1,
+            "enabled": true,
+            "role": "frame",
+            "transform": {
+              "posX": 0,
+              "posY": 0,
+              "boundsType": "OBS_BOUNDS_STRETCH",
+              "boundsWidth": 1920,
+              "boundsHeight": 1080,
+              "alignment": 0
+            },
+            "browser": {
+              "page": "frame.html?theme=cream",
+              "width": 1920,
+              "height": 1080,
+              "css": "",
+              "rerouteAudio": false
+            }
+          },
+          {
+            "name": "Avatar",
+            "inputKind": "ndi_source",
+            "zOrder": 3,
+            "enabled": true,
+            "role": "avatar",
+            "fallbackKinds": [
+              "spout2_source",
+              "dshow_input",
+              "window_capture"
+            ],
+            "placeholder": {
+              "kind": "tracker",
+              "hint": "Bind it with Live2D Setup, or pick an existing window / NDI source."
+            },
+            "transform": {
+              "posX": 340,
+              "posY": 140,
+              "boundsType": "OBS_BOUNDS_SCALE_INNER",
+              "boundsWidth": 1240,
+              "boundsHeight": 820,
+              "alignment": 0
+            }
+          },
+          {
+            "name": "Chat",
+            "inputKind": "browser_source",
+            "zOrder": 4,
+            "enabled": true,
+            "role": "chat",
+            "placeholder": {
+              "kind": "url",
+              "hint": "Replace this URL with your own chat widget."
+            },
+            "transform": {
+              "posX": 1440,
+              "posY": 300,
+              "boundsType": "OBS_BOUNDS_SCALE_INNER",
+              "boundsWidth": 400,
+              "boundsHeight": 640,
+              "alignment": 0
+            },
+            "browser": {
+              "page": "chat.html",
+              "width": 400,
+              "height": 640,
+              "css": "body{background:rgba(0,0,0,0);margin:0;overflow:hidden}",
+              "rerouteAudio": false
+            }
+          },
+          {
+            "name": "Title",
+            "inputKind": "text_gdiplus_v3",
+            "zOrder": 6,
+            "enabled": true,
+            "role": "caption",
+            "settings": {
+              "text": "Guest close-up",
+              "font": {
+                "face": "Segoe UI",
+                "size": 46
+              },
+              "color": 4294967295
+            },
+            "fallbackKinds": [
+              "text_ft2_source_v3"
+            ],
+            "placeholder": {
+              "kind": "text",
+              "hint": "Replace with your title / announcement."
+            },
+            "transform": {
+              "posX": 80,
+              "posY": 60,
+              "boundsType": "OBS_BOUNDS_NONE",
+              "alignment": 5
+            }
+          },
+          {
+            "name": "My Microphone",
+            "inputKind": "wasapi_input_capture",
+            "zOrder": 5,
+            "enabled": true,
+            "role": "audio",
+            "shared": true,
+            "placeholder": {
+              "kind": "device",
+              "hint": "Choose your microphone."
+            }
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "vtuber-handcam",
+    "title": "VTuber · Hand Camera",
+    "summary": "Main view plus a hand-camera PiP — for crafts, drawing and controller demos.",
+    "icon": "✋",
+    "portrait": false,
+    "notes": "The hand camera uses Video Capture Device; pick the device after applying the template.",
+    "tags": [
+      "vtuber",
+      "handcam",
+      "craft",
+      "chat"
+    ],
+    "assetPack": "",
+    "minAppVersion": "3.5.0",
+    "canvas": {
+      "baseWidth": 1920,
+      "baseHeight": 1080,
+      "outputWidth": 1920,
+      "outputHeight": 1080,
+      "fpsNumerator": 30,
+      "fpsDenominator": 1
+    },
+    "transition": "Fade",
+    "transitionDurationMs": 300,
+    "scenes": [
+      {
+        "name": "Hand Camera",
+        "sources": [
+          {
+            "name": "Background Color",
+            "inputKind": "color_source_v3",
+            "zOrder": 0,
+            "enabled": true,
+            "role": "bg",
+            "settings": {
+              "color": 4294965224
+            },
+            "transform": {
+              "posX": 0,
+              "posY": 0,
+              "boundsType": "OBS_BOUNDS_STRETCH",
+              "boundsWidth": 1920,
+              "boundsHeight": 1080,
+              "alignment": 0
+            }
+          },
+          {
+            "name": "Decorative Frame",
+            "inputKind": "browser_source",
+            "zOrder": 1,
+            "enabled": true,
+            "role": "frame",
+            "transform": {
+              "posX": 0,
+              "posY": 0,
+              "boundsType": "OBS_BOUNDS_STRETCH",
+              "boundsWidth": 1920,
+              "boundsHeight": 1080,
+              "alignment": 0
+            },
+            "browser": {
+              "page": "frame.html?theme=cocoa",
+              "width": 1920,
+              "height": 1080,
+              "css": "",
+              "rerouteAudio": false
+            }
+          },
+          {
+            "name": "Avatar",
+            "inputKind": "ndi_source",
+            "zOrder": 3,
+            "enabled": true,
+            "role": "avatar",
+            "fallbackKinds": [
+              "spout2_source",
+              "dshow_input",
+              "window_capture"
+            ],
+            "placeholder": {
+              "kind": "tracker",
+              "hint": "Bind it with Live2D Setup, or pick an existing window / NDI source."
+            },
+            "transform": {
+              "posX": 140,
+              "posY": 220,
+              "boundsType": "OBS_BOUNDS_SCALE_INNER",
+              "boundsWidth": 900,
+              "boundsHeight": 800,
+              "alignment": 0
+            }
+          },
+          {
+            "name": "Hand Camera",
+            "inputKind": "dshow_input",
+            "zOrder": 5,
+            "enabled": true,
+            "role": "avatar",
+            "placeholder": {
+              "kind": "device",
+              "hint": "Choose the hand camera / capture card."
+            },
+            "transform": {
+              "posX": 1380,
+              "posY": 700,
+              "boundsType": "OBS_BOUNDS_SCALE_INNER",
+              "boundsWidth": 460,
+              "boundsHeight": 300,
+              "alignment": 0
+            }
+          },
+          {
+            "name": "Chat",
+            "inputKind": "browser_source",
+            "zOrder": 4,
+            "enabled": true,
+            "role": "chat",
+            "placeholder": {
+              "kind": "url",
+              "hint": "Replace this URL with your own chat widget."
+            },
+            "transform": {
+              "posX": 1400,
+              "posY": 180,
+              "boundsType": "OBS_BOUNDS_SCALE_INNER",
+              "boundsWidth": 440,
+              "boundsHeight": 480,
+              "alignment": 0
+            },
+            "browser": {
+              "page": "chat.html",
+              "width": 440,
+              "height": 480,
+              "css": "body{background:rgba(0,0,0,0);margin:0;overflow:hidden}",
+              "rerouteAudio": false
+            }
+          },
+          {
+            "name": "Title",
+            "inputKind": "text_gdiplus_v3",
+            "zOrder": 6,
+            "enabled": true,
+            "role": "caption",
+            "settings": {
+              "text": "Craft time · hand camera",
+              "font": {
+                "face": "Segoe UI",
+                "size": 44
+              },
+              "color": 4294967295
+            },
+            "fallbackKinds": [
+              "text_ft2_source_v3"
+            ],
+            "placeholder": {
+              "kind": "text",
+              "hint": "Replace with your title / announcement."
+            },
+            "transform": {
+              "posX": 80,
+              "posY": 60,
+              "boundsType": "OBS_BOUNDS_NONE",
+              "alignment": 5
+            }
+          },
+          {
+            "name": "My Microphone",
+            "inputKind": "wasapi_input_capture",
+            "zOrder": 5,
+            "enabled": true,
+            "role": "audio",
+            "shared": true,
+            "placeholder": {
+              "kind": "device",
+              "hint": "Choose your microphone."
+            }
+          }
+        ]
+      },
+      {
+        "name": "Hand Close-up",
+        "sources": [
+          {
+            "name": "Background Color",
+            "inputKind": "color_source_v3",
+            "zOrder": 0,
+            "enabled": true,
+            "role": "bg",
+            "settings": {
+              "color": 4280950597
+            },
+            "transform": {
+              "posX": 0,
+              "posY": 0,
+              "boundsType": "OBS_BOUNDS_STRETCH",
+              "boundsWidth": 1920,
+              "boundsHeight": 1080,
+              "alignment": 0
+            }
+          },
+          {
+            "name": "Decorative Frame",
+            "inputKind": "browser_source",
+            "zOrder": 1,
+            "enabled": true,
+            "role": "frame",
+            "transform": {
+              "posX": 0,
+              "posY": 0,
+              "boundsType": "OBS_BOUNDS_STRETCH",
+              "boundsWidth": 1920,
+              "boundsHeight": 1080,
+              "alignment": 0
+            },
+            "browser": {
+              "page": "frame.html?theme=cocoa",
+              "width": 1920,
+              "height": 1080,
+              "css": "",
+              "rerouteAudio": false
+            }
+          },
+          {
+            "name": "Hand Camera",
+            "inputKind": "dshow_input",
+            "zOrder": 2,
+            "enabled": true,
+            "role": "avatar",
+            "placeholder": {
+              "kind": "device",
+              "hint": "Choose the hand camera / capture card."
+            },
+            "transform": {
+              "posX": 260,
+              "posY": 140,
+              "boundsType": "OBS_BOUNDS_SCALE_INNER",
+              "boundsWidth": 1400,
+              "boundsHeight": 800,
+              "alignment": 0
+            }
+          },
+          {
+            "name": "Chat",
+            "inputKind": "browser_source",
+            "zOrder": 4,
+            "enabled": true,
+            "role": "chat",
+            "placeholder": {
+              "kind": "url",
+              "hint": "Replace this URL with your own chat widget."
+            },
+            "transform": {
+              "posX": 1440,
+              "posY": 180,
+              "boundsType": "OBS_BOUNDS_SCALE_INNER",
+              "boundsWidth": 400,
+              "boundsHeight": 700,
+              "alignment": 0
+            },
+            "browser": {
+              "page": "chat.html",
+              "width": 400,
+              "height": 700,
+              "css": "body{background:rgba(0,0,0,0);margin:0;overflow:hidden}",
+              "rerouteAudio": false
+            }
+          },
+          {
+            "name": "Title",
+            "inputKind": "text_gdiplus_v3",
+            "zOrder": 6,
+            "enabled": true,
+            "role": "caption",
+            "settings": {
+              "text": "Hand close-up",
+              "font": {
+                "face": "Segoe UI",
+                "size": 46
+              },
+              "color": 4294967295
+            },
+            "fallbackKinds": [
+              "text_ft2_source_v3"
+            ],
+            "placeholder": {
+              "kind": "text",
+              "hint": "Replace with your title / announcement."
+            },
+            "transform": {
+              "posX": 80,
+              "posY": 60,
+              "boundsType": "OBS_BOUNDS_NONE",
+              "alignment": 5
+            }
+          },
+          {
+            "name": "My Microphone",
+            "inputKind": "wasapi_input_capture",
+            "zOrder": 5,
+            "enabled": true,
+            "role": "audio",
+            "shared": true,
+            "placeholder": {
+              "kind": "device",
+              "hint": "Choose your microphone."
+            }
+          }
+        ]
       }
     ]
   }

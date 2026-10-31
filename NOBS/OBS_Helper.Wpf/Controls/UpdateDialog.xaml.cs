@@ -33,11 +33,11 @@ public partial class UpdateDialog : Window
 
         dlg.CurrentRun.Text = current is null
             ? Strings.T("update.currentUnknown")
-            : Strings.T("update.current", $"{current.Major}.{current.Minor}.{current.Build}");
+            : Strings.T("update.current", ReleaseChannel.FormatVersion(current).TrimStart('v', 'V'));
         dlg.LatestRun.Text = latest is null
             ? Strings.T("update.latestUnknown")
-            : Strings.T("update.latest", $"{latest.Major}.{latest.Minor}.{latest.Build}");
-        dlg.TitleText.Text = latest is null ? Strings.T("update.title") : Strings.T("update.dialogTitle", $"{latest.Major}.{latest.Minor}.{latest.Build}");
+            : Strings.T("update.latest", ReleaseChannel.FormatVersion(latest).TrimStart('v', 'V'));
+        dlg.TitleText.Text = latest is null ? Strings.T("update.title") : Strings.T("update.dialogTitle", ReleaseChannel.FormatVersion(latest).TrimStart('v', 'V'));
         dlg.PasswordText.Text = UpdateService.UpdatePassword;
 
         // 展示当前知识库版本（异步刷新，失败静默）

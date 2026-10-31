@@ -4,8 +4,10 @@
 
 # OBS Helper · OBS帮助助手
 
-**Current release: V3.4.2** — information-architecture cleanup: the Feature Center no longer carries "new in this version" labels, Settings is now a grouped left rail with search and one page at a time (with a short guide per page), and the Toolbox is reorganised into seven groups with grouped filtering and a non-duplicating section directory.
-See [RELEASE_NOTES_v3.4.2.md](RELEASE_NOTES_v3.4.2.md) (Chinese).
+**Current release: X1031** — the first independent X-series release: a minimal “OBS helper” app icon, GitHub accelerator guidance for the plugin catalog, merged managed/locally-detected installed plugins, one-click media server for phone cameras, 10 VTuber room templates, a rebuilt mini control window and phone-side teleprompter editing. X builds only check GitHub tags starting with `X`; they never mix with V releases.
+See [RELEASE_NOTES_x1031.md](RELEASE_NOTES_x1031.md) (Chinese).
+
+> **V / X series**: V releases keep `V3.5.0`-style versions; X releases use date-code versions such as `X1031`. Both share the same features and data folder, but each channel only checks its own tags. V3.5.0 additionally ships the global background UI refactor and mobile/Feature Center UX work.
 
 > **This is the developer-facing full documentation for the Windows native WPF version and it lives inside `NOBS/`**;
 > the repository-root [`README.md`](../README.md) is the complete user-facing guide (features · usage · installation),
@@ -18,11 +20,11 @@ See [RELEASE_NOTES_v3.4.2.md](RELEASE_NOTES_v3.4.2.md) (Chinese).
 [![Platform](https://img.shields.io/badge/Platform-Windows_7_SP1%2B-0078D6.svg)]()
 [![.NET](https://img.shields.io/badge/.NET-10_%2F_6-512BD4.svg)]()
 [![Stack](https://img.shields.io/badge/Stack-WPF_%2F_C%23-239120.svg)]()
-[![Release](https://img.shields.io/badge/Release-3.4.2-38bdf8.svg)](https://github.com/YYRMMAYO/OBS_Helper/releases)
+[![Release](https://img.shields.io/badge/Release-1031-38bdf8.svg)](https://github.com/YYRMMAYO/OBS_Helper/releases)
 [![OBS](https://img.shields.io/badge/OBS-32.2.2-302E31.svg)](https://github.com/obsproject/obs-studio/releases)
 [![Offline](https://img.shields.io/badge/offline--first-2ea44f.svg)]()
 [![Incremental Update](https://img.shields.io/badge/Incremental%20Update-2.5MB-7dd3fc.svg)]()
-[![Tests](https://img.shields.io/badge/Tests-1697%20passed-2ea44f.svg)]()
+[![Tests](https://img.shields.io/badge/Tests-1729%20passed-2ea44f.svg)]()
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](../LICENSE)
 
 **English** · [简体中文](README.md)
@@ -63,6 +65,17 @@ There are two channels for the same app — pick the one that matches how much "
 - **DEV builds are not packaged and do not use the Lanzou mirror yet**: the update prompt only points you at the dev Releases page (`/releases/tag/0X`). Incremental updates, the Lanzou mirror and installers keep serving stable users exactly as before.
 - **Which one should you pick?** Use stable for day-to-day work; take DEV if you want early features and can live with the occasional broken build. Please report DEV issues through *Help & feedback* and put `DEV 0X` (e.g. `DEV 03`) in the description.
 
+## X1031 highlights
+
+- **Independent X channel**: X1031 only checks tags starting with `X`; V3.6.0-style tags are invisible to X users. The UI shows `X1031`.
+- **New app icon**: black rounded plate with white `OBS`, `helper`, and an overlapping teal arc; window, taskbar, tray and installer use the same mark.
+- **Plugin experience**: GitHub accelerator guidance (Watt Toolkit / Steam++) with a re-check button; the installed list merges “managed by this app” and “detected locally”, so plugins you added to OBS yourself are visible too.
+- **Phone camera**: mediamtx pinned to v1.21.3 with SHA-256 and one-click install; the media server can start before OBS connects, and the source is added automatically afterwards.
+- **VTuber templates**: expanded from 6 to 10 (karaoke, study, duo collab, hand camera); the chat template no longer overlaps the avatar.
+- **Mini control**: save replay, scene switching, audio mute, teleprompter, studio mode and main-window entry.
+- **Phone teleprompter editing**: edit and save the script from the phone, with the last 5 backups kept.
+- **Guide rewrite**: a 5-minute setup section plus plugin acceleration, phone camera, VTuber and phone editing steps.
+
 ## V3.4.2 highlights
 
 - **Feature Center without version labels**: the left navigation no longer says "V3.4.x NEW", and the Feature Center/home hero no longer carry version badges or split modules into "new this release / everyday". Capabilities are grouped by domain.
@@ -70,7 +83,7 @@ There are two channels for the same app — pick the one that matches how much "
 - **Search**: filter settings by title, guide text or keywords; a no-results state keeps the search honest.
 - **Toolbox reorganised**: 18 tools are grouped into Recording & files, Video checks, Audio checks, Network & streaming, Parameters & privacy, Conflicts & versions, and Help & feedback; group chips and the section directory stay in sync.
 - **Fixes**: the "jump to section" list duplicated after a language switch (the builder never cleared its children); code-generated Feature Center/Settings text now refreshes on language change; duplicate `using` directives and a nullable warning were removed.
-- **Verification**: all **1697 unit tests** pass; both builds (`net10.0-windows` / `net6.0-windows`) compile with 0 errors; all 2,596 resource references across 47 XAML files resolve.
+- **Verification**: all **1729 unit tests** pass; both builds (`net10.0-windows` / `net6.0-windows`) compile with 0 errors; all 2,633 resource references across 47 XAML files resolve.
 
 ## V3.4.1 highlights
 

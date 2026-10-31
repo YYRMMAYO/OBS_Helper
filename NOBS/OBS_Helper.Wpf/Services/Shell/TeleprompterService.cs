@@ -222,6 +222,45 @@ public sealed class TeleprompterService : IDisposable
         }
     }
 
+    /// <summary>
+    /// 直接设置脚本（V3.5.0 手机端改稿）：先备份旧稿，再原子写入并刷新已打开的窗口。
+    /// 长度 / 空稿校验由调用方（手机命令）完成；这里只做规范化与持久化。
+    /// </summary>
+    public void SetScript(string? text)
+    {
+        Initialize();
+        BackupScript();
+        SaveScript(text);
+        _window?.SetScript(_script);
+        StateChanged?.Invoke();
+    }
+
+    /// <summary>备份当前脚本，最多保留 5 份（手机改稿误操作可找回）。</summary>
+    private void BackupScript()
+    {
+        try
+        {
+            if (!File.Exists(ScriptPath)) return;
+            var dir = Path.GetDirectoryName(ScriptPath)!;
+            Directory.CreateDirectory(dir);
+            var backup = Path.Combine(dir, "backup-" + DateTime.Now.ToString("yyyyMMdd-HHmmss") + ".txt");
+            File.Copy(ScriptPath, backup, overwrite: false);
+
+            var old = Directory.GetFiles(dir, "backup-*.txt")
+                .OrderByDescending(f => f, StringComparer.OrdinalIgnoreCase)
+                .Skip(5)
+                .ToList();
+            foreach (var file in old)
+            {
+                try { File.Delete(file); } catch { /* 清理失败不影响保存 */ }
+            }
+        }
+        catch (Exception ex)
+        {
+            FileLogger.Warn("Teleprompter", $"备份提词器脚本失败（不影响本次保存）：{ex.Message}");
+        }
+    }
+
     /// <summary>读取脚本文件（用户手动替换后重新加载）。</summary>
     public string ReloadScript()
     {

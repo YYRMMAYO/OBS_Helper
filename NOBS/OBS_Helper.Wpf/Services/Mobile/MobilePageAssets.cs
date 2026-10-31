@@ -95,6 +95,13 @@ public static class MobilePageAssets
         ["mirror"] = ("镜像", "Mirror"),
         ["script"] = ("提词稿", "Script"),
         ["scriptEmpty"] = ("电脑上还没有提词稿。", "No script on the PC yet."),
+        ["scriptEdit"] = ("编辑提词稿", "Edit script"),
+        ["saveScript"] = ("保存到电脑", "Save to PC"),
+        ["refreshScript"] = ("从电脑刷新", "Refresh from PC"),
+        ["scriptSaved"] = ("已保存到电脑", "Saved to the PC"),
+        ["scriptTooLong"] = ("提词稿不能超过 20000 字", "Script must be 20000 characters or fewer"),
+        ["scriptRequired"] = ("提词稿不能为空", "Script cannot be empty"),
+        ["scriptDirty"] = ("有未保存的修改", "Unsaved changes"),
         ["offsetUp"] = ("上移", "Scroll up"),
         ["offsetDown"] = ("下移", "Scroll down"),
         ["openLight"] = ("打开补光 / 色卡", "Open light & color card"),
@@ -335,6 +342,15 @@ h2:first-child{margin-top:16px}
     <div class="check"><label data-i18n="mirror"></label><input id="pMirror" type="checkbox" /></div>
   </div>
   <h2 data-i18n="script"></h2>
+  <div class="card" style="margin-bottom:12px">
+    <label for="pScript" data-i18n="scriptEdit" style="font-weight:600"></label>
+    <textarea id="pScript" rows="6" maxlength="20000" style="width:100%;margin-top:8px;padding:10px;border:1px solid var(--line);border-radius:var(--radius-sm);background:var(--surface);color:var(--fg);font:inherit;font-size:1rem;line-height:1.5;resize:vertical"></textarea>
+    <div class="grid actions">
+      <button class="btn" id="pSaveScript" type="button" data-i18n="saveScript"></button>
+      <button class="btn" id="pReloadScript" type="button" data-i18n="refreshScript"></button>
+    </div>
+    <p id="pScriptNotice" class="hint" role="status" aria-live="polite"></p>
+  </div>
   <div id="prompt" class="script"></div>
 </section>
 <section id="light" role="tabpanel" aria-labelledby="tab-light">
@@ -375,7 +391,8 @@ const $ = id => document.getElementById(id);
 const memoryStore = {};
 const state = {
   token: readStore("obshelper.token"), role: "", snapshot: null, ws: null, es: null,
-  previewTimer: 0, previewMsg: "", retry: 0, theme: readStore("obshelper.theme") || "auto", audioDrag: ""
+  previewTimer: 0, previewMsg: "", retry: 0, theme: readStore("obshelper.theme") || "auto", audioDrag: "",
+  scriptDirty: false
 };
 
 function readStore(key) {
@@ -704,6 +721,12 @@ function renderPrompt(s) {
     prompt.style.setProperty("--prompt-font", (p.fontSize || 26) + "px");
     prompt.classList.toggle("mirror", !!p.mirror);
   }
+  // 手机端改稿：用户正在编辑时不覆盖输入；保存成功后由本端清掉 dirty。
+  const editor = $("pScript");
+  if (editor && !state.scriptDirty) editor.value = p.script || "";
+  if ($("pScriptNotice")) {
+    $("pScriptNotice").textContent = state.scriptDirty ? t("scriptDirty") : "";
+  }
   const speed = $("pSpeed"), font = $("pFont");
   if (speed && document.activeElement !== speed) speed.value = String(p.speed || 5);
   if (font && document.activeElement !== font) font.value = String(p.fontSize || 26);
@@ -813,6 +836,28 @@ document.addEventListener("change", ev => {
   if (i.id === "pMirror") return send("teleprompter.mirror", { mirror: !!i.checked });
   if (i.id === "file") return upload(i);
 });
+function scriptText() {
+  const editor = $("pScript");
+  return editor ? editor.value : "";
+}
+async function saveScript() {
+  const text = scriptText();
+  const notice = $("pScriptNotice");
+  if (!text.trim()) { if (notice) notice.textContent = t("scriptRequired"); return; }
+  if (text.length > 20000) { if (notice) notice.textContent = t("scriptTooLong"); return; }
+  const ok = await send("teleprompter.set", { text });
+  if (ok) {
+    state.scriptDirty = false;
+    if (notice) notice.textContent = t("scriptSaved");
+    toast(t("scriptSaved"));
+  }
+}
+$("pScript").addEventListener("input", () => {
+  state.scriptDirty = true;
+  if ($("pScriptNotice")) $("pScriptNotice").textContent = t("scriptDirty");
+});
+$("pSaveScript").addEventListener("click", saveScript);
+$("pReloadScript").addEventListener("click", () => { state.scriptDirty = false; send("state.get"); });
 $("pPlay").addEventListener("click", () => send("teleprompter.play"));
 $("pPause").addEventListener("click", () => send("teleprompter.pause"));
 $("pRestart").addEventListener("click", () => send("teleprompter.restart"));

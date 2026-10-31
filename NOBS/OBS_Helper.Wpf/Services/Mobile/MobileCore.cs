@@ -94,6 +94,7 @@ public static class MobileCommandCore
     public const string TeleprompterFont = "teleprompter.font";
     public const string TeleprompterMirror = "teleprompter.mirror";
     public const string TeleprompterRestart = "teleprompter.restart";
+    public const string TeleprompterSet = "teleprompter.set";
     public const string DeviceRevoke = "device.revoke";
     public const string AppPanic = "app.panic";
 
@@ -121,6 +122,7 @@ public static class MobileCommandCore
             [TeleprompterFont] = new(TeleprompterFont, MobileRole.Operator, false, new[] { "fontSize" }),
             [TeleprompterMirror] = new(TeleprompterMirror, MobileRole.Operator, false, new[] { "mirror" }),
             [TeleprompterRestart] = new(TeleprompterRestart, MobileRole.Operator, false, Array.Empty<string>()),
+            [TeleprompterSet] = new(TeleprompterSet, MobileRole.Operator, false, new[] { "text" }),
             [DeviceRevoke] = new(DeviceRevoke, MobileRole.Admin, true, new[] { "deviceId" }),
             [AppPanic] = new(AppPanic, MobileRole.Admin, true, new[] { "stopStream" }),
         };
@@ -223,6 +225,14 @@ public static class MobileCommandCore
             case TeleprompterOffset:
                 if (double.IsNaN(Num("offset"))) return Validation.Fail(FeatureErrors.MobCommandInvalid);
                 break;
+            case TeleprompterSet:
+            {
+                // 手机端直接改稿：空稿 / 超长稿一律拒绝，避免把电脑上的稿子清空。
+                var text = Str("text");
+                if (string.IsNullOrWhiteSpace(text) || text.Length > 20_000)
+                    return Validation.Fail(FeatureErrors.MobCommandInvalid);
+                break;
+            }
             case DeviceRevoke:
                 if (Str("deviceId").Length == 0) return Validation.Fail(FeatureErrors.MobCommandInvalid);
                 break;

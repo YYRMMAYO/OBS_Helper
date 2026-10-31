@@ -11,6 +11,7 @@ using OBS_Helper.Wpf.Services;
 using OBS_Helper.Wpf.Services.Dependencies;
 using OBS_Helper.Wpf.Services.Plugins;
 using OBS_Helper.Wpf.Services.Shell;
+using OBS_Helper.Wpf.Services.Update;
 
 namespace OBS_Helper.Wpf.Views;
 
@@ -204,6 +205,9 @@ public partial class PluginsPage : UserControl, INavigationAware
 
         // V3.3.0：应用管理的已安装插件（installed.json）
         RefreshManagedList();
+
+        // V3.5.0：GitHub 加速引导（用户点「不再提示」后隐藏）
+        RefreshAcceleratorPanel();
     }
 
     /// <summary>
@@ -233,6 +237,52 @@ public partial class PluginsPage : UserControl, INavigationAware
         {
             // 提示是锦上添花：取不到就不显示，不影响插件列表
         }
+    }
+
+    // ---------------------------------------------------------- GitHub 加速引导（V3.5.0）
+
+    /// <summary>「不再提示」偏好键；只影响提示，不影响插件功能。</summary>
+    private const string AcceleratorDismissKey = "plugin.githubAcceleratorDismissed";
+
+    private void RefreshAcceleratorPanel()
+    {
+        var dismissed = string.Equals(AppServices.Store.GetItem(AcceleratorDismissKey), "1", StringComparison.Ordinal);
+        AcceleratorPanel.Visibility = dismissed ? Visibility.Collapsed : Visibility.Visible;
+    }
+
+    private async void OnDownloadAcceleratorClick(object sender, RoutedEventArgs e)
+    {
+        var ok = await AppServices.Host.OpenExternalAsync(ObsDownloadLinks.WattToolkitSite);
+        AcceleratorStatusText.Text = ok
+            ? ""
+            : Strings.T("plugin.accelerator.failed", Strings.T("common.openBrowserFailed"));
+    }
+
+    private async void OnCheckGitHubClick(object sender, RoutedEventArgs e)
+    {
+        AcceleratorCheckButton.IsEnabled = false;
+        AcceleratorStatusText.SetResourceReference(TextBlock.ForegroundProperty, "MutedBrush");
+        AcceleratorStatusText.Text = Strings.T("plugin.accelerator.checking");
+        try
+        {
+            var (status, error) = await GitHubReachability.ProbeAsync().ConfigureAwait(true);
+            AcceleratorStatusText.Text = status == GitHubReachabilityStatus.Failed
+                ? Strings.T(GitHubReachability.MessageKey(status), error)
+                : Strings.T(GitHubReachability.MessageKey(status));
+            AcceleratorStatusText.SetResourceReference(
+                TextBlock.ForegroundProperty,
+                status == GitHubReachabilityStatus.Reachable ? "OkBrush" : "WarnBrush");
+        }
+        finally
+        {
+            AcceleratorCheckButton.IsEnabled = true;
+        }
+    }
+
+    private void OnDismissAcceleratorClick(object sender, RoutedEventArgs e)
+    {
+        AppServices.Store.SetItem(AcceleratorDismissKey, "1");
+        AcceleratorPanel.Visibility = Visibility.Collapsed;
     }
 
     // ---------------------------------------------------------- 目录元信息（V2.9）
@@ -532,15 +582,44 @@ public partial class PluginsPage : UserControl, INavigationAware
             return;
         }
 
-        ManagedEmptyText.Visibility = installed.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
+        // V3.5.0：合并「本应用管理」与「本机检测」两套数据源。
+        // 旧实现只看 installed.json，用户用 OBS 自己装的插件完全不可见，
+        // 页面却显示「还没有插件」——与事实相反（用户反馈截图）。
+        var rows = PluginManagedListCore.Merge(
+            installed,
+            _scan?.Plugins ?? Enumerable.Empty<InstalledPluginFile>(),
+            backupCount: id => AppServices.PluginInstall.Store.ListBackups(id).Count);
 
-        foreach (var entry in installed.OrderBy(e => e.Name, StringComparer.CurrentCultureIgnoreCase))
+        if (rows.Count == 0)
+        {
+            ManagedEmptyText.Text = _scan is not null && !_scan.ObsInstallFound
+                ? Strings.T("plugin.managed.emptyNoObs")
+                : Strings.T("plugin.managed.emptyNoPlugins");
+            ManagedEmptyText.Visibility = Visibility.Visible;
+            return;
+        }
+
+        ManagedEmptyText.Visibility = Visibility.Collapsed;
+
+        var managedCount = rows.Count(r => r.Kind == ManagedPluginKind.Managed);
+        var localCount = rows.Count - managedCount;
+        var summary = new TextBlock
+        {
+            Text = Strings.T("plugin.managed.summary", managedCount, localCount),
+            Margin = new Thickness(0, 0, 0, 8),
+            TextWrapping = TextWrapping.Wrap
+        };
+        summary.SetResourceReference(TextBlock.FontSizeProperty, "FontSizeXs");
+        summary.SetResourceReference(TextBlock.ForegroundProperty, "MutedBrush");
+        ManagedHost.Children.Add(summary);
+
+        foreach (var row in rows)
         {
             var box = new StackPanel { Margin = new Thickness(0, 0, 0, 12) };
 
             var title = new TextBlock
             {
-                Text = $"{entry.Name}  ·  v{entry.Version}" + (entry.Curated ? "" : "  " + Strings.T("plugin.managed.unverifiedBadge")),
+                Text = string.IsNullOrWhiteSpace(row.Version) ? row.Name : $"{row.Name}  ·  v{row.Version}",
                 FontWeight = FontWeights.SemiBold,
                 TextWrapping = TextWrapping.Wrap
             };
@@ -548,39 +627,109 @@ public partial class PluginsPage : UserControl, INavigationAware
             title.SetResourceReference(TextBlock.ForegroundProperty, "TextBrush");
             box.Children.Add(title);
 
+            var badges = new WrapPanel { Margin = new Thickness(0, 3, 0, 0) };
+            badges.Children.Add(Badge(
+                Strings.T(row.Kind == ManagedPluginKind.Managed ? "plugin.managed.managedBadge" : "plugin.managed.localBadge"),
+                row.Kind == ManagedPluginKind.Managed ? "BrandSoftBrush" : "Surface3Brush",
+                row.Kind == ManagedPluginKind.Managed ? "BrandBrush" : "MutedBrush"));
+            if (row.Kind == ManagedPluginKind.Managed && !row.Curated)
+                badges.Children.Add(Badge(Strings.T("plugin.managed.unverifiedBadge"), "WarnSoftBrush", "WarnBrush"));
+            if (row.DirectoryMissing)
+                badges.Children.Add(Badge(Strings.T("plugin.managed.directoryMissing"), "WarnSoftBrush", "WarnBrush"));
+            box.Children.Add(badges);
+
             var path = new TextBlock
             {
-                Text = entry.InstallDirectory,
+                Text = row.Path,
                 TextWrapping = TextWrapping.Wrap,
-                Margin = new Thickness(0, 2, 0, 0)
+                Margin = new Thickness(0, 4, 0, 0)
             };
             path.SetResourceReference(TextBlock.FontSizeProperty, "FontSizeXs");
             path.SetResourceReference(TextBlock.ForegroundProperty, "MutedBrush");
             box.Children.Add(path);
 
-            var actions = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 6, 0, 0) };
-
-            var rollback = new Button
+            if (row.Kind == ManagedPluginKind.Managed)
             {
-                Content = Strings.T("plugin.managed.rollback"),
-                Style = (Style)Application.Current.Resources["SecondaryButton"],
-                IsEnabled = AppServices.PluginInstall.Store.ListBackups(entry.Id).Count > 0
-            };
-            rollback.Click += async (_, _) => await RollbackAsync(entry);
-            actions.Children.Add(rollback);
+                var metaParts = new List<string>();
+                if (!string.IsNullOrWhiteSpace(row.SourceRepo)) metaParts.Add(row.SourceRepo);
+                if (!string.IsNullOrWhiteSpace(row.Sha256))
+                    metaParts.Add(Strings.T("plugin.managed.sha", row.Sha256[..Math.Min(12, row.Sha256.Length)]));
+                if (metaParts.Count > 0)
+                {
+                    var meta = new TextBlock
+                    {
+                        Text = string.Join(" · ", metaParts),
+                        TextWrapping = TextWrapping.Wrap,
+                        Margin = new Thickness(0, 2, 0, 0)
+                    };
+                    meta.SetResourceReference(TextBlock.FontSizeProperty, "FontSizeXs");
+                    meta.SetResourceReference(TextBlock.ForegroundProperty, "MutedBrush");
+                    box.Children.Add(meta);
+                }
 
-            var uninstall = new Button
+                var actions = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 6, 0, 0) };
+                var rollback = new Button
+                {
+                    Content = Strings.T("plugin.managed.rollback"),
+                    Style = (Style)Application.Current.Resources["SecondaryButton"],
+                    IsEnabled = row.CanRollback
+                };
+                rollback.Click += async (_, _) =>
+                {
+                    var entry = AppServices.PluginInstall.Store.Find(row.Id);
+                    if (entry is not null) await RollbackAsync(entry);
+                };
+                actions.Children.Add(rollback);
+
+                var uninstall = new Button
+                {
+                    Content = Strings.T("plugin.managed.uninstall"),
+                    Style = (Style)Application.Current.Resources["GhostButton"],
+                    Margin = new Thickness(10, 0, 0, 0),
+                    IsEnabled = !row.DirectoryMissing
+                };
+                uninstall.Click += async (_, _) =>
+                {
+                    var entry = AppServices.PluginInstall.Store.Find(row.Id);
+                    if (entry is not null) await UninstallAsync(entry);
+                };
+                actions.Children.Add(uninstall);
+                box.Children.Add(actions);
+            }
+            else
             {
-                Content = Strings.T("plugin.managed.uninstall"),
-                Style = (Style)Application.Current.Resources["GhostButton"],
-                Margin = new Thickness(10, 0, 0, 0)
-            };
-            uninstall.Click += async (_, _) => await UninstallAsync(entry);
-            actions.Children.Add(uninstall);
+                var hint = new TextBlock
+                {
+                    Text = Strings.T("plugin.managed.localHint"),
+                    TextWrapping = TextWrapping.Wrap,
+                    Margin = new Thickness(0, 4, 0, 0)
+                };
+                hint.SetResourceReference(TextBlock.FontSizeProperty, "FontSizeXs");
+                hint.SetResourceReference(TextBlock.ForegroundProperty, "MutedBrush");
+                box.Children.Add(hint);
+            }
 
-            box.Children.Add(actions);
             ManagedHost.Children.Add(box);
         }
+    }
+
+    /// <summary>紧凑状态徽标（本应用管理 / 本机检测 / 未验证 / 目录缺失）。</summary>
+    private static Border Badge(string text, string backgroundKey, string foregroundKey)
+    {
+        var tb = new TextBlock { Text = text };
+        tb.SetResourceReference(TextBlock.FontSizeProperty, "FontSizeXs");
+        tb.SetResourceReference(TextBlock.ForegroundProperty, foregroundKey);
+        var border = new Border
+        {
+            CornerRadius = new CornerRadius(999),
+            Padding = new Thickness(7, 2, 7, 2),
+            Margin = new Thickness(0, 0, 6, 0),
+            Child = tb
+        };
+        border.SetResourceReference(Border.BackgroundProperty, backgroundKey);
+        border.SetResourceReference(Border.BorderBrushProperty, foregroundKey);
+        border.BorderThickness = new Thickness(1);
+        return border;
     }
 
     private async Task RollbackAsync(PluginInstallEntry entry)

@@ -346,7 +346,14 @@ public partial class MobileLinkPage : UserControl, INavigationAware
             CameraUrlText.Text = "";
             return;
         }
-        CameraStatusText.Text = Strings.T("mobile.camera.running");
+
+        // 媒体服务先跑起来、OBS 后连接：这里补建来源，成功后状态会从「等待」变成「运行中」。
+        if (!session.Ready && AppServices.Obs.IsConnected)
+            _ = manager.BindPendingAsync();
+
+        CameraStatusText.Text = session.Ready
+            ? Strings.T("mobile.camera.running")
+            : Strings.T("mobile.camera.obsPending");
         CameraUrlText.Text =
             Strings.T("mobile.camera.srt") + ":\n" + PhoneCameraCore.SrtPublishUrl(session.LanAddress, session.SrtPort, session.StreamKey) +
             "\n" + Strings.T("mobile.camera.rtmp") + ":\n" + PhoneCameraCore.RtmpPublishUrl(session.LanAddress, session.RtmpPort, session.StreamKey);
@@ -354,8 +361,7 @@ public partial class MobileLinkPage : UserControl, INavigationAware
 
     private async void OnCameraStartClick(object sender, RoutedEventArgs e)
     {
-        var address = AppServices.MobileLink.Address;
-        var lan = address?.ToString() ?? "";
+        var lan = AppServices.MobileLink.Address?.ToString() ?? MobileLinkServer.DetectLanAddress() ?? "";
         if (!LanPolicy.IsPrivateAddress(lan))
         {
             AppServices.Toast.Show(FeatureErrors.Describe(FeatureErrors.CamNoPrivateIp));
@@ -510,7 +516,7 @@ public partial class MobileLinkPage : UserControl, INavigationAware
 
     private async void OnAddCameraClick(object sender, RoutedEventArgs e)
     {
-        var lan = AppServices.MobileLink.Address?.ToString() ?? "";
+        var lan = AppServices.MobileLink.Address?.ToString() ?? MobileLinkServer.DetectLanAddress() ?? "";
         if (!LanPolicy.IsPrivateAddress(lan))
         {
             AppServices.Toast.Show(FeatureErrors.Describe(FeatureErrors.CamNoPrivateIp));

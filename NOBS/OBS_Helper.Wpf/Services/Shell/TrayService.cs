@@ -28,7 +28,10 @@ namespace OBS_Helper.Wpf.Services.Shell;
 /// </summary>
 public sealed class TrayService : IDisposable
 {
-    private const string IconResource = "OBS_Helper.Wpf.Assets.appicon.ico";
+    /// <summary>X 系列使用新字标图标；V 系列继续使用原图标。</summary>
+    private static string IconResource => ReleaseChannel.IsXSeries
+        ? "OBS_Helper.Wpf.Assets.appicon_x.ico"
+        : "OBS_Helper.Wpf.Assets.appicon.ico";
     private const string SettingsKey = "obshelper.shell";
 
     /// <summary>磁盘剩余空间低于该值（GB）时触发预警通知。</summary>

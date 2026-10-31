@@ -38,7 +38,7 @@
         <StackPanel DockPanel.Dock="Top" Margin="18,20,18,14">
           <StackPanel Orientation="Horizontal">
             <!-- 左上角品牌图标：与应用 / 任务栏 / 托盘同一枚 appicon.ico（含圆角与徽章） -->
-            <Image Width="30" Height="30" Stretch="Uniform"
+            <Image x:Name="BrandIcon" Width="30" Height="30" Stretch="Uniform"
                    Source="pack://application:,,,/Assets/appicon.ico"
                    VerticalAlignment="Center" RenderOptions.BitmapScalingMode="HighQuality" />
             <StackPanel Margin="10,0,0,0" VerticalAlignment="Center">
@@ -73,8 +73,8 @@
             <!-- V3.4.0：功能中心（模块总览）+ 手机联动（主推）直接出现在一级导航 -->
             <Border Height="1" Background="{DynamicResource LineBrush}" Margin="10,10,10,8" />
             <!-- V3.4.2：不再用「某版本新功能」给导航分组，功能中心就是稳定入口 -->
-            <RadioButton x:Name="NavFeatures" Style="{StaticResource NavTabButton}" Content="{DynamicResource Loc.nav.features}" Tag="{StaticResource IconGeomTemplates}" Checked="OnNavChecked" />
-            <RadioButton x:Name="NavMobileLink" Style="{StaticResource NavTabButton}" Content="{DynamicResource Loc.nav.mobile}" Tag="{StaticResource IconGeomConsole}" Checked="OnNavChecked" />
+            <RadioButton x:Name="NavFeatures" Style="{StaticResource NavTabButton}" Content="{DynamicResource Loc.nav.features}" Tag="{StaticResource IconGeomLayoutGrid}" Checked="OnNavChecked" />
+            <RadioButton x:Name="NavMobileLink" Style="{StaticResource NavTabButton}" Content="{DynamicResource Loc.nav.mobile}" Tag="{StaticResource IconGeomDeviceMobile}" Checked="OnNavChecked" />
             <RadioButton x:Name="NavSearch"     Style="{StaticResource NavTabButton}" Content="{DynamicResource Loc.nav.search}"   Tag="{StaticResource IconGeomSearch}"     Checked="OnNavChecked" />
             <RadioButton x:Name="NavAssistant"  Style="{StaticResource NavTabButton}" Content="{DynamicResource Loc.nav.assistant}"   Tag="{StaticResource IconGeomAssistant}"  Checked="OnNavChecked" />
             <RadioButton x:Name="NavDiagnostic" Style="{StaticResource NavTabButton}" Content="{DynamicResource Loc.nav.diagnostic}"   Tag="{StaticResource IconGeomDiagnostic}" Checked="OnNavChecked" />
@@ -82,7 +82,7 @@
             <RadioButton x:Name="NavTemplates" Style="{StaticResource NavTabButton}" Content="{DynamicResource Loc.nav.templates}"   Tag="{StaticResource IconGeomTemplates}" Checked="OnNavChecked" />
             <RadioButton x:Name="NavVirtualLive" Style="{StaticResource NavTabButton}" Content="{DynamicResource Loc.nav.virtuallive}" Tag="{StaticResource IconGeomVirtualLive}" Checked="OnNavChecked" />
             <RadioButton x:Name="NavPlugins"   Style="{StaticResource NavTabButton}" Content="{DynamicResource Loc.nav.plugins}"   Tag="{StaticResource IconGeomPlugins}" Checked="OnNavChecked" />
-            <RadioButton x:Name="NavToolbox"   Style="{StaticResource NavTabButton}" Content="{DynamicResource Loc.nav.toolbox}" Tag="{StaticResource IconGeomSetup}" Checked="OnNavChecked" />
+            <RadioButton x:Name="NavToolbox"   Style="{StaticResource NavTabButton}" Content="{DynamicResource Loc.nav.toolbox}" Tag="{StaticResource IconGeomTool}" Checked="OnNavChecked" />
             <RadioButton x:Name="NavConsole"    Style="{StaticResource NavTabButton}" Content="{DynamicResource Loc.nav.console}" Tag="{StaticResource IconGeomConsole}"    Checked="OnNavChecked" />
             <RadioButton x:Name="NavPerformance" Style="{StaticResource NavTabButton}" Content="{DynamicResource Loc.nav.performance}"   Tag="{StaticResource IconGeomPerformance}" Checked="OnNavChecked" />
             <RadioButton x:Name="NavGuide"      Style="{StaticResource NavTabButton}" Content="{DynamicResource Loc.nav.guide}"   Tag="{StaticResource IconGeomGuide}"      Checked="OnNavChecked" />

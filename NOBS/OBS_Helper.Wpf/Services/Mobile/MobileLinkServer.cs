@@ -181,6 +181,9 @@ public sealed class MobileLinkServer : IDisposable
 
     // ---------------------------------------------------------------- 监听
 
+    /// <summary>检测当前可用的私网地址（不启动服务）。摄像头链路可以独立于手机遥控页使用。</summary>
+    public static string? DetectLanAddress() => LanPolicy.PickLanAddress(NetworkAddresses())?.ToString();
+
     private static IEnumerable<IPAddress> NetworkAddresses()
     {
         var list = new List<IPAddress>();

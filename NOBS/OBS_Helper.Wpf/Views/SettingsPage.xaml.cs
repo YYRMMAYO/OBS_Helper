@@ -818,7 +818,7 @@ public partial class SettingsPage : UserControl, INavigationAware
     private async Task RefreshAboutAsync()
     {
         var ver = typeof(SettingsPage).Assembly.GetName().Version;
-        AppVersionText.Text = ver is null ? "1.0.0" : $"{ver.Major}.{ver.Minor}.{ver.Build}";
+        AppVersionText.Text = ver is null ? "1.0.0" : ReleaseChannel.FormatVersion(ver).TrimStart('v', 'V');
 
         var data = await AppServices.Problems.GetDataAsync();
         DataVersionText.Text = string.IsNullOrWhiteSpace(data.Version) ? "—" : data.Version;
@@ -1720,7 +1720,7 @@ public partial class SettingsPage : UserControl, INavigationAware
     }
 
     private static string CurrentVersionText(Version? v)
-        => v is null ? "—" : $"{v.Major}.{v.Minor}.{v.Build}";
+        => v is null ? "—" : ReleaseChannel.FormatVersion(v).TrimStart('v', 'V');
 
     private async void OnCheckUpdate(object sender, RoutedEventArgs e)
     {

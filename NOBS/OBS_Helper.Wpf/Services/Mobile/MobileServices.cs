@@ -453,6 +453,14 @@ public sealed class MobileCommandRouter
                 _prompter.SaveSettings(settings);
                 return MobileCommandResult.Success(requestId);
             }
+            case MobileCommandCore.TeleprompterSet:
+            {
+                var text = Str("text");
+                if (string.IsNullOrWhiteSpace(text) || text.Length > 20_000)
+                    return Fail(requestId, FeatureErrors.MobCommandInvalid);
+                _prompter.SetScript(text);
+                return MobileCommandResult.Success(requestId);
+            }
 
             case MobileCommandCore.DeviceRevoke:
             {
@@ -602,15 +610,48 @@ public sealed class MediaServerManager : IDisposable
             StartedUtc = DateTimeOffset.UtcNow,
         };
 
-        var prepared = await EnsureObsMediaSourceAsync(session, ct).ConfigureAwait(false);
-        if (!prepared)
+        // V3.5.0：先让媒体服务跑起来，OBS 未连接不再是启动的硬阻断。
+        // 用户常见顺序是「先开摄像头链路，再开 OBS」；旧实现直接返回失败，
+        // 于是页面永远提示启动失败。未连接时把来源绑定留到 BindPendingAsync。
+        var prepared = true;
+        if (_obs.IsConnected)
         {
-            if (startedNow) StopAll();
-            return (false, FeatureErrors.CamSidecarStartFailed, null);
+            prepared = await EnsureObsMediaSourceAsync(session, ct).ConfigureAwait(false);
+            if (!prepared)
+            {
+                if (startedNow) StopAll();
+                return (false, FeatureErrors.CamSidecarStartFailed, null);
+            }
         }
-        await ApplyLayoutAsync(session, layout, ct).ConfigureAwait(false);
+
+        session.Ready = prepared;
+        if (prepared) await ApplyLayoutAsync(session, layout, ct).ConfigureAwait(false);
         lock (_gate) _sessions[id] = session;
         return (true, "", session);
+    }
+
+    /// <summary>
+    /// 连接 OBS 后补建尚未绑定的手机摄像头来源（V3.5.0）。
+    /// 只在用户停留在摄像头页 / 重新进入时调用；成功一次后 Ready=true，不会反复请求。
+    /// </summary>
+    public async Task BindPendingAsync()
+    {
+        if (!_obs.IsConnected) return;
+        foreach (var session in Sessions.Where(s => !s.Ready).ToList())
+        {
+            try
+            {
+                if (await EnsureObsMediaSourceAsync(session, CancellationToken.None).ConfigureAwait(false))
+                {
+                    session.Ready = true;
+                    await ApplyLayoutAsync(session, session.Layout, CancellationToken.None).ConfigureAwait(false);
+                }
+            }
+            catch (Exception ex)
+            {
+                FileLogger.Warn("Mobile", $"补建手机摄像头来源失败（{session.CameraId}）：{ex.Message}");
+            }
+        }
     }
 
     public void StopCamera(string cameraId)

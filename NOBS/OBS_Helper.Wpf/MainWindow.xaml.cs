@@ -76,7 +76,16 @@ public partial class MainWindow : Window
         _nav.CanGoBackChanged += SyncBackButton;
 
         var ver = typeof(MainWindow).Assembly.GetName().Version;
-        if (ver is not null) VersionText.Text = $"v{ver.Major}.{ver.Minor}.{ver.Build}";
+        if (ver is not null) VersionText.Text = ReleaseChannel.FormatVersion(ver);
+        if (ReleaseChannel.IsXSeries)
+        {
+            try
+            {
+                BrandIcon.Source = new System.Windows.Media.Imaging.BitmapImage(
+                    new Uri("pack://application:,,,/Assets/appicon_x.ico"));
+            }
+            catch (Exception) { /* 图标加载失败时保留旧图标，不影响启动 */ }
+        }
 
         Loaded += OnLoaded;
         Closed += OnClosed;

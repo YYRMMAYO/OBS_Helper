@@ -1,14 +1,14 @@
 {
   "schema": 1,
-  "updated": "2026-10-30",
+  "updated": "2026-10-31",
   "note": "sidecar 清单只记录官方来源、许可证与放置位置；本轮不提供自动下载。原因：GitHub API 在本轮构建环境被限流，无法取得并核对二进制 SHA-256；按 PLAN_V3.4.0 §6.3「哈希 + 版本固定 + 用户确认」的门槛，未核验哈希的二进制不允许自动下载。用户在界面上点「打开来源」后自行下载，并按 installPath 放置；应用只检测存在性，不静默安装、不静默更新。补全 sha256/size 并把 manual 改为 false 后即可启用自动下载。",
   "sidecars": [
     {
       "id": "mediamtx",
-      "version": "manual",
-      "url": "https://github.com/bluenviron/mediamtx/releases",
-      "sha256": "",
-      "size": 0,
+      "version": "1.21.3",
+      "url": "https://github.com/bluenviron/mediamtx/releases/download/v1.21.3/mediamtx_v1.21.3_windows_amd64.zip",
+      "sha256": "b2f5246b07cb72961df03b8d5e8cad43dc657bcf3f49a87bb031bdf22721af74",
+      "size": 28734316,
       "license": "MIT",
       "source": "https://github.com/bluenviron/mediamtx",
       "minOs": "10.0",
@@ -16,8 +16,8 @@
       "executable": "mediamtx.exe",
       "args": [],
       "installSubdir": "",
-      "notes": "Wi-Fi 摄像头主链路。只监听私网；API 由应用固定绑 127.0.0.1；退出即停。放置路径：%LocalAppData%\\OBS_Helper\\sidecars\\mediamtx\\manual\\mediamtx.exe。",
-      "manual": true
+      "notes": "Wi-Fi 摄像头主链路。固定 v1.21.3 + GitHub 资产 SHA-256 + 体积；下载后逐项校验再解压。只监听私网，API 固定绑 127.0.0.1，退出即停。",
+      "manual": false
     },
     {
       "id": "whisper",

@@ -183,18 +183,29 @@ public class RoomOverlayCoreTests
     // ---------------------------------------------------------------- 随包模板资产
 
     [Fact]
-    public void ShippedTemplates_ContainSixValidVtuberRooms_InBothLanguages()
+    public void ShippedTemplates_ContainTenValidVtuberRooms_InBothLanguages()
     {
         var zh = LoadTemplates("scene_templates.json");
         var en = LoadTemplates("scene_templates.en-US.json");
 
-        Assert.Equal(18, zh.Count);
-        Assert.Equal(18, en.Count);
+        Assert.Equal(22, zh.Count);
+        Assert.Equal(22, en.Count);
         Assert.Equal(zh.Select(t => t.Id).OrderBy(x => x), en.Select(t => t.Id).OrderBy(x => x));
 
         var vtuber = zh.Where(RoomOverlayCore.IsVtuber).ToList();
-        Assert.Equal(6, vtuber.Count);
+        Assert.Equal(10, vtuber.Count);
         Assert.Contains(vtuber, t => t.Id == "vtuber-vertical" && t.Portrait && t.Canvas.BaseWidth == 1080);
+        Assert.Contains(vtuber, t => t.Id == "vtuber-karaoke");
+        Assert.Contains(vtuber, t => t.Id == "vtuber-study");
+        Assert.Contains(vtuber, t => t.Id == "vtuber-collab");
+        Assert.Contains(vtuber, t => t.Id == "vtuber-handcam");
+
+        // V3.5.0：杂谈模板的人物与聊天框不能重叠（旧坐标 400px 重叠，落地后聊天框压人物）。
+        var chatTemplate = vtuber.Single(t => t.Id == "vtuber-chat");
+        var avatar = chatTemplate.Scenes.SelectMany(s => s.Sources).First(s => s.Role == "avatar").Transform!;
+        var chat = chatTemplate.Scenes.SelectMany(s => s.Sources).First(s => s.Role == "chat").Transform!;
+        var avatarRight = avatar.PosX!.Value + avatar.BoundsWidth!.Value;
+        Assert.True(chat.PosX >= avatarRight, $"vtuber-chat overlap: avatar right={avatarRight}, chat x={chat.PosX}");
 
         foreach (var t in vtuber)
         {

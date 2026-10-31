@@ -264,6 +264,27 @@ public class MobileCoreTests
     }
 
     [Fact]
+    public void TeleprompterSetValidatesTextAndRole()
+    {
+        var context = new MobileCommandCore.Context { ObsOnline = false };
+        var request = new MobileCommandRequest { RequestId = "set", Command = MobileCommandCore.TeleprompterSet };
+        request.Params["text"] = System.Text.Json.JsonSerializer.SerializeToElement("新的提词稿\n第二行");
+
+        Assert.True(MobileCommandCore.Validate(request, MobileRole.Operator, context, "set").Ok);
+        Assert.False(MobileCommandCore.RequiresObs(MobileCommandCore.TeleprompterSet));
+
+        var viewer = MobileCommandCore.Validate(request, MobileRole.Viewer, context, "set");
+        Assert.False(viewer.Ok);
+        Assert.Equal(FeatureErrors.MobRoleDenied, viewer.Code);
+
+        request.Params["text"] = System.Text.Json.JsonSerializer.SerializeToElement("");
+        Assert.False(MobileCommandCore.Validate(request, MobileRole.Operator, context, "set").Ok);
+
+        request.Params["text"] = System.Text.Json.JsonSerializer.SerializeToElement(new string('x', 20_001));
+        Assert.False(MobileCommandCore.Validate(request, MobileRole.Operator, context, "set").Ok);
+    }
+
+    [Fact]
     public void NewMobileErrorCodesHaveCopy()
     {
         var undefined = OBS_Helper.Wpf.Localization.Strings.T("err.undefined");

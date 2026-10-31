@@ -183,7 +183,8 @@ public sealed class UpdateService
             resp.EnsureSuccessStatusCode();
 
             var body = await resp.Content.ReadAsStringAsync(cts.Token).ConfigureAwait(false);
-            var latest = ParseLatestVersion(body);
+            var series = ReleaseChannel.Current;
+            var latest = ParseLatestVersion(body, series);
 
             var current = typeof(UpdateService).Assembly.GetName().Version;
             if (latest is null)
@@ -218,7 +219,7 @@ public sealed class UpdateService
     /// 从 GitHub tags 接口响应中解析出最新版本。
     /// 不依赖接口排序：遍历全部 tag，取所有能解析出版本号的最大值。
     /// </summary>
-    private static Version? ParseLatestVersion(string json)
+    internal static Version? ParseLatestVersion(string json, ReleaseSeries series)
     {
         using var doc = JsonDocument.Parse(json);
         Version? max = null;
@@ -229,14 +230,10 @@ public sealed class UpdateService
             var tag = nameProp.GetString();
             if (string.IsNullOrWhiteSpace(tag)) continue;
 
-            var m = VersionPattern.Match(tag);
-            if (!m.Success) continue;
-
-            var major = int.Parse(m.Groups[1].Value);
-            var minor = int.Parse(m.Groups[2].Value);
-            var build = m.Groups[3].Success ? int.Parse(m.Groups[3].Value) : 0;
-
-            var v = new Version(major, minor, build);
+            // V3.5.0 / X1031：先按当前系列过滤，再比较版本号。
+            // X 构建绝不能把 V3.6.0 当成更新，V 构建也不能提示 X1031。
+            var v = ReleaseChannel.ParseTagForSeries(tag, series);
+            if (v is null) continue;
             if (max is null || v > max) max = v;
         }
 
@@ -289,7 +286,7 @@ public sealed class UpdateService
             var body = await resp.Content.ReadAsStringAsync(cts.Token).ConfigureAwait(false);
             using var doc = JsonDocument.Parse(body);
 
-            var best = FindBestRelease(doc.RootElement);
+            var best = FindBestRelease(doc.RootElement, ReleaseChannel.Current);
             if (best is null)
                 return new GitHubReleaseInfo(null, null, Strings.T("update.noSetupRelease"));
 
@@ -304,7 +301,7 @@ public sealed class UpdateService
     private sealed record ReleaseCandidate(string Tag, string AssetUrl, string? Digest);
 
     /// <summary>遍历全部 Release，取「版本号最高且确实带安装包资产」的一条；找不到返回 null。</summary>
-    private static ReleaseCandidate? FindBestRelease(JsonElement root)
+    private static ReleaseCandidate? FindBestRelease(JsonElement root, ReleaseSeries series)
     {
         Version? best = null;
         string? bestTag = null;
@@ -315,8 +312,8 @@ public sealed class UpdateService
         {
             var tag = rel.TryGetProperty("tag_name", out var tagProp) ? tagProp.GetString() : null;
             if (string.IsNullOrWhiteSpace(tag)) continue;
-            var v = ParseVersion(tag);
-            if (v is null) continue; // 跳过无法解析出版本号的 Release
+            var v = ReleaseChannel.ParseTagForSeries(tag, series);
+            if (v is null) continue; // 跳过不属于当前系列 / 无法解析的 Release
 
             var asset = FindAsset(rel, name =>
                 name.StartsWith("OBS_Helper_Setup_", StringComparison.OrdinalIgnoreCase)
@@ -456,7 +453,7 @@ public sealed class UpdateService
             {
                 var tag = rel.TryGetProperty("tag_name", out var tagProp) ? tagProp.GetString() : null;
                 if (string.IsNullOrWhiteSpace(tag)) continue;
-                var v = ParseVersion(tag);
+                var v = ReleaseChannel.ParseTagForSeries(tag, ReleaseChannel.Current);
                 if (v is null) continue;
 
                 var asset = FindAsset(rel, match);

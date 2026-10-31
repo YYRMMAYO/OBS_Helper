@@ -50,6 +50,8 @@
     <Compile Include="..\OBS_Helper.Wpf\Services\Ai\DiagnosticSeverityMapper.cs" Link="Linked\DiagnosticSeverityMapper.cs" />
     <Compile Include="..\OBS_Helper.Wpf\Services\Markdown\MarkdownRenderer.cs" Link="Linked\MarkdownRenderer.cs" />
     <Compile Include="..\OBS_Helper.Wpf\Services\UpdateService.cs" Link="Linked\UpdateService.cs" />
+    <!-- V3.5.0 / X1031：V / X 双通道解析（纯 BCL） -->
+    <Compile Include="..\OBS_Helper.Wpf\Services\ReleaseChannel.cs" Link="Linked\ReleaseChannel.cs" />
     <Compile Include="..\OBS_Helper.Wpf\Services\Update\UpdateManifest.cs" Link="Linked\Update\UpdateManifest.cs" />
     <Compile Include="..\OBS_Helper.Wpf\Services\Update\DeltaBuilder.cs" Link="Linked\Update\DeltaBuilder.cs" />
     <Compile Include="..\OBS_Helper.Wpf\Services\Update\FileHasher.cs" Link="Linked\Update\FileHasher.cs" />
@@ -146,6 +148,9 @@
     <!-- V3.3.0 插件广场：版本 / 资产选择 / zip 安全 / PE 架构 / GitHub 解析（纯 BCL） -->
     <Compile Include="..\OBS_Helper.Wpf\Models\Plugins\PluginInstallManifest.cs" Link="Linked\Plugins\PluginInstallManifest.cs" />
     <Compile Include="..\OBS_Helper.Wpf\Services\Plugins\PluginInstallCore.cs" Link="Linked\Plugins\PluginInstallCore.cs" />
+    <!-- V3.5.0 已安装插件合并列表 / GitHub 连通性分类（纯 BCL） -->
+    <Compile Include="..\OBS_Helper.Wpf\Services\Plugins\PluginManagedListCore.cs" Link="Linked\Plugins\PluginManagedListCore.cs" />
+    <Compile Include="..\OBS_Helper.Wpf\Services\Plugins\GitHubReachability.cs" Link="Linked\Plugins\GitHubReachability.cs" />
     <Compile Include="..\OBS_Helper.Wpf\Services\Plugins\GitHubSearchCore.cs" Link="Linked\Plugins\GitHubSearchCore.cs" />
     <!-- V3.4.0 批次 0：局域网安全策略 / 手写 HTTP 与 WS 报文 / 二维码 / sidecar 清单（纯 BCL） -->
     <Compile Include="..\OBS_Helper.Wpf\Services\Security\LanPolicy.cs" Link="Linked\Security\LanPolicy.cs" />

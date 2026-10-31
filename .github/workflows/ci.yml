@@ -4,7 +4,7 @@ on:
   push:
     branches: [master]
     # V* 标签推送 = 发版：下面的 release job 会创建/更新 Release 并上传资产
-    tags: ['V*']
+    tags: ['V*', 'X*']
   pull_request:
     branches: [master]
   # 保留手动触发；三个输入是「增量包可升级性校验」的基准资产来源
@@ -88,6 +88,13 @@ jobs:
           OBS_DELTA_BASE_URL_INPUT: ${{ inputs.delta_base_zip_url }}
         run: |
           $ErrorActionPreference = 'Stop'
+          # X 系列首版不做增量包：X1031 与 V 系列的版本号不连续（1031 vs 3.x），
+          # 用 V 版本做 diff 会产生跨系列增量包，老用户无法正确升级。
+          if ($env:GITHUB_REF_TYPE -eq 'tag' -and $env:GITHUB_REF_NAME -match '^[Xx]') {
+              Write-Host "X 系列标签 $env:GITHUB_REF_NAME：跳过增量基线与增量包校验"
+              Add-Content -Path $env:GITHUB_STEP_SUMMARY -Value "- X 系列标签 $env:GITHUB_REF_NAME：本版不生成增量包（跨系列版本号不连续）。"
+              exit 0
+          }
           # 原生命令失败不升级成异常：下面的探测靠 $LASTEXITCODE 判断
           $PSNativeCommandUseErrorActionPreference = $false
           $ws        = $env:GITHUB_WORKSPACE
@@ -404,10 +411,10 @@ jobs:
           path: NOBS/PAKE/windows/*
           if-no-files-found: warn
 
-  # ---------------- tag（V*）推送：算资产 SHA-256 并创建/更新 Release ----------------
+  # ---------------- tag（V* / X*）推送：算资产 SHA-256 并创建/更新 Release ----------------
   # 为什么独立成 job：发版只在打标签时发生，并且需要 contents: write（构建 job 不需要这么高权限）。
   release:
-    name: '打标签自动发版 (tag V*)'
+    name: '打标签自动发版 (tag V* / X*)'
     needs: windows
     # 只在 tag 推送时发版：master 推送 / PR 也会跑 windows job，但不能建 Release
     if: startsWith(github.ref, 'refs/tags/')
@@ -459,16 +466,20 @@ jobs:
           # Release 正文 = 仓库里的发布说明（必须写清新增 / 修复），末尾再追加 SHA-256 表。
           # 规则见 docs/RELEASE_RULES.md：不允许只发标题 + 哈希表，也不允许空说明发版。
           $tag = $env:GITHUB_REF_NAME
-          # tag 形如 V3.1.1（正式版）或 01（DEV）：对应 NOBS/RELEASE_NOTES_v3.1.1.md / RELEASE_NOTES_DEV_01.md
-          $version = $tag -replace '^[Vv]', ''
+          # tag 形如 V3.1.1（正式版）/ X1031（X 系列）/ 01（DEV）：
+          # 对应 NOBS/RELEASE_NOTES_v3.1.1.md、RELEASE_NOTES_x1031.md、RELEASE_NOTES_DEV_01.md。
+          $version = $tag -replace '^[VvXx]', ''
+          $isX = $tag -match '^[Xx]'
           $devNotes = Join-Path $ws "NOBS/RELEASE_NOTES_DEV_$version.md"
+          $xNotes = Join-Path $ws "NOBS/RELEASE_NOTES_x$version.md"
           $stableNotes = Join-Path $ws "NOBS/RELEASE_NOTES_v$version.md"
           $stableNotesNoV = Join-Path $ws "NOBS/RELEASE_NOTES_$version.md"
-          if (Test-Path -LiteralPath $devNotes) { $notesSource = $devNotes }
+          if ($isX -and (Test-Path -LiteralPath $xNotes)) { $notesSource = $xNotes }
+          elseif (Test-Path -LiteralPath $devNotes) { $notesSource = $devNotes }
           elseif (Test-Path -LiteralPath $stableNotes) { $notesSource = $stableNotes }
           elseif (Test-Path -LiteralPath $stableNotesNoV) { $notesSource = $stableNotesNoV }
           else {
-              throw "缺少发布说明：NOBS/RELEASE_NOTES_v$version.md（或 RELEASE_NOTES_DEV_$version.md）。每个 Release 必须写明新增 / 修复内容（见 docs/RELEASE_RULES.md）。"
+              throw "缺少发布说明：NOBS/RELEASE_NOTES_v$version.md 或 NOBS/RELEASE_NOTES_x$version.md（或 RELEASE_NOTES_DEV_$version.md）。每个 Release 必须写明新增 / 修复内容（见 docs/RELEASE_RULES.md）。"
           }
           $notesBody = (Get-Content -LiteralPath $notesSource -Raw).Trim()
           if ($notesBody.Length -lt 120) {

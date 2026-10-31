@@ -29,8 +29,14 @@
       <ColumnDefinition Width="*" />
     </Grid.ColumnDefinitions>
 
+    <!--
+      V3.5.0：壁纸层提升到窗口根 Grid，覆盖左侧导航与内容区（参考用户提供的整窗背景效果）。
+      默认 / 纯色 / 高对比模式下壁纸层不显示，导航与卡片使用不透明表面。
+    -->
+    <ctl:WallpaperLayer Grid.Column="0" Grid.ColumnSpan="2" />
+
     <!-- ============================================ 左侧导航 -->
-    <Border Grid.Column="0" Background="{DynamicResource SurfaceBrush}"
+    <Border Grid.Column="0" Background="{DynamicResource NavSurfaceBrush}"
             BorderBrush="{DynamicResource LineBrush}" BorderThickness="0,0,1,0">
       <DockPanel>
 
@@ -68,27 +74,30 @@
 
         <!-- 导航项 -->
         <ScrollViewer VerticalScrollBarVisibility="Auto" Style="{StaticResource PageScroll}">
-          <StackPanel x:Name="NavPanel" Margin="0,2,0,8">
+          <StackPanel x:Name="NavPanel" Margin="0,4,0,10">
+            <TextBlock Text="{DynamicResource Loc.nav.group.overview}" Style="{StaticResource NavGroupLabel}" />
             <RadioButton x:Name="NavHome"       Style="{StaticResource NavTabButton}" Content="{DynamicResource Loc.nav.home}"   Tag="{StaticResource IconGeomHome}"       Checked="OnNavChecked" />
-            <!-- V3.4.0：功能中心（模块总览）+ 手机联动（主推）直接出现在一级导航 -->
-            <Border Height="1" Background="{DynamicResource LineBrush}" Margin="10,10,10,8" />
-            <!-- V3.4.2：不再用「某版本新功能」给导航分组，功能中心就是稳定入口 -->
             <RadioButton x:Name="NavFeatures" Style="{StaticResource NavTabButton}" Content="{DynamicResource Loc.nav.features}" Tag="{StaticResource IconGeomLayoutGrid}" Checked="OnNavChecked" />
+
+            <TextBlock Text="{DynamicResource Loc.nav.group.live}" Style="{StaticResource NavGroupLabel}" />
             <RadioButton x:Name="NavMobileLink" Style="{StaticResource NavTabButton}" Content="{DynamicResource Loc.nav.mobile}" Tag="{StaticResource IconGeomDeviceMobile}" Checked="OnNavChecked" />
+            <RadioButton x:Name="NavVirtualLive" Style="{StaticResource NavTabButton}" Content="{DynamicResource Loc.nav.virtuallive}" Tag="{StaticResource IconGeomSparkles}" Checked="OnNavChecked" />
+            <RadioButton x:Name="NavTemplates" Style="{StaticResource NavTabButton}" Content="{DynamicResource Loc.nav.templates}"   Tag="{StaticResource IconGeomTemplates}" Checked="OnNavChecked" />
+            <RadioButton x:Name="NavPlugins"   Style="{StaticResource NavTabButton}" Content="{DynamicResource Loc.nav.plugins}"   Tag="{StaticResource IconGeomPackage}" Checked="OnNavChecked" />
+
+            <TextBlock Text="{DynamicResource Loc.nav.group.workbench}" Style="{StaticResource NavGroupLabel}" />
+            <RadioButton x:Name="NavConsole"    Style="{StaticResource NavTabButton}" Content="{DynamicResource Loc.nav.console}" Tag="{StaticResource IconGeomConsole}"    Checked="OnNavChecked" />
+            <RadioButton x:Name="NavPerformance" Style="{StaticResource NavTabButton}" Content="{DynamicResource Loc.nav.performance}"   Tag="{StaticResource IconGeomPerformance}" Checked="OnNavChecked" />
+            <RadioButton x:Name="NavToolbox"   Style="{StaticResource NavTabButton}" Content="{DynamicResource Loc.nav.toolbox}" Tag="{StaticResource IconGeomTool}" Checked="OnNavChecked" />
+            <RadioButton x:Name="NavSetup"      Style="{StaticResource NavTabButton}" Content="{DynamicResource Loc.nav.setup}"   Tag="{StaticResource IconGeomSetup}"      Checked="OnNavChecked" />
             <RadioButton x:Name="NavSearch"     Style="{StaticResource NavTabButton}" Content="{DynamicResource Loc.nav.search}"   Tag="{StaticResource IconGeomSearch}"     Checked="OnNavChecked" />
             <RadioButton x:Name="NavAssistant"  Style="{StaticResource NavTabButton}" Content="{DynamicResource Loc.nav.assistant}"   Tag="{StaticResource IconGeomAssistant}"  Checked="OnNavChecked" />
             <RadioButton x:Name="NavDiagnostic" Style="{StaticResource NavTabButton}" Content="{DynamicResource Loc.nav.diagnostic}"   Tag="{StaticResource IconGeomDiagnostic}" Checked="OnNavChecked" />
-            <RadioButton x:Name="NavSetup"      Style="{StaticResource NavTabButton}" Content="{DynamicResource Loc.nav.setup}"   Tag="{StaticResource IconGeomSetup}"      Checked="OnNavChecked" />
-            <RadioButton x:Name="NavTemplates" Style="{StaticResource NavTabButton}" Content="{DynamicResource Loc.nav.templates}"   Tag="{StaticResource IconGeomTemplates}" Checked="OnNavChecked" />
-            <RadioButton x:Name="NavVirtualLive" Style="{StaticResource NavTabButton}" Content="{DynamicResource Loc.nav.virtuallive}" Tag="{StaticResource IconGeomVirtualLive}" Checked="OnNavChecked" />
-            <RadioButton x:Name="NavPlugins"   Style="{StaticResource NavTabButton}" Content="{DynamicResource Loc.nav.plugins}"   Tag="{StaticResource IconGeomPlugins}" Checked="OnNavChecked" />
-            <RadioButton x:Name="NavToolbox"   Style="{StaticResource NavTabButton}" Content="{DynamicResource Loc.nav.toolbox}" Tag="{StaticResource IconGeomTool}" Checked="OnNavChecked" />
-            <RadioButton x:Name="NavConsole"    Style="{StaticResource NavTabButton}" Content="{DynamicResource Loc.nav.console}" Tag="{StaticResource IconGeomConsole}"    Checked="OnNavChecked" />
-            <RadioButton x:Name="NavPerformance" Style="{StaticResource NavTabButton}" Content="{DynamicResource Loc.nav.performance}"   Tag="{StaticResource IconGeomPerformance}" Checked="OnNavChecked" />
+
+            <TextBlock Text="{DynamicResource Loc.nav.group.help}" Style="{StaticResource NavGroupLabel}" />
             <RadioButton x:Name="NavGuide"      Style="{StaticResource NavTabButton}" Content="{DynamicResource Loc.nav.guide}"   Tag="{StaticResource IconGeomGuide}"      Checked="OnNavChecked" />
             <RadioButton x:Name="NavFeedback"   Style="{StaticResource NavTabButton}" Content="{DynamicResource Loc.nav.feedback}" Tag="{StaticResource IconGeomFeedback}" Checked="OnNavChecked" />
             <RadioButton x:Name="NavSettings"   Style="{StaticResource NavTabButton}" Content="{DynamicResource Loc.nav.settings}"   Tag="{StaticResource IconGeomSettings}"   Checked="OnNavChecked" />
-
           </StackPanel>
         </ScrollViewer>
       </DockPanel>
@@ -101,17 +110,10 @@
         <RowDefinition Height="*" />
       </Grid.RowDefinitions>
 
-      <!--
-        自定义背景层（v1.10 / V3.1.0）：位于顶栏与页面之下。
-        默认 / 纯色 / 高对比由 AppearanceService 写底色；图片模式由 WallpaperService
-        提供当前图、铺放方式、压暗与轮播，WallpaperLayer 负责渲染。
-      -->
-      <ctl:WallpaperLayer Grid.Row="0" Grid.RowSpan="2" />
-
       <!-- 顶栏 -->
-      <Border Grid.Row="0" Background="{DynamicResource SurfaceBrush}"
+      <Border Grid.Row="0" Background="{DynamicResource TopBarSurfaceBrush}"
               BorderBrush="{DynamicResource LineBrush}" BorderThickness="0,0,0,1"
-              Padding="16,10">
+              Padding="20,11">
         <Grid>
           <Grid.ColumnDefinitions>
             <ColumnDefinition Width="Auto" />
@@ -136,7 +138,7 @@
 
           <StackPanel Grid.Column="1" VerticalAlignment="Center">
             <TextBlock x:Name="PageTitle" Text="{DynamicResource Loc.page.home.title}"
-                       FontSize="{DynamicResource FontSizeLg}" FontWeight="SemiBold"
+                       FontSize="{DynamicResource FontSizeXl}" FontWeight="SemiBold"
                        Foreground="{DynamicResource TextBrush}" />
             <TextBlock x:Name="PageSubtitle" Text="{DynamicResource Loc.page.home.subtitle}"
                        FontSize="{DynamicResource FontSizeXs}"
@@ -144,6 +146,8 @@
           </StackPanel>
 
           <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
+            <Button Style="{StaticResource GhostButton}" Content="{DynamicResource Loc.nav.search}"
+                    Padding="10,6" Margin="0,0,8,0" Click="OnQuickSearchClick" />
             <ctl:ConnectionBadge x:Name="TopBadge" Margin="0,0,10,0" />
             <Button Style="{StaticResource SecondaryButton}" Content="{DynamicResource Loc.teleprompter.open}"
                     Padding="10,6" Margin="0,0,8,0" Click="OnTeleprompterClick"

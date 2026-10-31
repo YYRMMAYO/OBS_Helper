@@ -93,7 +93,15 @@ public sealed class AppearanceSettings
 
     /// <summary>壁纸作用范围：3.1.0 固定 content（整窗为后续版本）。</summary>
     [JsonPropertyName("bgScope")]
-    public string BackgroundScope { get; set; } = "content";
+    public string BackgroundScope { get; set; } = "window";
+
+    /// <summary>界面圆角：sm / md / lg（V3.5.0 自定义）。</summary>
+    [JsonPropertyName("uiRadius")]
+    public string UiRadius { get; set; } = "md";
+
+    /// <summary>图片模式下卡片 / 导航的半透明程度 0.65~1.0（V3.5.0 自定义）。</summary>
+    [JsonPropertyName("panelOpacity")]
+    public double PanelOpacity { get; set; } = 0.88;
 
     /// <summary>旧设置迁移标记（1 = 已尝试过迁移）。</summary>
     [JsonPropertyName("bgMigrationVersion")]
@@ -677,9 +685,26 @@ public sealed class AppearanceService : IDisposable
         res["BrandForegroundBrush"] = dark ? Frozen(accent.DarkOn) : Frozen("#ffffff");
 
         // ---- 表面 / 文字 / 边框
-        res["SurfaceBrush"] = Frozen(dark ? "#1b1c26" : "#ffffff");
-        res["Surface2Brush"] = Frozen(dark ? "#14151d" : "#f4f4fb");
-        res["Surface3Brush"] = Frozen(dark ? "#20212c" : "#ececf6");
+        // V3.5.0 简约视觉系统：中性背景 + 单一强调色 + 低阴影。
+        // 图片背景覆盖整窗后，卡片 / 导航 / 顶栏使用可调透明度的半透明表面；
+        // 默认 / 纯色 / 高对比仍保持不透明，保证对比度与性能。
+        var glass = !hc && string.Equals(Settings.BackgroundMode, "image", StringComparison.Ordinal);
+        var opacity = Math.Clamp(Settings.PanelOpacity, 0.65, 1.0);
+        var alpha = glass ? (int)Math.Round(opacity * 255) : 255;
+        var alpha2 = glass ? Math.Max(120, alpha - 22) : 255;
+        var alpha3 = glass ? Math.Max(110, alpha - 38) : 255;
+        static string Hex(int a, string rgb) => "#" + a.ToString("X2") + rgb.TrimStart('#');
+        var lightSurface = "#FFFFFF";
+        var lightSurface2 = "#F5F5F1";
+        var lightSurface3 = "#ECECE6";
+        var darkSurface = "#181A19";
+        var darkSurface2 = "#101211";
+        var darkSurface3 = "#242724";
+        res["SurfaceBrush"] = Frozen(Hex(alpha, dark ? darkSurface : lightSurface));
+        res["Surface2Brush"] = Frozen(Hex(alpha2, dark ? darkSurface2 : lightSurface2));
+        res["Surface3Brush"] = Frozen(Hex(alpha3, dark ? darkSurface3 : lightSurface3));
+        res["NavSurfaceBrush"] = Frozen(Hex(glass ? Math.Min(255, alpha + 12) : 255, dark ? "#121412" : "#FBFBF9"));
+        res["TopBarSurfaceBrush"] = Frozen(Hex(glass ? Math.Min(255, alpha + 18) : 255, dark ? "#121412" : "#FBFBF9"));
         res["TextBrush"] = Frozen(hc ? (dark ? "#ffffff" : "#000000") : (dark ? "#ececf5" : "#1c1d2b"));
         // 【深色对比度 v2.7.1】MutedBrush 深色 #9a9bb0→#a9abbe：在 Surface(#1b1c26) 上
         // 对比度约 6:1 → 7.5:1，弱光 / 低亮度屏幕下的次要文字不再发灰难读。
@@ -730,16 +755,17 @@ public sealed class AppearanceService : IDisposable
 
         // ---- 【UI 优化 v1.10】卡片投影：带偏移 + 柔和的真实阴影（craft-floor：深度必须 offset+blur）
         // DropShadowEffect 是 Freezable，按主题生成同名资源，卡片 / 卡片按钮 / Toast 统一引用。
-        res["CardShadow"] = NewShadow(dark ? 0.35 : 0.10, blur: 18, depth: 2);
-        res["CardShadowStrong"] = NewShadow(dark ? 0.50 : 0.16, blur: 24, depth: 4);
+        res["CardShadow"] = NewShadow(dark ? 0.24 : 0.055, blur: 10, depth: 1);
+        res["CardShadowStrong"] = NewShadow(dark ? 0.34 : 0.10, blur: 16, depth: 2);
 
         // ---- 圆角（紧凑风格，减少 AI 感）
-        res["CornerRadiusLg"] = new CornerRadius(8);
-        res["CornerRadiusMd"] = new CornerRadius(6);
-        res["CornerRadiusSm"] = new CornerRadius(4);
+        var radius = NormalizeUiRadius(Settings.UiRadius);
+        res["CornerRadiusLg"] = new CornerRadius(radius.Lg);
+        res["CornerRadiusMd"] = new CornerRadius(radius.Md);
+        res["CornerRadiusSm"] = new CornerRadius(radius.Sm);
         // V3.1.0 UI 视觉刷新 1.0：设计令牌（间距 / 圆角 / 动效），新页面优先引用它们，
         // 避免每处硬编码 8 / 12 / 16 造成视觉漂移；19 页的全量重设计留到 3.2。
-        res["CornerRadiusXl"] = new CornerRadius(12);
+        res["CornerRadiusXl"] = new CornerRadius(radius.Xl);
         res["SpacingXs"] = 4.0;
         res["SpacingSm"] = 8.0;
         res["SpacingMd"] = 12.0;
@@ -798,12 +824,34 @@ public sealed class AppearanceService : IDisposable
 
     // ------------------------------------------------------------ 自定义背景
 
+    /// <summary>界面圆角预设（V3.5.0 自定义）。</summary>
+    private static (int Lg, int Md, int Sm, int Xl) NormalizeUiRadius(string? value) => value switch
+    {
+        "sm" => (8, 6, 4, 12),
+        "lg" => (16, 12, 8, 22),
+        _ => (12, 8, 6, 18),
+    };
+
+    /// <summary>设置界面圆角并立即生效。</summary>
+    public void SetUiRadius(string? radius)
+    {
+        Settings.UiRadius = (radius ?? "").Trim().ToLowerInvariant() is "sm" or "lg" ? radius!.Trim().ToLowerInvariant() : "md";
+        Apply();
+    }
+
+    /// <summary>设置图片模式下卡片 / 导航的透明度并立即生效。</summary>
+    public void SetPanelOpacity(double opacity)
+    {
+        Settings.PanelOpacity = Math.Clamp(double.IsNaN(opacity) ? 0.88 : opacity, 0.65, 1.0);
+        Apply();
+    }
+
     /// <summary>按当前设置写入内容区背景资源：ContentBackgroundBrush / ContentBackgroundImage / ContentBackgroundDim。</summary>
     private void ApplyBackgroundResources(ResourceDictionary res, bool dark, bool hc)
     {
         if (hc || Settings.BackgroundMode == "default")
         {
-            res["ContentBackgroundBrush"] = Frozen(dark ? "#14151d" : "#f4f4fb");
+            res["ContentBackgroundBrush"] = Frozen(dark ? "#0F1110" : "#F7F7F4");
             ClearWallpaperResources(res);
             return;
         }
@@ -811,7 +859,7 @@ public sealed class AppearanceService : IDisposable
         if (Settings.BackgroundMode == "color")
         {
             var brush = TryParseBrush(Settings.BackgroundColor)
-                        ?? Frozen(dark ? "#14151d" : "#f4f4fb");
+                        ?? Frozen(dark ? "#0F1110" : "#F7F7F4");
             res["ContentBackgroundBrush"] = brush;
             ClearWallpaperResources(res);
             return;
@@ -819,7 +867,7 @@ public sealed class AppearanceService : IDisposable
 
         // 图片模式（V3.1.0）：底仍是主题默认底，图片、压暗、铺放方式由 WallpaperService 写入。
         // 高对比已在上面强制回退；文件丢失 / 损坏时服务层回退默认底并给出一次可见提示。
-        res["ContentBackgroundBrush"] = Frozen(dark ? "#14151d" : "#f4f4fb");
+        res["ContentBackgroundBrush"] = Frozen(dark ? "#0F1110" : "#F7F7F4");
         res["ContentBackgroundDim"] = Brushes.Transparent;
         res["ContentBackgroundImage"] = null;
         res["ContentBackgroundImageA"] = null;

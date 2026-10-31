@@ -30,6 +30,15 @@
         </Grid>
       </Border>
 
+      <!-- V3.5.0：先回答「现在能做什么」，再展示模块清单 -->
+      <Border Style="{StaticResource SoftPanel}" Margin="0,14,0,0" Padding="14,12">
+        <StackPanel>
+          <TextBlock Text="{DynamicResource Loc.feature.status.title}" Style="{StaticResource BodyText}"
+                     FontWeight="SemiBold" />
+          <WrapPanel x:Name="StatusHost" Margin="0,8,0,0" />
+        </StackPanel>
+      </Border>
+
       <!-- V3.4.2：不再按「本版新增 / 常用」分段，也不在卡片上贴版本号；
            功能中心展示的是「现在能用的全部能力」，与版本号无关。 -->
       <TextBlock Text="{DynamicResource Loc.feature.hub.all}" Style="{StaticResource SectionTitle}" Margin="0,20,0,10" />

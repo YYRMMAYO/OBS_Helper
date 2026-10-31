@@ -122,6 +122,7 @@ public partial class MobileLinkPage : UserControl, INavigationAware
             : Strings.T("mobile.server.stopped"))
             + (version.Length > 0 ? "  ·  v" + version : "");
         StopServerButton.IsEnabled = link.IsRunning;
+        HeroStopButton.IsEnabled = link.IsRunning;
     }
 
     private void RefreshDeviceArea()

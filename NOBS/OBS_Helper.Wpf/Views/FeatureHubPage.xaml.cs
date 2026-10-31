@@ -33,7 +33,57 @@ public partial class FeatureHubPage : UserControl, INavigationAware
             _builtLanguage = language;
             BuildModules();
         }
+        RefreshStatus();
         return Task.CompletedTask;
+    }
+
+    /// <summary>
+    /// 「现在能做什么」状态条（V3.5.0）：OBS / 手机服务 / 媒体服务 / 提词器。
+    /// 只读、不启动任何服务；没有配置时直接告诉用户下一步。
+    /// </summary>
+    private void RefreshStatus()
+    {
+        StatusHost.Children.Clear();
+
+        var obs = AppServices.Obs.IsConnected;
+        AddStatusChip(Strings.T("feature.status.obs"), obs ? Strings.T("feature.status.connected") : Strings.T("feature.status.disconnected"), obs ? "OkBrush" : "WarnBrush");
+
+        var phone = AppServices.MobileLink.IsRunning;
+        AddStatusChip(Strings.T("feature.status.phone"), phone ? Strings.T("feature.status.running") : Strings.T("feature.status.stopped"), phone ? "OkBrush" : "MutedBrush");
+
+        var entry = AppServices.Sidecars.Manifest.Find("mediamtx");
+        var media = entry is not null && AppServices.Sidecars.IsInstalled(entry);
+        AddStatusChip(Strings.T("feature.status.media"), media ? Strings.T("feature.status.installed") : Strings.T("feature.status.missing"), media ? "OkBrush" : "WarnBrush");
+
+        var script = AppServices.Teleprompter.Script;
+        var hasScript = !string.IsNullOrWhiteSpace(script);
+        AddStatusChip(Strings.T("feature.status.teleprompter"), hasScript ? Strings.T("feature.status.hasScript") : Strings.T("feature.status.noScript"), hasScript ? "OkBrush" : "MutedBrush");
+    }
+
+    private void AddStatusChip(string label, string value, string brushKey)
+    {
+        var dot = new System.Windows.Shapes.Ellipse { Width = 7, Height = 7, VerticalAlignment = VerticalAlignment.Center };
+        dot.SetResourceReference(System.Windows.Shapes.Shape.FillProperty, brushKey);
+
+        var text = new TextBlock { Text = $"{label} · {value}", Margin = new Thickness(6, 0, 0, 0) };
+        text.SetResourceReference(TextBlock.FontSizeProperty, "FontSizeXs");
+        text.SetResourceReference(TextBlock.ForegroundProperty, "TextBrush");
+
+        var row = new StackPanel { Orientation = Orientation.Horizontal };
+        row.Children.Add(dot);
+        row.Children.Add(text);
+
+        var chip = new Border
+        {
+            Background = (Brush)FindResource("SurfaceBrush"),
+            BorderBrush = (Brush)FindResource("LineBrush"),
+            BorderThickness = new Thickness(1),
+            CornerRadius = new CornerRadius(999),
+            Padding = new Thickness(9, 4, 9, 4),
+            Margin = new Thickness(0, 0, 8, 6),
+            Child = row
+        };
+        StatusHost.Children.Add(chip);
     }
 
     private void OnMobileAction(object sender, RoutedEventArgs e)

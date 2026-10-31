@@ -31,15 +31,18 @@
   <SolidColorBrush PresentationOptions:Freeze="True" x:Key="PillForegroundBrush" Color="#ffffff" />
 
   <SolidColorBrush PresentationOptions:Freeze="True" x:Key="SurfaceBrush" Color="#ffffff" />
-  <SolidColorBrush PresentationOptions:Freeze="True" x:Key="Surface2Brush" Color="#f4f4fb" />
-  <SolidColorBrush PresentationOptions:Freeze="True" x:Key="Surface3Brush" Color="#ececf6" />
-  <SolidColorBrush PresentationOptions:Freeze="True" x:Key="TextBrush" Color="#1c1d2b" />
-  <SolidColorBrush PresentationOptions:Freeze="True" x:Key="MutedBrush" Color="#5c5d70" />
-  <SolidColorBrush PresentationOptions:Freeze="True" x:Key="LineBrush" Color="#e6e6f0" />
+  <!-- V3.5.0 整窗背景：导航 / 顶栏在图片模式下使用半透明表面，默认模式下由 AppearanceService 写回不透明值。 -->
+  <SolidColorBrush PresentationOptions:Freeze="True" x:Key="NavSurfaceBrush" Color="#ffffff" />
+  <SolidColorBrush PresentationOptions:Freeze="True" x:Key="TopBarSurfaceBrush" Color="#ffffff" />
+  <SolidColorBrush PresentationOptions:Freeze="True" x:Key="Surface2Brush" Color="#f5f5f1" />
+  <SolidColorBrush PresentationOptions:Freeze="True" x:Key="Surface3Brush" Color="#ecece6" />
+  <SolidColorBrush PresentationOptions:Freeze="True" x:Key="TextBrush" Color="#1b1b19" />
+  <SolidColorBrush PresentationOptions:Freeze="True" x:Key="MutedBrush" Color="#63635d" />
+  <SolidColorBrush PresentationOptions:Freeze="True" x:Key="LineBrush" Color="#e4e4dd" />
   <SolidColorBrush PresentationOptions:Freeze="True" x:Key="OverlayBrush" Color="#80000000" />
 
   <!-- 【自定义背景 v1.10】内容区背景默认值（运行时由 AppearanceService 覆盖）：默认即 Surface2 -->
-  <SolidColorBrush PresentationOptions:Freeze="True" x:Key="ContentBackgroundBrush" Color="#f4f4fb" />
+  <SolidColorBrush PresentationOptions:Freeze="True" x:Key="ContentBackgroundBrush" Color="#f7f7f4" />
   <!-- 图片层默认空值：未设置自定义图片时 Image.Source 解析为 null（与缺失键时 XAML 默认行为一致），
        同时让 check_resources.py 的全量资源体检能对上这个运行时注入键 -->
   <x:Null x:Key="ContentBackgroundImage" />
@@ -81,9 +84,9 @@
   <DropShadowEffect x:Key="CardShadowStrong" BlurRadius="24" ShadowDepth="4" Direction="270"
                     Opacity="0.16" Color="#000000" />
 
-  <CornerRadius x:Key="CornerRadiusLg">8</CornerRadius>
-  <CornerRadius x:Key="CornerRadiusMd">6</CornerRadius>
-  <CornerRadius x:Key="CornerRadiusSm">4</CornerRadius>
+  <CornerRadius x:Key="CornerRadiusLg">12</CornerRadius>
+  <CornerRadius x:Key="CornerRadiusMd">8</CornerRadius>
+  <CornerRadius x:Key="CornerRadiusSm">6</CornerRadius>
 
   <sys:Double x:Key="FontScaleFactor">1.0</sys:Double>
   <sys:Double x:Key="FontSizeXs">11</sys:Double>

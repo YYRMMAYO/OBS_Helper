@@ -4,10 +4,9 @@
 
 # OBS Helper · OBS帮助助手
 
-**Current release: X1031** — the first independent X-series release: a minimal “OBS helper” app icon, GitHub accelerator guidance for the plugin catalog, merged managed/locally-detected installed plugins, one-click media server for phone cameras, 10 VTuber room templates, a rebuilt mini control window and phone-side teleprompter editing. X builds only check GitHub tags starting with `X`; they never mix with V releases.
-See [RELEASE_NOTES_x1031.md](RELEASE_NOTES_x1031.md) (Chinese).
+**Current release: V3.5.0** — the global background now covers the entire window (navigation, top bar and pages) with translucent surfaces, plus a rebuilt mobile connection page and Feature Center status strip. It also includes GitHub accelerator guidance, merged managed/locally-detected plugins, one-click media server for phone cameras, 10 VTuber templates, a rebuilt mini control window and phone-side teleprompter editing. See [RELEASE_NOTES_v3.5.0.md](RELEASE_NOTES_v3.5.0.md); the first X-series release [X1031](RELEASE_NOTES_x1031.md) ships the new icon without this UI refactor.
 
-> **V / X series**: V releases keep `V3.5.0`-style versions; X releases use date-code versions such as `X1031`. Both share the same features and data folder, but each channel only checks its own tags. V3.5.0 additionally ships the global background UI refactor and mobile/Feature Center UX work.
+> **V / X series**: V releases use `V3.5.0`-style versions; X releases use date-code versions such as `X1031`. Both share features and the data folder, but each channel only checks its own tags: V builds only `V*`, X builds only `X*`.
 
 > **This is the developer-facing full documentation for the Windows native WPF version and it lives inside `NOBS/`**;
 > the repository-root [`README.md`](../README.md) is the complete user-facing guide (features · usage · installation),
@@ -20,7 +19,7 @@ See [RELEASE_NOTES_x1031.md](RELEASE_NOTES_x1031.md) (Chinese).
 [![Platform](https://img.shields.io/badge/Platform-Windows_7_SP1%2B-0078D6.svg)]()
 [![.NET](https://img.shields.io/badge/.NET-10_%2F_6-512BD4.svg)]()
 [![Stack](https://img.shields.io/badge/Stack-WPF_%2F_C%23-239120.svg)]()
-[![Release](https://img.shields.io/badge/Release-1031-38bdf8.svg)](https://github.com/YYRMMAYO/OBS_Helper/releases)
+[![Release](https://img.shields.io/badge/Release-3.5.0-38bdf8.svg)](https://github.com/YYRMMAYO/OBS_Helper/releases)
 [![OBS](https://img.shields.io/badge/OBS-32.2.2-302E31.svg)](https://github.com/obsproject/obs-studio/releases)
 [![Offline](https://img.shields.io/badge/offline--first-2ea44f.svg)]()
 [![Incremental Update](https://img.shields.io/badge/Incremental%20Update-2.5MB-7dd3fc.svg)]()
@@ -64,6 +63,14 @@ There are two channels for the same app — pick the one that matches how much "
 - **Why DEV has its own channel**: DEV builds are numbered by an auto-incrementing **build number**, which is not comparable to the stable `Vmajor.minor.patch` scheme. A DEV build therefore **only recognises plain-number tags (`01`)**, and a stable build **only recognises `V3.1.1`-style tags** — even though both kinds of tag live in the same repository, neither channel mistakes the other for a newer version.
 - **DEV builds are not packaged and do not use the Lanzou mirror yet**: the update prompt only points you at the dev Releases page (`/releases/tag/0X`). Incremental updates, the Lanzou mirror and installers keep serving stable users exactly as before.
 - **Which one should you pick?** Use stable for day-to-day work; take DEV if you want early features and can live with the occasional broken build. Please report DEV issues through *Help & feedback* and put `DEV 0X` (e.g. `DEV 03`) in the description.
+
+## V3.5.0 highlights
+
+- **Global background UI refactor**: the wallpaper layer now covers the whole window (navigation, top bar and pages). In image mode, navigation/top bar/cards use translucent surfaces; default/colour/high-contrast stay opaque. The previous UI is saved as tag `ui-baseline-v3.4.2`.
+- **Mobile connection page**: hero area, equal-width segmented navigation, pairing card and device cards; no horizontal squeeze on narrow windows.
+- **Feature Center**: a “what works right now” status strip (OBS / phone service / media server / teleprompter) before the module list.
+- **Shared fixes**: GitHub accelerator guidance, merged installed-plugin sources, one-click media server, 10 VTuber templates, rebuilt mini window, phone teleprompter editing, bilingual guide rewrite and corrected icon semantics.
+- **Verification**: 1,729 unit tests pass; both builds 0 errors; 2,649 resource references across 47 XAML files resolve.
 
 ## X1031 highlights
 

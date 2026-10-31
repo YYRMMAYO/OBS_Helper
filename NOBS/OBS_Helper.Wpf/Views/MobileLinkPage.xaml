@@ -4,21 +4,46 @@
   <ScrollViewer Style="{StaticResource PageScroll}">
     <StackPanel Margin="22,18,22,26">
 
-      <StackPanel Orientation="Horizontal" Margin="0,14,0,0">
-        <Button x:Name="RemoteTab" Style="{StaticResource PrimaryButton}"
-                Content="{DynamicResource Loc.mobile.tab.remote}" Click="OnTabClick" Tag="remote" />
-        <Button x:Name="CameraTab" Style="{StaticResource SecondaryButton}" Margin="8,0,0,0"
-                Content="{DynamicResource Loc.mobile.tab.camera}" Click="OnTabClick" Tag="camera" />
-        <Button x:Name="MulticamTab" Style="{StaticResource SecondaryButton}" Margin="8,0,0,0"
-                Content="{DynamicResource Loc.mobile.tab.multicam}" Click="OnTabClick" Tag="multicam" />
-        <Button x:Name="DevicesTab" Style="{StaticResource SecondaryButton}" Margin="8,0,0,0"
-                Content="{DynamicResource Loc.mobile.tab.devices}" Click="OnTabClick" Tag="devices" />
-      </StackPanel>
+      <!-- V3.5.0 手机连接页 Hero：先告诉用户「这是什么 / 现在是否可用 / 下一步做什么」 -->
+      <Border Style="{StaticResource Card}" Margin="0,14,0,0" Padding="20,18"
+              Background="{DynamicResource BrandSoftBrush}" BorderBrush="{DynamicResource BrandBrush}">
+        <Grid>
+          <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*" />
+            <ColumnDefinition Width="Auto" />
+          </Grid.ColumnDefinitions>
+          <StackPanel Grid.Column="0">
+            <TextBlock Text="{DynamicResource Loc.mobile.hero.title}" Style="{StaticResource H2Text}"
+                       Foreground="{DynamicResource BrandBrush}" />
+            <TextBlock Text="{DynamicResource Loc.mobile.hero.desc}" Style="{StaticResource BodyText}"
+                       Margin="0,7,0,0" TextWrapping="Wrap" MaxWidth="640" />
+            <TextBlock x:Name="ServerStateText" Style="{StaticResource CaptionText}" Margin="0,10,0,0"
+                       TextWrapping="Wrap" />
+            <TextBlock Style="{StaticResource CaptionText}" Margin="0,3,0,0" TextWrapping="Wrap"
+                       Text="{DynamicResource Loc.mobile.server.firewall}" />
+          </StackPanel>
+          <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="16,0,0,0">
+            <Button x:Name="HeroPairButton" Style="{StaticResource PrimaryButton}"
+                    Content="{DynamicResource Loc.mobile.pair.generate}" Click="OnPairClick" />
+            <Button x:Name="HeroStopButton" Style="{StaticResource GhostButton}" Margin="0,8,0,0"
+                    Content="{DynamicResource Loc.mobile.server.stop}" Click="OnStopServerClick" />
+          </StackPanel>
+        </Grid>
+      </Border>
 
-      <TextBlock x:Name="ServerStateText" Style="{StaticResource CaptionText}" Margin="0,10,0,0"
-                 TextWrapping="Wrap" />
-      <TextBlock Style="{StaticResource CaptionText}" Margin="0,4,0,0" TextWrapping="Wrap"
-                 Text="{DynamicResource Loc.mobile.server.firewall}" />
+      <!-- 分段导航：四个 Tab 等宽，窄窗口也不挤出屏幕 -->
+      <Border Style="{StaticResource SoftPanel}" Margin="0,12,0,0" Padding="6">
+        <UniformGrid Columns="4">
+          <Button x:Name="RemoteTab" Style="{StaticResource PrimaryButton}" Margin="3"
+                  Content="{DynamicResource Loc.mobile.tab.remote}" Click="OnTabClick" Tag="remote" />
+          <Button x:Name="CameraTab" Style="{StaticResource SecondaryButton}" Margin="3"
+                  Content="{DynamicResource Loc.mobile.tab.camera}" Click="OnTabClick" Tag="camera" />
+          <Button x:Name="MulticamTab" Style="{StaticResource SecondaryButton}" Margin="3"
+                  Content="{DynamicResource Loc.mobile.tab.multicam}" Click="OnTabClick" Tag="multicam" />
+          <Button x:Name="DevicesTab" Style="{StaticResource SecondaryButton}" Margin="3"
+                  Content="{DynamicResource Loc.mobile.tab.devices}" Click="OnTabClick" Tag="devices" />
+        </UniformGrid>
+      </Border>
 
       <!-- ============================================================ 遥控 / 配对 -->
       <StackPanel x:Name="RemotePanel" Margin="0,8,0,0">

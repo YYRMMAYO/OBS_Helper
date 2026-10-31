@@ -4,7 +4,7 @@
 
 **OBS Helper · OBS帮助助手** — an OBS troubleshooting / recording / streaming assistant for streamers who are just getting started (native Windows WPF)
 
-**Current release: V3.4.0** (stable) · the DEV test channel is retired (the `dev` branch was deleted in V3.3.0)
+**Current release: V3.5.0** (stable) · the first X-series release `X1031` is available too
 
 **Focus of this release**: **Phone Link** — pair by QR code and turn your phone into a second screen, a second camera and a second microphone; plus chat aggregation, local live captions, review/clips, multi-platform relay, MIDI/lighting and team collaboration. See [`NOBS/RELEASE_NOTES_v3.4.0.md`](NOBS/RELEASE_NOTES_v3.4.0.md) for details.
 
@@ -12,11 +12,11 @@
 [![Platform](https://img.shields.io/badge/Platform-Windows_7_SP1%2B_%2F_10_%2F_11-0078D6.svg)]()
 [![.NET](https://img.shields.io/badge/.NET-10_%2F_6-512BD4.svg)]()
 [![Stack](https://img.shields.io/badge/Stack-WPF_%2F_C%23-239120.svg)]()
-[![Release](https://img.shields.io/badge/Release-3.4.0-38bdf8.svg)](https://github.com/YYRMMAYO/OBS_Helper/releases)
+[![Release](https://img.shields.io/badge/Release-3.5.0-38bdf8.svg)](https://github.com/YYRMMAYO/OBS_Helper/releases)
 [![OBS](https://img.shields.io/badge/OBS-32.2.2-302E31.svg)](https://github.com/obsproject/obs-studio/releases)
 [![offline-first](https://img.shields.io/badge/offline--first-2ea44f.svg)]()
 [![Incremental Update](https://img.shields.io/badge/Incremental%20Update-2.5MB-7dd3fc.svg)]()
-[![Tests](https://img.shields.io/badge/Tests-1670%20passed-2ea44f.svg)]()
+[![Tests](https://img.shields.io/badge/Tests-1729%20passed-2ea44f.svg)]()
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
 **English** · [简体中文](README.md)
@@ -38,7 +38,7 @@ This is the **native WPF rewrite** of the original Blazor WebAssembly + WebView2
 
 ---
 
-**Contents**: [Start here](#start-here) · [5-minute quick start](#5-minute-quick-start) · [Highlights at a glance](#highlights-at-a-glance) · [Features](#features) · [Smart diagnostics engine](#smart-diagnostics-engine) · [Release channels: stable vs DEV](#release-channels-stable-vs-dev) · [What's new in V3.4.0](#whats-new-in-v340) · [What's new in V3.3.0](#whats-new-in-v330) · [What's new in V3.1.1](#whats-new-in-v311) · [Version history](#version-history) · [Privacy & security](#privacy--security) · [Installation & updates](#installation--updates) · [Build](#build) · [Project structure](#project-structure) · [Quality baseline & known limits](#quality-baseline--known-limits) · [Promo video](#promo-video) · [Donate](#donate) · [License](#license)
+**Contents**: [Start here](#start-here) · [5-minute quick start](#5-minute-quick-start) · [Highlights at a glance](#highlights-at-a-glance) · [Features](#features) · [Smart diagnostics engine](#smart-diagnostics-engine) · [Release channels: stable vs DEV](#release-channels-stable-vs-dev) · [What's new in V3.5.0](#whats-new-in-v350) · [X1031](#x1031) · [What's new in V3.3.0](#whats-new-in-v330) · [What's new in V3.1.1](#whats-new-in-v311) · [Version history](#version-history) · [Privacy & security](#privacy--security) · [Installation & updates](#installation--updates) · [Build](#build) · [Project structure](#project-structure) · [Quality baseline & known limits](#quality-baseline--known-limits) · [Promo video](#promo-video) · [Donate](#donate) · [License](#license)
 
 ---
 
@@ -81,7 +81,7 @@ This is the **native WPF rewrite** of the original Blazor WebAssembly + WebView2
 | **Remote-control OBS** | Scene switching, source visibility, audio mute and volume, record / stream / virtual camera, live stats, scheduled stop, open the recording folder — always at hand through **four entry points: console, system tray, mini window and global hotkeys**; scenes can also switch automatically based on the foreground window title |
 | **Plugin square + local health check** | **57 curated plugins** (8 categories, the v1.4 catalog fully re-audited); cards show maintenance status and link straight to GitHub Releases; a **read-only scan of locally installed plugins** locates the OBS install folder across drives (multi-view registry / every fixed drive / multiple Steam libraries) and covers the OBS 32.x "one folder per plugin" plugin root |
 | **Scene templates and stream setup** | **12 built-in live-room templates** (Gaming Stream / Vertical Live Selling / Duo Co-Stream / Teaching Screen Recording / Radio Idle / Go-Live / BRB / End Pack / Green Screen Background / Selling Dual Camera / Esports Cast / Podcast Talk / Vertical Short Recording / Meeting/Class Multicam) — with OBS connected, one click creates the scenes and sources; when not connected you can export a standard scene-collection JSON. There is also a 6-step go-live walkthrough plus streaming presets for Bilibili / Douyin / Kuaishou / WeChat Channels / Xiaohongshu / YouTube / Twitch and other major platforms |
-| **Chinese / English bilingual** | The interface, tray, notifications, errors, log rules, health-check verdicts and diagnostic reports are all bilingual (**3251 string keys**), **Simplified Chinese by default**, and switching takes effect instantly with no restart; bundled content (knowledge base / templates / plugin catalog / troubleshooting guide) is bilingual too |
+| **Chinese / English bilingual** | The interface, tray, notifications, errors, log rules, health-check verdicts and diagnostic reports are all bilingual (**3373 string keys**), **Simplified Chinese by default**, and switching takes effect instantly with no restart; bundled content (knowledge base / templates / plugin catalog / troubleshooting guide) is bilingual too |
 | **Data safety (the V3.0 focus)** | All writes to user files go through a **transactional channel**: snapshot before writing + atomic replace + read-back verification + rollback on failure; every write resolves the absolute path first and passes an **out-of-bounds guard**; secrets such as OBS passwords and API keys are encrypted and stored separately |
 | **Privacy first** | Preferences contain no credentials at all; passwords and API keys are **double-encrypted** (AES-256-GCM + DPAPI, bound to this machine and this user); the app only goes online when you start an AI diagnostic, and logs are sanitized first; the plugin health check is entirely read-only and its results stay on this machine |
 | **Incremental updates, lighter by design** | The in-app "incremental update" downloads only changed files (a delta between neighbouring versions is usually just a few MB); every file is verified with SHA-256, and on failure it falls back to the full installer automatically; installed builds auto-elevate, swap files and restart. The knowledge base / plugin catalog can be updated separately |
@@ -178,16 +178,37 @@ Connect to OBS and run a one-click health check. Three engines are available:
 
 When the cloud / free engine fails it **falls back to the local engine automatically** and explains why in the result. The free tier is a single-turn ordinary conversation (no knowledge-base tool calls); for multi-turn deep troubleshooting or more frequent use, plug in your own cloud API.
 
-## Release channels: stable vs DEV
+## Release channels: V series vs X series
 
 | Channel | Version style | What it is | Where updates come from |
 | --- | --- | --- | --- |
-| **Stable** (`master`) | `V3.4.0` | **Stable first**: settled features, full regression and release verification — the right choice for everyday streaming / recording | The regular Releases page · the Lanzou mirror · in-app incremental updates |
-| ~~DEV (test) (`dev`)~~ | ~~`01`, `02`, `03` …~~ | **Retired in V3.3.0**: the branch is deleted and no new builds are produced | Historical Releases only |
+| **V series** (`master`) | `V3.5.0` | **Stable first**: settled features, full regression and release verification — the right choice for everyday streaming / recording | The regular Releases page · the Lanzou mirror · in-app incremental updates |
+| **X series** (`master`) | `X1031` | **Independent major line**: date-code versions and the X-specific icon; updates only look at `X` tags | X-series Releases · in-app update |
 
-- **Why DEV has its own channel**: DEV numbering is an auto-incrementing **build number** (+1 for every dev build, maintained by the dev branch's channel implementation) and is not comparable to the stable `Vmajor.minor.patch` scheme. A DEV build therefore **only recognises plain-number tags such as `01`**, and a stable build **only recognises tags such as `V3.4.0`** — even though both kinds of tag live in the same repository, neither channel mistakes the other for a newer version;
-- **DEV builds are not packaged and do not use the Lanzou mirror yet**: the update prompt only points you at the dev Releases page (`/releases/tag/0X`); the stable channel's incremental updates, Lanzou mirror and installers keep serving stable users exactly as before;
-- **Which one should you pick?** Use stable if you want stability; take DEV if you are happy to help test early features and can live with a build that may break. For DEV issues, go through *Help & feedback* as usual and put `DEV 0X` (e.g. `DEV 03`) in the description so it is easier to locate.
+- **Both series share features and the data folder**: install folder, assembly name and `%LocalAppData%\OBS_Helper` are unchanged, so the upgrade path is identical.
+- **Channel filtering happens in the parser**: V builds only recognise `V3.5.0`-style tags; X builds only recognise `X1031`-style tags. They never mistake one another for a newer version.
+- **X1031 is smaller than V3.5.0**: X1031 contains items 1–9 and the new icon, but not the global background UI refactor, mobile page layout or Feature Center UX work. V3.5.0 contains those UI changes but keeps the original icon as requested.
+
+## What's new in V3.5.0
+
+> Full details: [`NOBS/RELEASE_NOTES_v3.5.0.md`](NOBS/RELEASE_NOTES_v3.5.0.md).
+
+- **Global background UI refactor**: the wallpaper layer now covers the left navigation, top bar and pages; image mode uses translucent navigation/top bar/cards, while default/colour/high-contrast stay opaque. The previous UI is saved as tag `ui-baseline-v3.4.2`.
+- **Mobile connection page**: hero area, equal-width segmented navigation, pairing card and device cards.
+- **Feature Center**: a “what works right now” status strip (OBS / phone service / media server / teleprompter).
+- **Plugins**: GitHub accelerator guidance with re-check; installed list merges managed and locally detected plugins.
+- **Phone camera**: pinned mediamtx version with SHA-256 and one-click install; the server can start before OBS connects.
+- **VTuber templates**: 10 templates (karaoke, study, duo collab, hand camera); the chat/avatar overlap is fixed.
+- **Mini window / teleprompter**: replay, scenes, mute, teleprompter, studio mode and main window; phone-side script editing.
+- **Guide & icons**: a 5-minute setup section in both languages; corrected icon semantics in the Tabler style.
+- **X1031**: the same shared features plus the new icon and the independent X channel, without this UI refactor.
+
+## X1031
+
+> Full details: [`NOBS/RELEASE_NOTES_x1031.md`](NOBS/RELEASE_NOTES_x1031.md) (Chinese).
+
+- Independent X channel (only `X*` tags) and the minimal “OBS helper” icon.
+- Shared plugin, phone camera, template, mini window, teleprompter and guide improvements.
 
 ## What's new in V3.4.0
 

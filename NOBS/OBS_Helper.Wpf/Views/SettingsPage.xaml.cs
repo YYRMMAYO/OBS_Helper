@@ -33,6 +33,7 @@ public partial class SettingsPage : UserControl, INavigationAware
     {
         InitializeComponent();
         BuildOssList();
+        BuildUiCustomCombos();
         BuildSettingsNav();
         ShowSettingsSection(SettingsSections.DefaultId);
     }
@@ -281,6 +282,8 @@ public partial class SettingsPage : UserControl, INavigationAware
             FontLg.IsChecked = ap.FontScale == AppFontScale.Lg;
             FontXl.IsChecked = ap.FontScale == AppFontScale.Xl;
 
+            SyncUiCustomCombos(ap.Settings.UiRadius, ap.Settings.PanelOpacity);
+
             HighContrastSwitch.IsChecked = ap.Settings.HighContrast;
             ReduceMotionSwitch.IsChecked = ap.Settings.ReduceMotion;
             EasterEggSwitch.IsChecked = ap.Settings.EasterEggEnabled;
@@ -310,6 +313,63 @@ public partial class SettingsPage : UserControl, INavigationAware
 
         ShellSync();
         RefreshCloudWarning();
+    }
+
+    // ------------------------------------------------------------ 界面自定义（V3.5.0）
+
+    private bool _syncingUiCustom;
+
+    private void BuildUiCustomCombos()
+    {
+        UiRadiusCombo.Items.Clear();
+        UiRadiusCombo.Items.Add(new ComboBoxItem { Content = Strings.T("settings.appearance.radius.sm"), Tag = "sm" });
+        UiRadiusCombo.Items.Add(new ComboBoxItem { Content = Strings.T("settings.appearance.radius.md"), Tag = "md" });
+        UiRadiusCombo.Items.Add(new ComboBoxItem { Content = Strings.T("settings.appearance.radius.lg"), Tag = "lg" });
+
+        PanelOpacityCombo.Items.Clear();
+        foreach (var value in new[] { 0.70, 0.80, 0.88, 0.95, 1.0 })
+            PanelOpacityCombo.Items.Add(new ComboBoxItem
+            {
+                Content = $"{value * 100:0}%",
+                Tag = value
+            });
+    }
+
+    private void SyncUiCustomCombos(string? radius, double opacity)
+    {
+        _syncingUiCustom = true;
+        try
+        {
+            foreach (ComboBoxItem item in UiRadiusCombo.Items)
+                if (item.Tag is string key && string.Equals(key, radius ?? "md", StringComparison.OrdinalIgnoreCase))
+                {
+                    UiRadiusCombo.SelectedItem = item;
+                    break;
+                }
+
+            foreach (ComboBoxItem item in PanelOpacityCombo.Items)
+                if (item.Tag is double value && Math.Abs(value - opacity) < 0.011)
+                {
+                    PanelOpacityCombo.SelectedItem = item;
+                    break;
+                }
+        }
+        finally
+        {
+            _syncingUiCustom = false;
+        }
+    }
+
+    private void OnUiRadiusChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (_syncingUiCustom || UiRadiusCombo.SelectedItem is not ComboBoxItem { Tag: string radius }) return;
+        AppServices.Appearance.SetUiRadius(radius);
+    }
+
+    private void OnPanelOpacityChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (_syncingUiCustom || PanelOpacityCombo.SelectedItem is not ComboBoxItem { Tag: double opacity }) return;
+        AppServices.Appearance.SetPanelOpacity(opacity);
     }
 
     /// <summary>云端选项没配全时给出提示：此时诊断会静默回退到本地引擎，不提示用户会以为云端已生效。</summary>

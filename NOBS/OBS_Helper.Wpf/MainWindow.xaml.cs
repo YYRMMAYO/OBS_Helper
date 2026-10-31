@@ -1560,6 +1560,8 @@ public partial class MainWindow : Window
 
     private void OnSettingsClick(object sender, RoutedEventArgs e) => _nav.Navigate(Routes.Settings);
 
+    private void OnQuickSearchClick(object sender, RoutedEventArgs e) => _nav.Navigate(Routes.Search);
+
     // ============================================================ 内容资产回退提示（V3.0 / E5）
 
     /// <summary>

@@ -234,6 +234,29 @@
                          Style="{StaticResource SegmentButton}" Checked="OnFontScaleChecked" />
           </WrapPanel>
 
+          <!-- V3.5.0 界面自定义：圆角与图片模式面板透明度，即时生效 -->
+          <TextBlock Text="{DynamicResource Loc.settings.appearance.custom}" Style="{StaticResource MutedText}" Margin="0,10,0,7" />
+          <Grid>
+            <Grid.ColumnDefinitions>
+              <ColumnDefinition Width="*" />
+              <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+            <StackPanel Grid.Column="0" Margin="0,0,8,0">
+              <TextBlock Text="{DynamicResource Loc.settings.appearance.radius}" Style="{StaticResource CaptionText}"
+                         Margin="2,0,0,5" />
+              <ComboBox x:Name="UiRadiusCombo" Style="{StaticResource AppComboBox}"
+                        SelectionChanged="OnUiRadiusChanged" />
+            </StackPanel>
+            <StackPanel Grid.Column="1" Margin="8,0,0,0">
+              <TextBlock Text="{DynamicResource Loc.settings.appearance.panelOpacity}" Style="{StaticResource CaptionText}"
+                         Margin="2,0,0,5" />
+              <ComboBox x:Name="PanelOpacityCombo" Style="{StaticResource AppComboBox}"
+                        SelectionChanged="OnPanelOpacityChanged" />
+            </StackPanel>
+          </Grid>
+          <TextBlock Style="{StaticResource CaptionText}" Margin="2,6,0,0" TextWrapping="Wrap"
+                     Text="{DynamicResource Loc.settings.appearance.customHint}" />
+
           <Border Style="{StaticResource HLine}" />
 
           <CheckBox x:Name="HighContrastSwitch" Style="{StaticResource AppSwitch}" Content="{DynamicResource Loc.settings.appearance.highContrast}"

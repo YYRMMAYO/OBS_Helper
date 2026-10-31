@@ -14,7 +14,8 @@
         ShowActivated="False"
         UseLayoutRounding="True"
         WindowStartupLocation="Manual"
-        Closing="OnClosing">
+        Closing="OnClosing"
+        FontFamily="{DynamicResource AppFontFamily}">
   <Window.Resources>
     <!-- 小窗专用紧凑按钮：比 GhostButton 更小，适合窄面板 -->
     <Style x:Key="MiniButton" TargetType="Button" BasedOn="{StaticResource GhostButton}">

@@ -12,7 +12,8 @@
         Width="900" Height="320"
         MinWidth="360" MinHeight="180"
         TextOptions.TextFormattingMode="Ideal"
-        UseLayoutRounding="True">
+        UseLayoutRounding="True"
+        FontFamily="{DynamicResource AppFontFamily}">
 
   <Grid x:Name="RootGrid" Background="Transparent">
     <!-- 背景层：颜色 / 不透明度可调，保证录制画面里不会出现一块突兀的白底 -->

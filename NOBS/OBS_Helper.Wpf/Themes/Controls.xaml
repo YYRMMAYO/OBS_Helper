@@ -27,8 +27,9 @@
   <conv:JoinConverter x:Key="Join" />
   <conv:IndexToNumberConverter x:Key="IndexNumber" />
 
-  <!-- V3.5.0：全局字体，由设置页选择并即时生效 -->
-  <Style TargetType="{x:Type Control}">
+  <!-- V3.5.0：全局字体。隐式样式只匹配精确类型，所以必须挂在 Window 上；
+       子控件通过 FontFamily 继承获得同一字体（显式设置字体的 MonoText 等除外）。 -->
+  <Style TargetType="{x:Type Window}">
     <Setter Property="FontFamily" Value="{DynamicResource AppFontFamily}" />
   </Style>
 

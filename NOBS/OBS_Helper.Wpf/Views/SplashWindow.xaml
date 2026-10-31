@@ -4,7 +4,8 @@
         Width="520" Height="300"
         WindowStyle="None" AllowsTransparency="True" Background="Transparent"
         ShowInTaskbar="False" Topmost="True" ResizeMode="NoResize"
-        WindowStartupLocation="CenterScreen" UseLayoutRounding="True">
+        WindowStartupLocation="CenterScreen" UseLayoutRounding="True"
+        FontFamily="{DynamicResource AppFontFamily}">
   <Border x:Name="Root" CornerRadius="22" BorderThickness="1"
           BorderBrush="#33FFFFFF" Background="#F2101211" Opacity="0">
     <Border.Effect>

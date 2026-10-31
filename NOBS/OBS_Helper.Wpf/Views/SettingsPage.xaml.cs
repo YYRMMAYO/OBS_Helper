@@ -335,12 +335,33 @@ public partial class SettingsPage : UserControl, INavigationAware
             });
 
         FontFamilyCombo.Items.Clear();
-        foreach (var key in new[] { "system", "yahei", "noto", "harmony", "misans", "alibaba", "smiley", "lxgw", "segoe" })
+        var installed = new HashSet<string>(
+            Fonts.SystemFontFamilies.Select(f => f.Source),
+            StringComparer.OrdinalIgnoreCase);
+        bool Has(params string[] names) => names.Any(n => installed.Any(i =>
+            i.Equals(n, StringComparison.OrdinalIgnoreCase) ||
+            i.StartsWith(n + " ", StringComparison.OrdinalIgnoreCase)));
+
+        foreach (var (key, probes) in new (string Key, string[] Probes)[]
+        {
+            ("system", Array.Empty<string>()),
+            ("yahei", new[] { "Microsoft YaHei UI", "Microsoft YaHei" }),
+            ("noto", new[] { "Noto Sans SC", "Source Han Sans SC" }),
+            ("harmony", new[] { "HarmonyOS Sans SC", "HarmonyOS Sans" }),
+            ("misans", new[] { "MiSans" }),
+            ("alibaba", new[] { "Alibaba PuHuiTi 3.0", "Alibaba PuHuiTi" }),
+            ("smiley", new[] { "Smiley Sans" }),
+            ("lxgw", new[] { "LXGW WenKai" }),
+            ("segoe", new[] { "Segoe UI" }),
+        })
+        {
+            if (probes.Length > 0 && !Has(probes)) continue; // 未安装的字体不列出，避免选了却回退
             FontFamilyCombo.Items.Add(new ComboBoxItem
             {
                 Content = Strings.T("settings.appearance.font." + key),
                 Tag = key
             });
+        }
     }
 
     private void SyncUiCustomCombos(string? radius, double opacity)

@@ -258,6 +258,19 @@
                      Margin="2,10,0,5" />
           <ComboBox x:Name="FontFamilyCombo" Style="{StaticResource AppComboBox}"
                     SelectionChanged="OnFontFamilyChanged" />
+          <Border Style="{StaticResource SoftPanel}" Margin="0,8,0,0" Padding="12,10">
+            <StackPanel>
+              <TextBlock Text="{DynamicResource Loc.settings.appearance.fontPreviewLabel}"
+                         Style="{StaticResource CaptionText}" />
+              <TextBlock x:Name="FontPreviewText"
+                         Text="{DynamicResource Loc.settings.appearance.fontPreview}"
+                         FontFamily="{DynamicResource AppFontFamily}"
+                         FontSize="18" Foreground="{DynamicResource TextBrush}"
+                         TextWrapping="Wrap" Margin="0,5,0,0" />
+            </StackPanel>
+          </Border>
+          <TextBlock Style="{StaticResource CaptionText}" Margin="2,6,0,0" TextWrapping="Wrap"
+                     Text="{DynamicResource Loc.settings.appearance.fontHint}" />
           <TextBlock Style="{StaticResource CaptionText}" Margin="2,6,0,0" TextWrapping="Wrap"
                      Text="{DynamicResource Loc.settings.appearance.customHint}" />
 

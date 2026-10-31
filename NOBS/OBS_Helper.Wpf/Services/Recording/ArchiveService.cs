@@ -15,11 +15,13 @@ namespace OBS_Helper.Wpf.Services.Recording;
 /// </summary>
 public sealed class ArchiveService
 {
-    private readonly string _rclonePath;
+    private string _rclonePath;
 
     public ArchiveService(string? rclonePath = null) => _rclonePath = rclonePath ?? "";
 
     public string LastError { get; private set; } = "";
+    public string RclonePath => _rclonePath;
+    public void SetRclonePath(string? path) => _rclonePath = path ?? "";
 
     public async Task<(bool Ok, string Code, string Detail)> UploadAsync(string file, string remote, int bandwidthLimitKbps = 0, int retries = 3, CancellationToken ct = default)
     {

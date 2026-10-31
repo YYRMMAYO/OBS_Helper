@@ -361,9 +361,35 @@ public static class BilibiliPacketCore
         {
             if (info.ValueKind != JsonValueKind.Object) return null;
             var user = info.TryGetProperty("uname", out var u) ? u.GetString() ?? "" : "";
-            return ChatCore.Create(ChatPlatform.Bilibili, room, user, user, "进入直播间", "enter");
+            var msgType = info.TryGetProperty("msg_type", out var mt) && mt.TryGetInt32(out var mv) ? mv : 1;
+            // B 站公开协议：1=进入、2=关注、3=分享、4=特别关注。关注单独记为 follow，
+            // 复盘页才能把「新增关注」从弹幕里自动回填出来。
+            var isFollow = msgType is 2 or 4;
+            return ChatCore.Create(ChatPlatform.Bilibili, room, user, user,
+                isFollow ? "关注了直播间" : "进入直播间", isFollow ? "follow" : "enter");
         }
         return null;
+    }
+
+    /// <summary>心跳回复里的直播间人气值（op=3，4 字节大端；部分版本为 JSON）。解析失败返回 0。</summary>
+    public static int ParsePopularity(ReadOnlySpan<byte> body)
+    {
+        if (body.Length >= 4)
+        {
+            var value = ReadBigEndian(body, 0);
+            if (value > 0) return value;
+        }
+        if (body.Length == 0) return 0;
+        try
+        {
+            using var doc = JsonDocument.Parse(body.ToArray());
+            var root = doc.RootElement;
+            if (root.TryGetProperty("popularity", out var p) && p.TryGetInt32(out var pv)) return Math.Max(0, pv);
+            if (root.TryGetProperty("data", out var data) && data.ValueKind == JsonValueKind.Object &&
+                data.TryGetProperty("popularity", out var dp) && dp.TryGetInt32(out var dpv)) return Math.Max(0, dpv);
+        }
+        catch (JsonException) { }
+        return 0;
     }
 
     public static string DanmuInfoUrl(int roomId)

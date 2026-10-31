@@ -381,6 +381,30 @@ public static class AppServices
     /// <summary>导航服务由 MainWindow 在构造时注入，供各页面互相跳转。</summary>
     public static Navigation.NavigationService Navigation { get; internal set; } = null!;
 
+    private static bool _chatStatsHooked;
+
+    /// <summary>
+    /// 把消息流接到本地看板：所有页面共享同一份统计，不再依赖互动页是否打开。
+    /// 进入直播间只更新人气，不计入弹幕数；关注、礼物分别累计。
+    /// </summary>
+    private static void HookChatStats()
+    {
+        if (_chatStatsHooked) return;
+        _chatStatsHooked = true;
+        ChatHub.MessageAccepted += message =>
+        {
+            var messages = message.Kind == "enter" ? 0 : 1;
+            var follows = message.Kind == "follow" ? 1 : 0;
+            if (messages != 0 || follows != 0)
+                ViewerStats.Add(message.At, 0, messages, follows);
+            if (message.Value > 0 && message.Kind is "gift" or "superchat")
+                ViewerStats.AddGift(message.Value);
+        };
+        ChatHub.ViewerCountChanged += viewers =>
+        {
+            if (viewers > 0) ViewerStats.Add(DateTimeOffset.Now, viewers, 0, 0);
+        };
+    }
     /// <summary>全局加载态遮罩，由 MainWindow 在构造时注入（P0）。</summary>
     public static BusyService Busy { get; internal set; } = null!;
 
@@ -400,6 +424,15 @@ public static class AppServices
         // V3.1.0：读壁纸库、迁移旧 bgImage、解析当前壁纸并启动轮播
         try { Wallpapers.Initialize(); }
         catch (Exception ex) { FileLogger.Warn("Wallpaper", $"壁纸初始化失败（已回退默认底）：{ex.Message}"); }
+
+        // V3.4.0：弹幕 TTS 必须在启动时订阅 ChatHub，否则惰性单例永远不会被访问
+        try { _ = ChatTts; }
+        catch (Exception ex) { FileLogger.Warn("ChatTts", $"初始化失败：{ex.Message}"); }
+
+        // V3.4.0：复盘指标在后台持续累计，不依赖「互动页是否正在显示」。
+        // 消息/关注/礼物来自 ChatHub，人气值来自平台公开心跳（目前 B 站）。
+        try { HookChatStats(); }
+        catch (Exception ex) { FileLogger.Warn("ViewerStats", $"统计订阅失败：{ex.Message}"); }
 
         // V3.1.0：提词器设置 / 脚本预加载（窗口仍然按需创建）
         try { Teleprompter.Initialize(); }

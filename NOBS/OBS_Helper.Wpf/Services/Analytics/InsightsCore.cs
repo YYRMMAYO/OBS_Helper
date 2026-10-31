@@ -119,6 +119,25 @@ public sealed class ViewerStatsCore
 
     private readonly SortedDictionary<long, MinuteBucket> _buckets = new();
     private readonly object _gate = new();
+    private long _giftValue;
+    private int _clipsExported;
+
+    public int PeakViewers { get { lock (_gate) return _buckets.Count == 0 ? 0 : _buckets.Values.Max(b => b.Viewers); } }
+    public int TotalMessages { get { lock (_gate) return _buckets.Values.Sum(b => b.Messages); } }
+    public int TotalFollows { get { lock (_gate) return _buckets.Values.Sum(b => b.Follows); } }
+    public long GiftValue { get { lock (_gate) return _giftValue; } }
+    public int ClipsExported { get { lock (_gate) return _clipsExported; } }
+
+    public void AddGift(long value)
+    {
+        if (value <= 0) return;
+        lock (_gate) _giftValue += value;
+    }
+
+    public void AddClip()
+    {
+        lock (_gate) _clipsExported++;
+    }
 
     public void Add(DateTimeOffset at, int viewers, int messages, int follows)
     {
@@ -161,5 +180,5 @@ public sealed class ViewerStatsCore
         return sb.ToString();
     }
 
-    public void Clear() { lock (_gate) _buckets.Clear(); }
+    public void Clear() { lock (_gate) { _buckets.Clear(); _giftValue = 0; _clipsExported = 0; } }
 }

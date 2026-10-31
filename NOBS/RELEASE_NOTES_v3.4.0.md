@@ -1,6 +1,6 @@
 # OBS帮助助手 V3.4.0 发布说明
 
-发布日期：2026-10-30 · 基线：V3.3.0（`c22c37f`）
+发布日期：2026-10-31 · 基线：V3.3.0（`c22c37f`）
 
 版本主题：**手机联动**——把手机变成第二块屏幕、第二台摄像机、第二支麦克风；并补齐弹幕、字幕、复盘、切片、转推、硬件与团队协作能力。
 
@@ -39,10 +39,25 @@
 - 主程序零 NuGet；重能力走外部进程；sidecar 未核验 SHA-256 前不自动下载。
 - 远程嘉宾浏览器推流需要 HTTPS（安全上下文），本项目不内置证书：房间/权限已实现，媒体链路需自备 HTTPS/SFU（已记录 BLOCKED）。
 
+## 2026-10-31 收尾补齐
+- 四个模块页（直播互动 / 智能与复盘 / 画质与分发 / 自动化与生态）统一页面顶部自检卡：逐项显示「正常 / 需配置 / 不可用」，不改动任何设置。
+- 直播互动补齐弹幕翻译（列表 + overlay 双语）、真实连接状态、TTS/OBS/转写索引/待审投稿自检与切片选中导出。
+- 智能与复盘把弹幕/关注/礼物/观众人气改为后台持续累计；复盘页进入即自动回填，新增报告复制/打开目录、封面候选编辑/禁用词拦截/复制、按分钟看板。
+- 画质与分发补齐健康评分真实数据、预案必检项、转推/归档/音频链依赖提示与 sidecar 路径回退。
+- 自动化与生态补齐 MIDI 默认映射与无设备提示、WLED 校验、装修市场应用/回滚/打开目录、团队邀请/接受/踢人、AI 朗读/VTS/口型/打断、导播建议确认切场景。
+- 实机自检截图见 `docs/reviews/v3.4.0/`（四页各一张）。
+
+## Release 资产
+- `OBS_Helper_Setup_3.4.0.exe` / `OBS_Helper_Setup_3.4.0_win7.exe`（主构建 / Win7 SP1+）
+- `OBS_Helper_Portable_3.4.0.zip` / `OBS_Helper_Portable_3.4.0_win7.zip`
+- `OBS_Helper_Update_3.4.0.zip`（增量更新）
+- `OBS_Helper_Knowledge_3.4.0*.json` / `OBS_Helper_Plugins_3.4.0*.json`（中英知识库/插件目录兜底资产）
+- `SHA256SUMS_3.4.0.txt`（以上资产校验和）
+
 ## 兼容性
 - `net10.0-windows` 主构建与 `net6.0-windows` Win7 兼容构建均已通过编译与自检。
 - Win7：遥控/预览/提词器可用；Wi-Fi 摄像头、字幕、多机位、转推明确降级/禁用并给出原因。
 
 ## 验证
-- 双 TFM 编译 0 错误；1663 项单测通过；`check_resources` / `check_accessibility` / `check_docs` 通过；`OBS_SELFTEST=1` 自检 35 项 PASS（含 27 条路由英文重放）。
+- 双 TFM 编译 0 错误；1670 项单测通过；`check_resources` / `check_accessibility` / `check_docs` 通过；`OBS_SELFTEST=1` 自检 36 项 PASS（含 28 条路由英文重放）。
 - 需人工验收：真机手机、OBS 32.x、mediamtx/whisper/ffmpeg/rclone 侧车、VTS/WLED/MIDI 设备、真实平台账号。

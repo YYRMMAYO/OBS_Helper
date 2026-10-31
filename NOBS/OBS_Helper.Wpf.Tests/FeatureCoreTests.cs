@@ -55,6 +55,16 @@ public class ChatCoreTests
     }
 
     [Fact]
+    public void BilibiliHeartbeatPopularityAndFollowAreParsed()
+    {
+        Assert.Equal(12345, BilibiliPacketCore.ParsePopularity(new byte[] { 0, 0, 0x30, 0x39 }));
+        const string json = "{\"cmd\":\"INTERACT_WORD\",\"data\":{\"uname\":\"foo\",\"msg_type\":2}}";
+        var follow = BilibiliPacketCore.ParseMessages("1", System.Text.Encoding.UTF8.GetBytes(json)).Single();
+        Assert.Equal("follow", follow.Kind);
+        Assert.Contains("关注", follow.Text);
+    }
+
+    [Fact]
     public void BilibiliTruncatedFrameReturnsNull()
     {
         var frame = BilibiliPacketCore.BuildFrame(BilibiliPacketCore.OpMessage, new byte[] { 1, 2, 3 });
@@ -350,10 +360,19 @@ public class StreamClipsTests
         var stats = new ViewerStatsCore();
         stats.Add(DateTimeOffset.UtcNow, 10, 5, 1);
         stats.Add(DateTimeOffset.UtcNow.AddMinutes(1), 8, 3, 0);
+        stats.AddGift(100);
+        stats.AddClip();
         Assert.True(stats.Retention() > 0);
+        Assert.Equal(10, stats.PeakViewers);
+        Assert.Equal(8, stats.TotalMessages);
+        Assert.Equal(1, stats.TotalFollows);
+        Assert.Equal(100, stats.GiftValue);
+        Assert.Equal(1, stats.ClipsExported);
         Assert.Contains("viewers", stats.ExportCsv());
         stats.Clear();
         Assert.Empty(stats.Snapshot());
+        Assert.Equal(0, stats.GiftValue);
+        Assert.Equal(0, stats.ClipsExported);
     }
 
     [Fact]

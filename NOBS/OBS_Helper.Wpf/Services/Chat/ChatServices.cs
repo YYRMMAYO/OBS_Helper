@@ -22,6 +22,8 @@ public interface IChatAdapter : IAsyncDisposable
     ChatConnectionState State { get; }
     event Action<ChatMessage>? MessageReceived;
     event Action<ChatConnectionState>? StateChanged;
+    /// <summary>平台公开的人气/观看数（拿不到的平台不触发）。</summary>
+    event Action<int>? ViewerCountChanged;
     Task<bool> ConnectAsync(CancellationToken ct = default);
     Task DisconnectAsync();
 }
@@ -47,6 +49,7 @@ public sealed class BilibiliChatAdapter : IChatAdapter
 
     public event Action<ChatMessage>? MessageReceived;
     public event Action<ChatConnectionState>? StateChanged;
+    public event Action<int>? ViewerCountChanged;
 
     private void SetState(ChatConnectionState state)
     {
@@ -122,6 +125,12 @@ public sealed class BilibiliChatAdapter : IChatAdapter
             foreach (var packet in BilibiliPacketCore.SplitPackets(data) ?? new List<BilibiliPacketCore.Packet>())
             {
                 var unpacked = BilibiliPacketCore.Decompress(packet);
+                if (unpacked.Operation == BilibiliPacketCore.OpHeartbeatReply)
+                {
+                    var popularity = BilibiliPacketCore.ParsePopularity(unpacked.Body);
+                    if (popularity > 0) ViewerCountChanged?.Invoke(popularity);
+                    continue;
+                }
                 if (unpacked.Operation != BilibiliPacketCore.OpMessage) continue;
                 if (unpacked.Version is 2 or 3)
                 {
@@ -198,6 +207,8 @@ public sealed class TwitchChatAdapter : IChatAdapter
 
     public event Action<ChatMessage>? MessageReceived;
     public event Action<ChatConnectionState>? StateChanged;
+    // Twitch 公开 IRC 不提供观看数：显式实现空事件，保持统一接口。
+    public event Action<int>? ViewerCountChanged { add { } remove { } }
 
     private void SetState(ChatConnectionState state)
     {
@@ -306,6 +317,7 @@ public sealed class ChatHub : IAsyncDisposable
     public event Action<ChatMessage>? MessageAccepted;
     public event Action<ChatModerationCore.Alert>? AlertRaised;
     public event Action<ChatConnectionState>? StateChanged;
+    public event Action<int>? ViewerCountChanged;
     public event Action<string>? TtsRequested;
 
     public bool Enabled { get; private set; } = true;
@@ -334,6 +346,7 @@ public sealed class ChatHub : IAsyncDisposable
     {
         adapter.MessageReceived += OnMessage;
         adapter.StateChanged += state => StateChanged?.Invoke(state);
+        adapter.ViewerCountChanged += count => ViewerCountChanged?.Invoke(count);
         lock (_gate) _adapters.Add(adapter);
     }
 
@@ -491,7 +504,7 @@ public static class ChatOverlayAssets
 *{box-sizing:border-box}
 html,body{margin:0;height:100%;background:var(--bg);color:var(--fg);font:22px/1.4 "Microsoft YaHei",system-ui,sans-serif;overflow:hidden}
 #list{position:fixed;left:0;right:0;bottom:0;display:flex;flex-direction:column;gap:6px;padding:16px;max-height:100%;overflow:hidden;justify-content:flex-end}
-.msg{background:var(--bubble);border-radius:10px;padding:6px 10px;word-break:break-word;animation:in .18s ease-out}
+.msg{background:var(--bubble);border-radius:10px;padding:6px 10px;word-break:break-word;white-space:pre-line;animation:in .18s ease-out}
 .name{color:var(--name);font-weight:700;margin-right:8px}
 @keyframes in{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
 </style></head>

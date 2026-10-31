@@ -6,6 +6,7 @@ using OBS_Helper.Wpf.Navigation;
 using OBS_Helper.Wpf.Services.Mobile;
 using OBS_Helper.Wpf.Services.Chat;
 using OBS_Helper.Wpf.Services.Clips;
+using OBS_Helper.Wpf.Services.Shell;
 using OBS_Helper.Wpf.Services.Subtitles;
 
 namespace OBS_Helper.Wpf.Views;
@@ -43,10 +44,16 @@ public partial class InteractionPage : UserControl, INavigationAware
         {
             AppServices.ChatHub.MessageAccepted += OnChatMessage;
             AppServices.ChatHub.AlertRaised += OnAlert;
+            AppServices.ChatHub.StateChanged += OnChatStateChanged;
             AppServices.Asr.CaptionReady += OnCaption;
             _subscribed = true;
         }
+        TtsMuteCheck.IsChecked = AppServices.ChatHub.Tts.Muted;
+        if (AppServices.ChatOverlay.IsRunning)
+            OverlayText.Text = Strings.T("chat.overlay") + " · " + AppServices.ChatOverlay.BaseUrl;
         UpdateChatState();
+        RefreshSubmissions();
+        RefreshCalendar();
         return Task.CompletedTask;
     }
 
@@ -56,6 +63,7 @@ public partial class InteractionPage : UserControl, INavigationAware
         {
             AppServices.ChatHub.MessageAccepted -= OnChatMessage;
             AppServices.ChatHub.AlertRaised -= OnAlert;
+            AppServices.ChatHub.StateChanged -= OnChatStateChanged;
             AppServices.Asr.CaptionReady -= OnCaption;
             _subscribed = false;
         }
@@ -104,8 +112,78 @@ public partial class InteractionPage : UserControl, INavigationAware
 
     private void UpdateChatState()
     {
-        var state = _adapter?.State ?? ChatConnectionState.Disconnected;
-        ChatStateText.Text = Strings.T("chat.state", state.ToString());
+        // 以 ChatHub 里的真实适配器为准：页面重新进入时 _adapter 可能已失效，
+        // 但后台连接仍在（自动重连/从别的页面发起），连接状态不能因此显示成“未连接”。
+        var adapters = AppServices.ChatHub.Adapters;
+        var state = adapters.Count == 0
+            ? ChatConnectionState.Disconnected
+            : adapters.Any(a => a.State == ChatConnectionState.Connected)
+                ? ChatConnectionState.Connected
+                : adapters.Any(a => a.State == ChatConnectionState.Connecting)
+                    ? ChatConnectionState.Connecting
+                    : adapters.Any(a => a.State == ChatConnectionState.Failed)
+                        ? ChatConnectionState.Failed
+                        : ChatConnectionState.Disconnected;
+        var label = state switch
+        {
+            ChatConnectionState.Connected => Strings.T("chat.state.connected"),
+            ChatConnectionState.Connecting => Strings.T("chat.state.connecting"),
+            ChatConnectionState.Failed => Strings.T("chat.state.failed"),
+            _ => Strings.T("chat.state.disconnected"),
+        };
+        ChatStateText.Text = Strings.T("chat.state", label);
+        ChatStartButton.IsEnabled = state == ChatConnectionState.Disconnected;
+        ChatStopButton.IsEnabled = state != ChatConnectionState.Disconnected;
+    }
+
+    private void OnChatStateChanged(ChatConnectionState state)
+        => Dispatcher.BeginInvoke(new Action(UpdateChatState));
+
+    private void OnSelfCheck(object sender, RoutedEventArgs e)
+    {
+        SelfCheck.SetBusy(true);
+        try
+        {
+            var lines = new List<string>();
+            var adapters = AppServices.ChatHub.Adapters;
+            var connected = adapters.Any(a => a.State == ChatConnectionState.Connected);
+            lines.Add(connected
+                ? SelfCheckResult.Ok(Strings.T("chat.title"), string.Join(" / ", adapters.Select(a => a.Platform)))
+                : SelfCheckResult.Warn(Strings.T("chat.title"), Strings.T("selfcheck.chatHint")));
+
+            var platform = (PlatformCombo.SelectedItem as ComboBoxItem)?.Tag as string ?? "bilibili";
+            var room = RoomBox.Text.Trim();
+            var roomOk = platform == "bilibili"
+                ? BilibiliPacketCore.IsValidRoomId(room)
+                : TwitchIrcCore.NormalizeChannel(room).Length > 0;
+            lines.Add(roomOk
+                ? SelfCheckResult.Ok(Strings.T("chat.roomLabel"), room)
+                : SelfCheckResult.Warn(Strings.T("chat.roomLabel"), Strings.T("selfcheck.chatHint")));
+
+            lines.Add(AppServices.ChatOverlay.IsRunning
+                ? SelfCheckResult.Ok(Strings.T("chat.overlay"), AppServices.ChatOverlay.BaseUrl)
+                : SelfCheckResult.Warn(Strings.T("chat.overlay"), Strings.T("selfcheck.overlayHint")));
+            lines.Add(AppServices.ChatTts.Available
+                ? SelfCheckResult.Ok(Strings.T("chat.tts"))
+                : SelfCheckResult.Warn(Strings.T("chat.tts"), Strings.T("selfcheck.ttsHint")));
+            lines.Add(AppServices.Obs.IsConnected
+                ? SelfCheckResult.Ok("OBS")
+                : SelfCheckResult.Warn("OBS", Strings.T("selfcheck.obsHint")));
+            lines.Add(File.Exists(WhisperBox.Text.Trim())
+                ? SelfCheckResult.Ok(Strings.T("caption.whisperPath"), WhisperBox.Text.Trim())
+                : SelfCheckResult.Warn(Strings.T("caption.whisperPath"), Strings.T("selfcheck.whisperHint")));
+            lines.Add(File.Exists(ModelBox.Text.Trim())
+                ? SelfCheckResult.Ok(Strings.T("caption.modelPath"), ModelBox.Text.Trim())
+                : SelfCheckResult.Warn(Strings.T("caption.modelPath"), Strings.T("selfcheck.whisperHint")));
+            lines.Add(File.Exists(FfmpegBox.Text.Trim())
+                ? SelfCheckResult.Ok(Strings.T("clips.ffmpegPath"), FfmpegBox.Text.Trim())
+                : SelfCheckResult.Warn(Strings.T("clips.ffmpegPath"), Strings.T("selfcheck.ffmpegHint")));
+            lines.Add(SelfCheckResult.Ok(Strings.T("clips.index"), AppServices.RecordingSearch.Count.ToString()));
+            lines.Add(SelfCheckResult.Ok(Strings.T("interaction.pending"),
+                AppServices.Submissions.Items.Count(i => i.State == "pending").ToString()));
+            SelfCheck.SetResult(SelfCheckResult.Join(lines));
+        }
+        finally { SelfCheck.SetBusy(false); }
     }
 
     private void OnChatMessage(ChatMessage message)
@@ -121,12 +199,41 @@ public partial class InteractionPage : UserControl, INavigationAware
             ChatList.Items.Add($"[{message.Platform}] {message.UserName}: {message.Text}");
             while (ChatList.Items.Count > 200) ChatList.Items.RemoveAt(0);
             ChatList.ScrollIntoView(ChatList.Items[^1]);
-            AppServices.ChatOverlay.Broadcast(message);
-            AppServices.ViewerStats.Add(DateTimeOffset.Now, 0, 1, 0);
+            if (TranslateCheck.IsChecked == true) _ = TranslateAndBroadcastAsync(message);
+            else AppServices.ChatOverlay.Broadcast(message);
             AppServices.ChatHistory.Append(message);
             _lastMessage = message;
             HandleInteractionCommand(message);
         }));
+    }
+
+    /// <summary>C08：弹幕翻译只在本机完成（本地短语表），译文同时进聊天列表与 overlay。</summary>
+    private async Task TranslateAndBroadcastAsync(ChatMessage message)
+    {
+        var target = Strings.Current.StartsWith("en", StringComparison.OrdinalIgnoreCase) ? "zh" : "en";
+        var (_, translated, code) = await AppServices.Translator.TranslateAsync(message.Text, target).ConfigureAwait(false);
+        var changed = code.Length == 0 && !string.Equals(translated, message.Text, StringComparison.Ordinal);
+        if (changed)
+        {
+            _ = Dispatcher.BeginInvoke(new Action(() =>
+            {
+                ChatList.Items.Add("   ↳ " + translated);
+                while (ChatList.Items.Count > 200) ChatList.Items.RemoveAt(0);
+                ChatList.ScrollIntoView(ChatList.Items[^1]);
+            }));
+        }
+        AppServices.ChatOverlay.Broadcast(new ChatMessage
+        {
+            Platform = message.Platform,
+            Room = message.Room,
+            UserId = message.UserId,
+            UserName = message.UserName,
+            Text = changed ? TranslationCore.BilingualLine(message.Text, translated) : message.Text,
+            Kind = message.Kind,
+            Value = message.Value,
+            At = message.At,
+            IsModerated = message.IsModerated,
+        });
     }
 
     private void OnAlert(ChatModerationCore.Alert alert)
@@ -202,6 +309,11 @@ public partial class InteractionPage : UserControl, INavigationAware
 
     private async void OnSubmissionApprove(object sender, RoutedEventArgs e)
     {
+        if (!AppServices.Obs.IsConnected)
+        {
+            AppServices.Toast.Show(FeatureErrors.Describe(FeatureErrors.MobObsOffline));
+            return;
+        }
         if (SubmissionList.SelectedItem is not ComboBoxItem { Tag: string id })
         {
             AppServices.Toast.Show(Strings.T("interaction.noSubmission"));
@@ -272,7 +384,11 @@ public partial class InteractionPage : UserControl, INavigationAware
     private async void OnAiReply(object sender, RoutedEventArgs e)
     {
         AiReplyList.Items.Clear();
-        if (_lastMessage is null) return;
+        if (_lastMessage is null)
+        {
+            AiReplyList.Items.Add(Strings.T("selfcheck.chatHint"));
+            return;
+        }
         var (suggestions, code) = await new AiReplyCore().SuggestAsync(_lastMessage).ConfigureAwait(true);
         if (code.Length > 0) { AiReplyList.Items.Add(FeatureErrors.Describe(code)); return; }
         foreach (var suggestion in suggestions) AiReplyList.Items.Add(suggestion);
@@ -426,7 +542,7 @@ public partial class InteractionPage : UserControl, INavigationAware
         var save = new SaveFileDialog { Filter = "MP4|*.mp4", FileName = (vertical ? "vertical-" : "highlight-") + DateTime.Now.ToString("HHmmss") + ".mp4" };
         if (save.ShowDialog() != true) return;
 
-        var clip = _clips[0];
+        var clip = _clips[ClipList.SelectedIndex >= 0 ? ClipList.SelectedIndex : 0];
         var recordStart = AppServices.Obs.RecordStartedUtc?.ToLocalTime() ?? clip.From;
         var from = clip.From - recordStart;
         if (from < TimeSpan.Zero) from = TimeSpan.Zero;
@@ -439,6 +555,7 @@ public partial class InteractionPage : UserControl, INavigationAware
             : FfmpegArgs.BuildClip(open.FileName, save.FileName, from, duration);
         ClipStateText.Text = Strings.T("common.busy");
         var (ok, code, output) = await runner.RunAsync(args).ConfigureAwait(true);
+        if (ok) AppServices.ViewerStats.AddClip();
         ClipStateText.Text = ok
             ? "✓ " + save.FileName
             : FeatureErrors.Describe(code) + " · " + output;
@@ -447,7 +564,13 @@ public partial class InteractionPage : UserControl, INavigationAware
     private void OnSearchTranscripts(object sender, RoutedEventArgs e)
     {
         SearchList.Items.Clear();
-        foreach (var segment in AppServices.RecordingSearch.Search(SearchBox.Text))
+        var results = AppServices.RecordingSearch.Search(SearchBox.Text).ToList();
+        if (results.Count == 0)
+        {
+            SearchList.Items.Add(Strings.T("clips.noResults"));
+            return;
+        }
+        foreach (var segment in results)
             SearchList.Items.Add($"{segment.File} · {segment.At:hh\\:mm\\:ss} · {segment.Text}");
     }
 
@@ -455,5 +578,6 @@ public partial class InteractionPage : UserControl, INavigationAware
     {
         AppServices.RecordingSearch.Clear();
         SearchList.Items.Clear();
+        AppServices.Toast.Show(Strings.T("clips.indexCleared"));
     }
 }

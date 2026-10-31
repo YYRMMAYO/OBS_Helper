@@ -20,6 +20,8 @@ public sealed class AiHostService : IDisposable
     public AiHostService(HostBridge host) => _host = host;
 
     public bool IsSpeaking { get; private set; }
+    /// <summary>系统是否提供 SAPI 语音（Windows 上通常可用）。</summary>
+    public bool TtsAvailable => Type.GetTypeFromProgID("SAPI.SpVoice") is not null;
     public bool VtsConnected => _vts?.IsConnected == true;
     public string LastError { get; private set; } = "";
     public event Action? StateChanged;

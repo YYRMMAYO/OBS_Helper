@@ -7,6 +7,9 @@
 ### 功能中心（V3.4.0 起）
 左侧导航「V3.4.0 新功能 → 功能中心」集中展示全部能力：**本版新增**（手机与多设备、直播互动、智能与复盘、画质与分发、自动化与生态）与**常用功能**（开播与录制、虚拟直播与插件、诊断与工具箱、外观与系统）。首页同时保留手机联动主推卡与「查看全部新功能」。新功能必须登记模块并出现在功能中心，规则见 [`docs/FEATURE_MODULES.md`](docs/FEATURE_MODULES.md)。
 
+### 四模块页面自检（V3.4.0 收尾）
+直播互动、智能与复盘、画质与分发、自动化与生态四页顶部都有「运行自检」：逐项列出正常 / 需配置 / 不可用，并给出下一步（连接 OBS、填写 WLED 地址、放置 FFmpeg/whisper 等）。自检只读，不改动任何设置；截图见 [`docs/reviews/v3.4.0/`](docs/reviews/v3.4.0/)。
+
 > **本文档是 Windows 原生 WPF 版的开发向完整文档，随源码一起放在 `NOBS/`**；仓库根的 [`README.md`](../README.md) 是面向用户的完整说明（功能 · 使用 · 安装），本文档额外保留质量基线、逐版本发布说明与代码清单。
 > **当前维护的源码在本目录的 [`OBS_Helper.Wpf/`](OBS_Helper.Wpf/)**；macOS 壳与旧版共享前端仅存档。
 
@@ -18,7 +21,7 @@
 [![OBS](https://img.shields.io/badge/OBS-32.2.2-302E31.svg)](https://github.com/obsproject/obs-studio/releases)
 [![离线可用](https://img.shields.io/badge/offline--first-2ea44f.svg)]()
 [![增量更新](https://img.shields.io/badge/Incremental%20Update-2.5MB-7dd3fc.svg)]()
-[![测试](https://img.shields.io/badge/Tests-1663%20passed-2ea44f.svg)]()
+[![测试](https://img.shields.io/badge/Tests-1670%20passed-2ea44f.svg)]()
 [![许可](https://img.shields.io/badge/License-MIT-green.svg)](../LICENSE)
 
 [English](README.en.md) · **简体中文**
@@ -344,7 +347,7 @@
 
 - **国际化：中文 / English 即时切换（默认中文）**。界面、托盘菜单与通知、报错提示、
   日志分析规则与结论、各类体检结论、诊断报告与导出内容全部双语，
-  **截至 V3.4.0 为 3065 条**文案键（V2.9.2 时为 1670 条，此后每版都在加；
+  **截至 V3.4.0 为 3251 条**文案键（V2.9.2 时为 1670 条，此后每版都在加；
   可用 `python scripts/check_docs.py` 实测当前值）。
   切换沿用换肤那套已经跑熟的机制（文案整体写进 `Application.Resources`，XAML 用
   `{DynamicResource Loc.*}` 引用），因此**与换主题一样即时生效、不用重启**；

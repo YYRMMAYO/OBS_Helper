@@ -27,7 +27,7 @@ public sealed class MultiPlatformRelayService : IDisposable
     private readonly LocalStore _store;
     private readonly HostBridge _host;
     private readonly ProcessGuard _guard = new();
-    private readonly string _ffmpegPath;
+    private string _ffmpegPath;
     private readonly object _gate = new();
     private string? _configPath;
     private int _rtmpPort, _rtspPort, _apiPort;
@@ -43,6 +43,8 @@ public sealed class MultiPlatformRelayService : IDisposable
     }
 
     public bool IsRunning { get; private set; }
+    public string FfmpegPath => _ffmpegPath;
+    public void SetFfmpegPath(string? path) => _ffmpegPath = path ?? "";
     public string IngestUrl => IsRunning ? $"rtmp://127.0.0.1:{_rtmpPort}/live" : "";
     public string StreamKey => IsRunning ? _streamKey : "";
     public string LastError { get; private set; } = "";

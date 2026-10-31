@@ -57,6 +57,9 @@
         </StackPanel>
       </Border>
 
+      <!-- 赞助开发（V3.5.1）：支付宝 / 微信两个独立收款码；不解锁任何功能 -->
+      <ctl:DonationCard Margin="0,14,0,0" />
+
     </StackPanel>
   </ScrollViewer>
 </UserControl>

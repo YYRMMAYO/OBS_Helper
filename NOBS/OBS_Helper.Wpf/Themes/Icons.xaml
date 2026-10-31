@@ -151,7 +151,7 @@
 
   <!-- 录制 / 视频：摄像机 -->
   <StreamGeometry x:Key="IconGeomVideo" PresentationOptions:Freeze="True">
-    M15,10 L19.6,7.7 A1,1 0 0 1 21,8.6 V15.4 A1,1 0 0 1 19.6,16.3 L15,14 M4,8 a2,2 0 0 1 2,-2 h7 a2,2 0 0 1 2,2 v8 a2,2 0 0 1 -2,2 h-7 a2,2 0 0 1 -2,-2 z
+    M15 10l4.553 -2.276a1 1 0 0 1 1.447 .894v6.764a1 1 0 0 1 -1.447 .894l-4.553 -2.276v-4 M3 8a2 2 0 0 1 2 -2h8a2 2 0 0 1 2 2v8a2 2 0 0 1 -2 2h-8a2 2 0 0 1 -2 -2l0 -8
   </StreamGeometry>
 
   <!-- 插件 / 依赖：包裹 -->
@@ -187,6 +187,64 @@
   <!-- 摄像头 -->
   <StreamGeometry x:Key="IconGeomCamera" PresentationOptions:Freeze="True">
     M5,8 a2,2 0 0 1 2,-2 h1 L9,4 h6 l1,2 h1 a2,2 0 0 1 2,2 v9 a2,2 0 0 1 -2,2 h-12 a2,2 0 0 1 -2,-2 z M12,11 a3,3 0 1 0 0,6 a3,3 0 0 0 0,-6
+  </StreamGeometry>
+
+  <!-- ============================================================
+    V3.5.1 设置页 / 详情页图标（Tabler Icons，MIT；24×24，2px 描边）。
+    背景：设置页右侧头部与功能中心模块卡此前用 Fill 渲染这批描边几何，
+    圆 / 方框被填成实心色块（语言页只剩一个圆点）；同时语言、外观、录制、
+    热键等分区复用了放大镜、模板、星芒等不相干的图标。这里补齐一组按
+    标题语义命名的图标，并统一由调用方用 Stroke 渲染。
+    ============================================================ -->
+
+  <!-- 语言与地区：地球（经线 + 纬线） -->
+  <StreamGeometry x:Key="IconGeomLanguage" PresentationOptions:Freeze="True">
+    M3 12a9 9 0 1 0 18 0a9 9 0 0 0 -18 0 M3.6 9h16.8 M3.6 15h16.8 M11.5 3a17 17 0 0 0 0 18 M12.5 3a17 17 0 0 1 0 18
+  </StreamGeometry>
+
+  <!-- 外观与无障碍：调色板 -->
+  <StreamGeometry x:Key="IconGeomPalette" PresentationOptions:Freeze="True">
+    M12 21a9 9 0 0 1 0 -18c4.97 0 9 3.582 9 8c0 1.06 -.474 2.078 -1.318 2.828c-.844 .75 -1.989 1.172 -3.182 1.172h-2.5a2 2 0 0 0 -1 3.75a1.3 1.3 0 0 1 -1 2.25 M7.5 10.5a1 1 0 1 0 2 0a1 1 0 1 0 -2 0 M11.5 7.5a1 1 0 1 0 2 0a1 1 0 1 0 -2 0 M15.5 10.5a1 1 0 1 0 2 0a1 1 0 1 0 -2 0
+  </StreamGeometry>
+
+  <!-- 后台与遥控：托盘收件箱 -->
+  <StreamGeometry x:Key="IconGeomTray" PresentationOptions:Freeze="True">
+    M4 6a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v12a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2l0 -12 M4 13h3l3 3h4l3 -3h3
+  </StreamGeometry>
+
+  <!-- 场景自动切换：双向箭头 -->
+  <StreamGeometry x:Key="IconGeomArrowsSwitch" PresentationOptions:Freeze="True">
+    M7 10h14l-4 -4 M17 14h-14l4 4
+  </StreamGeometry>
+
+  <!-- 全局热键：键盘 -->
+  <StreamGeometry x:Key="IconGeomKeyboard" PresentationOptions:Freeze="True">
+    M2 8a2 2 0 0 1 2 -2h16a2 2 0 0 1 2 2v8a2 2 0 0 1 -2 2h-16a2 2 0 0 1 -2 -2l0 -8 M6 10l0 .01 M10 10l0 .01 M14 10l0 .01 M18 10l0 .01 M6 14l0 .01 M18 14l0 .01 M10 14l4 .01
+  </StreamGeometry>
+
+  <!-- AI 诊断引擎：芯片 -->
+  <StreamGeometry x:Key="IconGeomCpu" PresentationOptions:Freeze="True">
+    M5 6a1 1 0 0 1 1 -1h12a1 1 0 0 1 1 1v12a1 1 0 0 1 -1 1h-12a1 1 0 0 1 -1 -1l0 -12 M9 9h6v6h-6l0 -6 M3 10h2 M3 14h2 M10 3v2 M14 3v2 M21 10h-2 M21 14h-2 M14 21v-2 M10 21v-2
+  </StreamGeometry>
+
+  <!-- 本地数据：数据库 -->
+  <StreamGeometry x:Key="IconGeomDatabase" PresentationOptions:Freeze="True">
+    M4 6a8 3 0 1 0 16 0a8 3 0 1 0 -16 0 M4 6v6a8 3 0 0 0 16 0v-6 M4 12v6a8 3 0 0 0 16 0v-6
+  </StreamGeometry>
+
+  <!-- OBS 配置管理：备份归档 -->
+  <StreamGeometry x:Key="IconGeomArchive" PresentationOptions:Freeze="True">
+    M3 6a2 2 0 0 1 2 -2h14a2 2 0 0 1 2 2a2 2 0 0 1 -2 2h-14a2 2 0 0 1 -2 -2 M5 8v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-10 M10 12l4 0
+  </StreamGeometry>
+
+  <!-- 新手引导：罗盘 -->
+  <StreamGeometry x:Key="IconGeomCompass" PresentationOptions:Freeze="True">
+    M8 16l2 -6l6 -2l-2 6l-6 2 M3 12a9 9 0 1 0 18 0a9 9 0 1 0 -18 0 M12 3l0 2 M12 19l0 2 M3 12l2 0 M19 12l2 0
+  </StreamGeometry>
+
+  <!-- 关于：信息圆 -->
+  <StreamGeometry x:Key="IconGeomInfo" PresentationOptions:Freeze="True">
+    M3 12a9 9 0 1 0 18 0a9 9 0 0 0 -18 0 M12 9h.01 M11 12h1v4h1
   </StreamGeometry>
 
 </ResourceDictionary>

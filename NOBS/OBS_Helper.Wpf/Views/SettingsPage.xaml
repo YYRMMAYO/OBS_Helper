@@ -1,6 +1,7 @@
 <UserControl x:Class="OBS_Helper.Wpf.Views.SettingsPage"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:ctl="clr-namespace:OBS_Helper.Wpf.Controls">
   <Grid>
     <Grid.ColumnDefinitions>
       <ColumnDefinition Width="248" />
@@ -41,8 +42,12 @@
           <StackPanel Orientation="Horizontal">
             <Border Width="44" Height="44" CornerRadius="12" Background="{DynamicResource BrandSoftBrush}"
                     VerticalAlignment="Top">
+              <!-- V3.5.1：图标几何是 Tabler 风格的描边路径，必须用 Stroke 渲染；
+                   以前这里写的是 Fill，圆 / 弧被填成实心色块（语言页只剩一个圆点）。 -->
               <Path x:Name="SettingsSectionIcon" Width="22" Height="22" Stretch="Uniform"
-                    Fill="{DynamicResource BrandBrush}" Data="{StaticResource IconGeomSettings}" />
+                    Stroke="{DynamicResource BrandBrush}" StrokeThickness="1.8"
+                    StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"
+                    Data="{StaticResource IconGeomSettings}" />
             </Border>
             <StackPanel Margin="12,0,0,0" VerticalAlignment="Center">
               <TextBlock x:Name="SettingsSectionGroupText" Style="{StaticResource CaptionText}" />
@@ -959,6 +964,9 @@
                      Text="{DynamicResource Loc.settings.about.oss.boundary}" />
 
           <Border Style="{StaticResource HLine}" />
+
+          <!-- V3.5.1 赞助开发：支付宝 / 微信个人收款码；不解锁任何功能 -->
+          <ctl:DonationCard Margin="0,4,0,12" />
 
           <TextBlock Style="{StaticResource CaptionText}"
                      Text="{DynamicResource Loc.settings.about.copyright}" />

@@ -1,0 +1,49 @@
+<UserControl x:Class="OBS_Helper.Wpf.Controls.DonationCard"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+  <!--
+    赞助开发（V3.5.1）。
+
+    设置页「关于」与帮助与反馈页「关于本工具」共用同一张卡：
+    支付宝 / 微信两个二维码是单独裁出来的（不带平台横幅、昵称与宣传字），
+    扫码后就是普通的个人收款码；不收集任何信息、不跳转网页。
+    口径写死在卡里：赞助不解锁任何功能，纯粹支持开发。
+  -->
+  <Border Style="{StaticResource SoftPanel}" Padding="14">
+    <StackPanel>
+      <TextBlock Text="{DynamicResource Loc.donate.title}" FontWeight="SemiBold"
+                 FontSize="{DynamicResource FontSizeMd}"
+                 Foreground="{DynamicResource TextBrush}" />
+      <TextBlock Text="{DynamicResource Loc.donate.desc}" Style="{StaticResource MutedText}"
+                 Margin="0,6,0,0" TextWrapping="Wrap" />
+      <TextBlock Text="{DynamicResource Loc.donate.noPerk}" Style="{StaticResource CaptionText}"
+                 Margin="0,6,0,0" TextWrapping="Wrap"
+                 Foreground="{DynamicResource BrandBrush}" />
+
+      <StackPanel Orientation="Horizontal" Margin="0,12,0,0">
+        <StackPanel Margin="0,0,18,0">
+          <Border Background="White" CornerRadius="10" Padding="6">
+            <Image Source="pack://application:,,,/OBS_Helper;component/Assets/donate-alipay.png"
+                   Width="148" Height="148" Stretch="Uniform"
+                   AutomationProperties.Name="{DynamicResource Loc.donate.alipayQr}" />
+          </Border>
+          <TextBlock Text="{DynamicResource Loc.donate.alipay}" Style="{StaticResource CaptionText}"
+                     HorizontalAlignment="Center" Margin="0,6,0,0" />
+        </StackPanel>
+
+        <StackPanel>
+          <Border Background="White" CornerRadius="10" Padding="6">
+            <Image Source="pack://application:,,,/OBS_Helper;component/Assets/donate-wechat.png"
+                   Width="148" Height="148" Stretch="Uniform"
+                   AutomationProperties.Name="{DynamicResource Loc.donate.wechatQr}" />
+          </Border>
+          <TextBlock Text="{DynamicResource Loc.donate.wechat}" Style="{StaticResource CaptionText}"
+                     HorizontalAlignment="Center" Margin="0,6,0,0" />
+        </StackPanel>
+      </StackPanel>
+
+      <TextBlock Text="{DynamicResource Loc.donate.hint}" Style="{StaticResource CaptionText}"
+                 Margin="0,10,0,0" TextWrapping="Wrap" />
+    </StackPanel>
+  </Border>
+</UserControl>

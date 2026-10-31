@@ -4,15 +4,15 @@
 
 **OBS Helper · OBS帮助助手** — an OBS troubleshooting / recording / streaming assistant for streamers who are just getting started (native Windows WPF)
 
-**Current release: V3.5.0** (stable) · the first X-series release `X1031` is available too
+**Current release: V3.5.1** (stable) · X series `X1031` / `X1031Y2` available too
 
-**Focus of this release**: **Phone Link** — pair by QR code and turn your phone into a second screen, a second camera and a second microphone; plus chat aggregation, local live captions, review/clips, multi-platform relay, MIDI/lighting and team collaboration. See [`NOBS/RELEASE_NOTES_v3.4.0.md`](NOBS/RELEASE_NOTES_v3.4.0.md) for details.
+**Focus of this release**: **icon and phone-script fixes** — settings detail and Feature Center icons now use proper stroke rendering and match their titles; edits made on the phone's teleprompter page sync to the PC instantly; Settings → About and the feedback page add Alipay / WeChat sponsorship codes. See [`NOBS/RELEASE_NOTES_v3.5.1.md`](NOBS/RELEASE_NOTES_v3.5.1.md).
 
 [![CI](https://github.com/YYRMMAYO/OBS_Helper/actions/workflows/ci.yml/badge.svg)](https://github.com/YYRMMAYO/OBS_Helper/actions/workflows/ci.yml)
 [![Platform](https://img.shields.io/badge/Platform-Windows_7_SP1%2B_%2F_10_%2F_11-0078D6.svg)]()
 [![.NET](https://img.shields.io/badge/.NET-10_%2F_6-512BD4.svg)]()
 [![Stack](https://img.shields.io/badge/Stack-WPF_%2F_C%23-239120.svg)]()
-[![Release](https://img.shields.io/badge/Release-3.5.0-38bdf8.svg)](https://github.com/YYRMMAYO/OBS_Helper/releases)
+[![Release](https://img.shields.io/badge/Release-3.5.1-38bdf8.svg)](https://github.com/YYRMMAYO/OBS_Helper/releases)
 [![OBS](https://img.shields.io/badge/OBS-32.2.2-302E31.svg)](https://github.com/obsproject/obs-studio/releases)
 [![offline-first](https://img.shields.io/badge/offline--first-2ea44f.svg)]()
 [![Incremental Update](https://img.shields.io/badge/Incremental%20Update-2.5MB-7dd3fc.svg)]()
@@ -38,7 +38,7 @@ This is the **native WPF rewrite** of the original Blazor WebAssembly + WebView2
 
 ---
 
-**Contents**: [Start here](#start-here) · [5-minute quick start](#5-minute-quick-start) · [Highlights at a glance](#highlights-at-a-glance) · [Features](#features) · [Smart diagnostics engine](#smart-diagnostics-engine) · [Release channels: stable vs DEV](#release-channels-stable-vs-dev) · [What's new in V3.5.0](#whats-new-in-v350) · [X1031](#x1031) · [What's new in V3.3.0](#whats-new-in-v330) · [What's new in V3.1.1](#whats-new-in-v311) · [Version history](#version-history) · [Privacy & security](#privacy--security) · [Installation & updates](#installation--updates) · [Build](#build) · [Project structure](#project-structure) · [Quality baseline & known limits](#quality-baseline--known-limits) · [Promo video](#promo-video) · [Donate](#donate) · [License](#license)
+**Contents**: [Start here](#start-here) · [5-minute quick start](#5-minute-quick-start) · [Highlights at a glance](#highlights-at-a-glance) · [Features](#features) · [Smart diagnostics engine](#smart-diagnostics-engine) · [Release channels: stable vs DEV](#release-channels-stable-vs-dev) · [What's new in V3.5.1](#whats-new-in-v351) · [What's new in V3.5.0](#whats-new-in-v350) · [X1031](#x1031) · [What's new in V3.3.0](#whats-new-in-v330) · [What's new in V3.1.1](#whats-new-in-v311) · [Version history](#version-history) · [Privacy & security](#privacy--security) · [Installation & updates](#installation--updates) · [Build](#build) · [Project structure](#project-structure) · [Quality baseline & known limits](#quality-baseline--known-limits) · [Promo video](#promo-video) · [Donate](#donate) · [License](#license)
 
 ---
 
@@ -182,14 +182,23 @@ When the cloud / free engine fails it **falls back to the local engine automatic
 
 | Channel | Version style | What it is | Where updates come from |
 | --- | --- | --- | --- |
-| **V series** (`master`) | `V3.5.0` | **Stable first**: settled features, full regression and release verification — the right choice for everyday streaming / recording | The regular Releases page · the Lanzou mirror · in-app incremental updates |
+| **V series** (`master`) | `V3.5.1` | **Stable first**: settled features, full regression and release verification — the right choice for everyday streaming / recording | The regular Releases page · the Lanzou mirror · in-app incremental updates |
 | **X series** (`master`) | `X1031` / `X1031Y2` | **Independent major line**: `X` + `MMdd` date codes and the X-specific icon; updates only look at `X` tags | X-series Releases · in-app update |
 
 - **Both series share features and the data folder**: install folder, assembly name and `%LocalAppData%\OBS_Helper` are unchanged, so the upgrade path is identical.
-- **Channel filtering happens in the parser**: V builds only recognise `V3.5.0`-style tags; X builds only recognise `X1031`-style tags. They never mistake one another for a newer version.
+- **Channel filtering happens in the parser**: V builds only recognise `V3.5.1`-style tags; X builds only recognise `X1031`-style tags. They never mistake one another for a newer version.
 - **X version rule**: the four digits after `X` are an `MMdd` date (`X1031` = October 31). A second release on the same day appends `Y1`, `Y2`, `Y3`…; update checks compare the date first, then the Y revision, so `X1031Y2 > X1031` and `X1101 > X1031Y99`.
 - **X update prompt**: when an update is found, the dialog fetches this release's notes from GitHub and shows them in place; a failed fetch never blocks checking or downloading.
 - **X1031 is smaller than V3.5.0**: X1031 contains items 1–9 and the new icon, but not the global background UI refactor, mobile page layout or Feature Center UX work. V3.5.0 contains those UI changes but keeps the original icon as requested.
+
+## What's new in V3.5.1
+
+> Full details: [`NOBS/RELEASE_NOTES_v3.5.1.md`](NOBS/RELEASE_NOTES_v3.5.1.md).
+
+- **Detail icon fix**: the settings detail header and Feature Center module cards now render outline geometry with `Stroke` instead of `Fill`, so circles and boxes no longer become solid blobs (Language & Region used to show a single dot).
+- **Semantic icon mapping**: language = globe, appearance = palette, background = tray, recording = camera, auto-switch = arrows, hotkeys = keyboard, AI = chip, guide = pulse, data = database, OBS config = archive, onboarding = compass, about = info circle (Tabler Icons, MIT).
+- **Phone script editing fixed**: teleprompter commands now marshal window updates onto the UI thread; saving from the phone's Prompt → Edit script → Save to PC immediately refreshes the desktop teleprompter, with the old script backed up.
+- **Sponsorship**: Settings → About and Help & Feedback → About this tool now show Alipay / WeChat sponsorship codes, with an explicit note that sponsorship unlocks no special features and changes no permissions.
 
 ## What's new in V3.5.0
 
@@ -427,6 +436,8 @@ Strings assembled in code are refreshed by `LocalizationService` broadcasting an
 
 | Version | Highlights | Release notes |
 | --- | --- | --- |
+| **V3.5.1** | Detail-icon stroke fix and semantic mapping, phone teleprompter sync fix, sponsorship codes in Settings / feedback | [`RELEASE_NOTES_v3.5.1.md`](NOBS/RELEASE_NOTES_v3.5.1.md) |
+| **V3.5.0** | Global background UI refactor, frosted glass, custom fonts, splash animation, mobile page and Feature Center polish | [`RELEASE_NOTES_v3.5.0.md`](NOBS/RELEASE_NOTES_v3.5.0.md) |
 | **V3.4.0** | Phone Link (remote / monitor / teleprompter / fill light / file transfer / Wi-Fi camera / phone mic / multicam / guests), chat aggregation and captions, review/clips, relay/archive, MIDI/lighting/team/AI co-host, four-module self-check | [`RELEASE_NOTES_v3.4.0.md`](NOBS/RELEASE_NOTES_v3.4.0.md) |
 | **V3.3.0** | Virtual Live workspace (Live2D / room templates / platform go-live), one-click plugin install and GitHub search, Accessibility / Elder modes, open-source attribution | [`RELEASE_NOTES_v3.3.0.md`](NOBS/RELEASE_NOTES_v3.3.0.md) |
 | **V3.1.1** | Teleprompter manual up/down movement (toolbar / drag / wheel / keyboard), window nudging, scroll-end fix | [`RELEASE_NOTES_v3.1.1.md`](NOBS/RELEASE_NOTES_v3.1.1.md) |

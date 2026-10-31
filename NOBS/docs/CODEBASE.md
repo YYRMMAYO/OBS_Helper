@@ -220,6 +220,7 @@ NOBS/
 | `Controls/RecordingEnvCard.xaml(.cs)` | **一键部署录制环境卡**（V2.9.3）：逐项列出推荐值与当前值、可单独取消、应用前整备份、可一键回滚。 |
 | `Controls/SimpleRecordCard.xaml(.cs)` | **简单录像卡**（V2.9.4，挂在首页）：预设三选 → 「现在能不能录」一行结论 → 一键开始 / 停止 → 录制中时长与剩余可录 → 停止后打开目录 / 转 MP4；并提示并恢复「上次会话未回滚的改动」。 |
 | `Controls/FeedbackCard.xaml(.cs)` | **帮助与反馈卡**（V2.9.4）：反馈表单 / GitHub Issue / 离线二维码 + 一键复制报错材料（版本 / 系统 / OBS 连接与场景 / 录前自检，不含路径与日志原文）+ 安全上报引导（中英双语）。 |
+| `Controls/DonationCard.xaml(.cs)` | **赞助开发卡**（V3.5.1）：支付宝 / 微信两个独立收款码（从原图单独裁出，离线内嵌）+ 明确「不解锁任何特殊功能」说明；设置页「关于」与帮助与反馈页共用。 |
 | `Controls/WallpaperLayer.xaml(.cs)` | **内容区壁纸渲染层**（V3.1.0）：填充 / 适应 / 居中 / 平铺、压暗、模糊、A/B 交叉淡入；高对比与「减少动画」自动降级。 |
 | `Controls/LaunchConsentDialog.xaml(.cs)` | **首次拉起 OBS 的同意对话框**（V3.1.0）：继续并记住 / 每次都问 / 我自己开。 |
 | `Controls/PasswordPromptDialog.xaml(.cs)` | **OBS WebSocket 密码输入**（V3.1.0）：应用内样式，密码只交给 DPAPI 存储。 |
@@ -298,8 +299,8 @@ NOBS/
 | 文件 | 职责 |
 |---|---|
 | `Localization/Strings.cs` | 文案表入口（纯 BCL、零 WPF）：当前语言、`T(key)` / `T(key, args)`、键集、语言标识归一化、缺键回退次序。 |
-| `Localization/StringTableZhHans.cs` | 简体中文文案（默认语言，**3388 条键**，按模块分段）。 |
-| `Localization/StringTableEnUs.cs` | English 文案（**3388 条键**，键集必须与中文表完全一致，有单测钉死）。 |
+| `Localization/StringTableZhHans.cs` | 简体中文文案（默认语言，**3396 条键**，按模块分段）。 |
+| `Localization/StringTableEnUs.cs` | English 文案（**3396 条键**，键集必须与中文表完全一致，有单测钉死）。 |
 | `Localization/ContentAssets.cs` | 随包离线内容的**按语言取资产**统一入口（V2.9.3）：外部缓存 → 当前语言内嵌 → 中文内嵌（最后一级兜底必写 WARN，否则英文用户会「安静地看到中文内容」）。 |
 | `Localization/DataValues.cs` | 数据驱动展示值的**跨语言**判定（severity / level / badge：中文「常见」与英文 `Common` 都认）。 |
 | `Services/LocalizationService.cs` | 语言服务：读 / 写偏好（`prefs.json` 的 `obshelper.language`）、解析首启语言（用户选择 > 安装向导 `language.ini` > 中文）、把整表写进 `Application.Resources`、广播 `Changed`。 |

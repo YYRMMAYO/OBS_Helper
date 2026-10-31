@@ -4,9 +4,9 @@
 
 # OBS Helper · OBS帮助助手
 
-**Current release: V3.5.0** — the global background now covers the entire window (navigation, top bar and pages) with translucent surfaces, plus a rebuilt mobile connection page and Feature Center status strip. It also includes GitHub accelerator guidance, merged managed/locally-detected plugins, one-click media server for phone cameras, 10 VTuber templates, a rebuilt mini control window and phone-side teleprompter editing. See [RELEASE_NOTES_v3.5.0.md](RELEASE_NOTES_v3.5.0.md); the first X-series release [X1031](RELEASE_NOTES_x1031.md) ships the new icon without this UI refactor.
+**Current release: V3.5.1** — settings detail / Feature Center icons now render as proper outlines and match their titles; phone-side teleprompter edits sync to the PC instantly; Settings → About and the feedback page add Alipay / WeChat sponsorship codes. See [RELEASE_NOTES_v3.5.1.md](RELEASE_NOTES_v3.5.1.md); the X series `X1031` / `X1031Y2` is available too.
 
-> **V / X series**: V releases use `V3.5.0`-style versions; X releases use `X` + `MMdd` date codes such as `X1031`, with `Y1`/`Y2`/`Y3` appended for a second release on the same day. Both share features and the data folder, but each channel only checks its own tags: V builds only `V*`, X builds only `X*`.
+> **V / X series**: V releases use `V3.5.1`-style versions; X releases use `X` + `MMdd` date codes such as `X1031`, with `Y1`/`Y2`/`Y3` appended for a second release on the same day. Both share features and the data folder, but each channel only checks its own tags: V builds only `V*`, X builds only `X*`.
 
 > **This is the developer-facing full documentation for the Windows native WPF version and it lives inside `NOBS/`**;
 > the repository-root [`README.md`](../README.md) is the complete user-facing guide (features · usage · installation),
@@ -19,7 +19,7 @@
 [![Platform](https://img.shields.io/badge/Platform-Windows_7_SP1%2B-0078D6.svg)]()
 [![.NET](https://img.shields.io/badge/.NET-10_%2F_6-512BD4.svg)]()
 [![Stack](https://img.shields.io/badge/Stack-WPF_%2F_C%23-239120.svg)]()
-[![Release](https://img.shields.io/badge/Release-3.5.0-38bdf8.svg)](https://github.com/YYRMMAYO/OBS_Helper/releases)
+[![Release](https://img.shields.io/badge/Release-3.5.1-38bdf8.svg)](https://github.com/YYRMMAYO/OBS_Helper/releases)
 [![OBS](https://img.shields.io/badge/OBS-32.2.2-302E31.svg)](https://github.com/obsproject/obs-studio/releases)
 [![Offline](https://img.shields.io/badge/offline--first-2ea44f.svg)]()
 [![Incremental Update](https://img.shields.io/badge/Incremental%20Update-2.5MB-7dd3fc.svg)]()
@@ -63,6 +63,13 @@ There are two channels for the same app — pick the one that matches how much "
 - **Why DEV has its own channel**: DEV builds are numbered by an auto-incrementing **build number**, which is not comparable to the stable `Vmajor.minor.patch` scheme. A DEV build therefore **only recognises plain-number tags (`01`)**, and a stable build **only recognises `V3.1.1`-style tags** — even though both kinds of tag live in the same repository, neither channel mistakes the other for a newer version.
 - **DEV builds are not packaged and do not use the Lanzou mirror yet**: the update prompt only points you at the dev Releases page (`/releases/tag/0X`). Incremental updates, the Lanzou mirror and installers keep serving stable users exactly as before.
 - **Which one should you pick?** Use stable for day-to-day work; take DEV if you want early features and can live with the occasional broken build. Please report DEV issues through *Help & feedback* and put `DEV 0X` (e.g. `DEV 03`) in the description.
+
+## V3.5.1 highlights
+
+- **Detail icon fix**: the settings detail header and Feature Center cards now render outline geometry with `Stroke`; circles / boxes no longer become solid blobs.
+- **Semantic icons**: language = globe, appearance = palette, background = tray, recording = camera, auto-switch = arrows, hotkeys = keyboard, AI = chip, guide = pulse, data = database, OBS config = archive, onboarding = compass, about = info circle (Tabler Icons, MIT).
+- **Phone script editing fixed**: teleprompter window updates are marshalled to the UI thread, so saving from the phone immediately refreshes the desktop teleprompter.
+- **Sponsorship**: Settings → About and Help & Feedback → About this tool add Alipay / WeChat codes, with an explicit note that sponsorship unlocks no special features.
 
 ## V3.5.0 highlights
 

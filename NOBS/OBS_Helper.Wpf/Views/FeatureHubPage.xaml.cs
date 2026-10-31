@@ -128,10 +128,16 @@ public partial class FeatureHubPage : UserControl, INavigationAware
             VerticalAlignment = VerticalAlignment.Top,
             Margin = new Thickness(0, 0, 14, 0),
         };
+        // V3.5.1：Icons.xaml 里的几何是描边路径，Fill 会把圆 / 方框糊成实心块；
+        // 与侧边导航、设置页头部保持同一套 Stroke 渲染。
         var icon = new Path
         {
             Data = (Geometry)FindResource(module.IconKey),
-            Fill = (Brush)FindResource("BrandBrush"),
+            Stroke = (Brush)FindResource("BrandBrush"),
+            StrokeThickness = 1.8,
+            StrokeStartLineCap = PenLineCap.Round,
+            StrokeEndLineCap = PenLineCap.Round,
+            StrokeLineJoin = PenLineJoin.Round,
             Width = 24,
             Height = 24,
             Stretch = Stretch.Uniform,

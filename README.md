@@ -4,15 +4,15 @@
 
 **OBS帮助助手 · OBS Helper** —— 面向直播新手的 OBS 排障 / 录制 / 推流助手（Windows 原生 WPF）
 
-**当前版本：V3.5.0**（正式版） · X 系列首版 `X1031` 同步提供
+**当前版本：V3.5.1**（正式版） · X 系列 `X1031` / `X1031Y2` 同步提供
 
-**本版主线**：**全局背景 UI 重构**——壁纸覆盖整个窗口，导航 / 顶栏 / 卡片变成半透明面板；同时重排手机连接页、给功能中心加「现在能做什么」状态条，并修复插件、手机摄像头、虚拟主播模板、小窗与提词器。详见 [`NOBS/RELEASE_NOTES_v3.5.0.md`](NOBS/RELEASE_NOTES_v3.5.0.md)。X 系列首版 [`X1031`](NOBS/RELEASE_NOTES_x1031.md) 使用新图标，不含本次 UI 重构。
+**本版主线**：**图标与手机改稿修复**——设置详情与功能中心的图标改为正确的描边渲染并按标题重新配图；手机端修改提词稿后可即时同步到电脑提词器；设置页与反馈页新增支付宝 / 微信赞助码。详见 [`NOBS/RELEASE_NOTES_v3.5.1.md`](NOBS/RELEASE_NOTES_v3.5.1.md)。
 
 [![CI](https://github.com/YYRMMAYO/OBS_Helper/actions/workflows/ci.yml/badge.svg)](https://github.com/YYRMMAYO/OBS_Helper/actions/workflows/ci.yml)
 [![平台](https://img.shields.io/badge/Platform-Windows_7_SP1%2B_%2F_10_%2F_11-0078D6.svg)]()
 [![.NET](https://img.shields.io/badge/.NET-10_%2F_6-512BD4.svg)]()
 [![技术栈](https://img.shields.io/badge/Stack-WPF_%2F_C%23-239120.svg)]()
-[![版本](https://img.shields.io/badge/Release-3.5.0-38bdf8.svg)](https://github.com/YYRMMAYO/OBS_Helper/releases)
+[![版本](https://img.shields.io/badge/Release-3.5.1-38bdf8.svg)](https://github.com/YYRMMAYO/OBS_Helper/releases)
 [![OBS](https://img.shields.io/badge/OBS-32.2.2-302E31.svg)](https://github.com/obsproject/obs-studio/releases)
 [![离线可用](https://img.shields.io/badge/offline--first-2ea44f.svg)]()
 [![增量更新](https://img.shields.io/badge/Incremental%20Update-2.5MB-7dd3fc.svg)]()
@@ -38,7 +38,7 @@
 
 ---
 
-**目录**：[从这里开始](#从这里开始) · [5 分钟上手](#5-分钟上手) · [亮点速览](#亮点速览) · [功能详解](#功能详解) · [智能诊断引擎](#智能诊断引擎) · [版本通道](#版本通道正式版与-dev-测试版) · [V3.5.0 新增](#v350-新增) · [X1031 新增](#x1031-新增) · [V3.4.0 新增](#v340-新增) · [V3.3.0 新增](#v330-新增) · [V3.1.1 新增](#v311-新增) · [版本历史](#版本历史) · [隐私与安全](#隐私与安全) · [安装与更新](#安装与更新) · [构建](#构建) · [工程结构](#工程结构) · [质量基线与已知边界](#质量基线与已知边界) · [宣传视频](#宣传视频) · [捐赠支持](#捐赠支持) · [许可](#许可)
+**目录**：[从这里开始](#从这里开始) · [5 分钟上手](#5-分钟上手) · [亮点速览](#亮点速览) · [功能详解](#功能详解) · [智能诊断引擎](#智能诊断引擎) · [版本通道](#版本通道正式版与-dev-测试版) · [V3.5.1 新增](#v351-新增) · [V3.5.0 新增](#v350-新增) · [X1031 新增](#x1031-新增) · [V3.4.0 新增](#v340-新增) · [V3.3.0 新增](#v330-新增) · [V3.1.1 新增](#v311-新增) · [版本历史](#版本历史) · [隐私与安全](#隐私与安全) · [安装与更新](#安装与更新) · [构建](#构建) · [工程结构](#工程结构) · [质量基线与已知边界](#质量基线与已知边界) · [宣传视频](#宣传视频) · [捐赠支持](#捐赠支持) · [许可](#许可)
 
 ---
 
@@ -50,7 +50,7 @@
 | 先看它能干什么、怎么用 | 往下读「[5 分钟上手](#5-分钟上手)」与「[功能详解](#功能详解)」 |
 | 读开发向的完整文档（质量基线 · 历史版本 · 代码清单） | [`NOBS/README.md`](NOBS/README.md) |
 | Full documentation in English | [`README.en.md`](README.en.md) · [`NOBS/README.en.md`](NOBS/README.en.md) |
-| 这一版改了什么 | [`NOBS/RELEASE_NOTES_v3.5.0.md`](NOBS/RELEASE_NOTES_v3.5.0.md) |
+| 这一版改了什么 | [`NOBS/RELEASE_NOTES_v3.5.1.md`](NOBS/RELEASE_NOTES_v3.5.1.md) |
 | DEV 测试通道的编号与更新规则 | [`NOBS/docs/DEV_CHANNEL.md`](NOBS/docs/DEV_CHANNEL.md) |
 | 改文档前先看：哪类文档放 master / 哪类放 dev | [`docs/BRANCH_AND_DOC_RULES.md`](docs/BRANCH_AND_DOC_RULES.md) |
 | 反馈问题 / 上报安全漏洞 | [Issues](https://github.com/YYRMMAYO/OBS_Helper/issues) · [SECURITY.md](SECURITY.md) |
@@ -183,14 +183,23 @@
 
 | 通道 | 版本号样式 | 定位 | 更新来源 |
 | --- | --- | --- | --- |
-| **V 系列**（`master`） | `V3.5.0` | **稳定优先**：功能收敛、经过完整回归与发布验证，适合日常直播 / 录制 | 正式 Release 页 · 蓝奏云 · 应用内增量更新 |
+| **V 系列**（`master`） | `V3.5.1` | **稳定优先**：功能收敛、经过完整回归与发布验证，适合日常直播 / 录制 | 正式 Release 页 · 蓝奏云 · 应用内增量更新 |
 | **X 系列**（`master`） | `X1031` / `X1031Y2` | **独立大版本**：`X` + `MMdd` 日期码，含 X 专属图标；更新检查只看 `X` 标签 | X 系列 Release 页 · 应用内更新 |
 
 - **两个系列共用功能与数据目录**：安装目录、程序集名、`%LocalAppData%\OBS_Helper` 都不变，升级链路一致。
-- **通道过滤在解析层完成**：V 构建只认 `V3.5.0` 这类 V tag，X 构建只认 `X1031` 这类 X tag；两类 tag 挂在同一个仓库里，也不会互相被当成新版本。
+- **通道过滤在解析层完成**：V 构建只认 `V3.5.1` 这类 V tag，X 构建只认 `X1031` 这类 X tag；两类 tag 挂在同一个仓库里，也不会互相被当成新版本。
 - **X 版本号规则**：`X` 后面的四位是日期 `MMdd`（`X1031` = 10 月 31 日）。同一天再次发版时追加 `Y1`、`Y2`、`Y3`…；更新检测先比日期，日期相同再比 Y 序号，所以 `X1031Y2 > X1031`、`X1101 > X1031Y99`。
 - **X 更新提示**：检测到新版本后，更新弹窗会直接从 GitHub Release 拉取本版更新说明并展示；拉取失败时不影响检查与下载。
 - **X1031 范围小于 V3.5.0**：X1031 含需求 1–9 与新图标，但不含全局背景 UI 重构、手机连接页重排与功能中心体验优化；V3.5.0 含这些 UI 内容，但按需求继续使用原应用图标。
+
+## V3.5.1 新增
+
+> 完整说明见 [`NOBS/RELEASE_NOTES_v3.5.1.md`](NOBS/RELEASE_NOTES_v3.5.1.md)。
+
+- **详情图标修复**：设置页右侧头部与功能中心模块卡改为正确的描边渲染，不再把圆 / 方框填成实心色块；语言与地区页不再只显示一个圆点。
+- **图标语义重配**：语言 = 地球、外观 = 调色板、后台 = 托盘、录制 = 摄像机、自动切换 = 双向箭头、热键 = 键盘、AI = 芯片、指引 = 脉冲、数据 = 数据库、OBS 配置 = 归档、新手引导 = 罗盘、关于 = 信息圆（Tabler Icons，MIT）。
+- **手机改提词稿修复**：手机命令改为在 UI 线程更新提词器窗口；手机「提词 → 编辑提词稿 → 保存到电脑」后，电脑端提词器立即显示新稿，旧稿自动备份。
+- **赞助开发**：设置 → 关于、帮助与反馈 → 关于本工具新增支付宝 / 微信赞助码；明确说明赞助不会解锁任何特殊功能，也不会改变软件权限，只是支持正常开发。
 
 ## V3.5.0 新增
 
@@ -430,6 +439,8 @@ XAML 一律用 `DynamicResource`（主题键直接用、文案键写作 `Loc.<�
 
 | 版本 | 重点 | 发布说明 |
 | --- | --- | --- |
+| **V3.5.1** | 详情图标描边修复与语义重配、手机改提词稿同步修复、设置/反馈页赞助码 | [`RELEASE_NOTES_v3.5.1.md`](NOBS/RELEASE_NOTES_v3.5.1.md) |
+| **V3.5.0** | 全局背景 UI 重构、毛玻璃、字体自定义、启动动画、手机连接页与功能中心优化 | [`RELEASE_NOTES_v3.5.0.md`](NOBS/RELEASE_NOTES_v3.5.0.md) |
 | **V3.4.0** | 手机联动（遥控 / 监看 / 提词 / 补光 / 快传 / Wi-Fi 摄像头 / 手机麦 / 多机位 / 嘉宾）、弹幕聚合与字幕、复盘/切片、转推/归档、MIDI/灯光/团队/AI 搭档、四模块自检 | [`RELEASE_NOTES_v3.4.0.md`](NOBS/RELEASE_NOTES_v3.4.0.md) |
 | **V3.3.0** | 虚拟直播工作台（Live2D / 直播间模板 / 平台开播）、插件一键安装与 GitHub 搜索、无障碍 / 老年模式、开源署名 | [`RELEASE_NOTES_v3.3.0.md`](NOBS/RELEASE_NOTES_v3.3.0.md) |
 | **V3.1.1** | 提词器手动上下移动（工具栏 / 拖动 / 滚轮 / 键盘）、窗口位置微调、滚动终点修正 | [`RELEASE_NOTES_v3.1.1.md`](NOBS/RELEASE_NOTES_v3.1.1.md) |

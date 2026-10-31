@@ -1,6 +1,6 @@
 # OBS Streaming Guide & Troubleshooting
 
-> Applies to V3.5.0 / X1031. Both use the same features; only the update channel differs.
+> Applies to V3.5.1 / X1031. Both use the same features; only the update channel differs.
 > Start with “5-minute setup”. If a problem remains, use the in-app **Diagnose** page
 > or connect OBS in **Console** to inspect live state.
 
@@ -170,5 +170,5 @@ Write actions ask for confirmation.
 
 ---
 
-*Provided with OBS Helper V3.5.0 / X1031. Based on OBS documentation, community experience and
+*Provided with OBS Helper V3.5.1 / X1031. Based on OBS documentation, community experience and
 in-project testing.*

@@ -82,89 +82,119 @@ public sealed class TeleprompterService : IDisposable
         }
     }
 
+    // ------------------------------------------------------------ 线程
+
+    /// <summary>
+    /// 把窗口操作切回 UI 线程（V3.5.1）。
+    ///
+    /// 手机遥控的命令由 <c>MobileLinkServer</c> 在 TcpListener 的线程池线程上执行，
+    /// 而 <see cref="TeleprompterWindow"/> 是 WPF 窗口，只能在创建它的 Dispatcher 上访问。
+    /// 旧实现直接调用 <c>_window.SetScript(...)</c> / <c>SetPlayingState(...)</c>，
+    /// 后台线程会抛「调用线程无法访问此对象」，被命令路由吞成「操作失败」，
+    /// 于是手机端看起来就是「提词器改不了」。
+    /// </summary>
+    private static void OnUi(Action action)
+    {
+        var dispatcher = Application.Current?.Dispatcher;
+        if (dispatcher is null || dispatcher.CheckAccess())
+        {
+            action();
+            return;
+        }
+        dispatcher.Invoke(action);
+    }
+
+    /// <summary>事件订阅方（设置页 / 托盘）都在 UI 线程，统一在 UI 线程触发。</summary>
+    private void RaiseStateChanged() => OnUi(() => StateChanged?.Invoke());
+
     // ------------------------------------------------------------ 窗口
 
     /// <summary>呼出提词器（已打开则置前）。</summary>
     public void Show()
     {
         Initialize();
-
-        if (_window is null)
+        OnUi(() =>
         {
-            _window = new TeleprompterWindow(this);
-            _window.Closed += OnWindowClosed;
-            _window.Show();
-        }
-        else
-        {
-            if (!_window.IsVisible) _window.Show();
-            if (_window.WindowState == WindowState.Minimized) _window.WindowState = WindowState.Normal;
-            _window.Activate();
-        }
-
-        StateChanged?.Invoke();
+            if (_window is null)
+            {
+                _window = new TeleprompterWindow(this);
+                _window.Closed += OnWindowClosed;
+                _window.Show();
+            }
+            else
+            {
+                if (!_window.IsVisible) _window.Show();
+                if (_window.WindowState == WindowState.Minimized) _window.WindowState = WindowState.Normal;
+                _window.Activate();
+            }
+            StateChanged?.Invoke();
+        });
     }
 
     /// <summary>隐藏提词器（不销毁窗口，滚动位置保留）。</summary>
-    public void Hide()
+    public void Hide() => OnUi(() =>
     {
         _window?.Hide();
         StateChanged?.Invoke();
-    }
+    });
 
     /// <summary>呼出 / 隐藏。</summary>
-    public void Toggle()
+    public void Toggle() => OnUi(() =>
     {
-        if (IsVisible) Hide();
+        if (_window?.IsVisible == true) Hide();
         else Show();
-    }
+    });
 
     /// <summary>播放 / 暂停（全局热键）。</summary>
-    public void TogglePlayPause()
+    public void TogglePlayPause() => OnUi(() =>
     {
         if (_window is null) Show();
         _window?.TogglePlayPause();
-    }
+    });
 
     /// <summary>提词器是否正在滚动（未打开时为 false）。</summary>
     public bool IsPlaying => _window?.IsPlaying == true;
 
     /// <summary>手机端遥控播放/暂停（V3.4.0 / M05）：窗口未打开时先呼出。</summary>
-    public void SetPlaying(bool playing)
+    public void SetPlaying(bool playing) => OnUi(() =>
     {
         if (_window is null) Show();
         _window?.SetPlayingState(playing);
         StateChanged?.Invoke();
-    }
+    });
 
     /// <summary>手机端「回到开头」。</summary>
-    public void ScrollToStart()
+    public void ScrollToStart() => OnUi(() =>
     {
         if (_window is null) Show();
         _window?.ScrollToStart();
         StateChanged?.Invoke();
-    }
+    });
 
     /// <summary>切换点击穿透（开启后靠全局热键关掉）。</summary>
-    public void ToggleClickThrough()
+    public void ToggleClickThrough() => OnUi(() =>
     {
         if (_window is null) Show();
         _window?.SetClickThrough(!_window.IsClickThrough, save: true);
-    }
+    });
 
     /// <summary>场景切换时把提词器滚到对应段落（只滚动，不切 OBS 场景）。</summary>
     public void ApplyScene(string? sceneName)
     {
-        if (_window is null || string.IsNullOrWhiteSpace(sceneName)) return;
-        _window.ApplyScene(sceneName!);
+        if (string.IsNullOrWhiteSpace(sceneName)) return;
+        OnUi(() =>
+        {
+            if (_window is null) return;
+            _window.ApplyScene(sceneName!);
+        });
     }
 
     /// <summary>3-2-1 倒计时。</summary>
-    public void StartCountdown(int seconds = 3)
+    public void StartCountdown(int seconds = 3) => OnUi(() =>
     {
         if (_window is null) Show();
         _window?.StartCountdown(seconds);
-    }
+    });
 
     private void OnWindowClosed(object? sender, EventArgs e)
     {
@@ -180,7 +210,7 @@ public sealed class TeleprompterService : IDisposable
             _window.Closed -= OnWindowClosed;
             _window = null;
         }
-        StateChanged?.Invoke();
+        RaiseStateChanged();
     }
 
     // ------------------------------------------------------------ 持久化
@@ -192,8 +222,8 @@ public sealed class TeleprompterService : IDisposable
         try { _store.SetObject(SettingsKey, _settings); }
         catch (Exception ex) { FileLogger.Warn("Teleprompter", $"保存提词器设置失败：{ex.Message}"); }
 
-        if (applyToWindow) _window?.ApplySettings(_settings);
-        StateChanged?.Invoke();
+        if (applyToWindow) OnUi(() => _window?.ApplySettings(_settings));
+        RaiseStateChanged();
     }
 
     /// <summary>保存脚本（原子写；自动保存也走这里）。</summary>
@@ -231,8 +261,8 @@ public sealed class TeleprompterService : IDisposable
         Initialize();
         BackupScript();
         SaveScript(text);
-        _window?.SetScript(_script);
-        StateChanged?.Invoke();
+        OnUi(() => _window?.SetScript(_script));
+        RaiseStateChanged();
     }
 
     /// <summary>备份当前脚本，最多保留 5 份（手机改稿误操作可找回）。</summary>
@@ -273,23 +303,26 @@ public sealed class TeleprompterService : IDisposable
         {
             FileLogger.Warn("Teleprompter", $"重新读取提词器脚本失败：{ex.Message}");
         }
-        _window?.SetScript(_script);
-        StateChanged?.Invoke();
+        OnUi(() => _window?.SetScript(_script));
+        RaiseStateChanged();
         return _script;
     }
 
     public void Dispose()
     {
-        if (_window is null) return;
-        try
+        OnUi(() =>
         {
-            _window.Closed -= OnWindowClosed;
-            _window.Close();
-        }
-        catch (Exception)
-        {
-            // 退出路径，忽略
-        }
-        _window = null;
+            if (_window is null) return;
+            try
+            {
+                _window.Closed -= OnWindowClosed;
+                _window.Close();
+            }
+            catch (Exception)
+            {
+                // 退出路径，忽略
+            }
+            _window = null;
+        });
     }
 }

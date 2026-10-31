@@ -40,7 +40,7 @@ NOBS/
 |---|---|
 | `App.xaml` | 应用资源字典装配（主题、图标、控件样式）。 |
 | `App.xaml.cs` | 启动入口：单实例 Mutex、异常三挂钩（Dispatcher/AppDomain/Unobserved）、启动服务装配、`HeadlessTest` 自检模式、新手引导重播事件。 |
-| `AppServices.cs` | 组合根：**91 个**服务的手工 Lazy 单例装配（刻意不用 DI 容器）。 |
+| `AppServices.cs` | 组合根：**92 个**服务的手工 Lazy 单例装配（刻意不用 DI 容器）。 |
 | `MainWindow.xaml` / `.xaml.cs` | 主窗口：导航框架、页面路由表、页面过渡动画、托盘联动、**新手引导覆盖层**（首启分步引导 + 设置页即时重播；V2.9.1 起每步自动跳转到对应页面并渲染站内/站外跳转按钮）、`OBS_SELFTEST=1` 的 **22 项**无界面自检。 |
 | `app.manifest` | Windows 清单（Per-Monitor V2 DPI 感知、执行级别、支持的 OS 版本）。 |
 
@@ -261,6 +261,12 @@ NOBS/
 | `Services/Plugins/LocalPluginScanner.cs` | OBS 安装目录候选定位与体检入口（复用 ObsPathService 探测）。 |
 | `Services/Plugins/PluginReleaseService.cs` | GitHub Releases 最新版本查询（内存 + 磁盘双层缓存、在途合并、失败静默）。 |
 | `Services/Plugins/PluginWatchService.cs` | 关注插件启动静默查新（24h 节流，仅 Toast）。 |
+| `Services/Plugins/PluginInstallCore.cs` | 插件安装纯逻辑（V3.3.0 / X1031Y2）：版本比较、资产选择、zip 路径安全、目录映射、PE 架构，以及卸载 / 回滚的「已知插件根」路径护栏。 |
+| `Services/Plugins/PluginInstallService.cs` | 插件事务安装 / 卸载 / 回滚：下载 → 校验 → staging → 备份 → 替换 → 写清单；OBS 运行中拒绝。 |
+| `Services/Plugins/PluginManagedListCore.cs` | 「本应用管理 + 本机检测」合并列表（V3.5.0）。 |
+| `Services/Plugins/GitHubSearchService.cs` | GitHub 搜索 / 最新 Release 查询（5 分钟搜索缓存、60 秒限流冷却）。 |
+| `Services/Plugins/LocalPluginManageCore.cs` | **本机插件管理纯逻辑（X1031Y2）**：识别一插件一目录 / 扁平布局、计算用户级 ⇄ 全局级迁移目标、校验可操作目录与插件单元。 |
+| `Services/Plugins/LocalPluginManageService.cs` | **本机插件管理（X1031Y2）**：卸载（整目录移入 local-backups）、迁移、接管管理、打开目录；OBS 运行中拒绝。 |
 
 ### 2.7 导航 / 错误码
 
@@ -278,7 +284,7 @@ NOBS/
 | `Themes/Controls.xaml` | 通用控件样式（按钮/卡片/输入框等）。 |
 | `Themes/Icons.xaml` | 品牌 SVG 矢量图标（DrawingImage）。 |
 | `Assets/appicon.ico` | 应用图标（7 档尺寸 16/24/32/48/64/128/256）。V2.9.6 起与仓库图标（`assets/icon.svg`）统一，由 `scripts/gen_appicon.py` 生成；小尺寸帧是单独绘制的简化版。 |
-| `Assets/problems.json` | 离线知识库（问题库，独立热更新；当前 **212 条**、知识库版本 2.2、10 个分类）。 |
+| `Assets/problems.json` | 离线知识库（问题库，独立热更新；当前 **208 条**、知识库版本 2.3、14 个分类）。 |
 | `Assets/plugins.json` | 插件广场目录（V2.2 外置数据，独立热更新）。 |
 | `Assets/scene_templates.json` | 场景模板数据（含推荐插件依赖标注）。 |
 | `Assets/troubleshooting.md` | 疑难排查 Markdown 指引。 |
@@ -300,8 +306,8 @@ NOBS/
 | 文件 | 职责 |
 |---|---|
 | `Localization/Strings.cs` | 文案表入口（纯 BCL、零 WPF）：当前语言、`T(key)` / `T(key, args)`、键集、语言标识归一化、缺键回退次序。 |
-| `Localization/StringTableZhHans.cs` | 简体中文文案（默认语言，**3396 条键**，按模块分段）。 |
-| `Localization/StringTableEnUs.cs` | English 文案（**3396 条键**，键集必须与中文表完全一致，有单测钉死）。 |
+| `Localization/StringTableZhHans.cs` | 简体中文文案（默认语言，**3459 条键**，按模块分段）。 |
+| `Localization/StringTableEnUs.cs` | English 文案（**3459 条键**，键集必须与中文表完全一致，有单测钉死）。 |
 | `Localization/ContentAssets.cs` | 随包离线内容的**按语言取资产**统一入口（V2.9.3）：外部缓存 → 当前语言内嵌 → 中文内嵌（最后一级兜底必写 WARN，否则英文用户会「安静地看到中文内容」）。 |
 | `Localization/DataValues.cs` | 数据驱动展示值的**跨语言**判定（severity / level / badge：中文「常见」与英文 `Common` 都认）。 |
 | `Services/LocalizationService.cs` | 语言服务：读 / 写偏好（`prefs.json` 的 `obshelper.language`）、解析首启语言（用户选择 > 安装向导 `language.ini` > 中文）、把整表写进 `Application.Resources`、广播 `Changed`。 |
@@ -366,7 +372,7 @@ NOBS/
 ## V3.4.0 新增源码（按域）
 - `Services/Security/`：LanPolicy、HttpWireCore、WebSocketFrameCore
 - `Services/Mobile/`：QrCodeCore、MobileCore、MobileServices、MobilePageAssets、MobileLinkServer、PhoneCameraCore
-- `Services/Dependencies/`（V3.4.1）：DependencyCore（清单 / 本机查找）、DependencyService（一键下载 / 一键配置）、SidecarDependencySource
+- `Services/Dependencies/`（V3.4.1 / X1031Y2）：DependencyCore（清单 / 本机查找）、DependencyService（手动配置 / 下载页）、DependencyInstallCore（资产选择 / 摘要 / 安全解压）、DependencyInstallService（应用内拉取最新 Release）、SidecarDependencySource
 - `Services/Interop/`：SidecarCore、SidecarManager（含 ProcessGuard）
 - `Services/Chat/`：ChatCore、ChatServices
 - `Services/Subtitles/`：AsrCore、AsrServices、VoiceControlService

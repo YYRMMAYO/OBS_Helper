@@ -112,8 +112,11 @@
           <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
             <TextBox x:Name="RepoBox" Style="{StaticResource AppTextBox}" Width="280"
                      ToolTip="{DynamicResource Loc.plugin.github.placeholder}"
-                     AutomationProperties.Name="{DynamicResource Loc.plugin.github.placeholder}" />
-            <Button x:Name="RepoQueryButton" Style="{StaticResource SecondaryButton}" Margin="10,0,0,0"
+                     AutomationProperties.Name="{DynamicResource Loc.plugin.github.placeholder}"
+                     KeyDown="OnRepoBoxKeyDown" />
+            <Button x:Name="RepoOneClickButton" Style="{StaticResource PrimaryButton}" Margin="10,0,0,0"
+                    Content="{DynamicResource Loc.plugin.github.oneClick}" Click="OnRepoOneClick" />
+            <Button x:Name="RepoQueryButton" Style="{StaticResource GhostButton}" Margin="10,0,0,0"
                     Content="{DynamicResource Loc.plugin.github.query}" Click="OnQueryRepoClick" />
             <Button Style="{StaticResource GhostButton}" Margin="10,0,0,0"
                     Content="{DynamicResource Loc.plugin.github.openSearch}" Click="OnOpenGitHubSearchClick" />

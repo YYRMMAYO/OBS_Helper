@@ -266,6 +266,11 @@ public sealed class PluginInstallService : IDisposable
             if (entry is null)
                 return new PluginInstallResult(false, "PLUGIN_NOT_INSTALLED", id, Array.Empty<string>());
 
+            // 清单是本机文件：只允许移动「本应用安装根」或已知 OBS 插件根之下的目录，
+            // 防止被篡改的 installed.json 把任意目录当作插件目录移走（X1031Y2）。
+            if (!PluginInstallCore.IsSafeManagedDirectory(entry.InstallDirectory, entry.Id, ResolveInstallRoot(entry.Scope)))
+                return new PluginInstallResult(false, "PLUGIN_UNSAFE_PATH", id, Array.Empty<string>());
+
             var slug = PluginInstallCore.SafeSlug(id);
             var backupRoot = Path.Combine(_store.BackupsDirectory, slug);
             Directory.CreateDirectory(backupRoot);
@@ -310,6 +315,9 @@ public sealed class PluginInstallService : IDisposable
             var entry = _store.Find(id);
             if (entry is null)
                 return new PluginInstallResult(false, "PLUGIN_NOT_INSTALLED", id, Array.Empty<string>());
+
+            if (!PluginInstallCore.IsSafeManagedDirectory(entry.InstallDirectory, entry.Id, ResolveInstallRoot(entry.Scope)))
+                return new PluginInstallResult(false, "PLUGIN_UNSAFE_PATH", id, Array.Empty<string>());
 
             var backups = _store.ListBackups(id);
             if (backups.Count == 0)

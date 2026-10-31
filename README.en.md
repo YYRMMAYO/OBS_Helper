@@ -4,7 +4,7 @@
 
 **OBS Helper · OBS帮助助手** — an OBS troubleshooting / recording / streaming assistant for streamers who are just getting started (native Windows WPF)
 
-**Current release: V3.5.2** (stable) · X series `X1031` / `X1031Y2` available too
+**Current release: V3.5.2** (stable) · X series `X1031Y2` available too (in-app plugin / dependency install and local plugin management)
 
 **Focus of this release**: **trustworthy recording / streaming state** — the desktop app and the phone page no longer keep showing “Recording / LIVE” after recording has stopped; the phone status pill distinguishes live from recording; batch status queries now use the correct obs-websocket protocol, so output state and audio levels refresh live again. See [`NOBS/RELEASE_NOTES_v3.5.2.md`](NOBS/RELEASE_NOTES_v3.5.2.md).
 
@@ -16,7 +16,7 @@
 [![OBS](https://img.shields.io/badge/OBS-32.2.2-302E31.svg)](https://github.com/obsproject/obs-studio/releases)
 [![offline-first](https://img.shields.io/badge/offline--first-2ea44f.svg)]()
 [![Incremental Update](https://img.shields.io/badge/Incremental%20Update-2.5MB-7dd3fc.svg)]()
-[![Tests](https://img.shields.io/badge/Tests-1756%20passed-2ea44f.svg)]()
+[![Tests](https://img.shields.io/badge/Tests-1790%20passed-2ea44f.svg)]()
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
 **English** · [简体中文](README.md)
@@ -70,7 +70,7 @@ This is the **native WPF rewrite** of the original Blazor WebAssembly + WebView2
 
 | | |
 |---|---|
-| **212 issues, fully offline** | **212 issues built in** (knowledge base v2.2), organised by category; each one contains **symptoms / causes / step-by-step fixes / tips / related issues**; steps can be checked off and progress is remembered automatically. **The knowledge base updates independently** (no need to wait for a release), with one update channel per language |
+| **208 issues, fully offline** | **208 issues built in** (knowledge base v2.3, 14 categories), organised by category; each one contains **symptoms / causes / step-by-step fixes / tips / related issues**; steps can be checked off and progress is remembered automatically. **The knowledge base updates independently** (no need to wait for a release), with one update channel per language |
 | **Phone Link (V3.4.0)** | QR pairing turns a phone into a remote / monitor / teleprompter / fill light / file-transfer device; phone as a Wi-Fi camera and microphone in OBS; up to 3 read-only monitor sessions, multi-cam and remote guest rooms. Every LAN feature is off by default, bound to private addresses and revocable |
 | **Chat / captions / review / clips (V3.4.0)** | Read-only Bilibili / Twitch chat aggregation, overlay, TTS and chat translation; song requests / polls / raffles / gifts / submissions / calendar / AI reply suggestions; local Whisper live captions and bilingual captions; review report, cover candidates and viewer dashboard; highlight clips / vertical export / transcript search |
 | **Quality / distribution / automation (V3.4.0)** | Stream health, composition check, go-live runbook, incident replay, AI director, safety sentinel, AI audio chain, multi-platform relay and rclone archive; MIDI / WLED / plugin signatures / theme market / team / AI co-host |
@@ -93,7 +93,7 @@ This is the **native WPF rewrite** of the original Blazor WebAssembly + WebView2
 ### Learn & troubleshoot
 
 - **First-run tutorial** — a four-step walkthrough on first launch (connect to OBS → where to look when something breaks → one-click health check → go live & decorate), and every entry point it mentions is a real navigation name; since V2.9.1 it is a "jump-style tour": each step switches the UI to the page it is describing, with the card tucked into the bottom-right corner and the overlay kept at about 17% black so the page stays visible. Replay it any time from *Settings → Onboarding*, no restart needed.
-- **Knowledge base** — 212 issues (knowledge base v2.2), organised by category; each one contains **symptoms, possible causes, step-by-step fixes, tips and related issues**, and steps can be checked off with progress remembered automatically. Both Chinese and English content is built in and follows the language switch immediately.
+- **Knowledge base** — 208 issues (knowledge base v2.3, 14 categories), organised by category; each one contains **symptoms, possible causes, step-by-step fixes, tips and related issues**, and steps can be checked off with progress remembered automatically. Both Chinese and English content is built in and follows the language switch immediately.
 - **Search** — instant results as you type, matching titles, symptoms and causes.
 - **Ask me anything** — describe the symptom in plain words (for example "the video I recorded stutters") and it matches the most likely issue entry.
 - **Troubleshooting guide** — a quick-reference manual of general debugging approaches, from "what to check first" to "what order to rule things out in".
@@ -138,7 +138,7 @@ This is the **native WPF rewrite** of the original Blazor WebAssembly + WebView2
 
 - **Scene templates** — 12 built-in live-room templates (Gaming Stream / Vertical Live Selling / Duo Co-Stream / Teaching Screen Recording / Radio Idle / Go-Live / BRB / End Pack / Green Screen Background / Selling Dual Camera / Esports Cast / Podcast Talk / Vertical Short Recording / Meeting/Class Multicam); with OBS connected, one click creates the scenes and sources (including transitions and duration settings); when not connected you can export them as a standard scene-collection JSON. Templates annotate recommended plugins and flag missing ones against the local health check.
 - **My templates (V3.0)** — save OBS's **current scene collection** back into a template: scene order, source settings, position / scale / crop / rotation, filters and groups all included; apply it in one go after switching machines or reinstalling. Applying verifies item by item and reports honestly, with explicit placeholders for anything unreadable; template files **never overwrite** existing files.
-- **My knowledge base (V3.0)** — beyond the built-in 212 entries you can write your own (including custom categories); they merge with the official knowledge base by id, with local entries taking precedence; element-level fault tolerance means one broken entry never makes the whole base unreadable; search, local-entry marking and feedback acknowledgement are supported.
+- **My knowledge base (V3.0)** — beyond the built-in 208 entries you can write your own (including custom categories); they merge with the official knowledge base by id, with local entries taking precedence; element-level fault tolerance means one broken entry never makes the whole base unreadable; search, local-entry marking and feedback acknowledgement are supported.
 - **OBS config management** — config directory detection, backup / export (ZIP, sanitized by default and without stream keys), import (overwrite / merge, with an automatic pre-backup), light reset and full factory reset.
 - **System monitor** — live CPU / memory / network up-and-down / disk space curves (last 2 minutes), linked with OBS render frame rate and dropped-frame data, with a warning when disk space runs low.
 - **Get OBS** — the official download page and the official GitHub releases; the app can download the official installer itself (resolve the current stable direct link → validate the official domain → download with progress → launch the installer wizard, **never a silent install**); two alternative routes are Watt Toolkit (formerly Steam++) and the Microsoft Store. All external links are forced to https and restricted to official domains, keeping out impostor packages from "download sites" and "Silver Fox"-style scams.
@@ -224,6 +224,18 @@ When the cloud / free engine fails it **falls back to the local engine automatic
 - **Mini window / teleprompter**: replay, scenes, mute, teleprompter, studio mode and main window; phone-side script editing.
 - **Guide & icons**: a 5-minute setup section in both languages; corrected icon semantics in the Tabler style.
 - **X1031**: the same shared features plus the new icon and the independent X channel, without this UI refactor.
+
+## What's new in X1031Y2
+
+> Full details: [`NOBS/RELEASE_NOTES_x1031.md`](NOBS/RELEASE_NOTES_x1031.md) (Chinese) and [`11_X1031Y2_PLUGIN_MANAGEMENT.md`](NOBS/docs/x1031_v350/11_X1031Y2_PLUGIN_MANAGEMENT.md).
+
+- **Syncs all of V3.5.2 and earlier** (except the X-specific icon): recording / streaming state fixes, glass effects and fonts, phone layout and Feature Center are all included.
+- **One-click plugin install**: curated cards query the latest Release, download, verify, extract, and install in-app; paste an `owner/repo` and press Enter to do the same without a browser.
+- **Network / accelerator confirmation**: before any automatic download the app asks you to enable Watt Toolkit (Steam++) GitHub acceleration or confirm your network; failures bring the accelerator guide back.
+- **One-click dependency setup**: FFmpeg / rclone / whisper / MediaMTX can be downloaded, SHA-256 verified, safely extracted, located, and wired up in-app; manual file picking, the Releases page, and the repo link remain.
+- **Local plugin management**: uninstall (backup first), move between user and global plugin roots, adopt into app management, and open the plugin folder.
+- **Leaner knowledge base**: 212 -> 208 entries, 9 duplicates removed and 5 new entries added; four missing categories added (14 total).
+- **Security hardening**: managed-directory checks on uninstall / rollback, download digest and GitHub host allowlists, and extraction limits for sidecars and delta packages.
 
 ## X1031
 

@@ -98,6 +98,27 @@ public class PluginInstallCoreTests
     }
 
     [Fact]
+    public void ValidateArchive_AcceptsDirectoryEntries()
+    {
+        using var ms = new MemoryStream();
+        using (var zip = new ZipArchive(ms, ZipArchiveMode.Create, leaveOpen: true))
+        {
+            zip.CreateEntry("plugin/");
+            zip.CreateEntry("plugin/bin/");
+            zip.CreateEntry("plugin/bin/64bit/");
+            var e = zip.CreateEntry("plugin/bin/64bit/plugin.dll");
+            using var s = e.Open();
+            s.Write(new byte[16]);
+        }
+        ms.Position = 0;
+        using var read = new ZipArchive(ms, ZipArchiveMode.Read);
+
+        var error = PluginInstallCore.ValidateArchive(read, out _, out var paths);
+        Assert.Equal("", error);
+        Assert.Single(paths);
+    }
+
+    [Fact]
     public void ValidateArchive_RejectsZipSlip()
     {
         using var zip = BuildZip(new[] { ("../../evil.dll", 16) });

@@ -1,4 +1,4 @@
-# 实现状态（X1031 / V3.5.0）
+# 实现状态（X1031Y2 / X1031 / V3.5.0）
 
 > 最终数字以三轮本地自检为准：2026-10-31。
 
@@ -20,6 +20,32 @@
 | 手机连接页 / 功能中心 | 08 | ✅ | `MobileLinkPage`、`FeatureHubPage` | 构建 + 自检 |
 | X/V 通道分离（日期 + Y 序号） | 09 | ✅ | `ReleaseChannel.cs`、`UpdateService.cs`、`build.ps1`、CI | 42 项单测 |
 | X 更新弹窗直显 Release 正文 | 09 | ✅ | `UpdateDialog.xaml(.cs)`、`UpdateService.cs`（Release body） | 单测 + 手动 |
+
+## 1.1 X1031Y2（2026-10-31）
+
+| 需求 | 计划文档 | 状态 | 代码落点 | 验证 |
+| --- | --- | --- | --- | --- |
+| 同步 V3.5.2 及此前全部内容（X 图标除外） | 本文 §1 | ✅ | 同一份 `OBS_Helper.Wpf` 源码；X 构建仅替换图标资源 | 构建 + 单测 |
+| 插件卡片 / 粘贴仓库应用内拉取 | 11 | ✅ | `PluginsPage.xaml(.cs)`、`PluginInstallService`、`GitHubSearchService` | 构建 + 资源检查 |
+| 下载前网络 / 加速器确认 | 11 | ✅ | `PluginsPage.ConfirmNetwork`、`plugin.network.*` 文案 | 资源检查 |
+| 开源依赖一键配置 | 11 | ✅ | `DependencyInstallCore`、`DependencyInstallService`、`DependencyCore.GitHubRepo` | 13 项单测 |
+| 本机插件卸载 / 迁移 / 接管 | 11 | ✅ | `LocalPluginManageCore`、`LocalPluginManageService`、`PluginsPage` | 20 项单测 |
+| 卸载 / 回滚路径护栏 | 11 | ✅ | `PluginInstallCore.IsSafeManagedDirectory`、`PluginInstallService` | 单测 |
+| sidecar / 增量包解压上限 | 11 | ✅ | `SidecarManager.SafeExtract`、`IncrementalUpdateService.SafeExtractToDirectory` | 构建 + 全量单测 |
+| 问题库精简与更新 | 11 | ✅ | `Assets/problems*.json`（208 条 / v2.3 / 14 分类） | 中英对等 42 项单测 |
+| README / 发布说明 / CODEBASE | 11 | ✅ | `README*.md`、`NOBS/README*.md`、`RELEASE_NOTES_x1031.md`、`docs/CODEBASE.md` | check_docs |
+
+### X1031Y2（2026-10-31，三轮）
+
+| 轮次 | 构建 | 单测 | 资源 / 无障碍 / 文档 | 真实插件拉取 |
+| --- | --- | --- | --- | --- |
+| 1 | `dotnet build OBS_Helper.slnx -c Release` 成功 | 1790 / 1790 | 全部通过 | 待执行（第 3 轮） |
+| 2 | `dotnet publish` net10 / net6 `1031.2.0` 成功，FileVersion = 1031.2.0.0 | 1790 / 1790 | 全部通过 | 待执行（第 3 轮） |
+| 3 | `dotnet build OBS_Helper.slnx -c Release` 成功 | 1790 / 1790 | 全部通过 | `exeldro/obs-move-transition` 3.2.1：资产下载 1.69 MB、SHA-256 匹配、压缩包 / DLL 布局校验通过 |
+
+- 真实拉取发现并修复了一个真实缺陷：`ValidateArchive` 把 zip 里的目录条目当成「无扩展名文件」拒绝，导致带 `bin/`、`data/` 目录的真实插件包全部安装失败；新增 `ValidateArchive_AcceptsDirectoryEntries` 回归测试。
+- 资源检查：49 个 XAML、2718 处引用、3459 条中英文案键、14 个分类语义色全部可解析。
+- 文档检查：34 项通过（CODEBASE 未收录 108 个历史文件为非阻塞提示）。
 
 ## 2. 三轮自检记录
 

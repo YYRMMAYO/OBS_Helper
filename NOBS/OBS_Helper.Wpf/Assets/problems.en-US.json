@@ -1,6 +1,6 @@
 {
- "version": "2.2",
- "updated": "2026-08-26",
+ "version": "2.3",
+ "updated": "2026-10-31",
  "categories": [
   {
    "id": "black-screen",
@@ -71,6 +71,34 @@
    "icon": "💥",
    "description": "Graphics driver issues, hardware acceleration conflicts, and anomalies or rollbacks after version updates.",
    "semantic": "crimson"
+  },
+  {
+   "id": "sources",
+   "title": "Sources / Capture",
+   "icon": "🎥",
+   "description": "Camera, capture card, media, browser, and other input source setup and troubleshooting.",
+   "semantic": "azure"
+  },
+  {
+   "id": "performance",
+   "title": "Performance / Resources",
+   "icon": "⚡",
+   "description": "OBS overhead, hidden sources, nested scenes, and background apps competing for resources.",
+   "semantic": "orange"
+  },
+  {
+   "id": "virtualcam",
+   "title": "Virtual Camera",
+   "icon": "📷",
+   "description": "Virtual camera missing, black, or blocked by permissions in Zoom / Discord / Teams.",
+   "semantic": "violet"
+  },
+  {
+   "id": "encoder",
+   "title": "Encoders / Bitrate",
+   "icon": "🎛️",
+   "description": "x264 / NVENC / AMF / QSV presets, CQP/CRF, and bitrate choices.",
+   "semantic": "teal"
   }
  ],
  "problems": [
@@ -114,8 +142,7 @@
    ],
    "related": [
     "bs-game",
-    "bs-dualgpu",
-    "bs-win11"
+    "bs-dualgpu"
    ],
    "links": [
     {
@@ -267,55 +294,6 @@
    "related": [
     "bs-display",
     "bs-game"
-   ],
-   "links": [
-    {
-     "title": "OBS Official · macOS Screen Recording/Microphone/Accessibility Permission Guide",
-     "url": "https://obsproject.com/kb/macos-permissions-guide"
-    },
-    {
-     "title": "OBS Versions · Black Screen and Encoding Fix Tutorial",
-     "url": "https://obs-versions.com/blog/fix-obs-black-screen"
-    },
-    {
-     "title": "OBS Official · Windows Troubleshooting Guide (Black Screen/Encoding/Audio/Crash)",
-     "url": "https://obsproject.com/zh-cn/kb"
-    }
-   ]
-  },
-  {
-   "id": "bs-win11",
-   "category": "black-screen",
-   "title": "Windows 11 Display Capture black screen",
-   "platforms": [
-    "Windows"
-   ],
-   "severity": "Occasional",
-   "symptoms": [
-    "Display/Window Capture black screen on Win11",
-    "Capture stops working after a system update"
-   ],
-   "causes": [
-    "Win11 changed the hardware-accelerated capture mechanism",
-    "The default capture method is incompatible with the new system"
-   ],
-   "steps": [
-    {
-     "title": "Switch to Windows Graphics Capture",
-     "detail": "In the Display/Window Capture source properties, change Capture Method to \"Windows Graphics Capture (WGC)\".",
-     "level": "Basic"
-    },
-    {
-     "title": "Turn off system hardware acceleration (if needed)",
-     "detail": "Settings → System → Display → Graphics → Change default graphics settings, turn off \"Hardware-accelerated GPU scheduling\", then restart.",
-     "level": "Advanced"
-    }
-   ],
-   "tips": [
-    "On Win11, prefer the WGC capture method"
-   ],
-   "related": [
-    "bs-display"
    ],
    "links": [
     {
@@ -766,62 +744,7 @@
    "tips": [
     "First decide whether the sound is ahead or behind, then choose positive or negative"
    ],
-   "related": [
-    "av-sample"
-   ],
-   "links": [
-    {
-     "title": "OBS Official · Windows Troubleshooting Guide (Black Screen/Encoding/Audio/Crash)",
-     "url": "https://obsproject.com/zh-cn/kb"
-    },
-    {
-     "title": "OBS Official · Log Analyzer (automatic log diagnostics)",
-     "url": "https://obsproject.com/tools/analyzer"
-    }
-   ]
-  },
-  {
-   "id": "av-sample",
-   "category": "avsync",
-   "title": "Mismatched audio sample rate causes crackling/desync",
-   "platforms": [
-    "Windows",
-    "macOS",
-    "Linux"
-   ],
-   "severity": "Occasional",
-   "symptoms": [
-    "Crackling and noise",
-    "Recording/stream is out of sync"
-   ],
-   "causes": [
-    "System sound sample rate differs from OBS (44.1k vs 48k)",
-    "Multichannel (5.1/7.1) is not downmixed"
-   ],
-   "steps": [
-    {
-     "title": "Set a uniform 48kHz sample rate",
-     "detail": "Windows Sound settings → playback/recording device Properties → Advanced → set Default Format to 48000 Hz; keep OBS audio settings the same.",
-     "level": "Basic"
-    },
-    {
-     "title": "Enable resampling in OBS",
-     "detail": "If a device is not 44.1/48k, enable resampling to the target 48kHz in the OBS audio settings.",
-     "level": "Advanced"
-    },
-    {
-     "title": "Downmix multichannel to stereo",
-     "detail": "For 5.1/7.1 devices, add an \"Audio Monitor\" filter → enable \"Downmix to Stereo\" and set the output channel count to 2.",
-     "level": "Advanced"
-    }
-   ],
-   "tips": [
-    "48kHz is the common standard for streaming"
-   ],
-   "related": [
-    "av-desync",
-    "au-mic"
-   ],
+   "related": [],
    "links": [
     {
      "title": "OBS Official · Windows Troubleshooting Guide (Black Screen/Encoding/Audio/Crash)",
@@ -874,8 +797,7 @@
     "Avoid letting system recording software and OBS grab the device at the same time"
    ],
    "related": [
-    "au-echo",
-    "av-sample"
+    "au-echo"
    ],
    "links": [
     {
@@ -2740,53 +2662,6 @@
    ]
   },
   {
-   "id": "av-drift",
-   "category": "avsync",
-   "title": "Audio/video desync that drifts over time (sample rate mismatch)",
-   "platforms": [
-    "Windows",
-    "macOS"
-   ],
-   "severity": "Rare",
-   "symptoms": [
-    "In sync at first, then gradually and increasingly out of alignment after a few minutes",
-    "Progressive drift that keeps getting worse"
-   ],
-   "causes": [
-    "Windows sound, OBS, and the streaming app use different sample rates (44.1k vs 48k)",
-    "Accumulated device clock drift"
-   ],
-   "steps": [
-    {
-     "title": "Set all sample rates to 48kHz",
-     "detail": "Set Windows sound settings, OBS (Settings → Audio → Sample Rate), and the streaming app all to 48kHz; never mix in 44.1k.",
-     "level": "Advanced"
-    },
-    {
-     "title": "Re-establish the sync offset baseline",
-     "detail": "After unifying the sample rate, re-measure with the clap method and enter the sync offset.",
-     "level": "Advanced"
-    }
-   ],
-   "tips": [
-    "A sample rate mismatch is the classic root cause of gradual drift"
-   ],
-   "related": [
-    "av-sample",
-    "av-offset"
-   ],
-   "links": [
-    {
-     "title": "OBS Official · Windows Troubleshooting Guide (Black Screen/Encoding/Audio/Crashes)",
-     "url": "https://obsproject.com/zh-cn/kb"
-    },
-    {
-     "title": "OBS Official · Log Analyzer (automatic log diagnosis)",
-     "url": "https://obsproject.com/tools/analyzer"
-    }
-   ]
-  },
-  {
    "id": "av-drift-long",
    "category": "avsync",
    "title": "Long recordings gradually drift out of sync (clock drift / disk saturation)",
@@ -2833,7 +2708,6 @@
     "Unify to 48kHz first, then measure the drift rate, to rule out most false drift"
    ],
    "related": [
-    "av-drift",
     "av-desync",
     "rc-disk-space"
    ],
@@ -3003,61 +2877,6 @@
     "Too much gain introduces noise floor; prefer raising the system volume over piling on gain"
    ],
    "related": [
-    "au-mic",
-    "au-mic-noise"
-   ],
-   "links": [
-    {
-     "title": "OBS Official · macOS Screen Recording/Microphone/Accessibility Permissions Guide",
-     "url": "https://obsproject.com/kb/macos-permissions-guide"
-    },
-    {
-     "title": "OBS Official · Windows Troubleshooting Guide (Black Screen/Encoding/Audio/Crashes)",
-     "url": "https://obsproject.com/zh-cn/kb"
-    }
-   ]
-  },
-  {
-   "id": "au-mic-noise",
-   "category": "audio",
-   "title": "Microphone noise floor / ambient noise (noise reduction)",
-   "platforms": [
-    "Windows",
-    "macOS"
-   ],
-   "severity": "Common",
-   "symptoms": [
-    "The stream has fan noise and air-conditioner hum",
-    "Background noise is obvious when it is quiet",
-    "Recordings have a hissing sound"
-   ],
-   "causes": [
-    "High ambient noise floor",
-    "Excessive microphone gain amplifies noise",
-    "No noise suppression is applied"
-   ],
-   "steps": [
-    {
-     "title": "Add a Noise Suppression filter",
-     "detail": "In the Audio Mixer, click the microphone gear → Filters → + → Noise Suppression, and choose RNNoise (effective and low overhead).",
-     "level": "Basic"
-    },
-    {
-     "title": "Use a Noise Gate to cut silent sections",
-     "detail": "Also add a \"Noise Gate\" filter and set the open/close thresholds so sound passes only while you speak.",
-     "level": "Advanced"
-    },
-    {
-     "title": "Improve the physical environment",
-     "detail": "Use a dynamic microphone, move it closer, add acoustic treatment, and turn off the air conditioner/fan.",
-     "level": "Basic"
-    }
-   ],
-   "tips": [
-    "If you use NVIDIA Broadcast, you can denoise there and skip adding RNNoise again in OBS"
-   ],
-   "related": [
-    "au-mic-quiet",
     "au-mic"
    ],
    "links": [
@@ -3157,10 +2976,7 @@
    "tips": [
     "Mismatched sample rates also cause audio/video drift"
    ],
-   "related": [
-    "av-sample",
-    "av-drift"
-   ],
+   "related": [],
    "links": [
     {
      "title": "OBS official · macOS screen recording/microphone/accessibility permissions guide",
@@ -3212,7 +3028,6 @@
     "Filter order affects the result; usually noise reduction first and polish last"
    ],
    "related": [
-    "au-mic-noise",
     "au-mic-quiet"
    ],
    "links": [
@@ -4930,8 +4745,7 @@
    ],
    "related": [
     "bs-game",
-    "bs-dualgpu",
-    "bs-win11"
+    "bs-dualgpu"
    ],
    "links": [
     {
@@ -5173,8 +4987,7 @@
     "If you can, prefer a Virtual Background plugin or AI keying instead of relying on a green screen"
    ],
    "related": [
-    "st-scene",
-    "au-mic-noise"
+    "st-scene"
    ],
    "links": [
     {
@@ -5415,9 +5228,7 @@
     "Do a short test recording in OBS to check the waveform before going live"
    ],
    "related": [
-    "au-mic-quiet",
-    "au-mic-noise",
-    "av-sample"
+    "au-mic-quiet"
    ],
    "links": [
     {
@@ -5537,7 +5348,6 @@
     "If the log (Help → Log Files) shows an audio buffering message, it's almost always a load or timestamp issue"
    ],
    "related": [
-    "av-drift",
     "lag-gpu-cap",
     "lag-gamemode"
    ],
@@ -5598,7 +5408,6 @@
     "Use Monitor and Output for monitoring, then fine-tune based on what you hear in real time"
    ],
    "related": [
-    "au-mic-noise",
     "au-mic-clip",
     "au-vst"
    ],
@@ -6945,7 +6754,6 @@
    "related": [
     "au-mute",
     "au-echo",
-    "au-mic-noise",
     "av-desync"
    ],
    "links": [
@@ -7071,7 +6879,6 @@
    ],
    "related": [
     "bs-display",
-    "bs-win11",
     "st-virtualcam",
     "au-mute"
    ],
@@ -7198,10 +7005,7 @@
     "For streaming, Bluetooth capture is never recommended, since the latency is amplified for viewers"
    ],
    "related": [
-    "av-drift",
-    "au-sample-mismatch",
-    "av-sample",
-    "au-mic-noise"
+    "au-sample-mismatch"
    ],
    "links": [
     {
@@ -7798,7 +7602,6 @@
     "It's normal for AMD / Intel users to not have an equivalent filter; just use RNNoise"
    ],
    "related": [
-    "au-mic-noise",
     "au-mic-chain",
     "enc-vram",
     "enc-overload"
@@ -8154,7 +7957,6 @@
    ],
    "related": [
     "bs-browser-src",
-    "cfg-browser-dock-refresh",
     "cf-webcam"
    ],
    "links": [
@@ -8165,67 +7967,6 @@
     {
      "title": "OBS Official Forum · Windows Support",
      "url": "https://obsproject.com/forum/list/windows-support.32/"
-    }
-   ]
-  },
-  {
-   "id": "cfg-browser-dock-refresh",
-   "category": "config",
-   "title": "Workarounds when a custom browser dock is stuck and won't refresh",
-   "platforms": [
-    "Windows",
-    "macOS",
-    "Linux"
-   ],
-   "severity": "Niche",
-   "symptoms": [
-    "A custom web panel added under View → Docks (chat / dashboard / stats panel) has stuck content that won't update",
-    "A Browser Source has a right-click Refresh, but a dock has no refresh entry at all",
-    "You have to restart OBS to get the panel displaying again"
-   ],
-   "causes": [
-    "As of 32.x, custom browser docks don't yet offer a refresh menu / hotkey / API at the same level as Browser Sources (the official repo has confirmed this capability gap)",
-    "Docks and sources share the same browser engine, but the refresh action isn't exposed to the dock layer"
-   ],
-   "steps": [
-    {
-     "title": "Workaround 1: switch to a Browser Source",
-     "detail": "Make the panel a Browser Source in a hidden scene (not output to the picture) and switch to that scene when you need to see it; a source has full right-click refresh.",
-     "level": "Basic"
-    },
-    {
-     "title": "Workaround 2: remove and re-add the dock",
-     "detail": "View → Docks → Custom Browser Docks, delete the entry and re-add the same URL, equivalent to a forced reload.",
-     "level": "Basic"
-    },
-    {
-     "title": "Workaround 3: fall back to an external browser",
-     "detail": "Put the panel URL in a standalone browser window on a second screen; trade layout integration for stable, controllable refreshing.",
-     "level": "Basic"
-    },
-    {
-     "title": "Follow official progress",
-     "detail": "This gap has a clear feature request in the official repo and may be filled in a later version; watch the release notes before upgrading.",
-     "level": "Advanced"
-    }
-   ],
-   "tips": [
-    "During a stream, don't rely on AX/UI automation to click a dock's right-click refresh: it steals focus and is unreliable across language systems",
-    "This helper's dock plugin uses a native protocol and isn't affected by this issue"
-   ],
-   "related": [
-    "bs-browser-src",
-    "src-browser-alert",
-    "cr-plugin-load"
-   ],
-   "links": [
-    {
-     "title": "OBS Official · Knowledge Base (Chinese)",
-     "url": "https://obsproject.com/zh-cn/kb"
-    },
-    {
-     "title": "OBS Official · OBS Studio 32.x Release Notes",
-     "url": "https://obsproject.com/blog/obs-studio-32-0-release-notes"
     }
    ]
   },
@@ -8525,8 +8266,7 @@
    ],
    "related": [
     "st-chat",
-    "au-random-desync",
-    "au-mic-noise"
+    "au-random-desync"
    ],
    "links": [
     {
@@ -9265,7 +9005,6 @@
    "related": [
     "bs-window",
     "bs-display",
-    "bs-win11",
     "bs-protected"
    ],
    "links": [
@@ -10351,7 +10090,6 @@
    "related": [
     "bs-browser-src",
     "src-browser-alert",
-    "cfg-browser-dock-refresh",
     "st-chat"
    ],
    "links": [
@@ -10408,59 +10146,6 @@
     "rc-media-source",
     "av-drift-long",
     "tr-stinger"
-   ],
-   "links": [
-    {
-     "title": "Official OBS knowledge base",
-     "url": "https://obsproject.com/zh-cn/kb"
-    }
-   ]
-  },
-  {
-   "id": "src-vlc-source",
-   "category": "sources",
-   "title": "VLC Video Source: playback order / looping / missing plugin",
-   "platforms": [
-    "Windows"
-   ],
-   "severity": "Niche",
-   "symptoms": [
-    "After adding a VLC Video Source, the list is empty or nothing plays",
-    "You want to play singing-stream clips in order, but it always shuffles",
-    "The black screen between tracks when switching songs looks bad."
-   ],
-   "causes": [
-    "It relies on a locally installed VLC and its decoders; the source is unusable if VLC is missing or the version doesn't match",
-    "The playback mode (sequential/loop/random) is buried at the bottom of the source properties and defaults to random",
-    "There is an inherent gap between playlist items."
-   ],
-   "steps": [
-    {
-     "title": "Install VLC matching your system architecture, then restart OBS",
-     "detail": "Install VLC matching your system architecture, then restart OBS",
-     "level": "Basic"
-    },
-    {
-     "title": "In Properties → Playlist, add local files",
-     "detail": "In Properties → Playlist, add local files, check Loop playlist and turn off random as needed",
-     "level": "Basic"
-    },
-    {
-     "title": "Use an image source in the scene underneath to cover the gap",
-     "detail": "Use an image source in the scene underneath to cover the gap, or concatenate the clips into one long video to avoid gaps",
-     "level": "Basic"
-    },
-    {
-     "title": "Use the Advance Scene Switcher plugin to switch scenes based on the media.",
-     "detail": "Use the Advance Scene Switcher plugin to switch scenes based on the media.",
-     "level": "Basic"
-    }
-   ],
-   "tips": [],
-   "related": [
-    "rc-media-source",
-    "src-media-loop",
-    "cf-hotkeys"
    ],
    "links": [
     {
@@ -10963,61 +10648,6 @@
    ]
   },
   {
-   "id": "rc-replay-hotkey",
-   "category": "recording",
-   "title": "Replay Buffer save fails: press vs release hotkey and duration settings",
-   "platforms": [
-    "Windows",
-    "macOS",
-    "Linux"
-   ],
-   "severity": "Occasional",
-   "symptoms": [
-    "You pressed the save hotkey, but no new file appears in the output folder",
-    "The saved clip is much shorter than expected",
-    "The Replay Buffer is on but keeps disabling itself."
-   ],
-   "causes": [
-    "The hotkey is bound as a hold-style action (a misunderstanding), or it conflicts with a game key and never fires",
-    "The Replay Buffer duration is shorter than the actual highlight length",
-    "When free disk space runs low, OBS stops the buffer to protect itself."
-   ],
-   "steps": [
-    {
-     "title": "In Hotkeys, set Save Replay as a single-press binding",
-     "detail": "In Hotkeys, set Save Replay as a single-press binding, avoiding keys that need a combined state",
-     "level": "Basic"
-    },
-    {
-     "title": "Set the Replay Buffer duration by content type",
-     "detail": "Set the Replay Buffer duration by content type: 60-90 seconds for FPS highlights, 30 seconds is enough day to day; longer durations use more memory",
-     "level": "Basic"
-    },
-    {
-     "title": "Check the recording folder's free space and write speed",
-     "detail": "Check the recording folder's free space and write speed (rc-disk-speed)",
-     "level": "Basic"
-    },
-    {
-     "title": "Saved clips land in a Replay Buffers subfolder of the recording folder",
-     "detail": "Saved clips land in a subfolder of the recording folder named Replay Buffers (or your custom path) — make sure you're looking in the right place before saying nothing was saved.",
-     "level": "Basic"
-    }
-   ],
-   "tips": [],
-   "related": [
-    "rc-replay-buffer",
-    "cfg-hotkey-conflict",
-    "rc-disk-speed"
-   ],
-   "links": [
-    {
-     "title": "Official OBS knowledge base",
-     "url": "https://obsproject.com/zh-cn/kb"
-    }
-   ]
-  },
-  {
    "id": "rc-filename-pattern",
    "category": "recording",
    "title": "Recording filename format tokens and Chinese/special-character path issues",
@@ -11228,61 +10858,6 @@
    ]
   },
   {
-   "id": "cf-ui-language",
-   "category": "config",
-   "title": "Language switch doesn't take effect / UI mixes English and Chinese",
-   "platforms": [
-    "Windows",
-    "macOS",
-    "Linux"
-   ],
-   "severity": "Niche",
-   "symptoms": [
-    "You picked Chinese in Settings, but after restarting some menus are still English",
-    "The language list has no Chinese option at all",
-    "After an upgrade the language resets back to English."
-   ],
-   "causes": [
-    "Some plugin/new-feature text isn't translated yet, which is normal",
-    "The portable/green version is missing locale files",
-    "The language field in the config file gets reset."
-   ],
-   "steps": [
-    {
-     "title": "Settings → General → Language → Chinese (Simplified)",
-     "detail": "Settings → General → Language → Chinese (Simplified), then fully quit and restart OBS",
-     "level": "Basic"
-    },
-    {
-     "title": "A few English strings are untranslated new features or third-party plugins",
-     "detail": "A few English strings are untranslated new features or third-party plugins; just wait for a translation update",
-     "level": "Basic"
-    },
-    {
-     "title": "For the green version, confirm the data\\locale folder is complete",
-     "detail": "For the green version, confirm the data\\locale folder is complete; if files are missing, reinstall",
-     "level": "Basic"
-    },
-    {
-     "title": "If it keeps resetting, check whether antivirus/cloud sync is rolling back global.ini.",
-     "detail": "If it keeps resetting, check whether antivirus/cloud sync is rolling back global.ini.",
-     "level": "Basic"
-    }
-   ],
-   "tips": [],
-   "related": [
-    "cf-text-cjk",
-    "cf-portable-mode",
-    "cf-reset"
-   ],
-   "links": [
-    {
-     "title": "OBS Chinese translation platform",
-     "url": "https://crowdin.com/project/obs-studio"
-    }
-   ]
-  },
-  {
    "id": "os-update-fail",
    "category": "crash",
    "title": "Auto-update fails / download is slow / how to update manually",
@@ -11390,63 +10965,6 @@
     {
      "title": "Community Guide · Global Hotkeys Not Registering",
      "url": "https://salivity.github.io/obs-studio/article/how-to-fix-obs-studio-global-hotkeys-not-registering"
-    }
-   ]
-  },
-  {
-   "id": "linux-flatpak-plugins",
-   "category": "crash",
-   "title": "Linux Flatpak/Snap/Nix OBS: Plugins Won't Install or None Load",
-   "platforms": [
-    "Linux"
-   ],
-   "severity": "Niche",
-   "symptoms": [
-    "Installed plugins following a tutorial but they don't appear in OBS at all",
-    "The Flatpak version can't see plugins installed in system directories",
-    "On NixOS, plugins mysteriously vanish after defining wrapOBS"
-   ],
-   "causes": [
-    "The Flatpak/Snap sandbox can't see host paths like ~/.local/share/obs-plugins, so you must install with the Flatpak-specific command",
-    "On NixOS, when obs-studio and wrapOBS are declared together, the latter gets overridden",
-    "The distro repo version of OBS is usually too old, and the plugin API doesn't match"
-   ],
-   "steps": [
-    {
-     "title": "For Flatpak plugin installs, use `flatpak install --from` or put the plugin in the matching directory under `~/.var/app/com.obsproject.Studio/data/obs-studio`",
-     "detail": "For Flatpak plugin installs, use `flatpak install --from` or put the plugin in the matching directory under `~/.var/app/com.obsproject.Studio/data/obs-studio`",
-     "level": "Advanced"
-    },
-    {
-     "title": "On NixOS, check that systemPackages doesn't declare obs-studio twice",
-     "detail": "On NixOS, check that systemPackages doesn't declare obs-studio twice; keep only the wrapOBS definition",
-     "level": "Advanced"
-    },
-    {
-     "title": "Prefer the official PPA/Flatpak to get a new OBS version",
-     "detail": "Prefer the official PPA/Flatpak to get a new OBS version; use the distro repo version only as a fallback",
-     "level": "Basic"
-    },
-    {
-     "title": "If plugins fail to load, check the startup terminal output and Help → Log Files",
-     "detail": "If plugins fail to load, check the startup terminal output and Help → Log Files.",
-     "level": "Basic"
-    }
-   ],
-   "tips": [],
-   "related": [
-    "cr-plugin-load",
-    "cf-steam-plugins",
-    "cr-plugin-manager"
-   ],
-   "links": [
-    {
-     "title": "NixOS Discourse · Fixing OBS Studio not seeing any plugins",
-     "url": "https://discourse.nixos.org/t/fixing-obs-studio-not-seeing-any-plugins/47702"
-    },
-    {
-     "title": "OBS Official Flatpak",
-     "url": "https://flathub.org/en/apps/com.obsproject.Studio"
     }
    ]
   },
@@ -12098,7 +11616,297 @@
      "url": "https://obsproject.com/analyzer"
     }
    ]
+  },
+  {
+   "id": "cfg-plugin-oneclick",
+   "category": "config",
+   "title": "Plugin one-click install fails or GitHub download times out",
+   "platforms": [
+    "Windows"
+   ],
+   "severity": "Common",
+   "symptoms": [
+    "One-click install spins forever or reports NET_TIMEOUT / NET_OFFLINE",
+    "The install fails halfway and no new entry appears in the installed list",
+    "The Releases page opens, but in-app download always fails"
+   ],
+   "causes": [
+    "A direct GitHub connection is unstable and the Release asset download is interrupted",
+    "The accelerator only proxies the browser, not the app process",
+    "OBS is still running and locks the plugin DLL",
+    "The latest Release has no Windows x64 zip"
+   ],
+   "steps": [
+    {
+     "title": "Turn on GitHub acceleration first",
+     "detail": "Open Watt Toolkit (Steam++) and enable GitHub acceleration. Return to the Plugins page, click \"I have enabled it, check again\", and retry after the probe succeeds.",
+     "level": "Basic"
+    },
+    {
+     "title": "Close OBS before installing",
+     "detail": "OBS locks plugin DLLs. Exit it completely, including the tray icon, before installing or updating. A failed install rolls back automatically and leaves no half-written folder.",
+     "level": "Basic"
+    },
+    {
+     "title": "Check the Release assets",
+     "detail": "Click Releases on the card. If the latest Release only has source or Linux packages, one-click install cannot work; download the Windows zip manually.",
+     "level": "Advanced"
+    },
+    {
+     "title": "Use the manual path",
+     "detail": "If you already downloaded a plugin, extract the zip into the OBS plugin folder, then click Adopt in the Installed list so the app can roll back or uninstall it later.",
+     "level": "Advanced"
+    }
+   ],
+   "tips": [
+    "Temporary downloads live in %LocalAppData%\\OBS_Helper\\plugins\\downloads and can be deleted after a failure",
+    "Downloads only come from official GitHub HTTPS asset hosts, with SHA-256 verification when a digest is available"
+   ],
+   "related": [
+    "cr-plugin",
+    "cr-plugin-load",
+    "cfg-local-plugin-manage"
+   ],
+   "links": [
+    {
+     "title": "OBS official plugin forum",
+     "url": "https://obsproject.com/forum/plugins/"
+    },
+    {
+     "title": "Watt Toolkit (Steam++)",
+     "url": "https://steampp.net/"
+    }
+   ]
+  },
+  {
+   "id": "cfg-dependency-missing",
+   "category": "config",
+   "title": "FFmpeg / rclone still missing after one-click configure",
+   "platforms": [
+    "Windows"
+   ],
+   "severity": "Occasional",
+   "symptoms": [
+    "The dependency center says installed, but a feature still reports FFmpeg / rclone missing",
+    "Highlight clipping, vertical conversion, or recording archive is unavailable",
+    "The path reverts to unconfigured after a restart"
+   ],
+   "causes": [
+    "The download folder was cleaned up or antivirus quarantined the exe",
+    "One-click configure stored an older path that was later moved",
+    "The consumer reads the path at startup and did not reload after configuration",
+    "Several versions exist and the path points at an incomplete copy"
+   ],
+   "steps": [
+    {
+     "title": "Check the dependency status",
+     "detail": "Each row shows Ready and the actual path. If the file is gone, run one-click configure again instead of editing an old path in settings.",
+     "level": "Basic"
+    },
+    {
+     "title": "Pick the exe manually",
+     "detail": "Extract a package you downloaded yourself, click Pick downloaded file, and select ffmpeg.exe (usually under bin) or rclone.exe.",
+     "level": "Basic"
+    },
+    {
+     "title": "Restart the app",
+     "detail": "Some features read dependency paths at startup. Restart this app after configuring, then reopen the feature page.",
+     "level": "Advanced"
+    },
+    {
+     "title": "Check security software",
+     "detail": "Make sure antivirus or cloud sync is not quarantining or locking the exe; add %LocalAppData%\\OBS_Helper\\dependencies to trusted locations if needed.",
+     "level": "Advanced"
+    }
+   ],
+   "tips": [
+    "One-click configure only records a path; it never changes PATH or the registry",
+    "FFmpeg is limited to LGPL builds so GPL artifacts do not enter the distribution chain"
+   ],
+   "related": [
+    "cfg-plugin-oneclick",
+    "rc-disk-speed"
+   ],
+   "links": [
+    {
+     "title": "FFmpeg downloads",
+     "url": "https://ffmpeg.org/download.html"
+    },
+    {
+     "title": "rclone downloads",
+     "url": "https://rclone.org/downloads/"
+    }
+   ]
+  },
+  {
+   "id": "cfg-obs-state-stale",
+   "category": "config",
+   "title": "Helper shows Recording / Live after OBS has stopped",
+   "platforms": [
+    "Windows"
+   ],
+   "severity": "Occasional",
+   "symptoms": [
+    "OBS has stopped recording or streaming, but the helper still shows running",
+    "The recording timer freezes at a few seconds or keeps counting",
+    "The phone page still shows a red light after refresh"
+   ],
+   "causes": [
+    "Older versions wrote query results back to the state after a stop event",
+    "The phone page reused a cached state",
+    "A reconnect missed the state event from obs-websocket"
+   ],
+   "steps": [
+    {
+     "title": "Upgrade to the fixed build",
+     "detail": "V3.5.2 / X1031Y2 and later treat state events as authoritative, use queries only for duration, and reconcile every 3 seconds to catch missed events.",
+     "level": "Basic"
+    },
+    {
+     "title": "Reconnect OBS",
+     "detail": "Disconnect and reconnect on the home page; refresh the phone page or scan the QR code again.",
+     "level": "Basic"
+    },
+    {
+     "title": "Confirm OBS really stopped",
+     "detail": "Check that the record / stream button in OBS is back to Start. If needed, click Stop once more and wait 1-2 seconds.",
+     "level": "Advanced"
+    },
+    {
+     "title": "Export logs",
+     "detail": "If it still happens, export this app log and the OBS log and check for missing RecordStateChanged / StreamStateChanged events.",
+     "level": "Advanced"
+    }
+   ],
+   "tips": [
+    "Since V3.5.2 the elapsed time is 00:00:00 whenever recording / streaming is not active",
+    "Batch status queries use obs-websocket 5.x RequestBatch (op 8 / 9)"
+   ],
+   "related": [
+    "cfg-websocket-remote",
+    "os-update-fail"
+   ],
+   "links": [
+    {
+     "title": "obs-websocket protocol",
+     "url": "https://github.com/obsproject/obs-websocket/blob/master/docs/generated/protocol.md"
+    }
+   ]
+  },
+  {
+   "id": "rc-file-locked",
+   "category": "recording",
+   "title": "Recording file is locked / cannot be deleted or moved",
+   "platforms": [
+    "Windows"
+   ],
+   "severity": "Occasional",
+   "symptoms": [
+    "Deleting a recording says the file is in use by another program",
+    "The editor cannot open a file that was just recorded",
+    "Renaming or moving the file to a cloud folder fails"
+   ],
+   "causes": [
+    "OBS is still writing or has not fully exited",
+    "A player, editor, or cloud sync client holds a handle",
+    "Antivirus is scanning the large file",
+    "The target disk is full or lacks permissions"
+   ],
+   "steps": [
+    {
+     "title": "Stop recording and exit OBS",
+     "detail": "Stop recording, wait a few seconds, then exit OBS from the tray. Confirm there is no obs64.exe left in Task Manager.",
+     "level": "Basic"
+    },
+    {
+     "title": "Close programs holding the file",
+     "detail": "Close players, editors, cloud sync, and antivirus scans. Use Resource Monitor to search for the file name and its handles if needed.",
+     "level": "Advanced"
+    },
+    {
+     "title": "Work in another folder",
+     "detail": "If the file still cannot be moved, copy it to another folder first. Do not force-delete a file that is being written; that often produces a corrupt MP4.",
+     "level": "Advanced"
+    },
+    {
+     "title": "Check disk and permissions",
+     "detail": "Make sure the target disk has enough space and that a managed or company folder does not require administrator rights.",
+     "level": "Advanced"
+    }
+   ],
+   "tips": [
+    "Recording to MKV is safer against crashes; remux to MP4 afterwards",
+    "Back up important footage before deleting or moving it"
+   ],
+   "related": [
+    "rc-nofile",
+    "rc-mkv",
+    "rc-disk-space"
+   ],
+   "links": [
+    {
+     "title": "OBS recording guide",
+     "url": "https://obsproject.com/kb/recording-guide"
+    }
+   ]
+  },
+  {
+   "id": "cfg-local-plugin-manage",
+   "category": "config",
+   "title": "Local plugin move / uninstall fails or backup is missing",
+   "platforms": [
+    "Windows"
+   ],
+   "severity": "Occasional",
+   "symptoms": [
+    "Uninstall or move in the Installed list does nothing or reports a permission error",
+    "After moving, the plugin disappears from the list and from OBS",
+    "The backup folder from before uninstall cannot be found"
+   ],
+   "causes": [
+    "OBS is not closed and the plugin folder is in use",
+    "The global plugin folder requires administrator rights",
+    "The plugin uses the flat layout (DLL directly in the plugin root) and cannot be moved as a folder",
+    "The scan result is still the cache from before the operation"
+   ],
+   "steps": [
+    {
+     "title": "Close OBS and rescan",
+     "detail": "Exit OBS completely, then click Rescan on the Plugins page so the list matches the disk.",
+     "level": "Basic"
+    },
+    {
+     "title": "Run as administrator for global moves",
+     "detail": "Moving to %ProgramData%\\obs-studio\\plugins needs write access; run this app as administrator first.",
+     "level": "Advanced"
+    },
+    {
+     "title": "Uninstall flat plugins and reinstall",
+     "detail": "The old flat layout can only remove a single DLL; it cannot move the whole folder. Uninstall it, then use one-click install to get the new layout.",
+     "level": "Advanced"
+    },
+    {
+     "title": "Restore from the backup folder",
+     "detail": "Uninstall never hard-deletes: backups live in %LocalAppData%\\OBS_Helper\\plugins\\local-backups. Find the timestamped folder and copy it back.",
+     "level": "Advanced"
+    }
+   ],
+   "tips": [
+    "Adopt only registers the plugin and does not move files; use Move to user / global when you want to change location",
+    "Both uninstall and move require OBS to be closed"
+   ],
+   "related": [
+    "cr-plugin",
+    "cfg-plugin-oneclick",
+    "cr-plugin-load"
+   ],
+   "links": [
+    {
+     "title": "OBS plugin folder guide",
+     "url": "https://obsproject.com/kb/plugins-guide"
+    }
+   ]
   }
  ],
- "note": "Expanded the library with common and rare OBS problems, macOS-side issues, and live-streaming setup guidance (platform onboarding plus the general workflow). Added 2026-08-05: anti-cheat game capture, Browser Source white screen, replay buffering, green-screen keying, Media Sources, garbled CJK text in Text sources, scene transitions, microphone clipping, viewer-side latency, and more. Added 2026-08-19 (1.5): random audio/video desync, microphone filter chains, stream key security, virtual camera troubleshooting, capture source conflicts, webcam image quality, config reset, Game Mode / GPU saturation, keyframe interval, dynamic bitrate, reading the Stats dock, recording file size management, and more. Added 2026-08-22 (v1.6, V2.2 plugin ecosystem linkage): migrating away from the discontinued StreamFX, known obs-multi-rtmp issues and the recommendation to migrate to Aitum Multistream. Added 2026-08-23 (v1.7): plugin load failures (32.2 changes), Nahimic/RTSS interference, multi-monitor refresh-rate stutter, the Steam build's plugin directory, bisecting slow startup, Device removed / GPU hang, Windows lowers volume during communications activity, and mosaic artifacts from insufficient bitrate. Added 2026-08-23 (v1.8, V2.5 troubleshooting loop): long-recording A/V drift (clock drift / disk saturation) and Browser Source memory growth; the plugin-caused crash entry now leads with \"upgrade OBS to 32.2.2 or later first\". Added 2026-08-25 (v1.8 batch expansion from network research): recording double audio (monitor loopback / dual capture), audio exclusive mode, multi-track recording, virtual camera in meeting apps, global hotkey conflicts, UWP/browser/PowerPoint capture, G-Sync flicker, fullscreen optimizations, AMF/QSV encoding, bitrate quick reference, Stinger transitions, nested scene performance, Twitch Enhanced Broadcasting, SRT output, multiple instances / portable mode, NDI and phone-as-camera, chapter markers, Replay Buffer hotkeys, macOS sleep and virtual camera permission, Linux Flatpak plugin paths, WebSocket remote control, and 63 more. Updated 2026-08-26 (v2.2): the Window Capture entry gained the symptoms, causes, and handling steps for \"occasionally goes black mid-capture\" (refresh the source, lock the capture method, disable hardware acceleration, use borderless windowed, and check the driver and overlays)."
+ "note": "Expanded the library with common and rare OBS problems, macOS-side issues, and live-streaming setup guidance (platform onboarding plus the general workflow). Added 2026-08-05: anti-cheat game capture, Browser Source white screen, replay buffering, green-screen keying, Media Sources, garbled CJK text in Text sources, scene transitions, microphone clipping, viewer-side latency, and more. Added 2026-08-19 (1.5): random audio/video desync, microphone filter chains, stream key security, virtual camera troubleshooting, capture source conflicts, webcam image quality, config reset, Game Mode / GPU saturation, keyframe interval, dynamic bitrate, reading the Stats dock, recording file size management, and more. Added 2026-08-22 (v1.6, V2.2 plugin ecosystem linkage): migrating away from the discontinued StreamFX, known obs-multi-rtmp issues and the recommendation to migrate to Aitum Multistream. Added 2026-08-23 (v1.7): plugin load failures (32.2 changes), Nahimic/RTSS interference, multi-monitor refresh-rate stutter, the Steam build's plugin directory, bisecting slow startup, Device removed / GPU hang, Windows lowers volume during communications activity, and mosaic artifacts from insufficient bitrate. Added 2026-08-23 (v1.8, V2.5 troubleshooting loop): long-recording A/V drift (clock drift / disk saturation) and Browser Source memory growth; the plugin-caused crash entry now leads with \"upgrade OBS to 32.2.2 or later first\". Added 2026-08-25 (v1.8 batch expansion from network research): recording double audio (monitor loopback / dual capture), audio exclusive mode, multi-track recording, virtual camera in meeting apps, global hotkey conflicts, UWP/browser/PowerPoint capture, G-Sync flicker, fullscreen optimizations, AMF/QSV encoding, bitrate quick reference, Stinger transitions, nested scene performance, Twitch Enhanced Broadcasting, SRT output, multiple instances / portable mode, NDI and phone-as-camera, chapter markers, Replay Buffer hotkeys, macOS sleep and virtual camera permission, Linux Flatpak plugin paths, WebSocket remote control, and 63 more. Updated 2026-08-26 (v2.2): the Window Capture entry gained the symptoms, causes, and handling steps for \"occasionally goes black mid-capture\" (refresh the source, lock the capture method, disable hardware acceleration, use borderless windowed, and check the driver and overlays).. Updated 2026-10-31 (v2.3, X1031Y2): pruned 9 duplicate or low-value entries (Windows 11 black screen merged into Display Capture, duplicate sample-rate and A/V drift entries, replay hotkey merged into Replay Buffer, UI language, Linux Flatpak, microphone noise merged into the filter chain, VLC source, browser dock refresh) and added 5 entries: plugin one-click install, dependency one-click configure, stale recording state, locked recording files, and local plugin move/uninstall."
 }

@@ -15,6 +15,8 @@ public sealed record DependencySpec
     public required string Executable { get; init; }
     /// <summary>官方 GitHub 仓库（一键打开仓库用）。</summary>
     public required string RepoUrl { get; init; }
+    /// <summary>GitHub API 用的 owner/repo（一键配置读取最新 Release）。</summary>
+    public required string GitHubRepo { get; init; }
     /// <summary>官方 GitHub Releases（一键下载用）。</summary>
     public required string ReleasesUrl { get; init; }
     public required string License { get; init; }
@@ -44,6 +46,7 @@ public static class DependencyCore
             Id = "ffmpeg",
             Executable = "ffmpeg.exe",
             RepoUrl = "https://github.com/BtbN/FFmpeg-Builds",
+            GitHubRepo = "BtbN/FFmpeg-Builds",
             ReleasesUrl = "https://github.com/BtbN/FFmpeg-Builds/releases",
             License = "LGPL-3.0-or-later",
             SidecarId = "ffmpeg",
@@ -54,6 +57,7 @@ public static class DependencyCore
             Id = "rclone",
             Executable = "rclone.exe",
             RepoUrl = "https://github.com/rclone/rclone",
+            GitHubRepo = "rclone/rclone",
             ReleasesUrl = "https://github.com/rclone/rclone/releases",
             License = "MIT",
             SidecarId = "rclone",
@@ -64,6 +68,7 @@ public static class DependencyCore
             Id = "whisper",
             Executable = "whisper-cli.exe",
             RepoUrl = "https://github.com/ggml-org/whisper.cpp",
+            GitHubRepo = "ggml-org/whisper.cpp",
             ReleasesUrl = "https://github.com/ggml-org/whisper.cpp/releases",
             License = "MIT",
             SidecarId = "whisper",
@@ -74,6 +79,7 @@ public static class DependencyCore
             Id = "mediamtx",
             Executable = "mediamtx.exe",
             RepoUrl = "https://github.com/bluenviron/mediamtx",
+            GitHubRepo = "bluenviron/mediamtx",
             ReleasesUrl = "https://github.com/bluenviron/mediamtx/releases",
             License = "MIT",
             SidecarId = "mediamtx",

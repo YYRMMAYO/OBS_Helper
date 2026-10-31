@@ -7,6 +7,7 @@ using OBS_Helper.Wpf.Services.ObsConfig;
 using OBS_Helper.Wpf.Services.Diagnostics;
 using OBS_Helper.Wpf.Services.Recording;
 using OBS_Helper.Wpf.Services.Plugins;
+using OBS_Helper.Wpf.Services.Dependencies;
 using OBS_Helper.Wpf.Services.Shell;
 using OBS_Helper.Wpf.Services.Tools;
 using OBS_Helper.Wpf.Services.Mobile;
@@ -114,6 +115,11 @@ public static class AppServices
         new(() => new PluginInstallService(PluginState));
     private static readonly Lazy<GitHubSearchService> _pluginSearch =
         new(() => new GitHubSearchService(tokenProvider: () => Host.GetSecretAsync("github.token")));
+    // X1031Y2：开源依赖一键配置（应用内拉取最新 Release + 摘要校验 + 安全解压）
+    private static readonly Lazy<DependencyInstallService> _dependencyInstall = new(() =>
+        new DependencyInstallService(
+            System.IO.Path.Combine(HostBridge.AppDataDirectory, "dependencies"),
+            _pluginSearch.Value));
 
     // 后台 / 遥控能力
     private static readonly Lazy<TrayService> _tray = new(() => new TrayService(Obs, Store));
@@ -301,6 +307,9 @@ public static class AppServices
 
     /// <summary>GitHub 搜索 / Release 查询（V3.3.0，带缓存与限频冷却）。</summary>
     public static GitHubSearchService PluginSearch => _pluginSearch.Value;
+
+    /// <summary>开源依赖一键配置（X1031Y2）：下载到 <c>%LocalAppData%\OBS_Helper\dependencies</c>。</summary>
+    public static DependencyInstallService DependencyInstall => _dependencyInstall.Value;
     public static ObsToolRegistry Tools => _tools.Value;
     public static LocalDiagnosticEngine LocalEngine => _localEngine.Value;
     public static CloudDiagnosticEngine CloudEngine => _cloudEngine.Value;

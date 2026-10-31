@@ -11,7 +11,7 @@ namespace OBS_Helper.Wpf.Services.Plugins;
 /// 只记录本应用装过的插件；未管理的插件永远不进清单，因此卸载 / 回滚不会误删用户文件。
 /// 写入走「临时文件 + 替换」，避免崩溃留下半截 JSON。
 /// </summary>
-public sealed class PluginStateStore
+public sealed class PluginStateStore : ILocalPluginStateStore
 {
     private static readonly JsonSerializerOptions JsonOpts = new()
     {

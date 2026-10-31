@@ -23,7 +23,7 @@
 [![OBS](https://img.shields.io/badge/OBS-32.2.2-302E31.svg)](https://github.com/obsproject/obs-studio/releases)
 [![Offline](https://img.shields.io/badge/offline--first-2ea44f.svg)]()
 [![Incremental Update](https://img.shields.io/badge/Incremental%20Update-2.5MB-7dd3fc.svg)]()
-[![Tests](https://img.shields.io/badge/Tests-1756%20passed-2ea44f.svg)]()
+[![Tests](https://img.shields.io/badge/Tests-1790%20passed-2ea44f.svg)]()
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](../LICENSE)
 
 **English** · [简体中文](README.md)
@@ -212,7 +212,7 @@ A 55-second look at what OBS Helper can do — Chinese and English versions, bot
 | | |
 |---|---|
 | **Chinese / English, switched instantly** | The interface, tray, notifications, error messages, log rules and health-check verdicts all ship in both languages — **Simplified Chinese by default** — and switching under *Settings → Language* takes effect immediately, with no restart. The installer asks first and uses that answer as the first-run default. Bundled offline content (issue database, templates, plugin catalog, guide) is bilingual too, since V2.9.3; see [I18N_EN_CONTENT_PLAN](docs/I18N_EN_CONTENT_PLAN.md) |
-| **212 fixes, fully offline** | A built-in knowledge base of **212 curated issues** (knowledge base v2.2, organised into 10 categories on the home screen) — symptoms, root causes, step-by-step fixes, tips and related questions. Steps are checkable and your progress is remembered. The **knowledge base updates independently** from the app. |
+| **208 fixes, fully offline** | A built-in knowledge base of **208 curated issues** (knowledge base v2.3, organised into 14 categories on the home screen) — symptoms, root causes, step-by-step fixes, tips and related questions. Steps are checkable and your progress is remembered. The **knowledge base updates independently** from the app. |
 | **First-run tutorial (V2.9, guided since V2.9.1)** | A four-step tour on first launch — connect to OBS → where to look when something breaks → one-click health check → go live & decorate. Since V2.9.1 each step **switches the app to the page it is describing** (card tucked into the bottom-right corner, overlay kept light so the page stays readable) and offers extra jump buttons for the other pages it mentions. Replay it any time from *Settings → Onboarding* without restarting. |
 | **Official OBS download entries (V2.9.1)** | For people who can't get hold of genuine OBS: the build page, the toolbox, the home welcome card, the first tutorial step and the troubleshooting guide all link to the **official site** (obsproject.com, Chinese page) and the **official GitHub releases**, plus a "download the current stable Windows installer" button whose direct link is resolved from the GitHub API. Every URL is forced to https and restricted to official hosts (`obsproject.com`, `cdn-fastly.obsproject.com`, `github.com/obsproject/obs-studio`) — a tampered API response makes the app fall back to the release page instead of opening a third-party site. |
 | **Plugin square + local plugin health check** | **57 curated plugins** across 8 categories, fully re-audited in V2.9 (repository not archived, recently maintained, Windows build available) with a **maintenance status** shown on each card; a **read-only scan** of locally installed plugins locates the OBS install directory across all drives — registry (multi-view + HKCU + DisplayIcon fallback), per-drive standard layouts, Steam libraries and the OBS 32.x per-plugin roots (`%ProgramData%\obs-studio\plugins\<name>\bin\64bit`) — so non-C-drive and new-style installs are never missed. Log analysis can link a suspect module straight to its plugin card. |
@@ -231,7 +231,7 @@ A 55-second look at what OBS Helper can do — Chinese and English versions, bot
 ### Learn & troubleshoot
 
 - **First-run tutorial** — a four-step walkthrough on first launch (connect to OBS → where to look when something breaks → one-click health check → go live & decorate); replay it from *Settings → Onboarding*
-- **Knowledge base** — 212 issues (knowledge base v2.2, organised into 10 categories on the home screen), each with symptoms / root causes / step-by-step fixes / tips / related questions; steps are checkable and progress is remembered
+- **Knowledge base** — 208 issues (knowledge base v2.3, organised into 14 categories on the home screen), each with symptoms / root causes / step-by-step fixes / tips / related questions; steps are checkable and progress is remembered
 - **Independent knowledge-base updates** — issue database and plugin catalog are decoupled from the app version: silent auto-update at startup (6h throttled), a "Check KB updates" button in Settings, and an "Update knowledge base only" option in the update dialog; GitHub raw primary channel + Release asset fallback
 - **Instant search** — matches across titles, symptoms and causes as you type
 - **Ask me anything** — describe the problem in plain words and get the most likely issue

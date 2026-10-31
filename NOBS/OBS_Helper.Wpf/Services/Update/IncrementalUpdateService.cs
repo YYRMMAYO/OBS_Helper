@@ -297,9 +297,20 @@ public sealed class IncrementalUpdateService
     private static void SafeExtractToDirectory(string zipPath, string destDir)
     {
         using var archive = ZipFile.OpenRead(zipPath);
+
+        // X1031Y2 安全加固：增量包也必须限制条目数与解压总量，防止被替换成 zip bomb。
+        const int maxEntries = 20_000;
+        const long maxTotalBytes = 4L * 1024 * 1024 * 1024;
+        if (archive.Entries.Count > maxEntries)
+            throw new InvalidDataException("update archive has too many entries");
+
+        long totalBytes = 0;
         foreach (var entry in archive.Entries)
         {
             if (string.IsNullOrWhiteSpace(entry.FullName)) continue;
+            totalBytes += entry.Length;
+            if (totalBytes > maxTotalBytes)
+                throw new InvalidDataException("update archive is too large");
 
             var rel = UpdatePaths.NormalizeRel(entry.FullName); // 非法路径直接抛 InvalidDataException
             var dst = Path.Combine(destDir, rel);

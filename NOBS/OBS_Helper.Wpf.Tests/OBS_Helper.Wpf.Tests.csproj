@@ -150,6 +150,9 @@
     <!-- V3.3.0 插件广场：版本 / 资产选择 / zip 安全 / PE 架构 / GitHub 解析（纯 BCL） -->
     <Compile Include="..\OBS_Helper.Wpf\Models\Plugins\PluginInstallManifest.cs" Link="Linked\Plugins\PluginInstallManifest.cs" />
     <Compile Include="..\OBS_Helper.Wpf\Services\Plugins\PluginInstallCore.cs" Link="Linked\Plugins\PluginInstallCore.cs" />
+    <!-- X1031Y2：本机插件管理（识别插件单元 / 迁移目标 / 路径护栏），纯 BCL -->
+    <Compile Include="..\OBS_Helper.Wpf\Services\Plugins\LocalPluginManageCore.cs" Link="Linked\Plugins\LocalPluginManageCore.cs" />
+    <Compile Include="..\OBS_Helper.Wpf\Services\Plugins\LocalPluginManageService.cs" Link="Linked\Plugins\LocalPluginManageService.cs" />
     <!-- V3.5.0 已安装插件合并列表 / GitHub 连通性分类（纯 BCL） -->
     <Compile Include="..\OBS_Helper.Wpf\Services\Plugins\PluginManagedListCore.cs" Link="Linked\Plugins\PluginManagedListCore.cs" />
     <Compile Include="..\OBS_Helper.Wpf\Services\Plugins\GitHubReachability.cs" Link="Linked\Plugins\GitHubReachability.cs" />
@@ -163,6 +166,7 @@
     <!-- V3.4.1 开源依赖中心：纯 BCL + SidecarCore，可脱离 WPF 直接测试 -->
     <Compile Include="..\OBS_Helper.Wpf\Services\Dependencies\DependencyCore.cs" Link="Linked\Dependencies\DependencyCore.cs" />
     <Compile Include="..\OBS_Helper.Wpf\Services\Dependencies\DependencyService.cs" Link="Linked\Dependencies\DependencyService.cs" />
+    <Compile Include="..\OBS_Helper.Wpf\Services\Dependencies\DependencyInstallCore.cs" Link="Linked\Dependencies\DependencyInstallCore.cs" />
 
     <!-- V3.4.0 纯逻辑：手机联动 / 弹幕 / 字幕 / 流健康 / 切片 / 复盘 / 自动化 / 多机位 -->
     <Compile Include="..\OBS_Helper.Wpf\Models\Mobile\MobileModels.cs" Link="Linked\Mobile\MobileModels.cs" />

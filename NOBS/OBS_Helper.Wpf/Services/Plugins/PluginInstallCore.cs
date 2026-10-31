@@ -241,13 +241,17 @@ public static class PluginInstallCore
         {
             if (IsSymlinkEntry(entry)) return "PLUGIN_ZIP_UNSAFE";
             if (!IsSafeEntryPath(entry.FullName, out var normalized)) return "PLUGIN_ZIP_UNSAFE";
-            if (!IsAllowedExtension(normalized)) return "PLUGIN_ZIP_UNSAFE_FILE";
+
+            // 目录条目没有扩展名：IsSafeEntryPath 会去掉末尾的 '/'，必须先按原始名称判定，
+            // 否则真实的插件包（带 bin/、data/ 等目录条目）会被误判成「可执行文件」。
+            var isDirectory = entry.FullName.EndsWith('/') || string.IsNullOrEmpty(entry.Name);
+            if (!isDirectory && !IsAllowedExtension(normalized)) return "PLUGIN_ZIP_UNSAFE_FILE";
             if (entry.Length > MaxEntryBytes) return "PLUGIN_ZIP_TOO_LARGE";
 
             totalBytes += entry.Length;
             if (totalBytes > MaxTotalBytes) return "PLUGIN_ZIP_TOO_LARGE";
 
-            if (!entry.FullName.EndsWith('/')) normalizedPaths.Add(normalized);
+            if (!isDirectory) normalizedPaths.Add(normalized);
         }
 
         if (normalizedPaths.Count == 0) return "PLUGIN_ZIP_EMPTY";
@@ -370,4 +374,64 @@ public static class PluginInstallCore
         => string.Equals(scope, "global", StringComparison.OrdinalIgnoreCase)
             ? Path.Combine(programData, "obs-studio", "plugins")
             : Path.Combine(localAppData, "obs-studio", "plugins");
+
+    /// <summary>
+    /// 卸载 / 回滚前的路径护栏（X1031Y2）：<c>installed.json</c> 是本地文件，
+    /// 不能因为里面写了一个别处路径就把那个目录移走。只接受：
+    /// <list type="bullet">
+    ///   <item>目录名与本条目的 slug 一致（<c>local-</c> 前缀的接管条目允许原名）；</item>
+    ///   <item>父目录是明确的插件根：本应用安装根 / 用户插件根 / 全局插件根，
+    ///         或 OBS 安装目录下的 <c>obs-studio\obs-plugins</c>。</item>
+    /// </list>
+    /// 任何一条不满足都拒绝操作，返回可翻译的错误码。
+    /// </summary>
+    public static bool IsSafeManagedDirectory(string? directory, string? id, string? allowedParentRoot = null)
+    {
+        var dir = (directory ?? "").Trim().TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+        if (dir.Length == 0) return false;
+        try { dir = Path.GetFullPath(dir); } catch (Exception) { return false; }
+
+        var leaf = Path.GetFileName(dir);
+        var slug = SafeSlug(id);
+        var plain = id is not null && id.StartsWith("local-", StringComparison.OrdinalIgnoreCase)
+            ? SafeSlug(id["local-".Length..])
+            : "";
+        if (!string.Equals(leaf, slug, StringComparison.OrdinalIgnoreCase) &&
+            !string.Equals(leaf, plain, StringComparison.OrdinalIgnoreCase))
+            return false;
+
+        var parent = Path.GetDirectoryName(dir);
+        if (string.IsNullOrWhiteSpace(parent)) return false;
+        parent = parent.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+
+        if (!string.IsNullOrWhiteSpace(allowedParentRoot) &&
+            string.Equals(parent, Path.GetFullPath(allowedParentRoot).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar),
+                StringComparison.OrdinalIgnoreCase))
+            return true;
+
+        try
+        {
+            var local = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "obs-studio", "plugins");
+            var roaming = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "obs-studio", "plugins");
+            var global = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), "obs-studio", "plugins");
+            if (string.Equals(parent, local.TrimEnd(Path.DirectorySeparatorChar), StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(parent, roaming.TrimEnd(Path.DirectorySeparatorChar), StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(parent, global.TrimEnd(Path.DirectorySeparatorChar), StringComparison.OrdinalIgnoreCase))
+                return true;
+        }
+        catch (Exception)
+        {
+            // 特殊文件夹取不到时继续走安装目录判断
+        }
+
+        // OBS 安装目录：<...>\obs-studio\obs-plugins\<plugin>
+        var leafOfParent = Path.GetFileName(parent);
+        var grand = Path.GetDirectoryName(parent);
+        return string.Equals(leafOfParent, "obs-plugins", StringComparison.OrdinalIgnoreCase)
+               && !string.IsNullOrWhiteSpace(grand)
+               && string.Equals(Path.GetFileName(grand), "obs-studio", StringComparison.OrdinalIgnoreCase);
+    }
 }

@@ -1,6 +1,6 @@
 {
-  "version": "2.2",
-  "updated": "2026-08-26",
+  "version": "2.3",
+  "updated": "2026-10-31",
   "categories": [
     {
       "id": "black-screen",
@@ -71,6 +71,34 @@
       "icon": "💥",
       "description": "显卡驱动、硬件加速冲突、版本更新后的异常与回退。",
       "semantic": "crimson"
+    },
+    {
+      "id": "sources",
+      "title": "来源 / 采集",
+      "icon": "🎥",
+      "description": "摄像头、采集卡、媒体源与浏览器源等输入设备的配置与排障。",
+      "semantic": "azure"
+    },
+    {
+      "id": "performance",
+      "title": "性能 / 资源占用",
+      "icon": "⚡",
+      "description": "OBS 自身开销、隐藏来源、嵌套场景与后台程序抢占资源。",
+      "semantic": "orange"
+    },
+    {
+      "id": "virtualcam",
+      "title": "虚拟摄像头",
+      "icon": "📷",
+      "description": "虚拟摄像头在 Zoom / Discord / Teams 中不出现、黑屏或权限问题。",
+      "semantic": "violet"
+    },
+    {
+      "id": "encoder",
+      "title": "编码器 / 码率",
+      "icon": "🎛️",
+      "description": "x264 / NVENC / AMF / QSV 预设、CQP/CRF 与码率选择。",
+      "semantic": "teal"
     }
   ],
   "problems": [
@@ -78,7 +106,12 @@
       "id": "bs-display",
       "category": "black-screen",
       "title": "显示器捕获（Display Capture）黑屏",
-    "synonyms": ["黑屏", "没有画面", "屏幕捕获黑屏", "heiping"],
+      "synonyms": [
+        "黑屏",
+        "没有画面",
+        "屏幕捕获黑屏",
+        "heiping"
+      ],
       "platforms": [
         "Windows"
       ],
@@ -115,8 +148,7 @@
       ],
       "related": [
         "bs-game",
-        "bs-dualgpu",
-        "bs-win11"
+        "bs-dualgpu"
       ],
       "links": [
         {
@@ -137,7 +169,11 @@
       "id": "bs-game",
       "category": "black-screen",
       "title": "游戏捕获（Game Capture）黑屏",
-    "synonyms": ["游戏黑屏", "游戏源黑屏", "游戏捕获失败"],
+      "synonyms": [
+        "游戏黑屏",
+        "游戏源黑屏",
+        "游戏捕获失败"
+      ],
       "platforms": [
         "Windows"
       ],
@@ -201,7 +237,10 @@
       "id": "bs-window",
       "category": "black-screen",
       "title": "窗口捕获（Window Capture）无法捕获/黑屏",
-    "synonyms": ["窗口黑屏", "捕获不到窗口"],
+      "synonyms": [
+        "窗口黑屏",
+        "捕获不到窗口"
+      ],
       "platforms": [
         "Windows",
         "macOS"
@@ -270,55 +309,6 @@
       "related": [
         "bs-display",
         "bs-game"
-      ],
-      "links": [
-        {
-          "title": "OBS 官方 · macOS 屏幕录制/麦克风/辅助功能权限指南",
-          "url": "https://obsproject.com/kb/macos-permissions-guide"
-        },
-        {
-          "title": "OBS Versions · 黑屏与编码问题修复教程",
-          "url": "https://obs-versions.com/blog/fix-obs-black-screen"
-        },
-        {
-          "title": "OBS 官方 · Windows 排障指南（黑屏/编码/音频/崩溃）",
-          "url": "https://obsproject.com/zh-cn/kb"
-        }
-      ]
-    },
-    {
-      "id": "bs-win11",
-      "category": "black-screen",
-      "title": "Windows 11 显示器捕获黑屏",
-      "platforms": [
-        "Windows"
-      ],
-      "severity": "一般",
-      "symptoms": [
-        "Win11 下显示器/窗口捕获黑屏",
-        "更新系统后捕获失效"
-      ],
-      "causes": [
-        "Win11 改变了硬件加速捕获机制",
-        "默认捕获方式与新系统不兼容"
-      ],
-      "steps": [
-        {
-          "title": "改用 Windows Graphics Capture",
-          "detail": "在显示器/窗口捕获源属性中，将 捕获方法 改为“Windows 图形捕获(WGC)”。",
-          "level": "基础"
-        },
-        {
-          "title": "关闭系统硬件加速（必要时）",
-          "detail": "设置 → 系统 → 显示 → 图形 → 更改默认图形设置，关闭“硬件加速的 GPU 计划”后重启。",
-          "level": "进阶"
-        }
-      ],
-      "tips": [
-        "Win11 优先使用 WGC 捕获方式"
-      ],
-      "related": [
-        "bs-display"
       ],
       "links": [
         {
@@ -459,7 +449,12 @@
       "id": "enc-cpu",
       "category": "encoding",
       "title": "x264 CPU 占用过高导致掉帧",
-    "synonyms": ["掉帧", "丢帧", "落帧", "CPU 占用高"],
+      "synonyms": [
+        "掉帧",
+        "丢帧",
+        "落帧",
+        "CPU 占用高"
+      ],
       "platforms": [
         "Windows",
         "macOS",
@@ -516,7 +511,12 @@
       "id": "enc-drop",
       "category": "encoding",
       "title": "输出分辨率/帧率过高导致卡顿",
-    "synonyms": ["卡顿", "很卡", "不流畅", "画面卡"],
+      "synonyms": [
+        "卡顿",
+        "很卡",
+        "不流畅",
+        "画面卡"
+      ],
       "platforms": [
         "Windows",
         "macOS",
@@ -574,7 +574,12 @@
       "id": "lag-network",
       "category": "lag",
       "title": "直播网络掉帧（Dropped Frames）",
-    "synonyms": ["掉帧", "丢帧", "网络卡", "上行不足"],
+      "synonyms": [
+        "掉帧",
+        "丢帧",
+        "网络卡",
+        "上行不足"
+      ],
       "platforms": [
         "Windows",
         "macOS",
@@ -772,62 +777,7 @@
       "tips": [
         "先判断声音快还是慢，再决定正负值"
       ],
-      "related": [
-        "av-sample"
-      ],
-      "links": [
-        {
-          "title": "OBS 官方 · Windows 排障指南（黑屏/编码/音频/崩溃）",
-          "url": "https://obsproject.com/zh-cn/kb"
-        },
-        {
-          "title": "OBS 官方 · 日志分析器（自动诊断日志）",
-          "url": "https://obsproject.com/tools/analyzer"
-        }
-      ]
-    },
-    {
-      "id": "av-sample",
-      "category": "avsync",
-      "title": "音频采样率不匹配导致爆音/不同步",
-      "platforms": [
-        "Windows",
-        "macOS",
-        "Linux"
-      ],
-      "severity": "一般",
-      "symptoms": [
-        "爆音、杂音",
-        "录音/直播不同步"
-      ],
-      "causes": [
-        "系统声音采样率与 OBS 不一致（44.1k vs 48k）",
-        "多声道(5.1/7.1)未降混"
-      ],
-      "steps": [
-        {
-          "title": "统一采样率为 48kHz",
-          "detail": "Windows 声音设置 → 播放/录制设备 属性 → 高级 → 默认格式 设为 48000 Hz；OBS 音频设置保持一致。",
-          "level": "基础"
-        },
-        {
-          "title": "在 OBS 启用重采样",
-          "detail": "若设备非 44.1/48k，在 OBS 音频设置中启用重采样到目标 48kHz。",
-          "level": "进阶"
-        },
-        {
-          "title": "多声道降混到立体声",
-          "detail": "对 5.1/7.1 设备添加“音频监听”滤镜 → 启用“降混至立体声”，输出声道数设为 2。",
-          "level": "进阶"
-        }
-      ],
-      "tips": [
-        "48kHz 是直播通用标准"
-      ],
-      "related": [
-        "av-desync",
-        "au-mic"
-      ],
+      "related": [],
       "links": [
         {
           "title": "OBS 官方 · Windows 排障指南（黑屏/编码/音频/崩溃）",
@@ -843,7 +793,12 @@
       "id": "au-mic",
       "category": "audio",
       "title": "麦克风没有声音 / 不被识别",
-    "synonyms": ["没声音", "无声", "话筒不响", "mic 没声音"],
+      "synonyms": [
+        "没声音",
+        "无声",
+        "话筒不响",
+        "mic 没声音"
+      ],
       "platforms": [
         "Windows",
         "macOS",
@@ -881,8 +836,7 @@
         "避免同时用系统录音软件和 OBS 抢占设备"
       ],
       "related": [
-        "au-echo",
-        "av-sample"
+        "au-echo"
       ],
       "links": [
         {
@@ -2747,53 +2701,6 @@
       ]
     },
     {
-      "id": "av-drift",
-      "category": "avsync",
-      "title": "音画不同步随时间漂移（采样率不匹配）",
-      "platforms": [
-        "Windows",
-        "macOS"
-      ],
-      "severity": "罕见",
-      "symptoms": [
-        "开播初期同步，几分钟后逐渐错位且越来越严重",
-        "周期性“越来越偏”"
-      ],
-      "causes": [
-        "Windows 声音、OBS、直播软件采样率不一致（44.1k vs 48k）",
-        "设备时钟漂移累积"
-      ],
-      "steps": [
-        {
-          "title": "统一所有采样率为 48kHz",
-          "detail": "Windows 声音设置、OBS（设置 → 音频 → 采样率）、直播软件全部设为 48kHz，切勿混用 44.1k。",
-          "level": "进阶"
-        },
-        {
-          "title": "重新设置同步偏移基准",
-          "detail": "统一采样率后重新用拍手法测量并填入同步偏移。",
-          "level": "进阶"
-        }
-      ],
-      "tips": [
-        "采样率不一致是导致“逐渐漂移”的典型根因"
-      ],
-      "related": [
-        "av-sample",
-        "av-offset"
-      ],
-      "links": [
-        {
-          "title": "OBS 官方 · Windows 排障指南（黑屏/编码/音频/崩溃）",
-          "url": "https://obsproject.com/zh-cn/kb"
-        },
-        {
-          "title": "OBS 官方 · 日志分析器（自动诊断日志）",
-          "url": "https://obsproject.com/tools/analyzer"
-        }
-      ]
-    },
-    {
       "id": "av-drift-long",
       "category": "avsync",
       "title": "长录制音画逐渐漂移（时钟漂移 / 磁盘饱和）",
@@ -2840,7 +2747,6 @@
         "先统一 48kHz 再测漂移速率，能排除大部分假漂移"
       ],
       "related": [
-        "av-drift",
         "av-desync",
         "rc-disk-space"
       ],
@@ -3010,62 +2916,6 @@
         "增益过大会引入底噪，宁可提高系统音量也少堆增益"
       ],
       "related": [
-        "au-mic",
-        "au-mic-noise"
-      ],
-      "links": [
-        {
-          "title": "OBS 官方 · macOS 屏幕录制/麦克风/辅助功能权限指南",
-          "url": "https://obsproject.com/kb/macos-permissions-guide"
-        },
-        {
-          "title": "OBS 官方 · Windows 排障指南（黑屏/编码/音频/崩溃）",
-          "url": "https://obsproject.com/zh-cn/kb"
-        }
-      ]
-    },
-    {
-      "id": "au-mic-noise",
-      "category": "audio",
-      "title": "麦克风底噪 / 环境噪音（降噪处理）",
-    "synonyms": ["底噪", "电流声", "沙沙声", "杂音"],
-      "platforms": [
-        "Windows",
-        "macOS"
-      ],
-      "severity": "常见",
-      "symptoms": [
-        "直播有风扇声、空调嗡嗡声",
-        "安静时背景噪音明显",
-        "录音带嘶嘶声"
-      ],
-      "causes": [
-        "环境噪音本底高",
-        "麦克风增益过高放大噪声",
-        "未做噪音抑制"
-      ],
-      "steps": [
-        {
-          "title": "加噪音抑制滤镜",
-          "detail": "混音器麦克风齿轮 → 滤镜 → + → 噪音抑制，选 RNNoise（效果好、开销低）。",
-          "level": "基础"
-        },
-        {
-          "title": "用噪音门限滤除静音段",
-          "detail": "再加“噪音门限”滤镜，设置开/关阈值，仅在说话时通过声音。",
-          "level": "进阶"
-        },
-        {
-          "title": "改善物理环境",
-          "detail": "用动圈麦、拉近麦克风、加装吸音材料、关闭空调/风扇。",
-          "level": "基础"
-        }
-      ],
-      "tips": [
-        "若使用 NVIDIA Broadcast，可在那里降噪，OBS 内就无需重复加 RNNoise"
-      ],
-      "related": [
-        "au-mic-quiet",
         "au-mic"
       ],
       "links": [
@@ -3165,10 +3015,7 @@
       "tips": [
         "采样率不一致还会引发音画漂移"
       ],
-      "related": [
-        "av-sample",
-        "av-drift"
-      ],
+      "related": [],
       "links": [
         {
           "title": "OBS 官方 · macOS 屏幕录制/麦克风/辅助功能权限指南",
@@ -3220,7 +3067,6 @@
         "滤镜顺序会影响最终效果，一般降噪在前、润色在后"
       ],
       "related": [
-        "au-mic-noise",
         "au-mic-quiet"
       ],
       "links": [
@@ -4938,8 +4784,7 @@
       ],
       "related": [
         "bs-game",
-        "bs-dualgpu",
-        "bs-win11"
+        "bs-dualgpu"
       ],
       "links": [
         {
@@ -5181,8 +5026,7 @@
         "条件允许时优先用「虚拟背景」插件或 AI 抠像，不依赖绿幕"
       ],
       "related": [
-        "st-scene",
-        "au-mic-noise"
+        "st-scene"
       ],
       "links": [
         {
@@ -5423,9 +5267,7 @@
         "先用 OBS 的「录制一段测试」确认波形再正式开播"
       ],
       "related": [
-        "au-mic-quiet",
-        "au-mic-noise",
-        "av-sample"
+        "au-mic-quiet"
       ],
       "links": [
         {
@@ -5545,7 +5387,6 @@
         "日志（帮助 → 日志文件）里出现 audio buffering 提示，基本就是负载或时间戳问题"
       ],
       "related": [
-        "av-drift",
         "lag-gpu-cap",
         "lag-gamemode"
       ],
@@ -5606,7 +5447,6 @@
         "监听用「监听并输出」，听实时效果再微调"
       ],
       "related": [
-        "au-mic-noise",
         "au-mic-clip",
         "au-vst"
       ],
@@ -6953,7 +6793,6 @@
       "related": [
         "au-mute",
         "au-echo",
-        "au-mic-noise",
         "av-desync"
       ],
       "links": [
@@ -7079,7 +6918,6 @@
       ],
       "related": [
         "bs-display",
-        "bs-win11",
         "st-virtualcam",
         "au-mute"
       ],
@@ -7207,10 +7045,7 @@
         "直播场景绝对不建议蓝牙收音，观众端延迟会被放大"
       ],
       "related": [
-        "av-drift",
-        "au-sample-mismatch",
-        "av-sample",
-        "au-mic-noise"
+        "au-sample-mismatch"
       ],
       "links": [
         {
@@ -7807,7 +7642,6 @@
         "AMD / Intel 用户没有对应滤镜属正常，用 RNNoise 即可"
       ],
       "related": [
-        "au-mic-noise",
         "au-mic-chain",
         "enc-vram",
         "enc-overload"
@@ -8163,7 +7997,6 @@
       ],
       "related": [
         "bs-browser-src",
-        "cfg-browser-dock-refresh",
         "cf-webcam"
       ],
       "links": [
@@ -8174,67 +8007,6 @@
         {
           "title": "OBS 官方论坛 · Windows 支持",
           "url": "https://obsproject.com/forum/list/windows-support.32/"
-        }
-      ]
-    },
-    {
-      "id": "cfg-browser-dock-refresh",
-      "category": "config",
-      "title": "自定义浏览器 Dock 卡住无法刷新的变通方案",
-      "platforms": [
-        "Windows",
-        "macOS",
-        "Linux"
-      ],
-      "severity": "小众",
-      "symptoms": [
-        "视图 → 停靠窗口里添加的自定义网页面板（弹幕 / 后台 / 数据面板）内容卡住不更新",
-        "浏览器来源有右键「刷新」，Dock 却没有任何刷新入口",
-        "只能重启 OBS 才能恢复面板显示"
-      ],
-      "causes": [
-        "截至 32.x，自定义浏览器 Dock 尚未提供与浏览器来源同级的刷新菜单 / 快捷键 / API（官方仓库已确认此能力缺口）",
-        "Dock 与来源共用同一个浏览器内核，但刷新操作没有暴露到 Dock 层"
-      ],
-      "steps": [
-        {
-          "title": "变通一：改用浏览器来源",
-          "detail": "把面板做成一个隐藏场景里的浏览器来源（不输出到画面），需要看时切到该场景；来源拥有完整的右键刷新能力。",
-          "level": "基础"
-        },
-        {
-          "title": "变通二：移除再添加 Dock",
-          "detail": "视图 → 停靠窗口 → 自定义浏览器窗口，删除该条目后重新添加同 URL，等效强制重载。",
-          "level": "基础"
-        },
-        {
-          "title": "变通三：外部浏览器兜底",
-          "detail": "把面板 URL 放到第二块屏幕的独立浏览器窗口；牺牲布局一体化换取稳定可控的刷新。",
-          "level": "基础"
-        },
-        {
-          "title": "跟进官方进展",
-          "detail": "该缺口在官方仓库有明确 feature request，后续版本可能补齐；升级前留意 Release Notes。",
-          "level": "进阶"
-        }
-      ],
-      "tips": [
-        "直播中不要依赖 AX/UI 自动化去点 Dock 右键刷新——会抢焦点且跨语言系统不可靠",
-        "本助手的 Dock 版插件走原生协议，不受此问题影响"
-      ],
-      "related": [
-        "bs-browser-src",
-        "src-browser-alert",
-        "cr-plugin-load"
-      ],
-      "links": [
-        {
-          "title": "OBS 官方 · 知识库（中文）",
-          "url": "https://obsproject.com/zh-cn/kb"
-        },
-        {
-          "title": "OBS 官方 · OBS Studio 32.x 发布说明",
-          "url": "https://obsproject.com/blog/obs-studio-32-0-release-notes"
         }
       ]
     },
@@ -8534,8 +8306,7 @@
       ],
       "related": [
         "st-chat",
-        "au-random-desync",
-        "au-mic-noise"
+        "au-random-desync"
       ],
       "links": [
         {
@@ -9274,7 +9045,6 @@
       "related": [
         "bs-window",
         "bs-display",
-        "bs-win11",
         "bs-protected"
       ],
       "links": [
@@ -10360,7 +10130,6 @@
       "related": [
         "bs-browser-src",
         "src-browser-alert",
-        "cfg-browser-dock-refresh",
         "st-chat"
       ],
       "links": [
@@ -10417,59 +10186,6 @@
         "rc-media-source",
         "av-drift-long",
         "tr-stinger"
-      ],
-      "links": [
-        {
-          "title": "OBS 官方知识库",
-          "url": "https://obsproject.com/zh-cn/kb"
-        }
-      ]
-    },
-    {
-      "id": "src-vlc-source",
-      "category": "sources",
-      "title": "VLC 视频列表源：播放顺序 / 循环 / 缺插件问题",
-      "platforms": [
-        "Windows"
-      ],
-      "severity": "小众",
-      "symptoms": [
-        "添加「VLC 视频源」后列表为空或不播放；",
-        "想顺序播放歌回切片但总是随机；",
-        "切歌间隙黑屏难看。"
-      ],
-      "causes": [
-        "依赖本机安装的 VLC 及其解码器，未装或版本不匹配时源不可用；",
-        "播放模式（顺序/循环/随机）藏在源属性底部，默认随机；",
-        "列表项之间天然有空隙。"
-      ],
-      "steps": [
-        {
-          "title": "安装与本机架构匹配的 VLC 后重启 OBS",
-          "detail": "安装与本机架构匹配的 VLC 后重启 OBS；",
-          "level": "基础"
-        },
-        {
-          "title": "属性 → 播放列表填入本地文件",
-          "detail": "属性 → 播放列表填入本地文件，勾选「循环列表」并按需关闭随机；",
-          "level": "基础"
-        },
-        {
-          "title": "用「场景内的图片源垫底」承接间隙",
-          "detail": "用「场景内的图片源垫底」承接间隙，或把素材拼接成一个长视频规避间隙；",
-          "level": "基础"
-        },
-        {
-          "title": "配合 Advance Scene Switcher 插件实现按媒体切换场景。",
-          "detail": "配合 Advance Scene Switcher 插件实现按媒体切换场景。",
-          "level": "基础"
-        }
-      ],
-      "tips": [],
-      "related": [
-        "rc-media-source",
-        "src-media-loop",
-        "cf-hotkeys"
       ],
       "links": [
         {
@@ -10972,61 +10688,6 @@
       ]
     },
     {
-      "id": "rc-replay-hotkey",
-      "category": "recording",
-      "title": "回放缓冲保存失败：快捷键「按下 vs 松开」与时长设置",
-      "platforms": [
-        "Windows",
-        "macOS",
-        "Linux"
-      ],
-      "severity": "一般",
-      "symptoms": [
-        "按了保存热键但输出目录没有新文件；",
-        "存出的片段比预期短很多；",
-        "回放缓冲开着却时不时自动停用。"
-      ],
-      "causes": [
-        "热键绑成了「按住型」语义理解错误，或与游戏键冲突没触发；",
-        "「重播缓冲时长」短于精彩片段实际长度；",
-        "磁盘剩余空间不足时 OBS 自动停止缓冲保护。"
-      ],
-      "steps": [
-        {
-          "title": "热键设置里区分「开始回放保存」单击绑定",
-          "detail": "热键设置里区分「开始回放保存」单击绑定，避免绑定到需要组合状态的键；",
-          "level": "基础"
-        },
-        {
-          "title": "回放缓冲时长按内容类型设",
-          "detail": "回放缓冲时长按内容类型设：FPS 高光 60~90 秒，日常 30 秒足够；时长越大内存占用越高；",
-          "level": "基础"
-        },
-        {
-          "title": "检查录像目录磁盘余量与写入速度",
-          "detail": "检查录像目录磁盘余量与写入速度（rc-disk-speed）；",
-          "level": "基础"
-        },
-        {
-          "title": "保存的片段落在录像目录下名为 Replay Buffers 的子目录",
-          "detail": "保存的片段落在录像目录下名为 Replay Buffers 的子目录（或自设路径），先找对地方再说没保存。",
-          "level": "基础"
-        }
-      ],
-      "tips": [],
-      "related": [
-        "rc-replay-buffer",
-        "cfg-hotkey-conflict",
-        "rc-disk-speed"
-      ],
-      "links": [
-        {
-          "title": "OBS 官方知识库",
-          "url": "https://obsproject.com/zh-cn/kb"
-        }
-      ]
-    },
-    {
       "id": "rc-filename-pattern",
       "category": "recording",
       "title": "录制文件名格式化符与中文/特殊字符路径问题",
@@ -11237,61 +10898,6 @@
       ]
     },
     {
-      "id": "cf-ui-language",
-      "category": "config",
-      "title": "语言切换不生效 / 界面英文中文混杂",
-      "platforms": [
-        "Windows",
-        "macOS",
-        "Linux"
-      ],
-      "severity": "小众",
-      "symptoms": [
-        "设置里选了中文，重启后部分菜单仍是英文；",
-        "语言列表里根本没有中文选项；",
-        "升级后语言被重置回英文。"
-      ],
-      "causes": [
-        "部分插件/新功能文案尚未翻译，属正常现象；",
-        "便携版/绿色版缺 locale 文件；",
-        "配置文件里 language 字段被重置。"
-      ],
-      "steps": [
-        {
-          "title": "设置 → 一般 → 语言 → 简体中文",
-          "detail": "设置 → 一般 → 语言 → 简体中文，完全退出重启 OBS；",
-          "level": "基础"
-        },
-        {
-          "title": "少数英文词条是未翻译的新功能/第三方插件",
-          "detail": "少数英文词条是未翻译的新功能/第三方插件，等翻译更新即可；",
-          "level": "基础"
-        },
-        {
-          "title": "绿色版确认 data\\locale 目录完整",
-          "detail": "绿色版确认 data\\locale 目录完整，缺文件就重装；",
-          "level": "基础"
-        },
-        {
-          "title": "反复重置则检查 global.ini 是否被杀软/同步盘回滚。",
-          "detail": "反复重置则检查 global.ini 是否被杀软/同步盘回滚。",
-          "level": "基础"
-        }
-      ],
-      "tips": [],
-      "related": [
-        "cf-text-cjk",
-        "cf-portable-mode",
-        "cf-reset"
-      ],
-      "links": [
-        {
-          "title": "OBS 中文翻译平台",
-          "url": "https://crowdin.com/project/obs-studio"
-        }
-      ]
-    },
-    {
       "id": "os-update-fail",
       "category": "crash",
       "title": "自动更新失败 / 下载缓慢 / 手动更新方法",
@@ -11399,63 +11005,6 @@
         {
           "title": "社区指南 · Global Hotkeys Not Registering",
           "url": "https://salivity.github.io/obs-studio/article/how-to-fix-obs-studio-global-hotkeys-not-registering"
-        }
-      ]
-    },
-    {
-      "id": "linux-flatpak-plugins",
-      "category": "crash",
-      "title": "Linux Flatpak/Snap/Nix 版 OBS：插件装不上或全都不加载",
-      "platforms": [
-        "Linux"
-      ],
-      "severity": "小众",
-      "symptoms": [
-        "按教程装了插件但 OBS 里完全不出现；",
-        "Flatpak 版看不到系统目录装的插件；",
-        "NixOS 上 wrapOBS 定义后插件神秘失踪。"
-      ],
-      "causes": [
-        "Flatpak/Snap 沙箱看不到宿主 ~/.local/share/obs-plugins 等路径，要用 flatpak 版专属命令安装；",
-        "NixOS 中 obs-studio 与 wrapOBS 同时声明时后者被覆盖。",
-        "发行版仓库版 OBS 通常过旧，插件 API 不匹配。"
-      ],
-      "steps": [
-        {
-          "title": "Flatpak 插件安装用 `flatpak install --from` 或把插件放入 `~/.var/app/com.obsproject.Studio/data/obs-studio` 对应目录",
-          "detail": "Flatpak 插件安装用 `flatpak install --from` 或把插件放入 `~/.var/app/com.obsproject.Studio/data/obs-studio` 对应目录；",
-          "level": "进阶"
-        },
-        {
-          "title": "NixOS 检查 systemPackages 不要重复声明 obs-studio",
-          "detail": "NixOS 检查 systemPackages 不要重复声明 obs-studio，只保留 wrapOBS 定义；",
-          "level": "进阶"
-        },
-        {
-          "title": "优先使用官方 PPA/Flatpak 获取新版 OBS",
-          "detail": "优先使用官方 PPA/Flatpak 获取新版 OBS，发行版仓库版仅作兜底；",
-          "level": "基础"
-        },
-        {
-          "title": "插件加载失败看启动终端输出与 Help → Log Files。",
-          "detail": "插件加载失败看启动终端输出与 Help → Log Files。",
-          "level": "基础"
-        }
-      ],
-      "tips": [],
-      "related": [
-        "cr-plugin-load",
-        "cf-steam-plugins",
-        "cr-plugin-manager"
-      ],
-      "links": [
-        {
-          "title": "NixOS Discourse · Fixing OBS Studio not seeing any plugins",
-          "url": "https://discourse.nixos.org/t/fixing-obs-studio-not-seeing-any-plugins/47702"
-        },
-        {
-          "title": "OBS 官方 Flatpak",
-          "url": "https://flathub.org/en/apps/com.obsproject.Studio"
         }
       ]
     },
@@ -12107,7 +11656,330 @@
           "url": "https://obsproject.com/analyzer"
         }
       ]
+    },
+    {
+      "id": "cfg-plugin-oneclick",
+      "category": "config",
+      "title": "插件广场「一键配置」失败 / GitHub 下载超时",
+      "synonyms": [
+        "插件装不上",
+        "一键安装失败",
+        "下载超时",
+        "GitHub 连不上",
+        "steam++",
+        "加速器"
+      ],
+      "platforms": [
+        "Windows"
+      ],
+      "severity": "常见",
+      "symptoms": [
+        "点「一键配置」后一直转圈或提示 NET_TIMEOUT / NET_OFFLINE",
+        "安装到一半失败，插件列表里没有新条目",
+        "下载页能打开，但应用内拉取总是失败"
+      ],
+      "causes": [
+        "直连 GitHub 不稳定，Release 资产下载被中断",
+        "加速器只代理了浏览器，没有接管应用进程",
+        "OBS 仍在运行，插件 DLL 被占用",
+        "最新 Release 里没有 Windows x64 的 zip 包"
+      ],
+      "steps": [
+        {
+          "title": "先开启 GitHub 加速",
+          "detail": "打开 Watt Toolkit（Steam++）并勾选「GitHub 加速」；回到插件页点「我已开启，重新检测」，探测通过后再点一键配置。",
+          "level": "基础"
+        },
+        {
+          "title": "关闭 OBS 再安装",
+          "detail": "OBS 会锁住插件 DLL，安装 / 更新前必须完全退出（含托盘图标）；安装失败时应用会自动回滚，不会留下半截目录。",
+          "level": "基础"
+        },
+        {
+          "title": "确认 Release 有 Windows 包",
+          "detail": "点卡片上的「下载页」查看最新 Release；只有源码包或 Linux 包时无法一键配置，需要手动下载 Windows zip。",
+          "level": "进阶"
+        },
+        {
+          "title": "手动渠道兜底",
+          "detail": "已经自己下好插件时，把 zip 解压到 OBS 插件目录；然后在「已安装」列表点「接管管理」，之后就能在本应用内回滚 / 卸载。",
+          "level": "进阶"
+        }
+      ],
+      "tips": [
+        "下载临时文件在 %LocalAppData%\\OBS_Helper\\plugins\\downloads，失败后可删除",
+        "安装时只从 GitHub 官方 HTTPS 资产域下载，并做 SHA-256 校验（有摘要时）"
+      ],
+      "related": [
+        "cr-plugin",
+        "cr-plugin-load",
+        "cfg-local-plugin-manage"
+      ],
+      "links": [
+        {
+          "title": "OBS 官方插件论坛",
+          "url": "https://obsproject.com/forum/plugins/"
+        },
+        {
+          "title": "Watt Toolkit（Steam++）",
+          "url": "https://steampp.net/"
+        }
+      ]
+    },
+    {
+      "id": "cfg-dependency-missing",
+      "category": "config",
+      "title": "FFmpeg / rclone「一键配置」后仍提示未就绪",
+      "synonyms": [
+        "依赖未配置",
+        "ffmpeg 找不到",
+        "rclone 找不到",
+        "高光切片不可用",
+        "自动归档不可用"
+      ],
+      "platforms": [
+        "Windows"
+      ],
+      "severity": "一般",
+      "symptoms": [
+        "依赖中心显示已下载，但功能页仍提示缺少 FFmpeg / rclone",
+        "高光切片、竖屏转换或录制自动归档不可用",
+        "重启后配置又变回未配置"
+      ],
+      "causes": [
+        "下载目录被清理或杀毒软件隔离了 exe",
+        "一键配置写入了旧版本路径，文件后来被移动",
+        "使用方在启动时读取路径，配置后没有重新加载",
+        "多个版本共存，路径指向了不完整的副本"
+      ],
+      "steps": [
+        {
+          "title": "确认依赖中心的状态",
+          "detail": "依赖中心每行显示「已就绪」和实际路径；路径不存在就重新点「一键配置」，不要只改设置里的旧路径。",
+          "level": "基础"
+        },
+        {
+          "title": "手动指定 exe",
+          "detail": "自己下载的包解压后，点「选择已下载文件」，选中 ffmpeg.exe（通常在 bin 目录）或 rclone.exe。",
+          "level": "基础"
+        },
+        {
+          "title": "重启应用后再试",
+          "detail": "部分功能在启动时读取依赖路径；配置完成后重启本应用，再打开对应功能页。",
+          "level": "进阶"
+        },
+        {
+          "title": "检查安全软件",
+          "detail": "确认杀毒 / 网盘同步没有隔离或锁定下载的 exe；必要时把 %LocalAppData%\\OBS_Helper\\dependencies 加入信任目录。",
+          "level": "进阶"
+        }
+      ],
+      "tips": [
+        "一键配置只记录路径，不修改系统 PATH、不写注册表",
+        "FFmpeg 只使用 LGPL 构建，避免把 GPL 产物带进分发链路"
+      ],
+      "related": [
+        "cfg-plugin-oneclick",
+        "rc-disk-speed"
+      ],
+      "links": [
+        {
+          "title": "FFmpeg 官方下载",
+          "url": "https://ffmpeg.org/download.html"
+        },
+        {
+          "title": "rclone 官方下载",
+          "url": "https://rclone.org/downloads/"
+        }
+      ]
+    },
+    {
+      "id": "cfg-obs-state-stale",
+      "category": "config",
+      "title": "助手显示「录制中 / 直播中」但 OBS 已停止",
+      "synonyms": [
+        "状态不同步",
+        "停止后还显示录制中",
+        "计时器不归零",
+        "手机端状态错误"
+      ],
+      "platforms": [
+        "Windows"
+      ],
+      "severity": "一般",
+      "symptoms": [
+        "OBS 已经停止录制 / 推流，助手仍显示进行中",
+        "录制计时器停在几秒或继续走",
+        "手机页面刷新后仍显示红灯"
+      ],
+      "causes": [
+        "旧版本把查询结果直接写回状态，停止事件后又被翻回运行中",
+        "手机页面复用了缓存里的旧状态",
+        "obs-websocket 断线重连后漏掉了状态事件"
+      ],
+      "steps": [
+        {
+          "title": "升级到修复版本",
+          "detail": "V3.5.2 / X1031Y2 及以后：状态事件是权威来源，查询只补时长；另有每 3 秒一次的对账兜住丢失事件。",
+          "level": "基础"
+        },
+        {
+          "title": "重连 OBS",
+          "detail": "在助手首页断开连接再连一次；手机页面下拉刷新或重新扫码进入。",
+          "level": "基础"
+        },
+        {
+          "title": "确认 OBS 真的停了",
+          "detail": "在 OBS 主界面确认录制 / 推流按钮已经变为「开始」；必要时再点一次停止，等待 1~2 秒。",
+          "level": "进阶"
+        },
+        {
+          "title": "导出日志排查",
+          "detail": "仍不对时导出本应用日志与 OBS 日志，检查是否缺少 RecordStateChanged / StreamStateChanged 事件。",
+          "level": "进阶"
+        }
+      ],
+      "tips": [
+        "V3.5.2 起不在录制 / 推流时，时长固定返回 00:00:00",
+        "批量状态查询使用 obs-websocket 5.x 的 RequestBatch（op 8 / 9）"
+      ],
+      "related": [
+        "cfg-websocket-remote",
+        "os-update-fail"
+      ],
+      "links": [
+        {
+          "title": "obs-websocket 协议文档",
+          "url": "https://github.com/obsproject/obs-websocket/blob/master/docs/generated/protocol.md"
+        }
+      ]
+    },
+    {
+      "id": "rc-file-locked",
+      "category": "recording",
+      "title": "录制文件被占用 / 无法删除或移动",
+      "synonyms": [
+        "文件正在使用",
+        "录像删不掉",
+        "录像移动失败",
+        "文件被锁定"
+      ],
+      "platforms": [
+        "Windows"
+      ],
+      "severity": "一般",
+      "symptoms": [
+        "删除录像时提示文件正在被另一个程序使用",
+        "剪辑软件打不开刚录完的文件",
+        "重命名或移动到网盘目录失败"
+      ],
+      "causes": [
+        "OBS 仍在写文件或进程没有完全退出",
+        "播放器、剪辑软件或网盘同步客户端持有句柄",
+        "杀毒软件正在扫描大文件",
+        "目标磁盘权限不足或空间已满"
+      ],
+      "steps": [
+        {
+          "title": "先停止录制并退出 OBS",
+          "detail": "停止录制后等待几秒，再从托盘退出 OBS；确认任务管理器里没有残留的 obs64.exe。",
+          "level": "基础"
+        },
+        {
+          "title": "关闭占用程序",
+          "detail": "关闭播放器、剪辑软件、网盘同步与杀毒扫描；必要时用资源监视器搜索文件名对应的句柄。",
+          "level": "进阶"
+        },
+        {
+          "title": "换目录处理",
+          "detail": "仍无法移动时，先把文件复制到其他目录再处理；不要直接强删正在写入的文件，容易得到损坏的 MP4。",
+          "level": "进阶"
+        },
+        {
+          "title": "检查磁盘与权限",
+          "detail": "确认目标磁盘有足够空间；公司电脑 / 受控目录可能需要管理员权限才能移动。",
+          "level": "进阶"
+        }
+      ],
+      "tips": [
+        "录制用 MKV 更抗崩溃，结束后再重新封装为 MP4",
+        "重要素材先备份，再做删除 / 移动"
+      ],
+      "related": [
+        "rc-nofile",
+        "rc-mkv",
+        "rc-disk-space"
+      ],
+      "links": [
+        {
+          "title": "OBS 官方录制指南",
+          "url": "https://obsproject.com/kb/recording-guide"
+        }
+      ]
+    },
+    {
+      "id": "cfg-local-plugin-manage",
+      "category": "config",
+      "title": "本机插件迁移 / 卸载失败或找不到备份",
+      "synonyms": [
+        "插件卸载失败",
+        "插件迁移失败",
+        "找不到插件备份",
+        "本机检测不能管理"
+      ],
+      "platforms": [
+        "Windows"
+      ],
+      "severity": "一般",
+      "symptoms": [
+        "在「已安装」里点卸载 / 迁移没有反应或报权限错误",
+        "迁移后插件从列表消失，OBS 里也不见了",
+        "找不到卸载前的备份目录"
+      ],
+      "causes": [
+        "OBS 未关闭，插件目录被占用",
+        "全局插件目录需要管理员权限",
+        "插件是扁平摆放（DLL 直接放在插件根），无法整目录迁移",
+        "扫描结果还是操作前的缓存"
+      ],
+      "steps": [
+        {
+          "title": "关闭 OBS 并重新扫描",
+          "detail": "完全退出 OBS 后，在插件页点「重新扫描」，让列表与磁盘一致。",
+          "level": "基础"
+        },
+        {
+          "title": "全局级迁移用管理员身份",
+          "detail": "迁移到 %ProgramData%\\obs-studio\\plugins 需要写权限；右键本应用「以管理员身份运行」再操作。",
+          "level": "进阶"
+        },
+        {
+          "title": "扁平插件先卸载再重装",
+          "detail": "DLL 直接放在插件根的老布局只能卸载单个 DLL，不能整目录迁移；卸载后用「一键配置」重装成新布局。",
+          "level": "进阶"
+        },
+        {
+          "title": "从备份目录恢复",
+          "detail": "卸载不会硬删：备份在 %LocalAppData%\\OBS_Helper\\plugins\\local-backups，按时间戳找到插件目录手动放回。",
+          "level": "进阶"
+        }
+      ],
+      "tips": [
+        "「接管管理」只登记，不移动文件；需要换位置时用「迁移到用户级 / 全局级」",
+        "卸载 / 迁移前都要求 OBS 已关闭"
+      ],
+      "related": [
+        "cr-plugin",
+        "cfg-plugin-oneclick",
+        "cr-plugin-load"
+      ],
+      "links": [
+        {
+          "title": "OBS 插件目录说明",
+          "url": "https://obsproject.com/kb/plugins-guide"
+        }
+      ]
     }
   ],
-  "note": "已扩充常见与罕见 OBS 问题、macOS 端问题及直播间搭建引导（含各平台接入与通用流程）。2026-08-05 增补：反作弊游戏捕获、浏览器源白屏、回放缓冲、绿幕抠像、媒体源、文本中文乱码、场景过渡、麦克风爆音、观众端延迟等。2026-08-19 增补（1.5）：随机音画不同步、麦克风滤镜链、串流密钥安全、虚拟摄像头排障、捕获源冲突、摄像头画质、配置重置、游戏模式/GPU 满载、关键帧间隔、动态码率、统计面板解读、录像体积管理等。；2026-08-22 增补（v1.6，V2.2 插件生态联动）：StreamFX 停更替代迁移、obs-multi-rtmp 已知问题与 Aitum Multistream 迁移建议。2026-08-23 增补（v1.7）：插件加载失败（32.2 变更）、Nahimic/RTSS 干扰、多显示器刷新率卡顿、Steam 版插件目录、启动缓慢二分定位、Device removed/GPU 挂起、Windows 通信活动降音量、码率不足马赛克。2026-08-23 增补（v1.8，V2.5 排障闭环）：长录制音画漂移（时钟漂移 / 磁盘饱和）、浏览器源内存膨胀；插件导致崩溃条目补充「先升级 OBS ≥ 32.2.2」首推解法。；2026-08-25 增补（v1.8 网络调研批量扩充）：录制重音（监听回环/双采）、音频独占模式、多轨录制、虚拟摄像头会议软件接入、全局热键冲突、UWP/浏览器/PPT 捕获、G-Sync 闪烁、全屏优化、AMF/QSV 编码、码率速查、Stinger 转场、嵌套场景性能、Twitch 增强广播、SRT 输出、多实例/便携模式、NDI 与手机作摄像头、章节标记、回放缓存热键、macOS 休眠与虚拟相机权限、Linux Flatpak 插件路径、WebSocket 远程控制等 63 条；2026-08-26 更新（v2.2）：窗口捕获条目补充「采集中途偶发突然黑屏」的症状、成因与处理步骤（刷新源、锁定捕获方法、关闭硬件加速、无边框窗口化、驱动与覆盖层排查）"
+  "note": "已扩充常见与罕见 OBS 问题、macOS 端问题及直播间搭建引导（含各平台接入与通用流程）。2026-08-05 增补：反作弊游戏捕获、浏览器源白屏、回放缓冲、绿幕抠像、媒体源、文本中文乱码、场景过渡、麦克风爆音、观众端延迟等。2026-08-19 增补（1.5）：随机音画不同步、麦克风滤镜链、串流密钥安全、虚拟摄像头排障、捕获源冲突、摄像头画质、配置重置、游戏模式/GPU 满载、关键帧间隔、动态码率、统计面板解读、录像体积管理等。；2026-08-22 增补（v1.6，V2.2 插件生态联动）：StreamFX 停更替代迁移、obs-multi-rtmp 已知问题与 Aitum Multistream 迁移建议。2026-08-23 增补（v1.7）：插件加载失败（32.2 变更）、Nahimic/RTSS 干扰、多显示器刷新率卡顿、Steam 版插件目录、启动缓慢二分定位、Device removed/GPU 挂起、Windows 通信活动降音量、码率不足马赛克。2026-08-23 增补（v1.8，V2.5 排障闭环）：长录制音画漂移（时钟漂移 / 磁盘饱和）、浏览器源内存膨胀；插件导致崩溃条目补充「先升级 OBS ≥ 32.2.2」首推解法。；2026-08-25 增补（v1.8 网络调研批量扩充）：录制重音（监听回环/双采）、音频独占模式、多轨录制、虚拟摄像头会议软件接入、全局热键冲突、UWP/浏览器/PPT 捕获、G-Sync 闪烁、全屏优化、AMF/QSV 编码、码率速查、Stinger 转场、嵌套场景性能、Twitch 增强广播、SRT 输出、多实例/便携模式、NDI 与手机作摄像头、章节标记、回放缓存热键、macOS 休眠与虚拟相机权限、Linux Flatpak 插件路径、WebSocket 远程控制等 63 条；2026-08-26 更新（v2.2）：窗口捕获条目补充「采集中途偶发突然黑屏」的症状、成因与处理步骤（刷新源、锁定捕获方法、关闭硬件加速、无边框窗口化、驱动与覆盖层排查）。2026-10-31（v2.3，X1031Y2）：精简 9 条重复 / 低价值条目（Win11 黑屏并入显示器捕获、采样率重复、音画漂移重复、回放快捷键并入回放缓冲、界面语言、Linux Flatpak、麦克风底噪并入处理链、VLC 源、浏览器 Dock 刷新），新增插件一键配置、依赖一键配置、录制状态不同步、录制文件被占用、本机插件迁移/卸载 5 条。"
 }

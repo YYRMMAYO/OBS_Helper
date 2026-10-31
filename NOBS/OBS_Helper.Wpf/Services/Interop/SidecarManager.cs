@@ -228,6 +228,14 @@ public sealed class SidecarManager : IDisposable
                 }
             }
 
+            // 固定上限：sidecar 都是几十 MB 级，超过 1 GB 直接拒绝。
+            try
+            {
+                if (new FileInfo(archivePath).Length > 1024L * 1024 * 1024)
+                    return (false, FeatureErrors.CamSidecarMissing, "");
+            }
+            catch (Exception) { return (false, FeatureErrors.CamSidecarMissing, ""); }
+
             var hash = await HashFileAsync(archivePath, ct).ConfigureAwait(false);
             if (!string.Equals(hash, entry.Sha256, StringComparison.OrdinalIgnoreCase))
             {
@@ -277,7 +285,15 @@ public sealed class SidecarManager : IDisposable
         try
         {
             using var archive = ZipFile.OpenRead(archivePath);
+
+            // X1031Y2 安全加固：压缩包解压也要有上限，避免 zip bomb 把磁盘塞满。
+            const int maxEntries = 20_000;
+            const long maxEntryBytes = 1024L * 1024 * 1024;
+            const long maxTotalBytes = 2L * 1024 * 1024 * 1024;
+            if (archive.Entries.Count > maxEntries) return false;
+
             var root = Path.GetFullPath(destination) + Path.DirectorySeparatorChar;
+            long totalBytes = 0;
             foreach (var entry in archive.Entries)
             {
                 var relative = SidecarCore.SafeRelativePath(entry.FullName);
@@ -290,6 +306,9 @@ public sealed class SidecarManager : IDisposable
                 var unixMode = (entry.ExternalAttributes >> 16) & 0xF000;
                 if (unixMode == 0xA000) return false;
                 if (string.IsNullOrEmpty(entry.Name)) { Directory.CreateDirectory(target); continue; }
+
+                totalBytes += entry.Length;
+                if (entry.Length > maxEntryBytes || totalBytes > maxTotalBytes) return false;
                 Directory.CreateDirectory(Path.GetDirectoryName(target)!);
                 entry.ExtractToFile(target, overwrite: true);
             }

@@ -101,12 +101,12 @@ public class SearchOnRealKnowledgeBaseTests
     {
         var problems = LoadRealProblems();
 
-        // 「沙沙声」只出现在 au-mic-noise 的 synonyms 里（标题与症状都不含这三个字）
-        Assert.DoesNotContain(problems, p => p.Title.Contains("沙沙声", StringComparison.Ordinal)
-                                          || p.Symptoms.Any(s => s.Contains("沙沙声", StringComparison.Ordinal)));
+        // 「找不到插件备份」只出现在 cfg-local-plugin-manage 的 synonyms 里（标题与症状不含这七个字）
+        Assert.DoesNotContain(problems, p => p.Title.Contains("找不到插件备份", StringComparison.Ordinal)
+                                          || p.Symptoms.Any(s => s.Contains("找不到插件备份", StringComparison.Ordinal)));
 
-        var hits = SearchQueryCore.Rank(problems, "沙沙声", 10);
-        Assert.Contains(hits, h => h.Problem.Id == "au-mic-noise");
+        var hits = SearchQueryCore.Rank(problems, "找不到插件备份", 10);
+        Assert.Contains(hits, h => h.Problem.Id == "cfg-local-plugin-manage");
     }
 
     /// <summary>带空格的多词查询在真数据上也能命中（过去整串 Contains 必然失败）。</summary>

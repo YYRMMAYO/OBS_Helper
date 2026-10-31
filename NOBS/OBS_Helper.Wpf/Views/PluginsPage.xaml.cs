@@ -1,6 +1,8 @@
+using System.IO;
 using System.Text;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
 using System.Windows.Threading;
@@ -66,6 +68,12 @@ public partial class PluginsPage : UserControl, INavigationAware
     /// <summary>开源依赖中心（V3.4.1）：一键下载 / 一键配置。</summary>
     private DependencyService? _dependencies;
 
+    /// <summary>本机插件管理（X1031Y2）：卸载 / 迁移 / 接管。</summary>
+    private LocalPluginManageService? _localPluginManager;
+
+    private LocalPluginManageService LocalPlugins
+        => _localPluginManager ??= new LocalPluginManageService(AppServices.PluginState);
+
     private DependencyService Dependencies => _dependencies ??= new DependencyService(
         new SidecarDependencySource(AppServices.Sidecars),
         AppServices.Store.GetItem,
@@ -121,6 +129,9 @@ public partial class PluginsPage : UserControl, INavigationAware
 
     /// <summary>按视口补查角标时的预取余量（像素）：卡片进入视口下方这一段就先查，滚到时角标已经在了。</summary>
     private const double BadgePrefetchPx = 400;
+
+    // ---- 一键配置串行化：同一时间只允许一个下载 / 安装，避免重复落盘
+    private bool _pluginInstallBusy;
 
     // ---- 本机体检状态
     private LocalPluginScanResult? _scan;
@@ -565,7 +576,115 @@ public partial class PluginsPage : UserControl, INavigationAware
 
     // ============================================================ 一键安装与管理（V3.3.0）
 
-    /// <summary>已安装（本应用管理）列表：版本、路径、回滚、卸载。</summary>
+    /// <summary>按 DLL 全路径找本机检测结果（列表行只保留路径，操作需要原始插件对象）。</summary>
+    private InstalledPluginFile? FindLocalPlugin(string path)
+        => _scan?.Plugins.FirstOrDefault(p => string.Equals(p.FullPath, path, StringComparison.OrdinalIgnoreCase));
+
+    private void OnOpenPluginFolderClick(object sender, RoutedEventArgs e)
+    {
+        if (sender is not Button { Tag: string path } || string.IsNullOrWhiteSpace(path)) return;
+        var dir = Directory.Exists(path) ? path : Path.GetDirectoryName(path);
+        if (string.IsNullOrWhiteSpace(dir) || !Directory.Exists(dir) || !AppServices.Host.OpenFolder(dir))
+            AppServices.Toast.Show(Strings.T("plugin.managed.openFailed"), "warn");
+    }
+
+    /// <summary>接管管理：只登记，不移动文件；之后可用广场更新 / 回滚 / 卸载。</summary>
+    private async Task AdoptLocalPluginAsync(InstalledPluginFile plugin)
+    {
+        if (PluginInstallService.IsObsRunning())
+        {
+            AppServices.Toast.Show(InstallError("PLUGIN_OBS_RUNNING"), "warn");
+            return;
+        }
+
+        if (!ConfirmDialog.Show(
+                Strings.T("plugin.managed.adoptConfirmTitle"),
+                Strings.T("plugin.managed.adoptConfirmMessage", plugin.Stem, plugin.FullPath),
+                Strings.T("plugin.managed.adopt"), Strings.T("common.cancel"),
+                danger: false, icon: "📋"))
+            return;
+
+        var result = LocalPlugins.Adopt(plugin, _catalog);
+        if (result.Ok)
+        {
+            AppServices.Toast.Show(Strings.T("plugin.managed.adoptDone", plugin.Stem), "ok");
+            RefreshManagedList();
+        }
+        else
+        {
+            AppServices.Toast.Show(InstallError(result.Code), "warn");
+        }
+    }
+
+    /// <summary>迁移：用户级 ⇄ 全局级，或 OBS 安装目录 → 用户级。</summary>
+    private async Task MigrateLocalPluginAsync(InstalledPluginFile plugin)
+    {
+        if (PluginInstallService.IsObsRunning())
+        {
+            AppServices.Toast.Show(InstallError("PLUGIN_OBS_RUNNING"), "warn");
+            return;
+        }
+
+        var unit = LocalPluginManageService.Describe(plugin);
+        var target = LocalPlugins.MigrationTargetDirectory(plugin);
+        if (unit is null || string.IsNullOrWhiteSpace(target))
+        {
+            AppServices.Toast.Show(InstallError("PLUGIN_LOCAL_NO_TARGET"), "warn");
+            return;
+        }
+
+        if (!ConfirmDialog.Show(
+                Strings.T("plugin.managed.migrateConfirmTitle"),
+                Strings.T("plugin.managed.migrateConfirmMessage", plugin.Stem, unit.PluginDirectory, target),
+                Strings.T("plugin.managed.migrate"), Strings.T("common.cancel"),
+                danger: false, icon: "📁"))
+            return;
+
+        var result = await LocalPlugins.MigrateAsync(plugin, CancellationToken.None);
+        if (result.Ok)
+        {
+            AppServices.Toast.Show(Strings.T("plugin.managed.migrateDone", plugin.Stem, result.Path), "ok");
+            await EnsureScanAsync(force: true);
+            RefreshManagedList();
+        }
+        else
+        {
+            AppServices.Toast.Show(InstallError(result.Code), "warn");
+        }
+    }
+
+    /// <summary>卸载本机插件：整目录移进本应用备份区，不硬删。</summary>
+    private async Task UninstallLocalPluginAsync(InstalledPluginFile plugin)
+    {
+        if (PluginInstallService.IsObsRunning())
+        {
+            AppServices.Toast.Show(InstallError("PLUGIN_OBS_RUNNING"), "warn");
+            return;
+        }
+
+        var unit = LocalPluginManageService.Describe(plugin);
+        var directory = unit?.PluginDirectory ?? Path.GetDirectoryName(plugin.FullPath) ?? plugin.FullPath;
+        if (!ConfirmDialog.Show(
+                Strings.T("plugin.managed.uninstallLocalTitle"),
+                Strings.T("plugin.managed.uninstallLocalMessage", plugin.Stem, directory),
+                Strings.T("plugin.managed.uninstall"), Strings.T("common.cancel"),
+                danger: true, icon: "⚠", irreversible: true))
+            return;
+
+        var result = await LocalPlugins.UninstallAsync(plugin, CancellationToken.None);
+        if (result.Ok)
+        {
+            AppServices.Toast.Show(Strings.T("plugin.managed.uninstallLocalDone", plugin.Stem, result.Path), "ok");
+            await EnsureScanAsync(force: true);
+            RefreshManagedList();
+        }
+        else
+        {
+            AppServices.Toast.Show(InstallError(result.Code), "warn");
+        }
+    }
+
+    /// <summary>已安装（本应用管理 + 本机检测）列表：版本、路径、回滚、卸载、迁移与接管。</summary>
     private void RefreshManagedList()
     {
         ManagedHost.Children.Clear();
@@ -694,6 +813,16 @@ public partial class PluginsPage : UserControl, INavigationAware
                     if (entry is not null) await UninstallAsync(entry);
                 };
                 actions.Children.Add(uninstall);
+
+                var openManagedFolder = new Button
+                {
+                    Content = Strings.T("plugin.managed.openFolder"),
+                    Style = (Style)Application.Current.Resources["LinkButton"],
+                    Margin = new Thickness(10, 0, 0, 0),
+                    Tag = row.Path
+                };
+                openManagedFolder.Click += OnOpenPluginFolderClick;
+                actions.Children.Add(openManagedFolder);
                 box.Children.Add(actions);
             }
             else
@@ -707,6 +836,61 @@ public partial class PluginsPage : UserControl, INavigationAware
                 hint.SetResourceReference(TextBlock.FontSizeProperty, "FontSizeXs");
                 hint.SetResourceReference(TextBlock.ForegroundProperty, "MutedBrush");
                 box.Children.Add(hint);
+
+                // X1031Y2：本机检测不再只读。打开目录 / 接管管理 / 迁移 / 卸载（先备份）。
+                var actions = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 6, 0, 0) };
+
+                var openFolder = new Button
+                {
+                    Content = Strings.T("plugin.managed.openFolder"),
+                    Style = (Style)Application.Current.Resources["LinkButton"],
+                    Tag = row.Path
+                };
+                openFolder.Click += OnOpenPluginFolderClick;
+                actions.Children.Add(openFolder);
+
+                var local = FindLocalPlugin(row.Path);
+                if (local is not null)
+                {
+                    var adopt = new Button
+                    {
+                        Content = Strings.T("plugin.managed.adopt"),
+                        Style = (Style)Application.Current.Resources["SecondaryButton"],
+                        Margin = new Thickness(10, 0, 0, 0),
+                        Tag = local,
+                        ToolTip = Strings.T("plugin.managed.adoptTip")
+                    };
+                    adopt.Click += async (_, _) => await AdoptLocalPluginAsync(local);
+                    actions.Children.Add(adopt);
+
+                    var migrateScope = LocalPlugins.MigrationTargetScope(local);
+                    if (migrateScope is not null)
+                    {
+                        var migrate = new Button
+                        {
+                            Content = Strings.T("plugin.managed.migrate." + migrateScope),
+                            Style = (Style)Application.Current.Resources["GhostButton"],
+                            Margin = new Thickness(8, 0, 0, 0),
+                            Tag = local,
+                            ToolTip = Strings.T("plugin.managed.migrateTip")
+                        };
+                        migrate.Click += async (_, _) => await MigrateLocalPluginAsync(local);
+                        actions.Children.Add(migrate);
+                    }
+
+                    var remove = new Button
+                    {
+                        Content = Strings.T("plugin.managed.uninstall"),
+                        Style = (Style)Application.Current.Resources["GhostButton"],
+                        Margin = new Thickness(8, 0, 0, 0),
+                        Tag = local,
+                        ToolTip = Strings.T("plugin.managed.uninstallLocalTip")
+                    };
+                    remove.Click += async (_, _) => await UninstallLocalPluginAsync(local);
+                    actions.Children.Add(remove);
+                }
+
+                box.Children.Add(actions);
             }
 
             ManagedHost.Children.Add(box);
@@ -816,7 +1000,13 @@ public partial class PluginsPage : UserControl, INavigationAware
                 Content = Strings.T("plugin.github.install", asset.Name),
                 Style = (Style)Application.Current.Resources["PrimaryButton"]
             };
-            install.Click += async (_, _) => await InstallAssetAsync(slug, version, asset);
+            install.Click += async (_, _) => await InstallAssetAsync(
+                slug, slug, version, asset, curated: false, sourceRepo: slug, networkConfirmed: false,
+                status: (text, brush) =>
+                {
+                    RepoStatusText.Text = text;
+                    RepoStatusText.SetResourceReference(TextBlock.ForegroundProperty, brush);
+                });
             AssetHost.Children.Add(install);
         }
         catch (Exception ex)
@@ -938,52 +1128,239 @@ public partial class PluginsPage : UserControl, INavigationAware
         return box;
     }
 
-    private async Task InstallAssetAsync(string slug, string version, PluginReleaseAsset asset)
+    private async Task InstallAssetAsync(
+        string id, string name, string version, PluginReleaseAsset asset,
+        bool curated, string sourceRepo, bool networkConfirmed,
+        Action<string, string>? status = null)
     {
+        if (PluginInstallService.IsObsRunning())
+        {
+            status?.Invoke(InstallError("PLUGIN_OBS_RUNNING"), "WarnBrush");
+            AppServices.Toast.Show(InstallError("PLUGIN_OBS_RUNNING"), "warn");
+            return;
+        }
+
+        // 网络预检：从 GitHub 直接拉取前，让用户确认已开加速器或网络可用（X1031Y2）。
+        if (!networkConfirmed && !ConfirmNetwork(Strings.T("plugin.network.actionPackage", name)))
+            return;
+
+        if (curated)
+        {
+            if (!ConfirmDialog.Show(
+                    Strings.T("plugin.install.curatedConfirmTitle"),
+                    Strings.T("plugin.install.curatedConfirmMessage", name, version, asset.Name),
+                    Strings.T("plugin.install.curatedConfirmOk"), Strings.T("common.cancel"),
+                    danger: false, icon: "🧩"))
+                return;
+        }
+        else
+        {
+            // 任意仓库 = 未经验证的第三方代码：强警告 + 明确确认，不做「静默安装」
+            if (!ConfirmDialog.Show(
+                    Strings.T("plugin.github.confirmTitle"),
+                    Strings.T("plugin.github.confirmMessage", sourceRepo, version, asset.Name),
+                    Strings.T("plugin.github.confirmOk"), Strings.T("common.cancel"),
+                    danger: true, icon: "⚠", irreversible: true))
+                return;
+        }
+
+        var request = new PluginInstallRequest
+        {
+            Id = PluginInstallCore.SafeSlug(id.Replace('/', '-')),
+            Name = name,
+            Version = version,
+            SourceRepo = sourceRepo,
+            Asset = asset,
+            Scope = "user",
+            Curated = curated,
+            ExpectedSha256 = asset.Digest
+        };
+
+        var progress = new Progress<PluginInstallProgress>(p =>
+            status?.Invoke(Strings.T("plugin.install.stage." + p.Stage), "MutedBrush"));
+
+        status?.Invoke(Strings.T("plugin.github.installing"), "MutedBrush");
+        var result = await AppServices.PluginInstall.InstallAsync(request, progress, CancellationToken.None);
+
+        if (result.Ok)
+        {
+            var done = Strings.T("plugin.github.installed", name, version);
+            status?.Invoke(done, "OkBrush");
+            AppServices.Toast.Show(done, "ok");
+            await EnsureScanAsync(force: true);
+            RefreshManagedList();
+        }
+        else
+        {
+            var error = InstallError(result.ErrorCode);
+            status?.Invoke(error, "DangerBrush");
+            AppServices.Toast.Show(error, "danger");
+        }
+    }
+
+    /// <summary>卡片「一键配置」：查询最新 Release → 选 Windows 包 → 下载校验 → 安装。</summary>
+    private async void OnOneClickInstallClick(object sender, RoutedEventArgs e)
+    {
+        e.Handled = true;
+        if (sender is not Button { Tag: PluginEntry plugin }) return;
+        await OneClickInstallAsync(plugin);
+    }
+
+    private async Task OneClickInstallAsync(PluginEntry plugin)
+    {
+        if (_pluginInstallBusy)
+        {
+            AppServices.Toast.Show(Strings.T("plugin.oneClick.busy"), "warn");
+            return;
+        }
+
         if (PluginInstallService.IsObsRunning())
         {
             AppServices.Toast.Show(InstallError("PLUGIN_OBS_RUNNING"), "warn");
             return;
         }
 
-        // 任意仓库 = 未经验证的第三方代码：强警告 + 明确确认，不做「静默安装」
-        if (!ConfirmDialog.Show(
-                Strings.T("plugin.github.confirmTitle"),
-                Strings.T("plugin.github.confirmMessage", slug, version, asset.Name),
-                Strings.T("plugin.github.confirmOk"), Strings.T("common.cancel"),
-                danger: true, icon: "⚠", irreversible: true))
+        if (string.IsNullOrWhiteSpace(plugin.Repo))
+        {
+            AppServices.Toast.Show(Strings.T("plugin.oneClick.noRepo"), "warn");
             return;
-
-        var request = new PluginInstallRequest
-        {
-            Id = PluginInstallCore.SafeSlug(slug.Replace('/', '-')),
-            Name = slug,
-            Version = version,
-            SourceRepo = slug,
-            Asset = asset,
-            Scope = "user",
-            Curated = false,
-            ExpectedSha256 = asset.Digest
-        };
-
-        var progress = new Progress<PluginInstallProgress>(p =>
-        {
-            RepoStatusText.Text = Strings.T("plugin.install.stage." + p.Stage);
-        });
-
-        RepoStatusText.Text = Strings.T("plugin.github.installing");
-        var result = await AppServices.PluginInstall.InstallAsync(request, progress, CancellationToken.None);
-
-        if (result.Ok)
-        {
-            RepoStatusText.Text = Strings.T("plugin.github.installed", slug, version);
-            AppServices.Toast.Show(RepoStatusText.Text, "ok");
-            RefreshManagedList();
         }
-        else
+
+        var slot = _cardPool.TryGetValue(plugin.Id, out var found) ? found : null;
+        void Status(string text, string brush)
         {
-            RepoStatusText.Text = InstallError(result.ErrorCode);
-            AppServices.Toast.Show(RepoStatusText.Text, "danger");
+            if (slot is null) return;
+            slot.StatusText.Text = text;
+            slot.StatusText.Visibility = Visibility.Visible;
+            slot.StatusText.SetResourceReference(TextBlock.ForegroundProperty, brush);
+        }
+
+        // 网络预检先于任何 GitHub 请求：用户点「一键配置」之前就被告知可以开加速器。
+        if (!ConfirmNetwork(Strings.T("plugin.network.actionPlugin", plugin.Name))) return;
+
+        _pluginInstallBusy = true;
+        if (slot is not null) slot.OneClickButton.IsEnabled = false;
+        try
+        {
+            Status(Strings.T("plugin.github.querying", plugin.Repo), "MutedBrush");
+            var (version, assets, error) = await AppServices.PluginSearch
+                .GetLatestReleaseAsync(plugin.Repo, CancellationToken.None);
+
+            if (error.Length > 0)
+            {
+                Status(NetError(error), "DangerBrush");
+                ShowAcceleratorHint();
+                return;
+            }
+
+            var asset = PluginInstallCore.SelectAsset(assets);
+            if (asset is null)
+            {
+                Status(Strings.T("plugin.github.noAsset", plugin.Repo), "WarnBrush");
+                return;
+            }
+
+            await InstallAssetAsync(plugin.Id, plugin.Name, version, asset,
+                curated: true, sourceRepo: plugin.Repo, networkConfirmed: true, status: Status);
+        }
+        catch (Exception ex)
+        {
+            Status(Strings.T("plugin.github.queryFailed", ex.Message), "DangerBrush");
+        }
+        finally
+        {
+            _pluginInstallBusy = false;
+            if (slot is not null)
+            {
+                slot.OneClickButton.IsEnabled = true;
+                slot.OneClickButton.Content = Strings.T("plugin.oneClick");
+            }
+        }
+    }
+
+    /// <summary>网络预检文案：把「先开 Steam++ / 确认网络」放在真正下载之前。</summary>
+    private static bool ConfirmNetwork(string action)
+        => ConfirmDialog.Show(
+            Strings.T("plugin.network.title"),
+            Strings.T("plugin.network.message", action),
+            Strings.T("plugin.network.confirm"), Strings.T("common.cancel"),
+            danger: false, icon: "🌐");
+
+    /// <summary>网络失败时把加速引导重新露出来，并滚到用户看得见的位置。</summary>
+    private void ShowAcceleratorHint()
+    {
+        RefreshAcceleratorPanel();
+        AcceleratorPanel.Visibility = Visibility.Visible;
+        try { AcceleratorPanel.BringIntoView(); } catch (Exception) { }
+    }
+
+    /// <summary>仓库输入框按回车 = 一键配置，不用先点查询再点安装。</summary>
+    private async void OnRepoBoxKeyDown(object sender, KeyEventArgs e)
+    {
+        if (e.Key != Key.Enter) return;
+        e.Handled = true;
+        await RepoOneClickAsync();
+    }
+
+    private async void OnRepoOneClick(object sender, RoutedEventArgs e) => await RepoOneClickAsync();
+
+    /// <summary>粘贴 owner/repo 或完整仓库地址 → 直接在应用内拉取并安装最新 Release。</summary>
+    private async Task RepoOneClickAsync()
+    {
+        AssetHost.Children.Clear();
+        RepoStatusText.Text = "";
+
+        if (!PluginInstallCore.TryParseOwnerRepo(RepoBox.Text, out var slug))
+        {
+            RepoStatusText.Text = Strings.T("plugin.github.badRepo");
+            return;
+        }
+
+        if (_pluginInstallBusy)
+        {
+            AppServices.Toast.Show(Strings.T("plugin.oneClick.busy"), "warn");
+            return;
+        }
+
+        if (!ConfirmNetwork(Strings.T("plugin.network.actionRepo", slug))) return;
+
+        _pluginInstallBusy = true;
+        RepoOneClickButton.IsEnabled = false;
+        try
+        {
+            RepoStatusText.Text = Strings.T("plugin.github.querying", slug);
+            var (version, assets, error) = await AppServices.PluginSearch
+                .GetLatestReleaseAsync(slug, CancellationToken.None);
+            if (error.Length > 0)
+            {
+                RepoStatusText.Text = NetError(error);
+                ShowAcceleratorHint();
+                return;
+            }
+
+            var asset = PluginInstallCore.SelectAsset(assets);
+            if (asset is null)
+            {
+                RepoStatusText.Text = Strings.T("plugin.github.noAsset", slug);
+                return;
+            }
+
+            await InstallAssetAsync(slug, slug, version, asset,
+                curated: false, sourceRepo: slug, networkConfirmed: true,
+                status: (text, brush) =>
+                {
+                    RepoStatusText.Text = text;
+                    RepoStatusText.SetResourceReference(TextBlock.ForegroundProperty, brush);
+                });
+        }
+        catch (Exception ex)
+        {
+            RepoStatusText.Text = Strings.T("plugin.github.queryFailed", ex.Message);
+        }
+        finally
+        {
+            _pluginInstallBusy = false;
+            RepoOneClickButton.IsEnabled = true;
         }
     }
 
@@ -1243,6 +1620,12 @@ public partial class PluginsPage : UserControl, INavigationAware
         /// <summary>关注按钮：关注状态可能在别处被改，刷新时同步文案。</summary>
         public Button WatchButton { get; init; } = null!;
 
+        /// <summary>一键配置按钮：安装期间改文案 / 禁用，完成后再按已安装状态恢复。</summary>
+        public Button OneClickButton { get; init; } = null!;
+
+        /// <summary>一键配置的状态行（下载 / 校验 / 安装 / 失败原因）。</summary>
+        public TextBlock StatusText { get; init; } = null!;
+
         /// <summary>最新版本角标。</summary>
         public TextBlock LatestBadge { get; init; } = null!;
 
@@ -1350,6 +1733,9 @@ public partial class PluginsPage : UserControl, INavigationAware
     private void ApplyInstalledState(PluginCardSlot slot)
     {
         var installed = FindInstalled(slot.Entry);
+        slot.OneClickButton.Content = Strings.T(
+            installed is null ? "plugin.oneClick" : "plugin.oneClick.reinstall");
+
         if (installed is null)
         {
             slot.InstalledBadge.Visibility = Visibility.Collapsed;
@@ -1631,21 +2017,33 @@ public partial class PluginsPage : UserControl, INavigationAware
             body.Children.Add(compatText);
         }
 
-        // 动作行：下载 + 最新版本角标 + 关注（P1-1 / P2-1）
+        // 动作行：一键配置 + 下载页 + 最新版本角标 + 关注（P1-1 / P2-1 / X1031Y2）
         var actions = new StackPanel
         {
             Orientation = Orientation.Horizontal,
             Margin = new Thickness(0, 8, 0, 0)
         };
 
+        var oneClick = new Button
+        {
+            Style = (Style)TryFindResource("PrimaryButton"),
+            Content = Strings.T("plugin.oneClick"),
+            Padding = new Thickness(12, 4, 12, 5),
+            Tag = plugin,
+            ToolTip = Strings.T("plugin.oneClickTip")
+        };
+        oneClick.Click += OnOneClickInstallClick;
+        actions.Children.Add(oneClick);
+
         var downloadUrl = BuildReleasesLatestUrl(plugin.Repo);
         if (!string.IsNullOrEmpty(downloadUrl))
         {
             var downloadBtn = new Button
             {
-                Style = (Style)TryFindResource("SecondaryButton"),
-                Content = Strings.T("plugin.download"),
-                Padding = new Thickness(10, 4, 10, 5),
+                Style = (Style)TryFindResource("LinkButton"),
+                Content = Strings.T("plugin.releases"),
+                Padding = new Thickness(8, 2, 8, 3),
+                Margin = new Thickness(8, 0, 0, 0),
                 Tag = downloadUrl,
                 ToolTip = Strings.T("plugin.downloadTip")
             };
@@ -1676,6 +2074,18 @@ public partial class PluginsPage : UserControl, INavigationAware
 
         body.Children.Add(actions);
 
+        // 一键配置的状态行：下载 / 校验 / 安装 / 失败原因。默认隐藏，不占视觉噪音。
+        var statusText = new TextBlock
+        {
+            Text = "",
+            Visibility = Visibility.Collapsed,
+            Margin = new Thickness(0, 5, 0, 0),
+            TextWrapping = TextWrapping.Wrap
+        };
+        statusText.SetResourceReference(TextBlock.FontSizeProperty, "FontSizeXs");
+        statusText.SetResourceReference(TextBlock.ForegroundProperty, "MutedBrush");
+        body.Children.Add(statusText);
+
         var button = new Button
         {
             Style = (Style)FindResource("CardButton"),
@@ -1700,6 +2110,8 @@ public partial class PluginsPage : UserControl, INavigationAware
             InstalledBadge = installedBadge,
             InstalledText = installedText,
             WatchButton = watchBtn,
+            OneClickButton = oneClick,
+            StatusText = statusText,
             LatestBadge = latestBadge,
             CostText = costText
         };
@@ -1905,27 +2317,45 @@ public partial class PluginsPage : UserControl, INavigationAware
 
         grid.Children.Add(info);
 
-        var actions = new StackPanel
+        var actions = new WrapPanel
         {
             Orientation = Orientation.Horizontal,
             VerticalAlignment = VerticalAlignment.Center,
         };
 
-        var download = new Button { Content = Strings.T("dep.download"), Tag = spec, MinWidth = 92 };
-        download.SetResourceReference(FrameworkElement.StyleProperty, "SecondaryButton");
-        download.Click += OnDependencyDownloadClick;
-        actions.Children.Add(download);
+        var auto = new Button
+        {
+            Content = Strings.T("dep.configureAuto"),
+            Tag = spec,
+            MinWidth = 92,
+            ToolTip = Strings.T("dep.configureAutoTip")
+        };
+        auto.SetResourceReference(FrameworkElement.StyleProperty, "PrimaryButton");
+        auto.Click += OnDependencyAutoClick;
+        actions.Children.Add(auto);
 
         var configure = new Button
         {
-            Content = Strings.T("dep.configure"),
+            Content = Strings.T("dep.configureManual"),
             Tag = spec,
             MinWidth = 92,
             Margin = new Thickness(8, 0, 0, 0),
+            ToolTip = Strings.T("dep.configureManualTip")
         };
         configure.SetResourceReference(FrameworkElement.StyleProperty, "GhostButton");
         configure.Click += OnDependencyConfigureClick;
         actions.Children.Add(configure);
+
+        var download = new Button
+        {
+            Content = Strings.T("dep.downloadPage"),
+            Tag = spec,
+            Margin = new Thickness(8, 0, 0, 0),
+            ToolTip = Strings.T("dep.downloadTip")
+        };
+        download.SetResourceReference(FrameworkElement.StyleProperty, "LinkButton");
+        download.Click += OnDependencyDownloadClick;
+        actions.Children.Add(download);
 
         var repo = new Button { Content = Strings.T("dep.repo"), Tag = spec.RepoUrl, Margin = new Thickness(8, 0, 0, 0) };
         repo.SetResourceReference(FrameworkElement.StyleProperty, "LinkButton");
@@ -1936,6 +2366,72 @@ public partial class PluginsPage : UserControl, INavigationAware
         grid.Children.Add(actions);
         row.Child = grid;
         return row;
+    }
+
+    /// <summary>
+    /// 一键配置（X1031Y2）：在应用内查最新 Release、下载、校验、解压并接入。
+    /// 下载前先确认网络 / 加速器；失败时保留「选择已下载文件」与「下载页」两条退路。
+    /// </summary>
+    private async void OnDependencyAutoClick(object sender, RoutedEventArgs e)
+    {
+        if (sender is not Button button || button.Tag is not DependencySpec spec) return;
+
+        var name = Strings.T("dep.name." + spec.Id);
+        if (!ConfirmNetwork(Strings.T("dep.download.action", name))) return;
+
+        button.IsEnabled = false;
+        var original = button.Content;
+        try
+        {
+            var progress = new Progress<(long Done, long Total)>(p =>
+            {
+                if (p.Total > 0)
+                {
+                    var percent = (int)Math.Clamp(p.Done * 100 / p.Total, 0, 100);
+                    button.Content = Strings.T("dep.download.progress", percent);
+                }
+                else
+                {
+                    button.Content = Strings.T("dep.installing", name);
+                }
+            });
+
+            button.Content = Strings.T("dep.installing", name);
+            var result = await AppServices.DependencyInstall
+                .InstallAsync(spec, progress, CancellationToken.None).ConfigureAwait(true);
+
+            if (!result.Ok)
+            {
+                var code = string.IsNullOrWhiteSpace(result.Code) ? "dep.error.download" : result.Code;
+                AppServices.Toast.Show(Strings.T(code, spec.Executable), "warn");
+                return;
+            }
+
+            var (configured, configureCode, path) = Dependencies.Configure(spec, result.Path);
+            if (configured)
+            {
+                AppServices.Toast.Show(
+                    result.DigestVerified
+                        ? Strings.T("dep.configure.autoDone", name, path)
+                        : Strings.T("dep.configure.autoDoneNoDigest", name, path),
+                    "ok");
+            }
+            else
+            {
+                AppServices.Toast.Show(Strings.T(string.IsNullOrWhiteSpace(configureCode) ? "dep.error.invalid" : configureCode), "warn");
+            }
+        }
+        catch (Exception ex)
+        {
+            FileLogger.Warn("Dependency", $"一键配置失败（{spec.Id}）：{ex.Message}");
+            AppServices.Toast.Show(Strings.T("dep.error.download"), "warn");
+        }
+        finally
+        {
+            button.Content = original;
+            button.IsEnabled = true;
+            BuildDependencyPanel();
+        }
     }
 
     private async void OnDependencyDownloadClick(object sender, RoutedEventArgs e)

@@ -28,6 +28,7 @@
 | 8 | [`08_GUIDE_AND_UX.md`](08_GUIDE_AND_UX.md) | 内置指引、功能中心、手机连接页 | 8、V3.5.0 体验优化 |
 | 9 | [`09_X_SERIES_CHANNEL.md`](09_X_SERIES_CHANNEL.md) | X/V 双通道技术规范 | X 系列独立大版本 |
 | 10 | [`10_IMPLEMENTATION_STATUS.md`](10_IMPLEMENTATION_STATUS.md) | 实现状态与三轮自检记录 | 交付验收 |
+| 11 | [`11_X1031Y2_PLUGIN_MANAGEMENT.md`](11_X1031Y2_PLUGIN_MANAGEMENT.md) | X1031Y2：插件 / 依赖应用内拉取、本机插件管理、安全加固与问题库精简 | X1031Y2 |
 
 ## 关键原则
 

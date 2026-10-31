@@ -278,6 +278,8 @@ public sealed class MobileLinkServer : IDisposable
         {
             var device = Authenticate(request);
             if (device is null) { await WriteAsync(stream, Json(401, Error(FeatureErrors.MobTokenInvalid))).ConfigureAwait(false); return; }
+            // 页面刷新会先要一份全量状态：先向 OBS 对一次账，避免把缓存里的旧状态当成刚发生的事（V3.5.2）。
+            await RefreshOutputsQuietlyAsync().ConfigureAwait(false);
             await WriteAsync(stream, Json(200, MobileStateCore.Serialize(_snapshots.Build(device)))).ConfigureAwait(false);
             return;
         }
@@ -556,6 +558,9 @@ public sealed class MobileLinkServer : IDisposable
                             return;
                         }
                         connection.Authenticate(device);
+                        // 手机刷新 / 重连时先对一次账：页面首帧就要显示真实状态，而不是服务端缓存
+                        // （V3.5.2：停止录制后旧状态会让手机显示「直播中 / 录制中」）。
+                        await RefreshOutputsQuietlyAsync().ConfigureAwait(false);
                         var hello = JsonSerializer.Serialize(new
                         {
                             type = "auth",
@@ -627,6 +632,20 @@ public sealed class MobileLinkServer : IDisposable
             lock (_gate) _clients.Remove(connection);
             connection.Close();
         }
+    }
+
+    /// <summary>
+    /// 向 OBS 对一次输出状态（失败静默）。
+    ///
+    /// 手机端只读服务端缓存：页面刷新 / WS 重连时先对账，首帧就不会把「上次录制中」的缓存
+    /// 当成当前状态（V3.5.2）。OBS 未连接时 <see cref="ObsConnectionService.RefreshOutputsAsync"/>
+    /// 的查询会失败，这里按「没有新鲜数据」处理，不影响页面照常打开。
+    /// </summary>
+    private async Task RefreshOutputsQuietlyAsync()
+    {
+        if (!_obs.IsConnected) return;
+        try { await _obs.RefreshOutputsAsync().ConfigureAwait(false); }
+        catch (Exception ex) { FileLogger.Warn("Mobile", $"手机页刷新前对账失败（沿用缓存）：{ex.Message}"); }
     }
 
     private void PushSnapshots()

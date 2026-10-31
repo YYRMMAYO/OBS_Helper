@@ -4,9 +4,9 @@
 
 # OBS Helper · OBS帮助助手
 
-**Current release: V3.5.1** — settings detail / Feature Center icons now render as proper outlines and match their titles; phone-side teleprompter edits sync to the PC instantly; Settings → About and the feedback page add Alipay / WeChat sponsorship codes. See [RELEASE_NOTES_v3.5.1.md](RELEASE_NOTES_v3.5.1.md); the X series `X1031` / `X1031Y2` is available too.
+**Current release: V3.5.2** — trustworthy recording / streaming state: the desktop app and the phone page no longer keep showing “Recording / LIVE” after recording stops; the phone status pill distinguishes live from recording; batch status queries now use the correct obs-websocket protocol. See [RELEASE_NOTES_v3.5.2.md](RELEASE_NOTES_v3.5.2.md); the X series `X1031` / `X1031Y2` is available too.
 
-> **V / X series**: V releases use `V3.5.1`-style versions; X releases use `X` + `MMdd` date codes such as `X1031`, with `Y1`/`Y2`/`Y3` appended for a second release on the same day. Both share features and the data folder, but each channel only checks its own tags: V builds only `V*`, X builds only `X*`.
+> **V / X series**: V releases use `V3.5.2`-style versions; X releases use `X` + `MMdd` date codes such as `X1031`, with `Y1`/`Y2`/`Y3` appended for a second release on the same day. Both share features and the data folder, but each channel only checks its own tags: V builds only `V*`, X builds only `X*`.
 
 > **This is the developer-facing full documentation for the Windows native WPF version and it lives inside `NOBS/`**;
 > the repository-root [`README.md`](../README.md) is the complete user-facing guide (features · usage · installation),
@@ -23,7 +23,7 @@
 [![OBS](https://img.shields.io/badge/OBS-32.2.2-302E31.svg)](https://github.com/obsproject/obs-studio/releases)
 [![Offline](https://img.shields.io/badge/offline--first-2ea44f.svg)]()
 [![Incremental Update](https://img.shields.io/badge/Incremental%20Update-2.5MB-7dd3fc.svg)]()
-[![Tests](https://img.shields.io/badge/Tests-1729%20passed-2ea44f.svg)]()
+[![Tests](https://img.shields.io/badge/Tests-1756%20passed-2ea44f.svg)]()
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](../LICENSE)
 
 **English** · [简体中文](README.md)
@@ -63,6 +63,13 @@ There are two channels for the same app — pick the one that matches how much "
 - **Why DEV has its own channel**: DEV builds are numbered by an auto-incrementing **build number**, which is not comparable to the stable `Vmajor.minor.patch` scheme. A DEV build therefore **only recognises plain-number tags (`01`)**, and a stable build **only recognises `V3.1.1`-style tags** — even though both kinds of tag live in the same repository, neither channel mistakes the other for a newer version.
 - **DEV builds are not packaged and do not use the Lanzou mirror yet**: the update prompt only points you at the dev Releases page (`/releases/tag/0X`). Incremental updates, the Lanzou mirror and installers keep serving stable users exactly as before.
 - **Which one should you pick?** Use stable for day-to-day work; take DEV if you want early features and can live with the occasional broken build. Please report DEV issues through *Help & feedback* and put `DEV 0X` (e.g. `DEV 03`) in the description.
+
+## V3.5.2 highlights
+
+- **“Recording” stuck after stop**: events are authoritative; OBS’s brief `outputActive=true` right after the stop event no longer flips the UI back. A 3-second reconciliation covers missed events.
+- **Phone refresh shows the truth**: the page reconciles before rendering; “LIVE”, “REC” and “LIVE · REC” are distinguished; the record timer reads `00:00:00` when idle.
+- **Batch protocol fixed**: `RequestBatch` (op 8 / 9) with numeric execution types; output state and audio mute / volume refresh again.
+- **Mini window**: remaining time is a whole number of minutes.
 
 ## V3.5.1 highlights
 

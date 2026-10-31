@@ -67,7 +67,8 @@ NOBS/
 | 文件 | 职责 |
 |---|---|
 | `Services/Obs/ObsWebSocketClient.cs` | obs-websocket 底层客户端：连接、鉴权、请求/响应、事件分发、重连。 |
-| `Services/Obs/ObsConnectionService.cs` | 连接生命周期编排：自动连接、状态机、重连调度、事件订阅管理；V3.1.0 增加 `EnsureConnectedAsync`（单飞 / 超时 / 取消 / 主动连接）。 |
+| `Services/Obs/ObsConnectionService.cs` | 连接生命周期编排：自动连接、状态机、重连调度、事件订阅管理；V3.1.0 增加 `EnsureConnectedAsync`（单飞 / 超时 / 取消 / 主动连接）；V3.5.2 增加输出状态对账（事件权威 + 3 秒轻量对账）。 |
+| `Services/Obs/ObsOutputStateCore.cs` | **V3.5.2 输出状态对账规则**：查询结果与最近事件冲突时，3 秒内以事件为准（OBS 在 STOPPED 之后仍可能短暂报 `outputActive=true`）。纯 BCL，单测直接链接。 |
 | `Services/Obs/ObsEnsureCore.cs` | **连接结果分类与重试策略纯逻辑**（V3.1.0）：把超时 / 端口未开 / 握手失败 / 密码错误 / OBS 退出翻译成可照做的分类，决定是否继续重试。 |
 | `Services/Obs/ObsAuth.cs` | 基于 salt/challenge 的鉴权字符串计算。 |
 | `Services/Obs/ObsReconnectPolicy.cs` | 重连退避策略。 |

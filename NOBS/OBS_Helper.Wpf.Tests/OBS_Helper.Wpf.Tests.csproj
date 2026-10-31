@@ -44,6 +44,8 @@
     <Compile Include="..\OBS_Helper.Wpf\Services\Obs\ObsLogAnalyzer.cs" Link="Linked\ObsLogAnalyzer.cs" />
     <Compile Include="..\OBS_Helper.Wpf\Services\Obs\PreflightCheckCore.cs" Link="Linked\PreflightCheckCore.cs" />
     <Compile Include="..\OBS_Helper.Wpf\Services\Obs\ObsReconnectPolicy.cs" Link="Linked\ObsReconnectPolicy.cs" />
+    <!-- V3.5.2：输出状态「事件 vs 查询」对账（纯 BCL） -->
+    <Compile Include="..\OBS_Helper.Wpf\Services\Obs\ObsOutputStateCore.cs" Link="Linked\ObsOutputStateCore.cs" />
     <!-- V3.1.0 一键录制：连接结果分类 / 重试策略（纯 BCL） -->
     <Compile Include="..\OBS_Helper.Wpf\Services\Obs\ObsEnsureCore.cs" Link="Linked\ObsEnsureCore.cs" />
     <Compile Include="..\OBS_Helper.Wpf\Services\Ai\DiagnosticSeverity.cs" Link="Linked\DiagnosticSeverity.cs" />

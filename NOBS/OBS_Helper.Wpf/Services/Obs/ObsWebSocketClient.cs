@@ -234,7 +234,7 @@ public sealed class ObsWebSocketClient : IAsyncDisposable
     /// </summary>
     public async Task<IReadOnlyList<ObsRequestResult>> CallBatchAsync(
         IReadOnlyList<ObsBatchRequest> requests,
-        string executionType = "Parallel",
+        string executionType = "SerialRealtime",
         bool haltOnFailure = false,
         CancellationToken ct = default)
     {
@@ -261,17 +261,14 @@ public sealed class ObsWebSocketClient : IAsyncDisposable
 
         var payload = new
         {
-            op = ObsOpCode.Request,
+            op = ObsOpCode.RequestBatch,
             d = new
             {
-                requestType = "CallBatch",
                 requestId = batchId,
-                requestData = new
-                {
-                    haltOnFailure,
-                    executionType,
-                    requests = items
-                }
+                haltOnFailure,
+                // 协议要求数字枚举；传 "Parallel" 字符串会让 OBS 直接以 4004 关闭连接（V3.5.2 修正）。
+                executionType = ObsBatchExecution.Parse(executionType),
+                requests = items
             }
         };
 
@@ -285,7 +282,7 @@ public sealed class ObsWebSocketClient : IAsyncDisposable
             return requests.Select(_ => ObsRequestResult.Fail(0, Strings.T("obs.ws.batchSendFailed", ex.Message))).ToArray();
         }
 
-        var batch = await AwaitResponseAsync(tcs, batchId, "CallBatch", ct);
+        var batch = await AwaitResponseAsync(tcs, batchId, "RequestBatch", ct);
         if (!batch.Ok)
             return requests.Select(_ => ObsRequestResult.Fail(batch.Code, batch.Comment ?? Strings.T("obs.ws.batchFailed"))).ToArray();
 
@@ -720,6 +717,15 @@ public sealed class ObsWebSocketClient : IAsyncDisposable
                     var id = d.TryGetProperty("requestId", out var ri) ? ri.GetString() : null;
                     if (id is null || !_pending.TryRemove(id, out var tcs)) break;
                     tcs.TrySetResult(ParseRequestResponse(d));
+                    break;
+                }
+
+            case ObsOpCode.RequestBatchResponse:
+                {
+                    // 批量响应：d 里带 requestId + results[]；把整个 d 交给 CallBatchAsync 回填顺序。
+                    var id = d.TryGetProperty("requestId", out var ri) ? ri.GetString() : null;
+                    if (id is null || !_pending.TryRemove(id, out var tcs)) break;
+                    tcs.TrySetResult(new ObsRequestResult { Ok = true, Data = d.Clone() });
                     break;
                 }
         }

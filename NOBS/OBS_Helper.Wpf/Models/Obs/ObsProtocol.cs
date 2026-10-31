@@ -20,6 +20,37 @@ public static class ObsOpCode
     public const int Request = 6;
     /// <summary>服务端 → 客户端：单条请求的响应。</summary>
     public const int RequestResponse = 7;
+    /// <summary>
+    /// 客户端 → 服务端：批量请求（V3.5.2 修正）。
+    ///
+    /// 批量**不是** <c>requestType = "CallBatch"</c> 的普通请求 —— 那样 OBS 会回 204
+    /// <c>Your request type is not valid</c>，导致连接后的输出状态 / 音频状态刷新全部静默失败。
+    /// </summary>
+    public const int RequestBatch = 8;
+    /// <summary>服务端 → 客户端：批量请求的响应。</summary>
+    public const int RequestBatchResponse = 9;
+}
+
+/// <summary>obs-websocket 5.x <c>RequestBatch</c> 的执行方式（协议里是数字枚举，不是字符串）。</summary>
+public static class ObsBatchExecution
+{
+    public const int SerialRealtime = 0;
+    public const int SerialFrame = 1;
+    public const int Parallel = 2;
+
+    /// <summary>
+    /// 把历史字符串写法归一化成协议要求的数字。
+    ///
+    /// V3.5.2 实测（OBS 33.0.1 / obs-websocket 5.7.6）：<c>executionType=2 (Parallel)</c> 时，
+    /// 返回的 <c>results[].responseData</c> 会**错配到别的子请求**（录制/推流/虚拟摄像头互相串位），
+    /// 而 <c>0 (SerialRealtime)</c> / <c>1 (SerialFrame)</c> 顺序执行结果正确。
+    /// 因此这里默认走串行，<c>"Parallel"</c> 也按串行处理，宁慢一点也不能拿错状态。
+    /// </summary>
+    public static int Parse(string? executionType) => executionType switch
+    {
+        "SerialFrame" => SerialFrame,
+        _ => SerialRealtime,
+    };
 }
 
 /// <summary>

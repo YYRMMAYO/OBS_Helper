@@ -27,6 +27,26 @@ public sealed class ObsConnectionService : IAsyncDisposable
     /// <summary>EnsureConnectedAsync 的单飞闸：控制台页 / 一键录制 / 启动自动连接不会并发握手。</summary>
     private readonly SemaphoreSlim _ensureGate = new(1, 1);
 
+    /// <summary>
+    /// 输出状态查询的单飞闸：界面刷新、手机端刷新与周期对账都会调用
+    /// <see cref="RefreshOutputsAsync"/>，串行化后不会互相用陈旧结果覆盖新状态。
+    /// </summary>
+    private readonly SemaphoreSlim _outputsGate = new(1, 1);
+
+    /// <summary>周期对账定时器（连接期间每 3 秒核一次输出状态，兜住漏掉的事件）。</summary>
+    private Timer? _reconcileTimer;
+    private int _reconcileBusy;
+
+    // 最近一次「原文状态事件」的值与时刻：查询结果与它冲突时，事件优先（见 ObsOutputStateCore）。
+    private bool _lastRecordEventActive;
+    private DateTime _lastRecordEventUtc = DateTime.MinValue;
+    private bool _lastStreamEventActive;
+    private DateTime _lastStreamEventUtc = DateTime.MinValue;
+
+    /// <summary>状态事件序号：查询在 await 期间若有新事件到达，就不能再用查询结果覆盖。</summary>
+    private int _recordStateVersion;
+    private int _streamStateVersion;
+
     private CancellationTokenSource? _reconnectCts;
     private int _attempt;
     private bool _userInitiatedDisconnect;
@@ -95,6 +115,8 @@ public sealed class ObsConnectionService : IAsyncDisposable
     {
         get
         {
+            // 与 RecordElapsed 同口径：不在推流时返回 0，避免停止后仍显示上次的时长（V3.5.2）。
+            if (!StreamStatus.Active) return TimeSpan.Zero;
             var fromTimecode = ParseTimecode(StreamStatus.Timecode);
             if (fromTimecode > TimeSpan.Zero) return fromTimecode;
             if (StreamStartedUtc is { } start)
@@ -124,6 +146,10 @@ public sealed class ObsConnectionService : IAsyncDisposable
     {
         get
         {
+            // V3.5.2：不在录制就一定是 0。停止事件之后 OBS 的 outputTimecode 仍可能短暂停在
+            // 最后一帧的时长上（见 ObsOutputStateCore）；若不在这里短路，手机端「录制」计时器
+            // 会在停止后继续显示 00:00:06，看起来就像还在录。
+            if (!RecordStatus.Active) return TimeSpan.Zero;
             var fromTimecode = ParseTimecode(RecordStatus.Timecode);
             if (fromTimecode > TimeSpan.Zero) return fromTimecode;
             if (RecordStartedUtc is { } start)
@@ -164,7 +190,10 @@ public sealed class ObsConnectionService : IAsyncDisposable
         // 快照上：界面继续显示「正在推流 / 正在录制 / 回放缓存已开」，一键开播的状态机也据此
         // 判定，而实际上 socket 早就断了（每秒空转一次必然失败的查询）。
         if (s is ObsConnectionState.Disconnected or ObsConnectionState.Failed)
+        {
+            StopReconcileLoop();
             ResetOutputStatuses();
+        }
 
         Notify();
     }
@@ -178,6 +207,11 @@ public sealed class ObsConnectionService : IAsyncDisposable
         ReplayBufferStatus = new ObsOutputStatus();
         RecordStartedUtc = null;
         StreamStartedUtc = null;
+        // 事件基线一并复位：重新连上后第一次查询不该被上一次会话的「最近事件」压住。
+        _lastRecordEventActive = false;
+        _lastRecordEventUtc = DateTime.MinValue;
+        _lastStreamEventActive = false;
+        _lastStreamEventUtc = DateTime.MinValue;
         // 演播室状态也要复位（V3.0 第三轮验证）：OBS 退出后缓存里的 true 会让控制台
         // 一直显示「已启用」，而点「切换」必然失败。
         SetStudioMode(false);
@@ -238,6 +272,7 @@ public sealed class ObsConnectionService : IAsyncDisposable
             SetState(ObsConnectionState.Connected);
             _attempt = 0;
             await RefreshAllAsync();
+            StartReconcileLoop();
             return EnsureConnectionOutcome.Connected;
         }
         catch (OperationCanceledException) when (ct.IsCancellationRequested)
@@ -590,67 +625,150 @@ public sealed class ObsConnectionService : IAsyncDisposable
 
     public async Task RefreshOutputsAsync()
     {
-        // V3.0 审查修正：**先**取旧值再 await。
-        // 原先在 await 之后才读 RecordStatus.Active / StreamStatus.Active，而事件线程可能在这段
-        // 等待期间已经改过它们 —— 于是「翻转」判定会凭空造出一个新起点（已录/已播时长跳变）。
-        var recordWasActive = RecordStatus.Active;
-        var streamWasActive = StreamStatus.Active;
-
-        // 四条输出状态查询合并成一次 CallBatch，连接/刷新时少三次往返
-        var results = await _client.CallBatchAsync(new[]
+        // 查询与事件可能并发：串行化查询，避免两次刷新各自用「查询发起时」的快照互相覆盖。
+        await _outputsGate.WaitAsync().ConfigureAwait(false);
+        try
         {
-            new ObsBatchRequest { RequestType = "GetRecordStatus" },
-            new ObsBatchRequest { RequestType = "GetStreamStatus" },
-            new ObsBatchRequest { RequestType = "GetVirtualCamStatus" },
-            new ObsBatchRequest { RequestType = "GetReplayBufferStatus" },
+            // V3.0 审查修正：**先**取旧值再 await。
+            // 原先在 await 之后才读 RecordStatus.Active / StreamStatus.Active，而事件线程可能在这段
+            // 等待期间已经改过它们 —— 于是「翻转」判定会凭空造出一个新起点（已录/已播时长跳变）。
+            var recordWasActive = RecordStatus.Active;
+            var streamWasActive = StreamStatus.Active;
+            var recordVersion = Volatile.Read(ref _recordStateVersion);
+            var streamVersion = Volatile.Read(ref _streamStateVersion);
+
+            // 四条输出状态查询合并成一次 CallBatch，连接/刷新时少三次往返
+            var results = await _client.CallBatchAsync(new[]
+            {
+                new ObsBatchRequest { RequestType = "GetRecordStatus" },
+                new ObsBatchRequest { RequestType = "GetStreamStatus" },
+                new ObsBatchRequest { RequestType = "GetVirtualCamStatus" },
+                new ObsBatchRequest { RequestType = "GetReplayBufferStatus" },
+            }).ConfigureAwait(false);
+
+            var rec = results[0];
+            if (rec.Ok && rec.Data is { } rd)
+            {
+                // V3.5.2：OBS 在 STOPPED 事件之后仍可能短暂把 outputActive 报成 true（实测 0.5~1s）。
+                // 查询只用来补时长/字节；Active 以「最近一次事件」为准（事件更老时才采信查询）。
+                var nowActive = ResolveRecordActive(Bool(rd, "outputActive"), recordVersion);
+
+                RecordStatus = new ObsOutputStatus
+                {
+                    Active = nowActive,
+                    Paused = Bool(rd, "outputPaused"),
+                    Timecode = Str(rd, "outputTimecode"),
+                    Bytes = Lng(rd, "outputBytes")
+                };
+
+                // 本地开始时刻只作为「拿不到 timecode」时的兜底；状态码翻转时才更新，
+                // 否则每次刷新都会把起点推后，时长永远停在零附近。
+                TrackRecordTransition(recordWasActive, nowActive);
+            }
+
+            var st = results[1];
+            if (st.Ok && st.Data is { } sd)
+            {
+                var streamNowActive = ResolveStreamActive(Bool(sd, "outputActive"), streamVersion);
+                StreamStatus = new ObsOutputStatus
+                {
+                    Active = streamNowActive,
+                    Reconnecting = Bool(sd, "outputReconnecting"),
+                    Timecode = Str(sd, "outputTimecode"),
+                    Bytes = Lng(sd, "outputBytes"),
+                    Congestion = Dbl(sd, "outputCongestion"),
+                    SkippedFrames = Lng(sd, "outputSkippedFrames"),
+                    TotalFrames = Lng(sd, "outputTotalFrames")
+                };
+                TrackStreamTransition(streamWasActive, streamNowActive);
+            }
+
+            var vc = results[2];
+            if (vc.Ok && vc.Data is { } vd)
+            {
+                VirtualCamStatus = new ObsOutputStatus { Active = Bool(vd, "outputActive") };
+            }
+
+            var rb = results[3];
+            if (rb.Ok && rb.Data is { } rbd)
+            {
+                ReplayBufferStatus = new ObsOutputStatus { Active = Bool(rbd, "outputActive") };
+            }
+        }
+        finally
+        {
+            _outputsGate.Release();
+        }
+    }
+
+    /// <summary>
+    /// 录制 Active 的最终取值。查询期间若有新事件到达，以当前（事件写好的）值为准；
+    /// 否则按 <see cref="ObsOutputStateCore"/> 在「事件 vs 查询」之间裁决。
+    /// </summary>
+    private bool ResolveRecordActive(bool queryActive, int versionAtRequest)
+    {
+        if (versionAtRequest != Volatile.Read(ref _recordStateVersion)) return RecordStatus.Active;
+        var since = _lastRecordEventUtc == DateTime.MinValue
+            ? TimeSpan.MaxValue
+            : DateTime.UtcNow - _lastRecordEventUtc;
+        return ObsOutputStateCore.ResolveActive(queryActive, _lastRecordEventActive, since);
+    }
+
+    /// <summary>推流 Active 的最终取值，规则同 <see cref="ResolveRecordActive"/>。</summary>
+    private bool ResolveStreamActive(bool queryActive, int versionAtRequest)
+    {
+        if (versionAtRequest != Volatile.Read(ref _streamStateVersion)) return StreamStatus.Active;
+        var since = _lastStreamEventUtc == DateTime.MinValue
+            ? TimeSpan.MaxValue
+            : DateTime.UtcNow - _lastStreamEventUtc;
+        return ObsOutputStateCore.ResolveActive(queryActive, _lastStreamEventActive, since);
+    }
+
+    // ------------------------------------------------------------ 输出状态对账
+
+    /// <summary>
+    /// 连接期间每 3 秒核对一次输出状态。
+    ///
+    /// 为什么需要：事件是主通道，但网络抖动、OBS 卡顿或一次性丢包都可能让某条事件没到；
+    /// 旧实现完全依赖事件，漏一条就会永久停在旧状态（V3.5.2 实测：停止录制后一直显示「进行中」）。
+    /// 对账只在 Active 真的变化时 Notify，不打扰正在操作的界面。
+    /// </summary>
+    private void StartReconcileLoop()
+    {
+        _reconcileTimer ??= new Timer(_ => ReconcileOutputs(), null, TimeSpan.FromSeconds(3), TimeSpan.FromSeconds(3));
+    }
+
+    private void StopReconcileLoop()
+    {
+        _reconcileTimer?.Dispose();
+        _reconcileTimer = null;
+        Interlocked.Exchange(ref _reconcileBusy, 0);
+    }
+
+    private void ReconcileOutputs()
+    {
+        if (!IsConnected) return;
+        if (Interlocked.Exchange(ref _reconcileBusy, 1) == 1) return;
+        _ = Task.Run(async () =>
+        {
+            try
+            {
+                var record = RecordStatus.Active;
+                var stream = StreamStatus.Active;
+                var vcam = VirtualCamStatus.Active;
+                await RefreshOutputsAsync().ConfigureAwait(false);
+                if (record != RecordStatus.Active || stream != StreamStatus.Active || vcam != VirtualCamStatus.Active)
+                    Notify();
+            }
+            catch (Exception ex)
+            {
+                FileLogger.Warn("ObsReconcile", $"输出状态对账失败（下轮重试）：{ex.Message}");
+            }
+            finally
+            {
+                Interlocked.Exchange(ref _reconcileBusy, 0);
+            }
         });
-
-        var rec = results[0];
-        if (rec.Ok && rec.Data is { } rd)
-        {
-            var nowActive = Bool(rd, "outputActive");
-
-            RecordStatus = new ObsOutputStatus
-            {
-                Active = nowActive,
-                Paused = Bool(rd, "outputPaused"),
-                Timecode = Str(rd, "outputTimecode"),
-                Bytes = Lng(rd, "outputBytes")
-            };
-
-            // 本地开始时刻只作为「拿不到 timecode」时的兜底；状态码翻转时才更新，
-            // 否则每次刷新都会把起点推后，时长永远停在零附近。
-            TrackRecordTransition(recordWasActive, nowActive);
-        }
-
-        var st = results[1];
-        if (st.Ok && st.Data is { } sd)
-        {
-            var streamNowActive = Bool(sd, "outputActive");
-            StreamStatus = new ObsOutputStatus
-            {
-                Active = streamNowActive,
-                Reconnecting = Bool(sd, "outputReconnecting"),
-                Timecode = Str(sd, "outputTimecode"),
-                Bytes = Lng(sd, "outputBytes"),
-                Congestion = Dbl(sd, "outputCongestion"),
-                SkippedFrames = Lng(sd, "outputSkippedFrames"),
-                TotalFrames = Lng(sd, "outputTotalFrames")
-            };
-            TrackStreamTransition(streamWasActive, streamNowActive);
-        }
-
-        var vc = results[2];
-        if (vc.Ok && vc.Data is { } vd)
-        {
-            VirtualCamStatus = new ObsOutputStatus { Active = Bool(vd, "outputActive") };
-        }
-
-        var rb = results[3];
-        if (rb.Ok && rb.Data is { } rbd)
-        {
-            ReplayBufferStatus = new ObsOutputStatus { Active = Bool(rbd, "outputActive") };
-        }
     }
 
     /// <summary>连接在线时刷新输出状态；失败返回 false（调用方按原结果处理，不吞真实错误）。</summary>
@@ -1138,13 +1256,20 @@ public sealed class ObsConnectionService : IAsyncDisposable
         RecordStatus.Active = Bool(e.Data, "outputActive");
         RecordStatus.Paused = Str(e.Data, "outputState") == "OBS_WEBSOCKET_OUTPUT_PAUSED";
 
+        // V3.5.2：记住事件给出的权威值。OBS 在 STOPPING / STOPPED 之后仍可能短暂把
+        // GetRecordStatus 报成 true，后续查询必须按这里裁决，不能把它翻回「录制中」。
+        _lastRecordEventActive = RecordStatus.Active;
+        _lastRecordEventUtc = DateTime.UtcNow;
+        Interlocked.Increment(ref _recordStateVersion);
+
         // 停止事件里带的路径就是刚落盘的成品文件：优先于上次的 RecordFileChanged
         var path = Str(e.Data, "outputPath");
         if (path.Length > 0) SetRecordFile(path);
 
         TrackRecordTransition(wasActive, RecordStatus.Active);
 
-        // 开始 / 停止都补一次状态查询：把 timecode 与 outputBytes 拉准（事件里不带这两个值）
+        // 开始 / 停止都补一次状态查询：把 timecode 与 outputBytes 拉准（事件里不带这两个值）。
+        // 注意：这次查询**只补时长/字节，不写 Active**（见 RefreshRecordStatusAsync）。
         _ = FireAndForget(RefreshRecordStatusAsync);
     }
 
@@ -1223,19 +1348,22 @@ public sealed class ObsConnectionService : IAsyncDisposable
         return new SimpleStreamServiceInfo(hasServer, hasKey, type ?? "");
     }
 
-    /// <summary>单独查一次录制状态（事件驱动后的补齐，失败静默）。</summary>
+    /// <summary>
+    /// 状态事件后的补齐查询（失败静默）。
+    ///
+    /// V3.5.2 关键约束：这里**只补 <c>timecode</c> / <c>Bytes</c> / <c>Paused</c>，绝不写
+    /// <c>Active</c>**。实测 OBS 在 <c>RecordStateChanged(STOPPING/STOPPED, outputActive=false)</c>
+    /// 之后仍会短暂返回 <c>outputActive=true</c>；旧实现直接写回，就把刚停止的录制翻回「进行中」，
+    /// 且此后不会再有任何事件来纠正（桌面端与手机端都会一直显示在录制）。
+    /// </summary>
     private async Task RefreshRecordStatusAsync()
     {
         var r = await _client.RequestAsync("GetRecordStatus");
         if (!r.Ok || r.Data is not { } d) return;
 
-        var wasActive = RecordStatus.Active;
-        var nowActive = Bool(d, "outputActive");
-        RecordStatus.Active = nowActive;
         RecordStatus.Paused = Bool(d, "outputPaused");
         RecordStatus.Timecode = Str(d, "outputTimecode");
         RecordStatus.Bytes = Lng(d, "outputBytes");
-        TrackRecordTransition(wasActive, nowActive);
     }
 
     /// <summary>
@@ -1247,16 +1375,13 @@ public sealed class ObsConnectionService : IAsyncDisposable
         var r = await _client.RequestAsync("GetStreamStatus");
         if (!r.Ok || r.Data is not { } d) return;
 
-        var wasActive = StreamStatus.Active;
-        var nowActive = Bool(d, "outputActive");
-        StreamStatus.Active = nowActive;
+        // 与录制同理：Active 由事件决定，这里只补指标（见 RefreshRecordStatusAsync 的说明）。
         StreamStatus.Reconnecting = Bool(d, "outputReconnecting");
         StreamStatus.Timecode = Str(d, "outputTimecode");
         StreamStatus.Bytes = Lng(d, "outputBytes");
         StreamStatus.Congestion = Dbl(d, "outputCongestion");
         StreamStatus.SkippedFrames = Lng(d, "outputSkippedFrames");
         StreamStatus.TotalFrames = Lng(d, "outputTotalFrames");
-        TrackStreamTransition(wasActive, nowActive);
     }
 
     private void OnStreamStateChanged(ObsEventMessage e)
@@ -1264,6 +1389,10 @@ public sealed class ObsConnectionService : IAsyncDisposable
         var wasActive = StreamStatus.Active;
         StreamStatus.Active = Bool(e.Data, "outputActive");
         StreamStatus.Reconnecting = Str(e.Data, "outputState") == "OBS_WEBSOCKET_OUTPUT_RECONNECTING";
+
+        _lastStreamEventActive = StreamStatus.Active;
+        _lastStreamEventUtc = DateTime.UtcNow;
+        Interlocked.Increment(ref _streamStateVersion);
 
         // V3.0（D2）：维护「本次推流」的起止时刻，并补一次查询把 timecode / 字节数拉准
         TrackStreamTransition(wasActive, StreamStatus.Active);
@@ -1331,6 +1460,7 @@ public sealed class ObsConnectionService : IAsyncDisposable
     public async ValueTask DisposeAsync()
     {
         CancelReconnect();
+        StopReconcileLoop();
         _client.EventReceived -= OnObsEvent;
         _client.Closed -= OnClosed;
         await _client.DisposeAsync();

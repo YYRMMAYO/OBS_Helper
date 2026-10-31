@@ -241,7 +241,7 @@ public partial class MiniControlWindow : Window
 
             var progress = AppServices.SimpleRecord?.Progress;
             if (progress is not null && progress.RemainingMinutes > 0)
-                parts.Add(Strings.T("mini.metricRemaining", progress.RemainingMinutes));
+                parts.Add(Strings.T("mini.metricRemaining", progress.RemainingMinutes.ToString("0")));
             else if (progress is not null)
                 parts.Add(Strings.T("mini.metricFree", progress.FreeGb));
         }

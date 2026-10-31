@@ -31,9 +31,9 @@
          增量更新、安装目录识别、%LocalAppData%\OBS_Helper 下的用户数据都依赖它，
          改名等于让老用户的数据和升级链路一起断掉。 -->
     <!-- V3.5.0：V 系列（主版本 < 1000）；X1031 的 1031.0.0 只在 X 标签构建中使用。 -->
-    <Version>3.5.1</Version>
-    <FileVersion>3.5.1.0</FileVersion>
-    <AssemblyVersion>3.5.1.0</AssemblyVersion>
+    <Version>3.5.2</Version>
+    <FileVersion>3.5.2.0</FileVersion>
+    <AssemblyVersion>3.5.2.0</AssemblyVersion>
     <AssemblyTitle>OBS帮助助手</AssemblyTitle>
     <Product>OBS帮助助手</Product>
     <Company>OBS Helper</Company>

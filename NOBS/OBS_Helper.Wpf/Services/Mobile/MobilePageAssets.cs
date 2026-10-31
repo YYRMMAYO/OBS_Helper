@@ -76,6 +76,8 @@ public static class MobilePageAssets
         ["online"] = ("OBS 已连接", "OBS connected"),
         ["offline"] = ("OBS 未连接", "OBS offline"),
         ["tallyLive"] = ("直播中", "LIVE"),
+        ["tallyRecord"] = ("录制中", "REC"),
+        ["tallyLiveRecord"] = ("直播中 · 录制中", "LIVE · REC"),
         ["tallyStandby"] = ("待机", "STANDBY"),
         ["viewer"] = ("只读权限，只能查看", "Read-only: view only"),
         ["operator"] = ("操作员", "Operator"),
@@ -614,7 +616,13 @@ function render(s) {
   renderLabels();
 }
 function renderTally(s) {
-  const label = s.tally === "red" ? t("tallyLive") : s.tally === "off" ? t("offline") : t("tallyStandby");
+  // 状态灯只表达「在不在运行」，文案要分清是直播、录制还是两者同时：
+  // 旧实现把所有红灯都写成「直播中」，只录制时手机上也显示「直播中」，与事实不符（V3.5.2）。
+  const label = s.tally === "off" ? t("offline")
+    : s.streaming && s.recording ? t("tallyLiveRecord")
+    : s.streaming ? t("tallyLive")
+    : s.recording ? t("tallyRecord")
+    : t("tallyStandby");
   const time = s.streaming ? (s.streamTime || "00:00:00") : (s.recording ? (s.recordTime || "00:00:00") : "00:00:00");
   document.querySelectorAll(".js-tally").forEach(n => {
     n.classList.remove("off", "green", "red");

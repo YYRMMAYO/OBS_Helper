@@ -4,19 +4,19 @@
 
 **OBS帮助助手 · OBS Helper** —— 面向直播新手的 OBS 排障 / 录制 / 推流助手（Windows 原生 WPF）
 
-**当前版本：V3.5.1**（正式版） · X 系列 `X1031` / `X1031Y2` 同步提供
+**当前版本：V3.5.2**（正式版） · X 系列 `X1031` / `X1031Y2` 同步提供
 
-**本版主线**：**图标与手机改稿修复**——设置详情与功能中心的图标改为正确的描边渲染并按标题重新配图；手机端修改提词稿后可即时同步到电脑提词器；设置页与反馈页新增支付宝 / 微信赞助码。详见 [`NOBS/RELEASE_NOTES_v3.5.1.md`](NOBS/RELEASE_NOTES_v3.5.1.md)。
+**本版主线**：**录制 / 直播状态可信度修复**——停止录制后电脑端与手机端不再一直显示「录制中 / 直播中」；手机状态灯区分直播与录制；批量状态查询改用正确的 obs-websocket 协议，连接后的音量与输出状态恢复实时刷新。详见 [`NOBS/RELEASE_NOTES_v3.5.2.md`](NOBS/RELEASE_NOTES_v3.5.2.md)。
 
 [![CI](https://github.com/YYRMMAYO/OBS_Helper/actions/workflows/ci.yml/badge.svg)](https://github.com/YYRMMAYO/OBS_Helper/actions/workflows/ci.yml)
 [![平台](https://img.shields.io/badge/Platform-Windows_7_SP1%2B_%2F_10_%2F_11-0078D6.svg)]()
 [![.NET](https://img.shields.io/badge/.NET-10_%2F_6-512BD4.svg)]()
 [![技术栈](https://img.shields.io/badge/Stack-WPF_%2F_C%23-239120.svg)]()
-[![版本](https://img.shields.io/badge/Release-3.5.1-38bdf8.svg)](https://github.com/YYRMMAYO/OBS_Helper/releases)
+[![版本](https://img.shields.io/badge/Release-3.5.2-38bdf8.svg)](https://github.com/YYRMMAYO/OBS_Helper/releases)
 [![OBS](https://img.shields.io/badge/OBS-32.2.2-302E31.svg)](https://github.com/obsproject/obs-studio/releases)
 [![离线可用](https://img.shields.io/badge/offline--first-2ea44f.svg)]()
 [![增量更新](https://img.shields.io/badge/Incremental%20Update-2.5MB-7dd3fc.svg)]()
-[![测试](https://img.shields.io/badge/Tests-1729%20passed-2ea44f.svg)]()
+[![测试](https://img.shields.io/badge/Tests-1756%20passed-2ea44f.svg)]()
 [![许可](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
 [English](README.en.md) · **简体中文**
@@ -38,7 +38,7 @@
 
 ---
 
-**目录**：[从这里开始](#从这里开始) · [5 分钟上手](#5-分钟上手) · [亮点速览](#亮点速览) · [功能详解](#功能详解) · [智能诊断引擎](#智能诊断引擎) · [版本通道](#版本通道正式版与-dev-测试版) · [V3.5.1 新增](#v351-新增) · [V3.5.0 新增](#v350-新增) · [X1031 新增](#x1031-新增) · [V3.4.0 新增](#v340-新增) · [V3.3.0 新增](#v330-新增) · [V3.1.1 新增](#v311-新增) · [版本历史](#版本历史) · [隐私与安全](#隐私与安全) · [安装与更新](#安装与更新) · [构建](#构建) · [工程结构](#工程结构) · [质量基线与已知边界](#质量基线与已知边界) · [宣传视频](#宣传视频) · [捐赠支持](#捐赠支持) · [许可](#许可)
+**目录**：[从这里开始](#从这里开始) · [5 分钟上手](#5-分钟上手) · [亮点速览](#亮点速览) · [功能详解](#功能详解) · [智能诊断引擎](#智能诊断引擎) · [版本通道](#版本通道正式版与-dev-测试版) · [V3.5.2 新增](#v352-新增) · [V3.5.1 新增](#v351-新增) · [V3.5.0 新增](#v350-新增) · [X1031 新增](#x1031-新增) · [V3.4.0 新增](#v340-新增) · [V3.3.0 新增](#v330-新增) · [V3.1.1 新增](#v311-新增) · [版本历史](#版本历史) · [隐私与安全](#隐私与安全) · [安装与更新](#安装与更新) · [构建](#构建) · [工程结构](#工程结构) · [质量基线与已知边界](#质量基线与已知边界) · [宣传视频](#宣传视频) · [捐赠支持](#捐赠支持) · [许可](#许可)
 
 ---
 
@@ -50,7 +50,7 @@
 | 先看它能干什么、怎么用 | 往下读「[5 分钟上手](#5-分钟上手)」与「[功能详解](#功能详解)」 |
 | 读开发向的完整文档（质量基线 · 历史版本 · 代码清单） | [`NOBS/README.md`](NOBS/README.md) |
 | Full documentation in English | [`README.en.md`](README.en.md) · [`NOBS/README.en.md`](NOBS/README.en.md) |
-| 这一版改了什么 | [`NOBS/RELEASE_NOTES_v3.5.1.md`](NOBS/RELEASE_NOTES_v3.5.1.md) |
+| 这一版改了什么 | [`NOBS/RELEASE_NOTES_v3.5.2.md`](NOBS/RELEASE_NOTES_v3.5.2.md) |
 | DEV 测试通道的编号与更新规则 | [`NOBS/docs/DEV_CHANNEL.md`](NOBS/docs/DEV_CHANNEL.md) |
 | 改文档前先看：哪类文档放 master / 哪类放 dev | [`docs/BRANCH_AND_DOC_RULES.md`](docs/BRANCH_AND_DOC_RULES.md) |
 | 反馈问题 / 上报安全漏洞 | [Issues](https://github.com/YYRMMAYO/OBS_Helper/issues) · [SECURITY.md](SECURITY.md) |
@@ -183,14 +183,23 @@
 
 | 通道 | 版本号样式 | 定位 | 更新来源 |
 | --- | --- | --- | --- |
-| **V 系列**（`master`） | `V3.5.1` | **稳定优先**：功能收敛、经过完整回归与发布验证，适合日常直播 / 录制 | 正式 Release 页 · 蓝奏云 · 应用内增量更新 |
+| **V 系列**（`master`） | `V3.5.2` | **稳定优先**：功能收敛、经过完整回归与发布验证，适合日常直播 / 录制 | 正式 Release 页 · 蓝奏云 · 应用内增量更新 |
 | **X 系列**（`master`） | `X1031` / `X1031Y2` | **独立大版本**：`X` + `MMdd` 日期码，含 X 专属图标；更新检查只看 `X` 标签 | X 系列 Release 页 · 应用内更新 |
 
 - **两个系列共用功能与数据目录**：安装目录、程序集名、`%LocalAppData%\OBS_Helper` 都不变，升级链路一致。
-- **通道过滤在解析层完成**：V 构建只认 `V3.5.1` 这类 V tag，X 构建只认 `X1031` 这类 X tag；两类 tag 挂在同一个仓库里，也不会互相被当成新版本。
+- **通道过滤在解析层完成**：V 构建只认 `V3.5.2` 这类 V tag，X 构建只认 `X1031` 这类 X tag；两类 tag 挂在同一个仓库里，也不会互相被当成新版本。
 - **X 版本号规则**：`X` 后面的四位是日期 `MMdd`（`X1031` = 10 月 31 日）。同一天再次发版时追加 `Y1`、`Y2`、`Y3`…；更新检测先比日期，日期相同再比 Y 序号，所以 `X1031Y2 > X1031`、`X1101 > X1031Y99`。
 - **X 更新提示**：检测到新版本后，更新弹窗会直接从 GitHub Release 拉取本版更新说明并展示；拉取失败时不影响检查与下载。
 - **X1031 范围小于 V3.5.0**：X1031 含需求 1–9 与新图标，但不含全局背景 UI 重构、手机连接页重排与功能中心体验优化；V3.5.0 含这些 UI 内容，但按需求继续使用原应用图标。
+
+## V3.5.2 新增
+
+> 完整说明见 [`NOBS/RELEASE_NOTES_v3.5.2.md`](NOBS/RELEASE_NOTES_v3.5.2.md)。
+
+- **停止录制后仍显示「录制中」**：状态事件之后 OBS 的 `GetRecordStatus` 会短暂返回 `outputActive=true`，旧实现把这次查询写回，导致停止后界面又翻回「进行中」。现在事件是权威来源，查询只补时长 / 字节，另有每 3 秒一次的轻量对账；控制台、迷你小窗、托盘与手机端同步修复。
+- **手机端刷新后误显示「直播中 / 录制中」**：刷新 / 重连时先向 OBS 对一次状态；状态灯按真实状态区分「直播中」「录制中」「直播中 · 录制中」，只录制时不再显示「直播中」；不在录制时录制计时器固定 `00:00:00`。
+- **批量状态查询协议修正**：改用 `RequestBatch`（op 8 / 9）与数字执行方式；连接后的录制 / 推流 / 虚拟摄像头状态、音频静音与音量恢复实时刷新（此前批量请求被 OBS 回 204 或 4004，全部静默失败）。
+- **迷你小窗**：「还可录约 X 分钟」改为整数显示，不再出现一长串小数。
 
 ## V3.5.1 新增
 
@@ -439,6 +448,7 @@ XAML 一律用 `DynamicResource`（主题键直接用、文案键写作 `Loc.<�
 
 | 版本 | 重点 | 发布说明 |
 | --- | --- | --- |
+| **V3.5.2** | 录制 / 直播状态可信度修复（桌面 + 手机）、批量状态查询协议修正 | [`RELEASE_NOTES_v3.5.2.md`](NOBS/RELEASE_NOTES_v3.5.2.md) |
 | **V3.5.1** | 详情图标描边修复与语义重配、手机改提词稿同步修复、设置/反馈页赞助码 | [`RELEASE_NOTES_v3.5.1.md`](NOBS/RELEASE_NOTES_v3.5.1.md) |
 | **V3.5.0** | 全局背景 UI 重构、毛玻璃、字体自定义、启动动画、手机连接页与功能中心优化 | [`RELEASE_NOTES_v3.5.0.md`](NOBS/RELEASE_NOTES_v3.5.0.md) |
 | **V3.4.0** | 手机联动（遥控 / 监看 / 提词 / 补光 / 快传 / Wi-Fi 摄像头 / 手机麦 / 多机位 / 嘉宾）、弹幕聚合与字幕、复盘/切片、转推/归档、MIDI/灯光/团队/AI 搭档、四模块自检 | [`RELEASE_NOTES_v3.4.0.md`](NOBS/RELEASE_NOTES_v3.4.0.md) |

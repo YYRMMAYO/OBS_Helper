@@ -25,6 +25,37 @@
 - 图标不承担唯一信息：始终有文字标签与可访问名称；
 - 新增图标必须同时补 `check_resources.py` 可解析的引用。
 
+### 1.3 V3.5.1 设置详情图标修复
+
+V3.5.1 修掉了一类**渲染方式**错误：`Icons.xaml` 里的几何全部是描边路径，
+但设置页详情头部与功能中心模块卡曾用 `Fill` 渲染，圆 / 方框会被填成实心色块
+（「语言与地区」因此只剩一个圆点）。现在两处统一改为 `Stroke`：
+
+```xml
+<Path Stroke="{DynamicResource BrandBrush}" StrokeThickness="1.8"
+      StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round" />
+```
+
+新增 / 替换的语义图标（Tabler Icons，MIT，路径取自官方 outline SVG）：
+
+| 资源键 | 语义 | 设置分区 |
+| --- | --- | --- |
+| `IconGeomLanguage` | 地球 | 语言与地区 |
+| `IconGeomPalette` | 调色板 | 外观与无障碍 |
+| `IconGeomTray` | 托盘 / 收件箱 | 后台与遥控 |
+| `IconGeomVideo` | 摄像机 | 录制 |
+| `IconGeomArrowsSwitch` | 双向箭头 | 场景自动切换 |
+| `IconGeomKeyboard` | 键盘 | 全局热键 |
+| `IconGeomCpu` | 芯片 | AI 诊断引擎 |
+| `IconGeomDiagnostic` | 脉冲线 | 排障指引 |
+| `IconGeomDatabase` | 数据库 | 本地数据 |
+| `IconGeomArchive` | 归档 | OBS 配置管理 |
+| `IconGeomCompass` | 罗盘 | 新手引导 |
+| `IconGeomInfo` | 信息圆 | 关于 |
+
+验收：`SettingsSectionsTests.EverySectionIconExists` 校验每个 `IconKey` 都在
+`Icons.xaml` 中存在；本地用 WPF `RenderTargetBitmap` 渲染全部图标，确认均为描边轮廓。
+
 ## 2. X1031 应用图标
 
 - 设计：黑色圆角方块（`#0B0F14`），白色 `OBS` 大字标，下方 `helper` 小字标；

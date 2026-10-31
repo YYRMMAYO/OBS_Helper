@@ -232,7 +232,7 @@ When the cloud / free engine fails it **falls back to the local engine automatic
 - **Fixed all plugin / dependency one-click downloads failing**: GitHub release assets now 302 to `release-assets.githubusercontent.com`; the old allowlist rejected the final host. The new CDN is allowed, download diagnostics now log host / HTTP status, and regression tests cover it.
 - **Full Feature Center audit**: compared advertised capabilities with the code; 17 items overclaim (phone microphone has no endpoint, "AI reply/director" are templates/rules, theme market is JSON import only, auto-archive needs a manual click, etc.). All are written into the development guide, split into Y3 follow-up and Y4.
 - **Shipped in this build**: one-click dependency UI (whisper / FFmpeg / rclone with auto-fill), whisper model download, phone camera QR / publish detection / firewall rule, Feature Center runtime setup + status chips, Q05 auto-archive, C10 / E06 persistence, MediaMTX WebRTC watch + OBS WHIP URL, and a local recording-file index.
-- **Explicit boundaries**: LLM reply / partner, real AI director, online theme market, networked team collaboration, Twitch / YouTube viewer stats, and browser-as-camera are not wired. Guide §13 documents why, how to connect them yourself, and what is not claimed.
+- **Explicit boundaries**: LLM reply / partner, real AI director, online theme market, networked team collaboration, Twitch / YouTube viewer stats, and browser-as-camera are not wired. The development guide documents the boundaries; self-integration steps are not published.
 
 ## What's new in X1031Y2
 

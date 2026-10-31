@@ -58,7 +58,7 @@
 | 依赖一键安装 / whisper 模型 / 摄像头诊断 / 防火墙 | 12 | ✅ | `DependencyProvisioner`、`WhisperModelService`、`MobileLinkPage`、`FirewallHelper` | 构建 + 单测 + 真实插件 / 模型探测 |
 | 功能中心环境准备 / 状态位、配对上限、Q05、C10/E06 落盘 | 12 | ✅ | `FeatureHubPage`、`FeatureCatalog.KnownStatus`、`AutoArchiveService`、`InsightsCore`、`InteractionPage` | 构建 + 单测 |
 | Y4 并入：WebRTC 视频监看、历史录像索引 | 12 | ✅ | `PhoneCameraCore`、`MediaServerManager`、`RecordingLibraryService` | 构建 + MobileCoreTests |
-| Y4 边界：LLM / AI 导播 / 主题市场 / 联机协作 / 多平台统计 / 浏览器摄像头 | 12 | ◐ 指引 | 开发指引 §13 | 未接入；不宣传为已完成 |
+| Y4 边界：LLM / AI 导播 / 主题市场 / 联机协作 / 多平台统计 / 浏览器摄像头 | 12 | ◐ 指引 | 开发指引（边界声明） | 未接入；不宣传为已完成 |
 
 ### X1031Y3（2026-10-31，三轮）
 

@@ -115,7 +115,12 @@ if ($ver -notmatch '^\d+\.\d+(\.\d+){0,2}$') {
 $verParts = @($ver.Split('.'))
 while ($verParts.Count -lt 4) { $verParts += '0' }
 $fileVer = ($verParts[0..3] -join '.')
+# X 系列（主版本 >= 1000 的日期码）必须使用 X 专属图标；V 系列保持原图标。
+$xSeries = ([int]$verParts[0] -ge 1000)
+$xSeriesIconArg = if ($xSeries) { "true" } else { "false" }
+$myAppIcon = if ($xSeries) { "Assets\appicon_x.ico" } else { "Assets\appicon.ico" }
 Write-Host "版本号：$ver（FileVersion / AssemblyVersion：$fileVer）" -ForegroundColor DarkGray
+Write-Host "图标：$myAppIcon（XSeriesIcon=$xSeriesIconArg）" -ForegroundColor DarkGray
 
 New-Item -ItemType Directory -Force -Path $pakeWin | Out-Null
 
@@ -168,7 +173,8 @@ function Publish-Wpf {
     $args = @(
         "publish", $proj, "-c", $Configuration, "-r", $Runtime, "--self-contained", "true",
         "-p:PublishSingleFile=false", "-p:TargetFramework=$Tfm",
-        "-p:Version=$ver", "-p:FileVersion=$fileVer", "-p:AssemblyVersion=$fileVer"
+        "-p:Version=$ver", "-p:FileVersion=$fileVer", "-p:AssemblyVersion=$fileVer",
+        "-p:XSeriesIcon=$xSeriesIconArg"
     )
     # ReadyToRun 对 net6.0 需要 6.0 的 crossgen 包；拿不到就退回非 R2R（只影响启动速度，不影响功能）。
     if ($ReadyToRun) { $args += "-p:PublishReadyToRun=true" }
@@ -204,7 +210,7 @@ function New-Installer {
 
     Step "Inno Setup 生成安装包（$Tfm，MinVersion=$MinVersion）"
     & $iscc "/DMyAppVersion=$ver" "/DMyAppTfm=$Tfm" "/DMyAppMinVersion=$MinVersion" `
-        "/DMyAppOutputSuffix=$Suffix" (Join-Path $projDir "OBS_Helper_Setup.iss") | Out-Host
+        "/DMyAppOutputSuffix=$Suffix" "/DMyAppIcon=$myAppIcon" (Join-Path $projDir "OBS_Helper_Setup.iss") | Out-Host
     if ($LASTEXITCODE -ne 0) { throw "Inno Setup 构建失败（$Tfm）。" }
     return $setupPath
 }
@@ -431,7 +437,7 @@ if ($SingleFile) {
     $sfDir = Join-Path $projDir "bin\$Configuration\$tfmModern\$Runtime\publish-single"
     dotnet publish $proj -c $Configuration -r $Runtime --self-contained true `
         -p:TargetFramework=$tfmModern -p:Version=$ver -p:FileVersion=$fileVer -p:AssemblyVersion=$fileVer `
-        -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true `
+        -p:XSeriesIcon=$xSeriesIconArg -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true `
         -p:EnableCompressionInSingleFile=true -p:PublishReadyToRun=true `
         -o $sfDir | Out-Host
     if ($LASTEXITCODE -ne 0) { throw "单文件发布失败。" }

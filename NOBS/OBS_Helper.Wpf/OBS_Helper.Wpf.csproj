@@ -23,7 +23,10 @@
     <RootNamespace>OBS_Helper.Wpf</RootNamespace>
     <AssemblyName>OBS_Helper</AssemblyName>
 
-    <ApplicationIcon>Assets\appicon.ico</ApplicationIcon>
+    <!-- X 系列专属图标（X1031Y2）：build.ps1 用 -p:XSeriesIcon=true 切换；
+         V 系列继续使用原 appicon.ico。两者都随程序集打包，运行时按系列选择。 -->
+    <ApplicationIcon Condition="'$(XSeriesIcon)' == 'true'">Assets\appicon_x.ico</ApplicationIcon>
+    <ApplicationIcon Condition="'$(XSeriesIcon)' != 'true'">Assets\appicon.ico</ApplicationIcon>
     <ApplicationManifest>app.manifest</ApplicationManifest>
 
     <!-- 名称（V2.9.6）：软件名从「OBS 排障助手」改为「OBS帮助助手」。
@@ -102,6 +105,9 @@
     <EmbeddedResource Include="Assets\sidecars.json" LogicalName="OBS_Helper.Wpf.Assets.sidecars.json" />
     <!-- 托盘图标：运行时以 Stream 读取（WinForms Icon 需要流，不能直接用 WPF 资源） -->
     <EmbeddedResource Include="Assets\appicon.ico" LogicalName="OBS_Helper.Wpf.Assets.appicon.ico" />
+    <!-- X 系列托盘图标（X1031Y2）：之前只存在资源文件、没有编进程序集，
+         导致 X 构建的托盘 / 窗口图标回退成 V 系列旧图标。 -->
+    <EmbeddedResource Include="Assets\appicon_x.ico" LogicalName="OBS_Helper.Wpf.Assets.appicon_x.ico" />
     <!-- BUG 反馈二维码（V2.9.3）：离线可扫，不依赖任何在线二维码服务 -->
     <EmbeddedResource Include="Assets\feedback_qr.png" LogicalName="OBS_Helper.Wpf.Assets.feedback_qr.png" Condition="Exists('Assets\feedback_qr.png')" />
     <!-- 内置免费 AI 密钥：真实文件由 scripts/embed_free_ai_key.ps1 生成（已 gitignore），
@@ -117,6 +123,7 @@
 
   <ItemGroup>
     <Resource Include="Assets\appicon.ico" />
+    <Resource Include="Assets\appicon_x.ico" />
     <!-- V3.5.1 赞助码：单独裁出的支付宝 / 微信二维码，随程序集打包，可离线扫码 -->
     <Resource Include="Assets\donate-alipay.png" />
     <Resource Include="Assets\donate-wechat.png" />

@@ -59,6 +59,16 @@ X1031Y2 把这三处改成「在软件内完成」，同时保留手动渠道，
 - 目录名与条目 id 可能不同（例如 `local-<stem>`），卸载 / 回滚的路径护栏同时接受两种 slug。
 - 接管后可以使用广场的「一键配置」更新，也可以在本应用内回滚 / 卸载。
 
+## 3.5 X 系列专属图标
+
+X1031Y2 的构建链新增 `XSeriesIcon` 开关：
+
+- `build.ps1` 按内部版本主版本号（>= 1000，即 X 日期码）自动传 `-p:XSeriesIcon=true`；
+- `OBS_Helper.Wpf.csproj` 据此把 `<ApplicationIcon>` 切到 `Assetsppicon_x.ico`，同时把该图标编入 `Resource`（窗口品牌图标）与 `EmbeddedResource`（托盘）；
+- `OBS_Helper_Setup.iss` 的 `SetupIconFile` 改为 `{#MyAppIcon}`，由 `build.ps1` 传 `/DMyAppIcon=Assetsppicon_x.ico`。
+
+这样 X 构建的 exe、安装包、窗口、托盘和快捷方式都使用「黑色圆角 + 白色 OBS/helper + 青绿弧线」字标图标，V 系列继续使用原图标。
+
 ## 4. 安全加固
 
 - `installed.json` 的卸载 / 回滚路径新增 `PluginInstallCore.IsSafeManagedDirectory`：目录名必须匹配条目 slug，父目录必须是本应用安装根、用户 / 全局插件根，或 `obs-studio\obs-plugins`。

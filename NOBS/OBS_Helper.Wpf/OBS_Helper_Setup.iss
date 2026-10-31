@@ -11,6 +11,10 @@
 ; 它也会自动识别 UTF-8，带上 BOM 只是更明确 —— 换编辑器或换旧版 ISCC 都不会退化成按 ANSI 读，
 ; 那会让中文整片变成乱码）。改动本文件后请确认 BOM 没有被编辑器丢掉。
 
+#ifndef MyAppIcon
+; V 系列默认旧图标；X 系列由 build.ps1 传 /DMyAppIcon=Assets\appicon_x.ico 覆盖。
+#define MyAppIcon "Assets\appicon.ico"
+#endif
 #define MyAppName "OBS帮助助手"
 ; 版本号默认与 csproj 对齐；build.ps1 会用 /DMyAppVersion=<ver> 覆盖此值。
 ; 用 #ifndef：ISPP 中命令行 /D 定义过的符号在脚本里不应再 #define 覆盖。
@@ -57,7 +61,7 @@ UninstallDisplayIcon={app}\{#MyAppExeName}
 
 OutputDir=..\PAKE\windows
 OutputBaseFilename=OBS_Helper_Setup_{#MyAppVersion}{#MyAppOutputSuffix}
-SetupIconFile=Assets\appicon.ico
+SetupIconFile={#MyAppIcon}
 LicenseFile=..\LICENSE
 
 VersionInfoVersion={#MyAppVersion}

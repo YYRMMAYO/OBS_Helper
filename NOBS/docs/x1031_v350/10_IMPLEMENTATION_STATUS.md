@@ -26,6 +26,7 @@
 | 需求 | 计划文档 | 状态 | 代码落点 | 验证 |
 | --- | --- | --- | --- | --- |
 | 同步 V3.5.2 及此前全部内容（X 图标除外） | 本文 §1 | ✅ | 同一份 `OBS_Helper.Wpf` 源码；X 构建仅替换图标资源 | 构建 + 单测 |
+| X 系列专属字标图标（exe / 安装包 / 窗口 / 托盘 / 快捷方式） | 11 | ✅ | `appicon_x.ico`、`XSeriesIcon`、`OBS_Helper_Setup.iss`、`build.ps1` | 构建 + 产物图标提取 |
 | 插件卡片 / 粘贴仓库应用内拉取 | 11 | ✅ | `PluginsPage.xaml(.cs)`、`PluginInstallService`、`GitHubSearchService` | 构建 + 资源检查 |
 | 下载前网络 / 加速器确认 | 11 | ✅ | `PluginsPage.ConfirmNetwork`、`plugin.network.*` 文案 | 资源检查 |
 | 开源依赖一键配置 | 11 | ✅ | `DependencyInstallCore`、`DependencyInstallService`、`DependencyCore.GitHubRepo` | 13 项单测 |

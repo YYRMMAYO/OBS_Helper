@@ -19,9 +19,22 @@ public partial class FeatureHubPage : UserControl, INavigationAware
     {
         InitializeComponent();
         BuildModules();
+        _builtLanguage = Strings.Current;
     }
 
-    public Task OnNavigatedToAsync(object? parameter) => Task.CompletedTask;
+    /// <summary>页面实例被导航缓存复用；语言切换后必须重建代码生成的模块卡片（V3.4.2）。</summary>
+    private string? _builtLanguage;
+
+    public Task OnNavigatedToAsync(object? parameter)
+    {
+        var language = Strings.Current;
+        if (!string.Equals(_builtLanguage, language, StringComparison.Ordinal))
+        {
+            _builtLanguage = language;
+            BuildModules();
+        }
+        return Task.CompletedTask;
+    }
 
     private void OnMobileAction(object sender, RoutedEventArgs e)
     {
@@ -31,13 +44,10 @@ public partial class FeatureHubPage : UserControl, INavigationAware
 
     private void BuildModules()
     {
-        NewModuleList.Children.Clear();
-        CommonModuleList.Children.Clear();
+        ModuleList.Children.Clear();
+        // V3.4.2：目录已把主推模块排在最前，界面不再按版本号分段或贴版本标签。
         foreach (var module in FeatureCatalog.Modules)
-        {
-            var target = module.Version == FeatureCatalog.CurrentVersion ? NewModuleList : CommonModuleList;
-            target.Children.Add(BuildModuleCard(module));
-        }
+            ModuleList.Children.Add(BuildModuleCard(module));
     }
 
     private Border BuildModuleCard(FeatureModule module)
@@ -89,22 +99,6 @@ public partial class FeatureHubPage : UserControl, INavigationAware
             Text = Strings.T(module.TitleKey),
             Style = (Style)FindResource("H3Text"),
             VerticalAlignment = VerticalAlignment.Center,
-        });
-        titleRow.Children.Add(new Border
-        {
-            Background = (Brush)FindResource("Surface3Brush"),
-            BorderBrush = (Brush)FindResource("LineBrush"),
-            BorderThickness = new Thickness(1),
-            CornerRadius = new CornerRadius(999),
-            Padding = new Thickness(8, 2, 8, 2),
-            Margin = new Thickness(8, 0, 0, 0),
-            VerticalAlignment = VerticalAlignment.Center,
-            Child = new TextBlock
-            {
-                Text = module.Version,
-                FontSize = (double)FindResource("FontSizeXs"),
-                Foreground = (Brush)FindResource("MutedBrush"),
-            },
         });
         if (module.Highlighted)
         {

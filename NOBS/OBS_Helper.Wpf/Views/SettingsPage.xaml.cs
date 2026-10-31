@@ -33,6 +33,8 @@ public partial class SettingsPage : UserControl, INavigationAware
     {
         InitializeComponent();
         BuildOssList();
+        BuildSettingsNav();
+        ShowSettingsSection(SettingsSections.DefaultId);
     }
 
     /// <summary>
@@ -82,6 +84,139 @@ public partial class SettingsPage : UserControl, INavigationAware
         }
     }
 
+    // ------------------------------------------------------------ 分类导航（V3.4.2）
+
+    /// <summary>当前设置页。页面实例会被导航缓存复用，因此它同时是「下次进入还停在哪一页」的状态。</summary>
+    private string _currentSectionId = SettingsSections.DefaultId;
+
+    /// <summary>设置页 id → 左栏单选按钮。搜索过滤后只保留命中的项。</summary>
+    private readonly Dictionary<string, RadioButton> _sectionButtons = new(StringComparer.Ordinal);
+
+    /// <summary>程序主动勾选左栏时挡住 Checked 事件，避免「重建导航 → 触发切换 → 再重建」。</summary>
+    private bool _navSyncing;
+
+    /// <summary>
+    /// 按当前搜索词重建左栏。先 <c>Clear()</c> 是关键：语言切换与每次进入设置页都会调用它，
+    /// 只追加不清空会让同一项出现两份（工具箱的「跳到小节」在 V3.4.1 就踩过这个坑）。
+    /// </summary>
+    private void BuildSettingsNav()
+    {
+        var query = SettingsSearchBox.Text?.Trim() ?? "";
+        var matched = SettingsSections.All.Where(section => Matches(section, query)).ToList();
+
+        SettingsNavPanel.Children.Clear();
+        _sectionButtons.Clear();
+        SettingsSearchEmptyText.Visibility = query.Length > 0 && matched.Count == 0
+            ? Visibility.Visible
+            : Visibility.Collapsed;
+
+        foreach (var group in SettingsSections.Groups)
+        {
+            var sections = matched
+                .Where(section => string.Equals(section.GroupId, group.Id, StringComparison.Ordinal))
+                .ToList();
+            if (sections.Count == 0) continue;
+
+            SettingsNavPanel.Children.Add(new TextBlock
+            {
+                Text = Strings.T(group.TitleKey),
+                Style = (Style)FindResource("CaptionText"),
+                Margin = new Thickness(8, 14, 8, 4),
+                ToolTip = Strings.T(group.DescKey),
+            });
+
+            foreach (var section in sections)
+            {
+                var radio = new RadioButton
+                {
+                    GroupName = "SettingsSection",
+                    Style = (Style)FindResource("NavTabButton"),
+                    Content = Strings.T(section.TitleKey),
+                    Tag = TryFindResource(section.IconKey) as Geometry,
+                    CommandParameter = section.Id,
+                    IsChecked = string.Equals(section.Id, _currentSectionId, StringComparison.Ordinal),
+                };
+                radio.Checked += OnSettingsSectionChecked;
+                _sectionButtons[section.Id] = radio;
+                SettingsNavPanel.Children.Add(radio);
+            }
+        }
+    }
+
+    private static bool Matches(SettingsSection section, string query)
+    {
+        if (query.Length == 0) return true;
+
+        if (Strings.T(section.TitleKey).Contains(query, StringComparison.OrdinalIgnoreCase)) return true;
+        if (Strings.T(section.DescKey).Contains(query, StringComparison.OrdinalIgnoreCase)) return true;
+
+        var group = SettingsSections.FindGroup(section.GroupId);
+        if (group is not null && Strings.T(group.TitleKey).Contains(query, StringComparison.OrdinalIgnoreCase))
+            return true;
+
+        return section.Keywords.Any(keyword => keyword.Contains(query, StringComparison.OrdinalIgnoreCase));
+    }
+
+    private void OnSettingsSearchChanged(object sender, TextChangedEventArgs e)
+    {
+        BuildSettingsNav();
+
+        // 搜索是「定位」而不是「筛选模式」：当前页被过滤掉时，直接落到第一个命中项。
+        if (_sectionButtons.Count > 0 && !_sectionButtons.ContainsKey(_currentSectionId))
+        {
+            var query = SettingsSearchBox.Text?.Trim() ?? "";
+            var first = SettingsSections.All.FirstOrDefault(section => Matches(section, query));
+            if (first is not null) ShowSettingsSection(first.Id);
+        }
+    }
+
+    private void OnSettingsSectionChecked(object sender, RoutedEventArgs e)
+    {
+        if (_navSyncing) return;
+        if (sender is not RadioButton { CommandParameter: string id }) return;
+        ShowSettingsSection(id);
+    }
+
+    /// <summary>
+    /// 只显示命中的那张卡片，并刷新右侧头部。12 张卡片一直留在视觉树里，
+    /// 因此既有控件的状态（正在编辑的输入框、滚动位置）不会因为切页而丢。
+    /// </summary>
+    private void ShowSettingsSection(string id)
+    {
+        var section = SettingsSections.Find(id) ?? SettingsSections.All[0];
+        _currentSectionId = section.Id;
+
+        foreach (var candidate in SettingsSections.All)
+        {
+            if (FindName(candidate.CardName) is FrameworkElement card)
+            {
+                card.Visibility = string.Equals(candidate.Id, section.Id, StringComparison.Ordinal)
+                    ? Visibility.Visible
+                    : Visibility.Collapsed;
+            }
+        }
+
+        var group = SettingsSections.FindGroup(section.GroupId);
+        SettingsSectionGroupText.Text = group is null ? "" : Strings.T(group.TitleKey);
+        SettingsSectionTitle.Text = Strings.T(section.TitleKey);
+        SettingsSectionDesc.Text = Strings.T(section.DescKey);
+        if (TryFindResource(section.IconKey) is Geometry geometry)
+            SettingsSectionIcon.Data = geometry;
+
+        _navSyncing = true;
+        try
+        {
+            if (_sectionButtons.TryGetValue(section.Id, out var button))
+                button.IsChecked = true;
+        }
+        finally
+        {
+            _navSyncing = false;
+        }
+
+        SettingsContentScroll.ScrollToTop();
+    }
+
     public async Task OnNavigatedToAsync(object? parameter)
     {
         await AppServices.AiSettings.LoadAsync();
@@ -99,6 +234,11 @@ public partial class SettingsPage : UserControl, INavigationAware
 
         SyncControls();
         RefreshDataSummary();
+        BuildOssList();
+
+        // V3.4.2：页面实例会被缓存复用；语言或目录变化后在这里重建左栏与右侧头部。
+        BuildSettingsNav();
+        ShowSettingsSection(_currentSectionId);
 
         await RefreshKeyStatusAsync();
         await RefreshFreeQuotaAsync();

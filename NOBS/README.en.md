@@ -4,8 +4,8 @@
 
 # OBS Helper · OBS帮助助手
 
-**Current release: V3.4.1** — repair release for the phone remote: fixes the blank page caused by an empty i18n payload, restores sessions after refresh, unblocks the live preview (CSP `blob:`), adds light/dark themes and 360px-first layout, and fixes a tray balloon crash plus false "OBS offline" / "stop failed" reports. Also adds a one-click download & setup center for open-source dependencies (FFmpeg, rclone, whisper.cpp, MediaMTX).
-See [RELEASE_NOTES_v3.4.1.md](RELEASE_NOTES_v3.4.1.md) (Chinese).
+**Current release: V3.4.2** — information-architecture cleanup: the Feature Center no longer carries "new in this version" labels, Settings is now a grouped left rail with search and one page at a time (with a short guide per page), and the Toolbox is reorganised into seven groups with grouped filtering and a non-duplicating section directory.
+See [RELEASE_NOTES_v3.4.2.md](RELEASE_NOTES_v3.4.2.md) (Chinese).
 
 > **This is the developer-facing full documentation for the Windows native WPF version and it lives inside `NOBS/`**;
 > the repository-root [`README.md`](../README.md) is the complete user-facing guide (features · usage · installation),
@@ -18,11 +18,11 @@ See [RELEASE_NOTES_v3.4.1.md](RELEASE_NOTES_v3.4.1.md) (Chinese).
 [![Platform](https://img.shields.io/badge/Platform-Windows_7_SP1%2B-0078D6.svg)]()
 [![.NET](https://img.shields.io/badge/.NET-10_%2F_6-512BD4.svg)]()
 [![Stack](https://img.shields.io/badge/Stack-WPF_%2F_C%23-239120.svg)]()
-[![Release](https://img.shields.io/badge/Release-3.4.1-38bdf8.svg)](https://github.com/YYRMMAYO/OBS_Helper/releases)
+[![Release](https://img.shields.io/badge/Release-3.4.2-38bdf8.svg)](https://github.com/YYRMMAYO/OBS_Helper/releases)
 [![OBS](https://img.shields.io/badge/OBS-32.2.2-302E31.svg)](https://github.com/obsproject/obs-studio/releases)
 [![Offline](https://img.shields.io/badge/offline--first-2ea44f.svg)]()
 [![Incremental Update](https://img.shields.io/badge/Incremental%20Update-2.5MB-7dd3fc.svg)]()
-[![Tests](https://img.shields.io/badge/Tests-1687%20passed-2ea44f.svg)]()
+[![Tests](https://img.shields.io/badge/Tests-1697%20passed-2ea44f.svg)]()
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](../LICENSE)
 
 **English** · [简体中文](README.md)
@@ -62,6 +62,15 @@ There are two channels for the same app — pick the one that matches how much "
 - **Why DEV has its own channel**: DEV builds are numbered by an auto-incrementing **build number**, which is not comparable to the stable `Vmajor.minor.patch` scheme. A DEV build therefore **only recognises plain-number tags (`01`)**, and a stable build **only recognises `V3.1.1`-style tags** — even though both kinds of tag live in the same repository, neither channel mistakes the other for a newer version.
 - **DEV builds are not packaged and do not use the Lanzou mirror yet**: the update prompt only points you at the dev Releases page (`/releases/tag/0X`). Incremental updates, the Lanzou mirror and installers keep serving stable users exactly as before.
 - **Which one should you pick?** Use stable for day-to-day work; take DEV if you want early features and can live with the occasional broken build. Please report DEV issues through *Help & feedback* and put `DEV 0X` (e.g. `DEV 03`) in the description.
+
+## V3.4.2 highlights
+
+- **Feature Center without version labels**: the left navigation no longer says "V3.4.x NEW", and the Feature Center/home hero no longer carry version badges or split modules into "new this release / everyday". Capabilities are grouped by domain.
+- **Settings rebuilt**: a left rail groups pages into Basics, Recording & automation, AI & diagnostics, Data & storage, and About & help; the right side shows one page at a time with a one-line guide. "Global hotkeys" and "Local data" are split out of the old combined cards.
+- **Search**: filter settings by title, guide text or keywords; a no-results state keeps the search honest.
+- **Toolbox reorganised**: 18 tools are grouped into Recording & files, Video checks, Audio checks, Network & streaming, Parameters & privacy, Conflicts & versions, and Help & feedback; group chips and the section directory stay in sync.
+- **Fixes**: the "jump to section" list duplicated after a language switch (the builder never cleared its children); code-generated Feature Center/Settings text now refreshes on language change; duplicate `using` directives and a nullable warning were removed.
+- **Verification**: all **1697 unit tests** pass; both builds (`net10.0-windows` / `net6.0-windows`) compile with 0 errors; all 2,596 resource references across 47 XAML files resolve.
 
 ## V3.4.1 highlights
 
@@ -221,6 +230,12 @@ A 55-second look at what OBS Helper can do — Chinese and English versions, bot
 - **Streaming setup** — a 6-step walkthrough from zero to live, plus setup guides for Bilibili / Douyin / Kuaishou / WeChat Channels / Xiaohongshu / YouTube / Twitch and other major platforms
 - **Appearance** — light / dark / follow system, 4 font sizes, high-contrast and reduced-motion options
 - **Language** — Simplified Chinese / English, switched instantly (Chinese by default, no restart); the installer choice sets the first-run default
+
+### Interface & settings (V3.4.2)
+
+- **Grouped settings** — the left rail groups pages into Basics, Recording & automation, AI & diagnostics, Data & storage, and About & help; the right side shows one page at a time with a one-line guide, and the search box filters by title, guide or keyword
+- **Grouped Toolbox** — 18 read-only tools are arranged into Recording & files, Video checks, Audio checks, Network & streaming, Parameters & privacy, Conflicts & versions, and Help & feedback; group chips and the section directory stay in sync
+- **Feature Center** — no "new in V3.4.x" labels or version badges; capabilities are grouped by domain, and the version number is only shown under About
 
 ## Smart Diagnostics
 

@@ -5,15 +5,14 @@ using OBS_Helper.Wpf.Services.Host;
 using OBS_Helper.Wpf.Services.Obs;
 using OBS_Helper.Wpf.Services.ObsConfig;
 using OBS_Helper.Wpf.Services.Diagnostics;
-using OBS_Helper.Wpf.Services.Recording;using OBS_Helper.Wpf.Services.Plugins;
+using OBS_Helper.Wpf.Services.Recording;
+using OBS_Helper.Wpf.Services.Plugins;
 using OBS_Helper.Wpf.Services.Shell;
 using OBS_Helper.Wpf.Services.Tools;
 using OBS_Helper.Wpf.Services.Mobile;
 using OBS_Helper.Wpf.Services.Interop;
 using OBS_Helper.Wpf.Services.Chat;
 using OBS_Helper.Wpf.Services.Streaming;
-using OBS_Helper.Wpf.Services.Recording;
-using OBS_Helper.Wpf.Services.Audio;
 using OBS_Helper.Wpf.Services.Subtitles;
 using OBS_Helper.Wpf.Services.Analytics;
 using OBS_Helper.Wpf.Services.Clips;
@@ -167,14 +166,16 @@ public static class AppServices
         new MobileSnapshotService(Obs, Teleprompter, SystemMonitor));
     private static readonly Lazy<MobilePreviewService> _mobilePreview = new(() => new MobilePreviewService(Obs));
     private static readonly Lazy<MobileUploadService> _mobileUploads = new(() => new MobileUploadService());
+    // 声明顺序放在 _mobileRouter 之前：静态字段初始化按文本顺序执行，
+    // 而 _mobileRouter 的回调会读取 _mobileLink；提前声明可避免可空流分析把该字段判成「尚未初始化」。
+    private static readonly Lazy<MobileLinkServer> _mobileLink = new(() =>
+        new MobileLinkServer(Obs, MobileSessions, MobileSnapshots, MobileRouter, MobilePreview, MobileUploads));
     private static readonly Lazy<MobileCommandRouter> _mobileRouter = new(() =>
         new MobileCommandRouter(Obs, Teleprompter, MobileSessions, MobileSnapshots, MobilePreview,
             deviceId =>
             {
                 if (_mobileLink.IsValueCreated) MobileLink.RevokeDevice(deviceId);
             }));
-    private static readonly Lazy<MobileLinkServer> _mobileLink = new(() =>
-        new MobileLinkServer(Obs, MobileSessions, MobileSnapshots, MobileRouter, MobilePreview, MobileUploads));
     private static readonly Lazy<MediaServerManager> _mediaServer = new(() => new MediaServerManager(Sidecars, Obs));
     private static readonly Lazy<UsbCameraGuide> _usbCamera = new(() => new UsbCameraGuide());
     private static readonly Lazy<MobileNotifyService> _mobileNotify = new(() => new MobileNotifyService(UsbCamera));

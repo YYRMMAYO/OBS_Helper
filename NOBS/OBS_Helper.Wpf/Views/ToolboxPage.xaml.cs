@@ -39,42 +39,151 @@ public partial class ToolboxPage : UserControl, INavigationAware
             PresetCombo.Items.Add(name);
         PresetCombo.SelectedIndex = 0;
 
+        BuildGroupChips();
         BuildSectionNav();
 
         Loaded += OnLoadedAsync;
     }
 
-    // ------------------------------------------------------------ 分节导航（V3.0 / C6）
+    // ------------------------------------------------------------ 分组筛选 / 分节导航（V3.4.2）
+
+    /// <summary>当前分组筛选；<c>null</c> = 全部工具。</summary>
+    private string? _activeGroupId;
+
+    /// <summary>重建 chips 时挡住 Checked，避免「设置选中态 → 触发筛选 → 再重建」。</summary>
+    private bool _syncingChips;
+
+    /// <summary>
+    /// 生成分组筛选 chips。顺序来自 <see cref="ToolboxSections.Groups"/>，
+    /// 与页面上的分组容器、单测里的分组断言共用同一份真源。
+    /// </summary>
+    private void BuildGroupChips()
+    {
+        GroupChips.Children.Clear();
+        AddGroupChip(null, Strings.T("toolbox.filter.all"));
+        foreach (var group in ToolboxSections.Groups)
+            AddGroupChip(group.Id, Strings.T(group.TitleKey));
+
+        SyncGroupChipState();
+    }
+
+    private void AddGroupChip(string? groupId, string text)
+    {
+        var chip = new RadioButton
+        {
+            GroupName = "ToolboxGroupFilter",
+            Style = (Style)FindResource("SegmentButton"),
+            Content = text,
+            Tag = groupId ?? "",
+            Margin = new Thickness(0, 0, 8, 6),
+        };
+        chip.Checked += OnGroupChipChecked;
+        GroupChips.Children.Add(chip);
+    }
+
+    private void SyncGroupChipState()
+    {
+        _syncingChips = true;
+        try
+        {
+            foreach (var child in GroupChips.Children)
+            {
+                if (child is not RadioButton { Tag: string tag } chip) continue;
+                chip.IsChecked = string.Equals(tag, _activeGroupId ?? "", StringComparison.Ordinal);
+            }
+        }
+        finally
+        {
+            _syncingChips = false;
+        }
+    }
+
+    private void OnGroupChipChecked(object sender, RoutedEventArgs e)
+    {
+        if (_syncingChips) return;
+        if (sender is not RadioButton { Tag: string tag }) return;
+        ApplyGroupFilter(string.IsNullOrEmpty(tag) ? null : tag);
+    }
+
+    /// <summary>
+    /// 只切换分组的可见性，不动任何工具内部状态：
+    /// 用户填过的码率、上传带宽、已经跑出的结果都留在视觉树里，切回来还在。
+    /// </summary>
+    private void ApplyGroupFilter(string? groupId)
+    {
+        _activeGroupId = groupId;
+
+        FrameworkElement? firstVisible = null;
+        foreach (var group in ToolboxSections.Groups)
+        {
+            if (FindName(ToolboxSections.GroupElementNameOf(group.Id)) is not FrameworkElement element)
+                continue;
+
+            var visible = groupId is null || string.Equals(groupId, group.Id, StringComparison.Ordinal);
+            element.Visibility = visible ? Visibility.Visible : Visibility.Collapsed;
+            if (visible && firstVisible is null) firstVisible = element;
+        }
+
+        BuildSectionNav();
+        if (groupId is not null && firstVisible is not null)
+            Dispatcher.BeginInvoke(new Action(() => firstVisible.BringIntoView()));
+    }
 
     /// <summary>
     /// 生成跳转按钮。顺序与页面自上而下一致，因此它同时是「这页有什么」的目录。
     ///
     /// 元素通过 <see cref="ToolboxSections.ElementNameOf"/> 的命名约定查找（而不是在页面里
     /// 再抄一份「元素 → 键」的表）：这样「分节清单」只有一个真源，单测可以拿它校验 XAML。
+    ///
+    /// V3.4.2：先 <c>Clear()</c>。本方法会在每次进入页面、切换语言、切换分组时调用；
+    /// 只追加不清空会让同一项重复出现（V3.4.1 的「跳到小节」重复就是这个原因）。
     /// </summary>
     private void BuildSectionNav()
     {
-        foreach (var key in ToolboxSections.Keys)
-        {
-            var target = FindName(ToolboxSections.ElementNameOf(key)) as FrameworkElement;
-            if (target is null) continue;   // 名字对不上就跳过（宁可少一个入口，也不要让整页崩掉）
+        SectionNav.Children.Clear();
 
-            var button = new Button
+        foreach (var group in ToolboxSections.Groups)
+        {
+            if (_activeGroupId is not null
+                && !string.Equals(_activeGroupId, group.Id, StringComparison.Ordinal))
             {
-                Content = Strings.T(key),
-                Style = TryFindResource("GhostButton") as Style,
-                Margin = new Thickness(0, 0, 8, 6),
-                Padding = new Thickness(10, 4, 10, 4),
-                Tag = target
-            };
-            button.Click += (_, _) =>
+                continue;
+            }
+
+            var block = new StackPanel { Margin = new Thickness(0, 0, 0, 4) };
+            block.Children.Add(new TextBlock
             {
-                if (button.Tag is not FrameworkElement el) return;
-                // 只滚动，不抢焦点：焦点留在导航按钮上，用户想连跳几节不必一路 Tab 回来；
-                // 而小节标题本身不可聚焦，把焦点丢过去反而会让读屏失去落点。
-                el.BringIntoView();
-            };
-            SectionNav.Children.Add(button);
+                Text = Strings.T(group.TitleKey),
+                Style = (Style)FindResource("CaptionText"),
+                Margin = new Thickness(2, 2, 0, 4),
+            });
+
+            var buttons = new WrapPanel();
+            foreach (var key in group.SectionKeys)
+            {
+                var target = FindName(ToolboxSections.ElementNameOf(key)) as FrameworkElement;
+                if (target is null) continue;   // 名字对不上就跳过（宁可少一个入口，也不要让整页崩掉）
+
+                var button = new Button
+                {
+                    Content = Strings.T(key),
+                    Style = TryFindResource("GhostButton") as Style,
+                    Margin = new Thickness(0, 0, 8, 6),
+                    Padding = new Thickness(10, 4, 10, 4),
+                    Tag = target
+                };
+                button.Click += (_, _) =>
+                {
+                    if (button.Tag is not FrameworkElement el) return;
+                    // 只滚动，不抢焦点：焦点留在导航按钮上，用户想连跳几节不必一路 Tab 回来；
+                    // 而小节标题本身不可聚焦，把焦点丢过去反而会让读屏失去落点。
+                    el.BringIntoView();
+                };
+                buttons.Children.Add(button);
+            }
+
+            block.Children.Add(buttons);
+            SectionNav.Children.Add(block);
         }
     }
 
@@ -121,13 +230,12 @@ public partial class ToolboxPage : UserControl, INavigationAware
         foreach (var (name, _) in Presets) PresetCombo.Items.Add(name);
         PresetCombo.SelectedIndex = selected >= 0 && selected < PresetCombo.Items.Count ? selected : 0;
 
+        BuildGroupChips();
         BuildSectionNav();
 
         DownloadCardControl.ApplyLanguage();
         FeedbackCardControl.ApplyLanguage();
     }
-
-    // ------------------------------------------------------------ 录像工具
 
     private async void OnOpenRecordingDir(object sender, RoutedEventArgs e)
     {

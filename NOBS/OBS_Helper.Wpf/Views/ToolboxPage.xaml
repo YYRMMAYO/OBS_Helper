@@ -9,19 +9,39 @@
                  Text="{DynamicResource Loc.toolbox.intro}" />
 
       <!--
-        分节导航（V3.0 / C6）：本页很长（17 个小节），顶部给一排「跳到小节」按钮。
-        按钮内容由代码按 ToolboxSections 生成（见 BuildSectionNav），XAML 里只放容器 ——
-        这样「分节清单」只有一份真源，单测可以拿它校验 XAML 里的 x:Name 是否存在。
+        工具目录（V3.4.2）：分组筛选 chips + 跳到小节。
+        chips 与目录都由代码按 ToolboxSections 生成 —— 分组 / 分节只有一份真源，
+        单测可以拿它校验 XAML 里的 Group_section_* / Sec_* 是否存在。
       -->
-      <Border Style="{StaticResource Card}" Margin="0,14,0,0" Padding="12,10">
+      <Border Style="{StaticResource Card}" Margin="0,14,0,0" Padding="14,12">
         <StackPanel>
+          <TextBlock Text="{DynamicResource Loc.toolbox.filter.hint}" Style="{StaticResource MutedText}" />
+          <WrapPanel x:Name="GroupChips" Margin="0,8,0,0" />
+          <Border Style="{StaticResource HLine}" Margin="0,10,0,10" />
           <TextBlock Text="{DynamicResource Loc.toolbox.nav.title}" FontWeight="SemiBold"
                      FontSize="{DynamicResource FontSizeSm}"
                      Foreground="{DynamicResource TextBrush}" />
-          <WrapPanel x:Name="SectionNav" Margin="0,8,0,0" />
+          <StackPanel x:Name="SectionNav" Margin="0,8,0,0" />
         </StackPanel>
       </Border>
 
+      <!-- ================================================== 01 录制与文件 -->
+      <StackPanel x:Name="Group_section_capture" Margin="0,26,0,0">
+        <Border Style="{StaticResource SoftPanel}" Padding="14,12" Margin="0,0,0,4">
+          <StackPanel Orientation="Horizontal">
+            <Border Width="30" Height="30" CornerRadius="9" Background="{DynamicResource BrandSoftBrush}"
+                    VerticalAlignment="Top">
+              <TextBlock Text="01" FontWeight="Bold" FontSize="{DynamicResource FontSizeSm}"
+                         Foreground="{DynamicResource BrandBrush}"
+                         HorizontalAlignment="Center" VerticalAlignment="Center" />
+            </Border>
+            <StackPanel Margin="10,0,0,0">
+              <TextBlock Text="{DynamicResource Loc.toolbox.group.capture}" Style="{StaticResource H3Text}" />
+              <TextBlock Text="{DynamicResource Loc.toolbox.group.capture.desc}"
+                         Style="{StaticResource CaptionText}" Margin="0,3,0,0" />
+            </StackPanel>
+          </StackPanel>
+        </Border>
       <!-- ================================================== 录像工具 -->
       <TextBlock x:Name="Sec_toolbox_recordingTools" Style="{StaticResource SectionTitle}" Text="{DynamicResource Loc.toolbox.recordingTools}" Margin="0,16,0,10" />
       <Border Style="{StaticResource Card}" Padding="14">
@@ -40,88 +60,220 @@
         </StackPanel>
       </Border>
 
-      <!-- ================================================== 参数处方 -->
-      <TextBlock x:Name="Sec_toolbox_prescription" Style="{StaticResource SectionTitle}" Text="{DynamicResource Loc.toolbox.prescription}" Margin="0,20,0,10" />
-      <Border Style="{StaticResource Card}" Padding="14">
-        <StackPanel>
-          <Grid>
-            <Grid.ColumnDefinitions>
-              <ColumnDefinition Width="Auto" />
-              <ColumnDefinition Width="*" />
-              <ColumnDefinition Width="Auto" />
-            </Grid.ColumnDefinitions>
-            <TextBlock Grid.Column="0" Text="{DynamicResource Loc.toolbox.prescription.scene}" VerticalAlignment="Center" Foreground="{DynamicResource TextBrush}" />
-            <ComboBox Grid.Column="1" x:Name="PresetCombo" Style="{StaticResource AppComboBox}"
-                      Margin="8,0,0,0" SelectionChanged="OnPresetChanged" />
-            <Button Grid.Column="2" Content="{DynamicResource Loc.toolbox.prescription.copy}" Style="{StaticResource SecondaryButton}"
-                    Margin="12,0,0,0" Click="OnCopyPreset" />
-          </Grid>
-          <TextBox x:Name="PresetText" Style="{StaticResource AppCodeBox}" Margin="0,10,0,0"
-                   IsReadOnly="True" TextWrapping="Wrap" MaxHeight="220" VerticalScrollBarVisibility="Auto"
-                   FontFamily="Consolas" />
-        </StackPanel>
-      </Border>
-
-      <!-- ================================================== 隐私模式清单 -->
-      <TextBlock x:Name="Sec_toolbox_privacy" Style="{StaticResource SectionTitle}" Text="{DynamicResource Loc.toolbox.privacy}" Margin="0,20,0,10" />
-      <Border Style="{StaticResource Card}" Padding="14">
-        <StackPanel>
-          <TextBlock Style="{StaticResource MutedText}" TextWrapping="Wrap"
-                     Text="{DynamicResource Loc.toolbox.privacy.desc}" />
-          <TextBlock Style="{StaticResource BodyText}" Margin="0,10,0,0" TextWrapping="Wrap"
-                     Text="{DynamicResource Loc.toolbox.privacy.checklist}" />
-          <StackPanel Orientation="Horizontal" Margin="0,12,0,0">
-            <Button Content="{DynamicResource Loc.toolbox.privacy.focus}" Style="{StaticResource SecondaryButton}" Click="OnOpenFocusAssist" />
-            <Button Content="{DynamicResource Loc.toolbox.privacy.notifications}" Style="{StaticResource SecondaryButton}" Margin="10,0,0,0" Click="OnOpenNotifications" />
-            <Button Content="{DynamicResource Loc.toolbox.privacy.personalization}" Style="{StaticResource SecondaryButton}" Margin="10,0,0,0" Click="OnOpenPersonalization" />
-          </StackPanel>
-        </StackPanel>
-      </Border>
-
-      <!-- ================================================== 冲突软件扫描 -->
-      <TextBlock x:Name="Sec_toolbox_conflicts" Style="{StaticResource SectionTitle}" Text="{DynamicResource Loc.toolbox.conflicts}" Margin="0,20,0,10" />
+      <!-- ================================================== 磁盘写入基准（V2.7） -->
+      <TextBlock x:Name="Sec_toolbox_disk" Style="{StaticResource SectionTitle}" Text="{DynamicResource Loc.toolbox.disk}" Margin="0,20,0,10" />
       <Border Style="{StaticResource Card}" Padding="14">
         <StackPanel>
           <StackPanel Orientation="Horizontal">
-            <Button Content="{DynamicResource Loc.toolbox.conflicts.scan}" Style="{StaticResource PrimaryButton}" Click="OnScanConflicts" />
-            <TextBlock x:Name="ConflictSummaryText" Style="{StaticResource CaptionText}"
-                       Margin="12,0,0,0" VerticalAlignment="Center" Text="" />
+            <Button Content="{DynamicResource Loc.toolbox.disk.run}" Style="{StaticResource PrimaryButton}" Click="OnRunDiskBenchmark" />
+            <TextBlock Text="{DynamicResource Loc.toolbox.disk.bitrate}" Margin="12,0,0,0" VerticalAlignment="Center" Foreground="{DynamicResource TextBrush}" />
+            <TextBox x:Name="DiskBitrateInput" Style="{StaticResource AppTextBox}" Width="90"
+                     MaxLength="7" PreviewTextInput="OnNumericPreviewTextInput"
+                     Text="20000" />
+            <TextBlock Text="kbps" Margin="6,0,0,0" VerticalAlignment="Center" Foreground="{DynamicResource MutedBrush}" />
           </StackPanel>
-          <ItemsControl x:Name="ConflictList" Margin="0,10,0,0">
+          <TextBlock x:Name="DiskBenchmarkText" Style="{StaticResource BodyText}" Margin="0,10,0,0"
+                     TextWrapping="Wrap"
+                     Text="{DynamicResource Loc.toolbox.disk.desc}" />
+        </StackPanel>
+      </Border>
+
+      </StackPanel>
+
+      <!-- ================================================== 02 画面体检 -->
+      <StackPanel x:Name="Group_section_video" Margin="0,26,0,0">
+        <Border Style="{StaticResource SoftPanel}" Padding="14,12" Margin="0,0,0,4">
+          <StackPanel Orientation="Horizontal">
+            <Border Width="30" Height="30" CornerRadius="9" Background="{DynamicResource BrandSoftBrush}"
+                    VerticalAlignment="Top">
+              <TextBlock Text="02" FontWeight="Bold" FontSize="{DynamicResource FontSizeSm}"
+                         Foreground="{DynamicResource BrandBrush}"
+                         HorizontalAlignment="Center" VerticalAlignment="Center" />
+            </Border>
+            <StackPanel Margin="10,0,0,0">
+              <TextBlock Text="{DynamicResource Loc.toolbox.group.video}" Style="{StaticResource H3Text}" />
+              <TextBlock Text="{DynamicResource Loc.toolbox.group.video.desc}"
+                         Style="{StaticResource CaptionText}" Margin="0,3,0,0" />
+            </StackPanel>
+          </StackPanel>
+        </Border>
+      <!-- ================================================== 色彩体检（V2.7） -->
+      <TextBlock x:Name="Sec_toolbox_colorCheck" Style="{StaticResource SectionTitle}" Text="{DynamicResource Loc.toolbox.colorCheck}" Margin="0,20,0,10" />
+      <Border Style="{StaticResource Card}" Padding="14">
+        <StackPanel>
+          <StackPanel Orientation="Horizontal">
+            <Button Content="{DynamicResource Loc.toolbox.colorCheck.run}" Style="{StaticResource PrimaryButton}" Click="OnRunColorCheck" />
+            <TextBlock x:Name="ColorSummaryText" Style="{StaticResource CaptionText}"
+                       Margin="12,0,0,0" VerticalAlignment="Center"
+                       Text="{DynamicResource Loc.toolbox.colorCheck.desc}" />
+          </StackPanel>
+          <ItemsControl x:Name="ColorCheckList" Margin="0,10,0,0">
             <ItemsControl.ItemTemplate>
               <DataTemplate>
                 <Border Style="{StaticResource SoftPanel}" Padding="10,8" Margin="0,0,0,8">
                   <StackPanel>
-                    <StackPanel Orientation="Horizontal">
-                      <TextBlock Text="{Binding DisplayName}" FontWeight="SemiBold" Foreground="{DynamicResource TextBrush}" />
-                      <TextBlock Text="{Binding Risk}" Margin="10,0,0,0" FontWeight="Bold">
-                        <TextBlock.Style>
-                          <Style TargetType="TextBlock">
-                            <Setter Property="Foreground" Value="{DynamicResource WarnBrush}" />
-                            <Style.Triggers>
-                              <DataTrigger Binding="{Binding RiskLevel}" Value="high">
-                                <Setter Property="Foreground" Value="{DynamicResource DangerBrush}" />
-                              </DataTrigger>
-                              <DataTrigger Binding="{Binding RiskLevel}" Value="medium">
-                                <Setter Property="Foreground" Value="{DynamicResource WarnBrush}" />
-                              </DataTrigger>
-                            </Style.Triggers>
-                          </Style>
-                        </TextBlock.Style>
-                      </TextBlock>
-                    </StackPanel>
-                    <TextBlock Text="{Binding Advice}" Style="{StaticResource MutedText}"
-                               Margin="0,4,0,0" TextWrapping="Wrap" />
+                    <TextBlock FontWeight="SemiBold" Foreground="{DynamicResource TextBrush}" Text="{Binding Title}" />
+                    <TextBlock Style="{StaticResource MutedText}" Margin="0,4,0,0" TextWrapping="Wrap" Text="{Binding Detail}" />
                   </StackPanel>
                 </Border>
               </DataTemplate>
             </ItemsControl.ItemTemplate>
           </ItemsControl>
-          <TextBlock x:Name="ConflictEmptyText" Style="{StaticResource MutedText}" Visibility="Collapsed"
-                     Text="{DynamicResource Loc.toolbox.conflicts.none}" />
         </StackPanel>
       </Border>
 
+      <!-- ================================================== 黑屏专项体检（V2.8） -->
+      <TextBlock x:Name="Sec_toolbox_graphics" Style="{StaticResource SectionTitle}" Text="{DynamicResource Loc.toolbox.graphics}" Margin="0,20,0,10" />
+      <Border Style="{StaticResource Card}" Padding="14">
+        <StackPanel>
+          <StackPanel Orientation="Horizontal">
+            <Button Content="{DynamicResource Loc.toolbox.graphics.run}" Style="{StaticResource PrimaryButton}" Click="OnRunGraphicsEnvCheck" />
+            <TextBlock x:Name="GraphicsEnvSummaryText" Style="{StaticResource CaptionText}"
+                       Margin="12,0,0,0" VerticalAlignment="Center"
+                       Text="{DynamicResource Loc.toolbox.graphics.desc}" />
+          </StackPanel>
+          <ItemsControl x:Name="GraphicsEnvList" Margin="0,10,0,0">
+            <ItemsControl.ItemTemplate>
+              <DataTemplate>
+                <Border Style="{StaticResource SoftPanel}" Padding="10,8" Margin="0,0,0,8">
+                  <StackPanel>
+                    <TextBlock FontWeight="SemiBold" Foreground="{DynamicResource TextBrush}" Text="{Binding Title}" />
+                    <TextBlock Style="{StaticResource MutedText}" Margin="0,4,0,0" TextWrapping="Wrap" Text="{Binding Detail}" />
+                  </StackPanel>
+                </Border>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+          <TextBlock x:Name="GraphicsEnvEmptyText" Style="{StaticResource MutedText}" Visibility="Visible"
+                     Margin="0,4,0,0" TextWrapping="Wrap"
+                     Text="{DynamicResource Loc.toolbox.notChecked.graphics}" />
+        </StackPanel>
+      </Border>
+
+      <!-- ================================================== 虚拟摄像头体检（V2.8） -->
+      <TextBlock x:Name="Sec_toolbox_vcam" Style="{StaticResource SectionTitle}" Text="{DynamicResource Loc.toolbox.vcam}" Margin="0,20,0,10" />
+      <Border Style="{StaticResource Card}" Padding="14">
+        <StackPanel>
+          <StackPanel Orientation="Horizontal">
+            <Button Content="{DynamicResource Loc.toolbox.vcam.run}" Style="{StaticResource PrimaryButton}" Click="OnRunVirtualCamCheck" />
+            <TextBlock x:Name="VcamSummaryText" Style="{StaticResource CaptionText}"
+                       Margin="12,0,0,0" VerticalAlignment="Center"
+                       Text="{DynamicResource Loc.toolbox.vcam.desc}" />
+          </StackPanel>
+          <ItemsControl x:Name="VcamCheckList" Margin="0,10,0,0">
+            <ItemsControl.ItemTemplate>
+              <DataTemplate>
+                <Border Style="{StaticResource SoftPanel}" Padding="10,8" Margin="0,0,0,8">
+                  <StackPanel>
+                    <TextBlock FontWeight="SemiBold" Foreground="{DynamicResource TextBrush}" Text="{Binding Title}" />
+                    <TextBlock Style="{StaticResource MutedText}" Margin="0,4,0,0" TextWrapping="Wrap" Text="{Binding Detail}" />
+                  </StackPanel>
+                </Border>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+          <TextBlock x:Name="VcamEmptyText" Style="{StaticResource MutedText}" Visibility="Visible"
+                     Margin="0,4,0,0" TextWrapping="Wrap"
+                     Text="{DynamicResource Loc.toolbox.notChecked.vcam}" />
+        </StackPanel>
+      </Border>
+
+      <!-- ================================================== 编码顾问（V2.7） -->
+      <TextBlock x:Name="Sec_toolbox_encoder" Style="{StaticResource SectionTitle}" Text="{DynamicResource Loc.toolbox.encoder}" Margin="0,20,0,10" />
+      <Border Style="{StaticResource Card}" Padding="14">
+        <StackPanel>
+          <StackPanel Orientation="Horizontal">
+            <Button Content="{DynamicResource Loc.toolbox.encoder.run}" Style="{StaticResource PrimaryButton}" Click="OnRunEncoderAdvice" />
+            <CheckBox x:Name="DualEncodeCheck" Content="{DynamicResource Loc.toolbox.encoder.dual}" Margin="14,0,0,0"
+                      VerticalAlignment="Center" Foreground="{DynamicResource TextBrush}" />
+          </StackPanel>
+          <TextBox x:Name="EncoderAdviceText" Style="{StaticResource AppCodeBox}" Margin="0,10,0,0"
+                   IsReadOnly="True" TextWrapping="Wrap" MaxHeight="220" VerticalScrollBarVisibility="Auto"
+                   FontFamily="Consolas" Visibility="Collapsed" />
+        </StackPanel>
+      </Border>
+
+      </StackPanel>
+
+      <!-- ================================================== 03 音频体检 -->
+      <StackPanel x:Name="Group_section_audio" Margin="0,26,0,0">
+        <Border Style="{StaticResource SoftPanel}" Padding="14,12" Margin="0,0,0,4">
+          <StackPanel Orientation="Horizontal">
+            <Border Width="30" Height="30" CornerRadius="9" Background="{DynamicResource BrandSoftBrush}"
+                    VerticalAlignment="Top">
+              <TextBlock Text="03" FontWeight="Bold" FontSize="{DynamicResource FontSizeSm}"
+                         Foreground="{DynamicResource BrandBrush}"
+                         HorizontalAlignment="Center" VerticalAlignment="Center" />
+            </Border>
+            <StackPanel Margin="10,0,0,0">
+              <TextBlock Text="{DynamicResource Loc.toolbox.group.audio}" Style="{StaticResource H3Text}" />
+              <TextBlock Text="{DynamicResource Loc.toolbox.group.audio.desc}"
+                         Style="{StaticResource CaptionText}" Margin="0,3,0,0" />
+            </StackPanel>
+          </StackPanel>
+        </Border>
+      <!-- ================================================== 音频采样率体检（V2.7） -->
+      <TextBlock x:Name="Sec_toolbox_sampleRate" Style="{StaticResource SectionTitle}" Text="{DynamicResource Loc.toolbox.sampleRate}" Margin="0,20,0,10" />
+      <Border Style="{StaticResource Card}" Padding="14">
+        <StackPanel>
+          <StackPanel Orientation="Horizontal">
+            <Button Content="{DynamicResource Loc.toolbox.sampleRate.run}" Style="{StaticResource PrimaryButton}" Click="OnRunSampleRateCheck" />
+            <TextBlock x:Name="SampleRateSummaryText" Style="{StaticResource CaptionText}"
+                       Margin="12,0,0,0" VerticalAlignment="Center"
+                       Text="{DynamicResource Loc.toolbox.sampleRate.desc}" />
+          </StackPanel>
+          <TextBlock x:Name="SampleRateText" Style="{StaticResource BodyText}" Margin="0,10,0,0"
+                     TextWrapping="Wrap" Visibility="Collapsed" />
+        </StackPanel>
+      </Border>
+
+      <!-- ================================================== 音频设备深度体检（V2.8） -->
+      <TextBlock x:Name="Sec_toolbox_audioHealth" Style="{StaticResource SectionTitle}" Text="{DynamicResource Loc.toolbox.audioHealth}" Margin="0,20,0,10" />
+      <Border Style="{StaticResource Card}" Padding="14">
+        <StackPanel>
+          <StackPanel Orientation="Horizontal">
+            <Button Content="{DynamicResource Loc.toolbox.audioHealth.run}" Style="{StaticResource PrimaryButton}" Click="OnRunAudioHealthCheck" />
+            <TextBlock x:Name="AudioHealthSummaryText" Style="{StaticResource CaptionText}"
+                       Margin="12,0,0,0" VerticalAlignment="Center"
+                       Text="{DynamicResource Loc.toolbox.audioHealth.desc}" />
+          </StackPanel>
+          <ItemsControl x:Name="AudioHealthList" Margin="0,10,0,0">
+            <ItemsControl.ItemTemplate>
+              <DataTemplate>
+                <Border Style="{StaticResource SoftPanel}" Padding="10,8" Margin="0,0,0,8">
+                  <StackPanel>
+                    <TextBlock FontWeight="SemiBold" Foreground="{DynamicResource TextBrush}" Text="{Binding Title}" />
+                    <TextBlock Style="{StaticResource MutedText}" Margin="0,4,0,0" TextWrapping="Wrap" Text="{Binding Detail}" />
+                  </StackPanel>
+                </Border>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+          <TextBlock x:Name="AudioHealthEmptyText" Style="{StaticResource MutedText}" Visibility="Visible"
+                     Margin="0,4,0,0" TextWrapping="Wrap"
+                     Text="{DynamicResource Loc.toolbox.notChecked.audio}" />
+        </StackPanel>
+      </Border>
+
+      </StackPanel>
+
+      <!-- ================================================== 04 网络与推流 -->
+      <StackPanel x:Name="Group_section_network" Margin="0,26,0,0">
+        <Border Style="{StaticResource SoftPanel}" Padding="14,12" Margin="0,0,0,4">
+          <StackPanel Orientation="Horizontal">
+            <Border Width="30" Height="30" CornerRadius="9" Background="{DynamicResource BrandSoftBrush}"
+                    VerticalAlignment="Top">
+              <TextBlock Text="04" FontWeight="Bold" FontSize="{DynamicResource FontSizeSm}"
+                         Foreground="{DynamicResource BrandBrush}"
+                         HorizontalAlignment="Center" VerticalAlignment="Center" />
+            </Border>
+            <StackPanel Margin="10,0,0,0">
+              <TextBlock Text="{DynamicResource Loc.toolbox.group.network}" Style="{StaticResource H3Text}" />
+              <TextBlock Text="{DynamicResource Loc.toolbox.group.network.desc}"
+                         Style="{StaticResource CaptionText}" Margin="0,3,0,0" />
+            </StackPanel>
+          </StackPanel>
+        </Border>
       <!-- ================================================== 带宽计算器 -->
       <TextBlock x:Name="Sec_toolbox_bandwidth" Style="{StaticResource SectionTitle}" Text="{DynamicResource Loc.toolbox.bandwidth}" Margin="0,20,0,10" />
       <Border Style="{StaticResource Card}" Padding="14">
@@ -155,163 +307,6 @@
           </StackPanel>
           <TextBlock x:Name="MultiStreamText" Style="{StaticResource BodyText}" Margin="0,10,0,0"
                      TextWrapping="Wrap" Text="" />
-        </StackPanel>
-      </Border>
-
-      <!-- ================================================== 色彩体检（V2.7） -->
-      <TextBlock x:Name="Sec_toolbox_colorCheck" Style="{StaticResource SectionTitle}" Text="{DynamicResource Loc.toolbox.colorCheck}" Margin="0,20,0,10" />
-      <Border Style="{StaticResource Card}" Padding="14">
-        <StackPanel>
-          <StackPanel Orientation="Horizontal">
-            <Button Content="{DynamicResource Loc.toolbox.colorCheck.run}" Style="{StaticResource PrimaryButton}" Click="OnRunColorCheck" />
-            <TextBlock x:Name="ColorSummaryText" Style="{StaticResource CaptionText}"
-                       Margin="12,0,0,0" VerticalAlignment="Center"
-                       Text="{DynamicResource Loc.toolbox.colorCheck.desc}" />
-          </StackPanel>
-          <ItemsControl x:Name="ColorCheckList" Margin="0,10,0,0">
-            <ItemsControl.ItemTemplate>
-              <DataTemplate>
-                <Border Style="{StaticResource SoftPanel}" Padding="10,8" Margin="0,0,0,8">
-                  <StackPanel>
-                    <TextBlock FontWeight="SemiBold" Foreground="{DynamicResource TextBrush}" Text="{Binding Title}" />
-                    <TextBlock Style="{StaticResource MutedText}" Margin="0,4,0,0" TextWrapping="Wrap" Text="{Binding Detail}" />
-                  </StackPanel>
-                </Border>
-              </DataTemplate>
-            </ItemsControl.ItemTemplate>
-          </ItemsControl>
-        </StackPanel>
-      </Border>
-
-      <!-- ================================================== 音频采样率体检（V2.7） -->
-      <TextBlock x:Name="Sec_toolbox_sampleRate" Style="{StaticResource SectionTitle}" Text="{DynamicResource Loc.toolbox.sampleRate}" Margin="0,20,0,10" />
-      <Border Style="{StaticResource Card}" Padding="14">
-        <StackPanel>
-          <StackPanel Orientation="Horizontal">
-            <Button Content="{DynamicResource Loc.toolbox.sampleRate.run}" Style="{StaticResource PrimaryButton}" Click="OnRunSampleRateCheck" />
-            <TextBlock x:Name="SampleRateSummaryText" Style="{StaticResource CaptionText}"
-                       Margin="12,0,0,0" VerticalAlignment="Center"
-                       Text="{DynamicResource Loc.toolbox.sampleRate.desc}" />
-          </StackPanel>
-          <TextBlock x:Name="SampleRateText" Style="{StaticResource BodyText}" Margin="0,10,0,0"
-                     TextWrapping="Wrap" Visibility="Collapsed" />
-        </StackPanel>
-      </Border>
-
-      <!-- ================================================== 黑屏专项体检（V2.8） -->
-      <TextBlock x:Name="Sec_toolbox_graphics" Style="{StaticResource SectionTitle}" Text="{DynamicResource Loc.toolbox.graphics}" Margin="0,20,0,10" />
-      <Border Style="{StaticResource Card}" Padding="14">
-        <StackPanel>
-          <StackPanel Orientation="Horizontal">
-            <Button Content="{DynamicResource Loc.toolbox.graphics.run}" Style="{StaticResource PrimaryButton}" Click="OnRunGraphicsEnvCheck" />
-            <TextBlock x:Name="GraphicsEnvSummaryText" Style="{StaticResource CaptionText}"
-                       Margin="12,0,0,0" VerticalAlignment="Center"
-                       Text="{DynamicResource Loc.toolbox.graphics.desc}" />
-          </StackPanel>
-          <ItemsControl x:Name="GraphicsEnvList" Margin="0,10,0,0">
-            <ItemsControl.ItemTemplate>
-              <DataTemplate>
-                <Border Style="{StaticResource SoftPanel}" Padding="10,8" Margin="0,0,0,8">
-                  <StackPanel>
-                    <TextBlock FontWeight="SemiBold" Foreground="{DynamicResource TextBrush}" Text="{Binding Title}" />
-                    <TextBlock Style="{StaticResource MutedText}" Margin="0,4,0,0" TextWrapping="Wrap" Text="{Binding Detail}" />
-                  </StackPanel>
-                </Border>
-              </DataTemplate>
-            </ItemsControl.ItemTemplate>
-          </ItemsControl>
-          <TextBlock x:Name="GraphicsEnvEmptyText" Style="{StaticResource MutedText}" Visibility="Visible"
-                     Margin="0,4,0,0" TextWrapping="Wrap"
-                     Text="{DynamicResource Loc.toolbox.notChecked.graphics}" />
-        </StackPanel>
-      </Border>
-
-      <!-- ================================================== 音频设备深度体检（V2.8） -->
-      <TextBlock x:Name="Sec_toolbox_audioHealth" Style="{StaticResource SectionTitle}" Text="{DynamicResource Loc.toolbox.audioHealth}" Margin="0,20,0,10" />
-      <Border Style="{StaticResource Card}" Padding="14">
-        <StackPanel>
-          <StackPanel Orientation="Horizontal">
-            <Button Content="{DynamicResource Loc.toolbox.audioHealth.run}" Style="{StaticResource PrimaryButton}" Click="OnRunAudioHealthCheck" />
-            <TextBlock x:Name="AudioHealthSummaryText" Style="{StaticResource CaptionText}"
-                       Margin="12,0,0,0" VerticalAlignment="Center"
-                       Text="{DynamicResource Loc.toolbox.audioHealth.desc}" />
-          </StackPanel>
-          <ItemsControl x:Name="AudioHealthList" Margin="0,10,0,0">
-            <ItemsControl.ItemTemplate>
-              <DataTemplate>
-                <Border Style="{StaticResource SoftPanel}" Padding="10,8" Margin="0,0,0,8">
-                  <StackPanel>
-                    <TextBlock FontWeight="SemiBold" Foreground="{DynamicResource TextBrush}" Text="{Binding Title}" />
-                    <TextBlock Style="{StaticResource MutedText}" Margin="0,4,0,0" TextWrapping="Wrap" Text="{Binding Detail}" />
-                  </StackPanel>
-                </Border>
-              </DataTemplate>
-            </ItemsControl.ItemTemplate>
-          </ItemsControl>
-          <TextBlock x:Name="AudioHealthEmptyText" Style="{StaticResource MutedText}" Visibility="Visible"
-                     Margin="0,4,0,0" TextWrapping="Wrap"
-                     Text="{DynamicResource Loc.toolbox.notChecked.audio}" />
-        </StackPanel>
-      </Border>
-
-      <!-- ================================================== 虚拟摄像头体检（V2.8） -->
-      <TextBlock x:Name="Sec_toolbox_vcam" Style="{StaticResource SectionTitle}" Text="{DynamicResource Loc.toolbox.vcam}" Margin="0,20,0,10" />
-      <Border Style="{StaticResource Card}" Padding="14">
-        <StackPanel>
-          <StackPanel Orientation="Horizontal">
-            <Button Content="{DynamicResource Loc.toolbox.vcam.run}" Style="{StaticResource PrimaryButton}" Click="OnRunVirtualCamCheck" />
-            <TextBlock x:Name="VcamSummaryText" Style="{StaticResource CaptionText}"
-                       Margin="12,0,0,0" VerticalAlignment="Center"
-                       Text="{DynamicResource Loc.toolbox.vcam.desc}" />
-          </StackPanel>
-          <ItemsControl x:Name="VcamCheckList" Margin="0,10,0,0">
-            <ItemsControl.ItemTemplate>
-              <DataTemplate>
-                <Border Style="{StaticResource SoftPanel}" Padding="10,8" Margin="0,0,0,8">
-                  <StackPanel>
-                    <TextBlock FontWeight="SemiBold" Foreground="{DynamicResource TextBrush}" Text="{Binding Title}" />
-                    <TextBlock Style="{StaticResource MutedText}" Margin="0,4,0,0" TextWrapping="Wrap" Text="{Binding Detail}" />
-                  </StackPanel>
-                </Border>
-              </DataTemplate>
-            </ItemsControl.ItemTemplate>
-          </ItemsControl>
-          <TextBlock x:Name="VcamEmptyText" Style="{StaticResource MutedText}" Visibility="Visible"
-                     Margin="0,4,0,0" TextWrapping="Wrap"
-                     Text="{DynamicResource Loc.toolbox.notChecked.vcam}" />
-        </StackPanel>
-      </Border>
-
-      <!-- ================================================== 磁盘写入基准（V2.7） -->
-      <TextBlock x:Name="Sec_toolbox_disk" Style="{StaticResource SectionTitle}" Text="{DynamicResource Loc.toolbox.disk}" Margin="0,20,0,10" />
-      <Border Style="{StaticResource Card}" Padding="14">
-        <StackPanel>
-          <StackPanel Orientation="Horizontal">
-            <Button Content="{DynamicResource Loc.toolbox.disk.run}" Style="{StaticResource PrimaryButton}" Click="OnRunDiskBenchmark" />
-            <TextBlock Text="{DynamicResource Loc.toolbox.disk.bitrate}" Margin="12,0,0,0" VerticalAlignment="Center" Foreground="{DynamicResource TextBrush}" />
-            <TextBox x:Name="DiskBitrateInput" Style="{StaticResource AppTextBox}" Width="90"
-                     MaxLength="7" PreviewTextInput="OnNumericPreviewTextInput"
-                     Text="20000" />
-            <TextBlock Text="kbps" Margin="6,0,0,0" VerticalAlignment="Center" Foreground="{DynamicResource MutedBrush}" />
-          </StackPanel>
-          <TextBlock x:Name="DiskBenchmarkText" Style="{StaticResource BodyText}" Margin="0,10,0,0"
-                     TextWrapping="Wrap"
-                     Text="{DynamicResource Loc.toolbox.disk.desc}" />
-        </StackPanel>
-      </Border>
-
-      <!-- ================================================== 编码顾问（V2.7） -->
-      <TextBlock x:Name="Sec_toolbox_encoder" Style="{StaticResource SectionTitle}" Text="{DynamicResource Loc.toolbox.encoder}" Margin="0,20,0,10" />
-      <Border Style="{StaticResource Card}" Padding="14">
-        <StackPanel>
-          <StackPanel Orientation="Horizontal">
-            <Button Content="{DynamicResource Loc.toolbox.encoder.run}" Style="{StaticResource PrimaryButton}" Click="OnRunEncoderAdvice" />
-            <CheckBox x:Name="DualEncodeCheck" Content="{DynamicResource Loc.toolbox.encoder.dual}" Margin="14,0,0,0"
-                      VerticalAlignment="Center" Foreground="{DynamicResource TextBrush}" />
-          </StackPanel>
-          <TextBox x:Name="EncoderAdviceText" Style="{StaticResource AppCodeBox}" Margin="0,10,0,0"
-                   IsReadOnly="True" TextWrapping="Wrap" MaxHeight="220" VerticalScrollBarVisibility="Auto"
-                   FontFamily="Consolas" Visibility="Collapsed" />
         </StackPanel>
       </Border>
 
@@ -356,26 +351,62 @@
         </StackPanel>
       </Border>
 
-      <!-- ================================================== OBS 新版本情报 -->
-      <TextBlock x:Name="Sec_toolbox_release" Style="{StaticResource SectionTitle}" Text="{DynamicResource Loc.toolbox.release}" Margin="0,20,0,10" />
+      </StackPanel>
+
+      <!-- ================================================== 05 参数与隐私 -->
+      <StackPanel x:Name="Group_section_params" Margin="0,26,0,0">
+        <Border Style="{StaticResource SoftPanel}" Padding="14,12" Margin="0,0,0,4">
+          <StackPanel Orientation="Horizontal">
+            <Border Width="30" Height="30" CornerRadius="9" Background="{DynamicResource BrandSoftBrush}"
+                    VerticalAlignment="Top">
+              <TextBlock Text="05" FontWeight="Bold" FontSize="{DynamicResource FontSizeSm}"
+                         Foreground="{DynamicResource BrandBrush}"
+                         HorizontalAlignment="Center" VerticalAlignment="Center" />
+            </Border>
+            <StackPanel Margin="10,0,0,0">
+              <TextBlock Text="{DynamicResource Loc.toolbox.group.params}" Style="{StaticResource H3Text}" />
+              <TextBlock Text="{DynamicResource Loc.toolbox.group.params.desc}"
+                         Style="{StaticResource CaptionText}" Margin="0,3,0,0" />
+            </StackPanel>
+          </StackPanel>
+        </Border>
+      <!-- ================================================== 参数处方 -->
+      <TextBlock x:Name="Sec_toolbox_prescription" Style="{StaticResource SectionTitle}" Text="{DynamicResource Loc.toolbox.prescription}" Margin="0,20,0,10" />
       <Border Style="{StaticResource Card}" Padding="14">
         <StackPanel>
-          <StackPanel Orientation="Horizontal">
-            <Button Content="{DynamicResource Loc.toolbox.release.query}" Style="{StaticResource PrimaryButton}" Click="OnFetchRelease" />
-            <Button Content="{DynamicResource Loc.toolbox.release.openPage}" Style="{StaticResource SecondaryButton}" Margin="10,0,0,0" Click="OnOpenReleaseUrl" />
-          </StackPanel>
-          <TextBlock x:Name="ReleaseText" Style="{StaticResource BodyText}" Margin="0,10,0,0"
-                     TextWrapping="Wrap"
-                     Text="{DynamicResource Loc.toolbox.release.desc}" />
+          <Grid>
+            <Grid.ColumnDefinitions>
+              <ColumnDefinition Width="Auto" />
+              <ColumnDefinition Width="*" />
+              <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <TextBlock Grid.Column="0" Text="{DynamicResource Loc.toolbox.prescription.scene}" VerticalAlignment="Center" Foreground="{DynamicResource TextBrush}" />
+            <ComboBox Grid.Column="1" x:Name="PresetCombo" Style="{StaticResource AppComboBox}"
+                      Margin="8,0,0,0" SelectionChanged="OnPresetChanged" />
+            <Button Grid.Column="2" Content="{DynamicResource Loc.toolbox.prescription.copy}" Style="{StaticResource SecondaryButton}"
+                    Margin="12,0,0,0" Click="OnCopyPreset" />
+          </Grid>
+          <TextBox x:Name="PresetText" Style="{StaticResource AppCodeBox}" Margin="0,10,0,0"
+                   IsReadOnly="True" TextWrapping="Wrap" MaxHeight="220" VerticalScrollBarVisibility="Auto"
+                   FontFamily="Consolas" />
         </StackPanel>
       </Border>
 
-      <!-- ================================================== 获取官方 OBS（V2.9.1） -->
-      <TextBlock x:Name="Sec_setup_officialObs" Style="{StaticResource SectionTitle}" Text="{DynamicResource Loc.setup.officialObs}" Margin="0,20,0,10" />
-      <ctl:ObsDownloadCard x:Name="DownloadCardControl" />
-
-      <!-- ================================================== BUG 反馈（V2.9.3） -->
-      <ctl:FeedbackCard x:Name="FeedbackCardControl" Margin="0,16,0,0" />
+      <!-- ================================================== 隐私模式清单 -->
+      <TextBlock x:Name="Sec_toolbox_privacy" Style="{StaticResource SectionTitle}" Text="{DynamicResource Loc.toolbox.privacy}" Margin="0,20,0,10" />
+      <Border Style="{StaticResource Card}" Padding="14">
+        <StackPanel>
+          <TextBlock Style="{StaticResource MutedText}" TextWrapping="Wrap"
+                     Text="{DynamicResource Loc.toolbox.privacy.desc}" />
+          <TextBlock Style="{StaticResource BodyText}" Margin="0,10,0,0" TextWrapping="Wrap"
+                     Text="{DynamicResource Loc.toolbox.privacy.checklist}" />
+          <StackPanel Orientation="Horizontal" Margin="0,12,0,0">
+            <Button Content="{DynamicResource Loc.toolbox.privacy.focus}" Style="{StaticResource SecondaryButton}" Click="OnOpenFocusAssist" />
+            <Button Content="{DynamicResource Loc.toolbox.privacy.notifications}" Style="{StaticResource SecondaryButton}" Margin="10,0,0,0" Click="OnOpenNotifications" />
+            <Button Content="{DynamicResource Loc.toolbox.privacy.personalization}" Style="{StaticResource SecondaryButton}" Margin="10,0,0,0" Click="OnOpenPersonalization" />
+          </StackPanel>
+        </StackPanel>
+      </Border>
 
       <!-- ================================================== 快捷键速查 -->
       <TextBlock x:Name="Sec_toolbox_shortcuts" Style="{StaticResource SectionTitle}" Text="{DynamicResource Loc.toolbox.shortcuts}" Margin="0,20,0,10" />
@@ -397,6 +428,112 @@
           </StackPanel>
         </Grid>
       </Border>
+
+      </StackPanel>
+
+      <!-- ================================================== 06 冲突与版本 -->
+      <StackPanel x:Name="Group_section_updates" Margin="0,26,0,0">
+        <Border Style="{StaticResource SoftPanel}" Padding="14,12" Margin="0,0,0,4">
+          <StackPanel Orientation="Horizontal">
+            <Border Width="30" Height="30" CornerRadius="9" Background="{DynamicResource BrandSoftBrush}"
+                    VerticalAlignment="Top">
+              <TextBlock Text="06" FontWeight="Bold" FontSize="{DynamicResource FontSizeSm}"
+                         Foreground="{DynamicResource BrandBrush}"
+                         HorizontalAlignment="Center" VerticalAlignment="Center" />
+            </Border>
+            <StackPanel Margin="10,0,0,0">
+              <TextBlock Text="{DynamicResource Loc.toolbox.group.updates}" Style="{StaticResource H3Text}" />
+              <TextBlock Text="{DynamicResource Loc.toolbox.group.updates.desc}"
+                         Style="{StaticResource CaptionText}" Margin="0,3,0,0" />
+            </StackPanel>
+          </StackPanel>
+        </Border>
+      <!-- ================================================== 冲突软件扫描 -->
+      <TextBlock x:Name="Sec_toolbox_conflicts" Style="{StaticResource SectionTitle}" Text="{DynamicResource Loc.toolbox.conflicts}" Margin="0,20,0,10" />
+      <Border Style="{StaticResource Card}" Padding="14">
+        <StackPanel>
+          <StackPanel Orientation="Horizontal">
+            <Button Content="{DynamicResource Loc.toolbox.conflicts.scan}" Style="{StaticResource PrimaryButton}" Click="OnScanConflicts" />
+            <TextBlock x:Name="ConflictSummaryText" Style="{StaticResource CaptionText}"
+                       Margin="12,0,0,0" VerticalAlignment="Center" Text="" />
+          </StackPanel>
+          <ItemsControl x:Name="ConflictList" Margin="0,10,0,0">
+            <ItemsControl.ItemTemplate>
+              <DataTemplate>
+                <Border Style="{StaticResource SoftPanel}" Padding="10,8" Margin="0,0,0,8">
+                  <StackPanel>
+                    <StackPanel Orientation="Horizontal">
+                      <TextBlock Text="{Binding DisplayName}" FontWeight="SemiBold" Foreground="{DynamicResource TextBrush}" />
+                      <TextBlock Text="{Binding Risk}" Margin="10,0,0,0" FontWeight="Bold">
+                        <TextBlock.Style>
+                          <Style TargetType="TextBlock">
+                            <Setter Property="Foreground" Value="{DynamicResource WarnBrush}" />
+                            <Style.Triggers>
+                              <DataTrigger Binding="{Binding RiskLevel}" Value="high">
+                                <Setter Property="Foreground" Value="{DynamicResource DangerBrush}" />
+                              </DataTrigger>
+                              <DataTrigger Binding="{Binding RiskLevel}" Value="medium">
+                                <Setter Property="Foreground" Value="{DynamicResource WarnBrush}" />
+                              </DataTrigger>
+                            </Style.Triggers>
+                          </Style>
+                        </TextBlock.Style>
+                      </TextBlock>
+                    </StackPanel>
+                    <TextBlock Text="{Binding Advice}" Style="{StaticResource MutedText}"
+                               Margin="0,4,0,0" TextWrapping="Wrap" />
+                  </StackPanel>
+                </Border>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+          <TextBlock x:Name="ConflictEmptyText" Style="{StaticResource MutedText}" Visibility="Collapsed"
+                     Text="{DynamicResource Loc.toolbox.conflicts.none}" />
+        </StackPanel>
+      </Border>
+
+      <!-- ================================================== OBS 新版本情报 -->
+      <TextBlock x:Name="Sec_toolbox_release" Style="{StaticResource SectionTitle}" Text="{DynamicResource Loc.toolbox.release}" Margin="0,20,0,10" />
+      <Border Style="{StaticResource Card}" Padding="14">
+        <StackPanel>
+          <StackPanel Orientation="Horizontal">
+            <Button Content="{DynamicResource Loc.toolbox.release.query}" Style="{StaticResource PrimaryButton}" Click="OnFetchRelease" />
+            <Button Content="{DynamicResource Loc.toolbox.release.openPage}" Style="{StaticResource SecondaryButton}" Margin="10,0,0,0" Click="OnOpenReleaseUrl" />
+          </StackPanel>
+          <TextBlock x:Name="ReleaseText" Style="{StaticResource BodyText}" Margin="0,10,0,0"
+                     TextWrapping="Wrap"
+                     Text="{DynamicResource Loc.toolbox.release.desc}" />
+        </StackPanel>
+      </Border>
+
+      <!-- ================================================== 获取官方 OBS（V2.9.1） -->
+      <TextBlock x:Name="Sec_setup_officialObs" Style="{StaticResource SectionTitle}" Text="{DynamicResource Loc.setup.officialObs}" Margin="0,20,0,10" />
+      <ctl:ObsDownloadCard x:Name="DownloadCardControl" />
+
+      </StackPanel>
+
+      <!-- ================================================== 07 帮助与反馈 -->
+      <StackPanel x:Name="Group_section_support" Margin="0,26,0,0">
+        <Border Style="{StaticResource SoftPanel}" Padding="14,12" Margin="0,0,0,4">
+          <StackPanel Orientation="Horizontal">
+            <Border Width="30" Height="30" CornerRadius="9" Background="{DynamicResource BrandSoftBrush}"
+                    VerticalAlignment="Top">
+              <TextBlock Text="07" FontWeight="Bold" FontSize="{DynamicResource FontSizeSm}"
+                         Foreground="{DynamicResource BrandBrush}"
+                         HorizontalAlignment="Center" VerticalAlignment="Center" />
+            </Border>
+            <StackPanel Margin="10,0,0,0">
+              <TextBlock Text="{DynamicResource Loc.toolbox.group.support}" Style="{StaticResource H3Text}" />
+              <TextBlock Text="{DynamicResource Loc.toolbox.group.support.desc}"
+                         Style="{StaticResource CaptionText}" Margin="0,3,0,0" />
+            </StackPanel>
+          </StackPanel>
+        </Border>
+      <!-- ================================================== 反馈与支持 -->
+      <TextBlock x:Name="Sec_toolbox_feedback" Style="{StaticResource SectionTitle}" Text="{DynamicResource Loc.toolbox.feedback}" Margin="0,16,0,10" />
+      <ctl:FeedbackCard x:Name="FeedbackCardControl" Margin="0,16,0,0" />
+      </StackPanel>
+
 
     </StackPanel>
   </ScrollViewer>

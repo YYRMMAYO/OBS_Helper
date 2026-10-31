@@ -82,4 +82,72 @@ public class ToolboxSectionsTests
     {
         Assert.Equal(ToolboxSections.Keys.Length, ToolboxSections.Keys.Distinct(StringComparer.Ordinal).Count());
     }
+
+    // ------------------------------------------------------------ V3.4.2 分组
+
+    private static readonly Regex GroupContainerRegex = new(
+        @"x:Name=""(?<name>Group_section_[^""]+)""", RegexOptions.Compiled);
+
+    private static List<string> XamlGroupNames()
+        => GroupContainerRegex.Matches(File.ReadAllText(
+                Path.Combine(SourceRoot(), "OBS_Helper.Wpf", "Views", "ToolboxPage.xaml")))
+            .Select(match => match.Groups["name"].Value)
+            .ToList();
+
+    /// <summary>每个分节必须且只能属于一个分组，分组 id 不得重复。</summary>
+    [Fact]
+    public void EverySectionBelongsToExactlyOneGroup()
+    {
+        Assert.Equal(
+            ToolboxSections.Groups.Length,
+            ToolboxSections.Groups.Select(group => group.Id).Distinct(StringComparer.Ordinal).Count());
+
+        foreach (var key in ToolboxSections.Keys)
+        {
+            var matches = ToolboxSections.Groups.Count(group =>
+                group.SectionKeys.Contains(key, StringComparer.Ordinal));
+            Assert.True(matches == 1, $"分节 {key} 属于 {matches} 个分组，应当恰好 1 个");
+            Assert.Equal(ToolboxSections.GroupOf(key), ToolboxSections.Groups.First(g => g.SectionKeys.Contains(key)).Id);
+        }
+    }
+
+    /// <summary>分组容器必须真实存在，且顺序与 <see cref="ToolboxSections.Groups"/> 一致。</summary>
+    [Fact]
+    public void GroupContainers_MatchCatalogOrder()
+    {
+        var expected = ToolboxSections.Groups
+            .Select(group => ToolboxSections.GroupElementNameOf(group.Id))
+            .ToList();
+
+        Assert.Equal(expected, XamlGroupNames());
+    }
+
+    /// <summary>分组标题 / 说明必须在中英文案表里存在。</summary>
+    [Fact]
+    public void GroupTextKeys_ExistInBothLanguages()
+    {
+        static HashSet<string> TableKeys(string file)
+        {
+            var regex = new Regex(@"\[""(?<key>[^""]+)""\]\s*=", RegexOptions.Compiled);
+            return regex.Matches(File.ReadAllText(Path.Combine(SourceRoot(), "OBS_Helper.Wpf", "Localization", file)))
+                .Select(match => match.Groups["key"].Value)
+                .ToHashSet(StringComparer.Ordinal);
+        }
+
+        var zh = TableKeys("StringTableZhHans.cs");
+        var en = TableKeys("StringTableEnUs.cs");
+        foreach (var group in ToolboxSections.Groups)
+        {
+            Assert.Contains(group.TitleKey, zh);
+            Assert.Contains(group.DescKey, zh);
+            Assert.Contains(group.TitleKey, en);
+            Assert.Contains(group.DescKey, en);
+        }
+
+        foreach (var key in new[] { "toolbox.filter.all", "toolbox.filter.hint", "toolbox.feedback" })
+        {
+            Assert.Contains(key, zh);
+            Assert.Contains(key, en);
+        }
+    }
 }

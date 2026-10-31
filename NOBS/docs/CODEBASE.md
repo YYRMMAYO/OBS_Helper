@@ -239,11 +239,11 @@ NOBS/
 | `Views/PerformancePage.xaml(.cs)` | 监控页（CPU/内存/磁盘 + 走势图 + 状态色）。 |
 | `Views/ObsConfigPage.xaml(.cs)` | OBS 配置管理页（备份/恢复/重置/定位）。 |
 | `Views/TemplatePage.xaml(.cs)` | 场景模板页（在线落地 / 离线导出）。 |
-| `Views/SettingsPage.xaml(.cs)` | 设置页（AI、连接、热键、外观、**新手引导重播**、更新等全部设置）。 |
+| `Views/SettingsPage.xaml(.cs)` | 设置页（V3.4.2：左栏分类导航 + 搜索 + 右侧单页显示；AI、外观、后台、热键、录像、自动切换、数据、OBS 配置、新手引导、更新与关于；目录真源见 `Services/Shell/SettingsSections.cs`）。 |
 | `Views/SetupPage.xaml(.cs)` | 新手搭建流程六步引导 + 竖屏 / 多平台进阶向导（V2.2）。 |
 | `Views/TeleprompterWindow.xaml(.cs)` | **提词器窗口**（V3.1.0；V3.1.1 补手动上下移动）：置顶 / 无边框 / 可拖动缩放、自动滚动、工具栏 ↑↓ / 拖动文字 / 滚轮 / 键盘手动滚动、Ctrl+方向键移动窗口、速度 / 字号 / 行高 / 透明度 / 镜像、点击穿透、3-2-1 倒计时、脚本编辑与导入、阅读参考线、捕获排除提示。 |
 | `Views/PluginsPage.xaml(.cs)` | 插件广场：目录热更新 + 目录版本/复核日期 + 维护状态标注（V2.9）+ 本机体检 + 下载角标 + AI 预算提示 + 关注（V2.2）。 |
-| `Views/ToolboxPage.xaml(.cs)` | 工具箱（V2.6）：录像工具 / 参数处方 / 隐私清单 / 冲突扫描 / 带宽计算 / 版本情报 / 快捷键速查。 |
+| `Views/ToolboxPage.xaml(.cs)` | 工具箱（V3.4.2：7 组 18 节，分组筛选 + 分组目录；录像工具 / 画面体检 / 音频体检 / 网络推流 / 参数隐私 / 冲突版本 / 帮助反馈）。 |
 | `Views/SetupWizardWindow.xaml(.cs)` | 分步向导窗口（竖屏双画布 / 多平台推流，V2.2）。 |
 | `Views/GuidePage.xaml(.cs)` | 使用指引（随包资源）。 |
 | `Views/FeedbackPage.xaml(.cs)` | **帮助与反馈页**（V2.9.4，一级导航）：反馈卡（表单 / Issue / 离线二维码）+ **一键复制报错材料**（版本 / 系统 / OBS 连接与场景 / 录前自检结论，不含路径与日志原文）+ 作者与仓库入口。 |
@@ -298,8 +298,8 @@ NOBS/
 | 文件 | 职责 |
 |---|---|
 | `Localization/Strings.cs` | 文案表入口（纯 BCL、零 WPF）：当前语言、`T(key)` / `T(key, args)`、键集、语言标识归一化、缺键回退次序。 |
-| `Localization/StringTableZhHans.cs` | 简体中文文案（默认语言，**3280 条键**，按模块分段）。 |
-| `Localization/StringTableEnUs.cs` | English 文案（**3280 条键**，键集必须与中文表完全一致，有单测钉死）。 |
+| `Localization/StringTableZhHans.cs` | 简体中文文案（默认语言，**3316 条键**，按模块分段）。 |
+| `Localization/StringTableEnUs.cs` | English 文案（**3316 条键**，键集必须与中文表完全一致，有单测钉死）。 |
 | `Localization/ContentAssets.cs` | 随包离线内容的**按语言取资产**统一入口（V2.9.3）：外部缓存 → 当前语言内嵌 → 中文内嵌（最后一级兜底必写 WARN，否则英文用户会「安静地看到中文内容」）。 |
 | `Localization/DataValues.cs` | 数据驱动展示值的**跨语言**判定（severity / level / badge：中文「常见」与英文 `Common` 都认）。 |
 | `Services/LocalizationService.cs` | 语言服务：读 / 写偏好（`prefs.json` 的 `obshelper.language`）、解析首启语言（用户选择 > 安装向导 `language.ini` > 中文）、把整表写进 `Application.Resources`、广播 `Changed`。 |
@@ -380,4 +380,6 @@ NOBS/
 - `Services/Ai/`：AiHostService
 - `Models/Mobile/`：MobileModels
 - `Views/`：FeatureHubPage、MobileLinkPage、InteractionPage、InsightsPage、StreamPage、AutomationPage
+- `Services/Shell/SettingsSections.cs`：设置页分组与 12 页目录（左栏导航 / 卡片名 / 单测共用真源）
+- `Services/Tools/ToolboxSections.cs`：工具箱 7 组 18 节顺序与分组真源
 - `Assets/sidecars.json`：sidecar 清单（manual 项不含哈希，不自动下载）

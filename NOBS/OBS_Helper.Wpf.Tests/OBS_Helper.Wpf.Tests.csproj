@@ -87,6 +87,8 @@
     <Compile Include="..\OBS_Helper.Wpf\Services\ObsConfig\SimpleRecordingCore.cs" Link="Linked\ObsConfig\SimpleRecordingCore.cs" />
     <Compile Include="..\OBS_Helper.Wpf\Services\ObsConfig\SimpleStreamingCore.cs" Link="Linked\ObsConfig\SimpleStreamingCore.cs" />
     <Compile Include="..\OBS_Helper.Wpf\Services\Tools\ToolboxSections.cs" Link="Linked\Tools\ToolboxSections.cs" />
+    <!-- V3.4.2 设置分类目录：左栏导航 / 卡片名 / 单测共用的纯数据 -->
+    <Compile Include="..\OBS_Helper.Wpf\Services\Shell\SettingsSections.cs" Link="Linked\Shell\SettingsSections.cs" />
     <Compile Include="..\OBS_Helper.Wpf\Services\Recording\RecordingArchiveCore.cs" Link="Linked\Recording\RecordingArchiveCore.cs" />
     <!-- V3.1.0 录像命名模板：变量替换 / 非法字符净化 / 冲突处理（纯 BCL） -->
     <Compile Include="..\OBS_Helper.Wpf\Services\Recording\RecordingNamingCore.cs" Link="Linked\Recording\RecordingNamingCore.cs" />

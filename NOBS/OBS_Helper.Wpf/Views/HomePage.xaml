@@ -50,9 +50,8 @@
             </WrapPanel>
           </StackPanel>
           <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="16,0,0,0">
-            <TextBlock Text="V3.4.0" Style="{StaticResource H2Text}" Foreground="{DynamicResource BrandBrush}"
-                       HorizontalAlignment="Right" />
-            <Button Style="{StaticResource PrimaryButton}" Margin="0,8,0,0" Click="OnOpenFeatures"
+            <!-- V3.4.2：去掉版本号大字，避免被理解成「只有这一版才有这些功能」 -->
+            <Button Style="{StaticResource PrimaryButton}" Click="OnOpenFeatures"
                     Content="{DynamicResource Loc.home.hero.all}" />
           </StackPanel>
         </Grid>

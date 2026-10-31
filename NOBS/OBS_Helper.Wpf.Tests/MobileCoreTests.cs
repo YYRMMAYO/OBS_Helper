@@ -206,6 +206,20 @@ public class MobileCoreTests
     }
 
     [Fact]
+    public void MediaServerConfigWithWebRtcEnablesWatchAndWhip()
+    {
+        var yml = PhoneCameraCore.BuildConfig(8554, 1935, 8890, 9997, 8889);
+        Assert.Contains("webrtc: yes", yml);
+        Assert.Contains("webrtcAddress: :8889", yml);
+        Assert.Contains("webrtcIPsFromInterfaces: yes", yml);
+        Assert.Contains("webrtcAllowOrigins: ['*']", yml);
+        Assert.Equal("http://192.168.1.10:8889/live/key",
+            PhoneCameraCore.VideoWatchUrl("192.168.1.10", 8889, "key"));
+        Assert.Equal("http://192.168.1.10:8889/live/key/whip",
+            PhoneCameraCore.WhipPublishUrl("192.168.1.10", 8889, "key"));
+    }
+
+    [Fact]
     public void NotifyCoreBlocksSensitiveContent()
     {
         Assert.True(MobileNotifyCore.IsSensitive("验证码 123456"));

@@ -76,6 +76,8 @@
                 <TextBox x:Name="RelayFfmpegBox" Width="240" />
                 <Button Style="{StaticResource SecondaryButton}" Margin="8,0,0,0"
                         Content="{DynamicResource Loc.caption.browse}" Click="OnBrowseRelayFfmpeg" />
+                <Button x:Name="RelayFfmpegInstallButton" Style="{StaticResource SecondaryButton}" Margin="8,0,0,0"
+                        Content="{DynamicResource Loc.stream.installFfmpeg}" Click="OnInstallRelayFfmpeg" />
               </StackPanel>
             </StackPanel>
             <Button Style="{StaticResource SecondaryButton}" Margin="8,0,0,0"
@@ -108,6 +110,8 @@
                 <TextBox x:Name="RcloneBox" Width="240" />
                 <Button Style="{StaticResource SecondaryButton}" Margin="8,0,0,0"
                         Content="{DynamicResource Loc.caption.browse}" Click="OnBrowseRclone" />
+                <Button x:Name="RcloneInstallButton" Style="{StaticResource SecondaryButton}" Margin="8,0,0,0"
+                        Content="{DynamicResource Loc.stream.installRclone}" Click="OnInstallRclone" />
               </StackPanel>
             </StackPanel>
             <StackPanel Margin="0,0,10,8">
@@ -122,6 +126,10 @@
             <Button Style="{StaticResource SecondaryButton}" Margin="8,0,0,0" Content="{DynamicResource Loc.stream.archiveVerify}" Click="OnArchiveVerify" />
             <Button Style="{StaticResource GhostButton}" Margin="8,0,0,0" Content="{DynamicResource Loc.stream.archiveUndo}" Click="OnArchiveUndo" />
           </WrapPanel>
+          <CheckBox x:Name="AutoArchiveCheck" Content="{DynamicResource Loc.stream.archive.auto}"
+                    Margin="0,8,0,0" Click="OnAutoArchiveToggle" />
+          <TextBlock Style="{StaticResource CaptionText}" Margin="0,4,0,0" TextWrapping="Wrap"
+                     Text="{DynamicResource Loc.stream.archive.autoTip}" />
           <TextBlock x:Name="ArchiveText" Style="{StaticResource CaptionText}" Margin="0,6,0,0" TextWrapping="Wrap" />
         </StackPanel>
       </Border>

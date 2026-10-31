@@ -3,9 +3,12 @@ using System.Windows;
 using System.Windows.Controls;
 using Microsoft.Win32;
 using OBS_Helper.Wpf.Navigation;
+using OBS_Helper.Wpf.Services;
+using OBS_Helper.Wpf.Services.Dependencies;
 using OBS_Helper.Wpf.Services.Mobile;
 using OBS_Helper.Wpf.Services.Chat;
 using OBS_Helper.Wpf.Services.Clips;
+using OBS_Helper.Wpf.Services.Recording;
 using OBS_Helper.Wpf.Services.Shell;
 using OBS_Helper.Wpf.Services.Subtitles;
 
@@ -34,6 +37,7 @@ public partial class InteractionPage : UserControl, INavigationAware
         FfmpegBox.Text = StoredOrSidecar("ffmpeg");
         WhisperBox.Text = StoredOrSidecar("whisper");
         ModelBox.Text = Path.Combine(AppServices.Sidecars.Root, "models", "ggml-base.bin");
+        LoadCalendar();
     }
 
     /// <summary>V3.4.1：优先使用「一键配置」写入的路径，其次 sidecar 安装目录。</summary>
@@ -66,6 +70,7 @@ public partial class InteractionPage : UserControl, INavigationAware
 
     public Task OnNavigatedFromAsync()
     {
+        SaveCalendar();
         if (_subscribed)
         {
             AppServices.ChatHub.MessageAccepted -= OnChatMessage;
@@ -75,6 +80,36 @@ public partial class InteractionPage : UserControl, INavigationAware
             _subscribed = false;
         }
         return Task.CompletedTask;
+    }
+
+    private const string CalendarKey = "interaction.calendar";
+
+    private void LoadCalendar()
+    {
+        try
+        {
+            var saved = AppServices.Store.GetObject<List<CalendarCore.Entry>>(CalendarKey);
+            if (saved is null || saved.Count == 0) return;
+            _calendar.Clear();
+            _calendar.AddRange(saved);
+            RefreshCalendar();
+        }
+        catch (Exception ex)
+        {
+            FileLogger.Warn("Interaction", $"读取直播日历失败：{ex.Message}");
+        }
+    }
+
+    private void SaveCalendar()
+    {
+        try
+        {
+            AppServices.Store.SetObject(CalendarKey, _calendar.ToList());
+        }
+        catch (Exception ex)
+        {
+            FileLogger.Warn("Interaction", $"保存直播日历失败：{ex.Message}");
+        }
     }
 
     // ------------------------------------------------------------ 弹幕
@@ -370,6 +405,7 @@ public partial class InteractionPage : UserControl, INavigationAware
             Start = new DateTimeOffset(start),
             TimeZoneId = TimeZoneInfo.Local.Id,
         });
+        SaveCalendar();
         RefreshCalendar();
         _calendarTimer ??= new System.Windows.Threading.DispatcherTimer { Interval = TimeSpan.FromSeconds(1) };
         _calendarTimer.Tick -= OnCalendarTick;
@@ -430,6 +466,93 @@ public partial class InteractionPage : UserControl, INavigationAware
     {
         var dialog = new OpenFileDialog { Filter = "whisper.cpp|whisper*.exe|可执行文件|*.exe" };
         if (dialog.ShowDialog() == true) WhisperBox.Text = dialog.FileName;
+    }
+
+    private async void OnInstallWhisper(object sender, RoutedEventArgs e)
+        => await InstallDependencyAsync("whisper", WhisperInstallButton,
+            path => WhisperBox.Text = path, CaptionStateText).ConfigureAwait(true);
+
+    private async void OnDownloadWhisperModel(object sender, RoutedEventArgs e)
+    {
+        var original = ModelDownloadButton.Content;
+        ModelDownloadButton.IsEnabled = false;
+        try
+        {
+            ModelDownloadButton.Content = Strings.T("caption.downloadModelBusy");
+            var progress = new Progress<(long Done, long Total)>(p =>
+            {
+                if (p.Total > 0)
+                    ModelDownloadButton.Content = Strings.T("dep.download.progress",
+                        (int)Math.Clamp(p.Done * 100 / p.Total, 0, 100));
+            });
+            var result = await AppServices.WhisperModel.DownloadAsync(progress, CancellationToken.None)
+                .ConfigureAwait(true);
+            if (!result.Ok)
+            {
+                CaptionStateText.Text = Strings.T(string.IsNullOrWhiteSpace(result.Code) ? "dep.error.download" : result.Code);
+                return;
+            }
+            ModelBox.Text = result.Path;
+            CaptionStateText.Text = Strings.T("caption.modelReady", result.Path);
+        }
+        catch (Exception ex)
+        {
+            FileLogger.Warn("Subtitles", $"模型一键下载失败：{ex.Message}");
+            CaptionStateText.Text = Strings.T("dep.error.download");
+        }
+        finally
+        {
+            ModelDownloadButton.Content = original;
+            ModelDownloadButton.IsEnabled = true;
+        }
+    }
+
+    private async void OnInstallFfmpeg(object sender, RoutedEventArgs e)
+        => await InstallDependencyAsync("ffmpeg", FfmpegInstallButton,
+            path => FfmpegBox.Text = path, ClipStateText).ConfigureAwait(true);
+
+    /// <summary>功能页共用的一键安装：已就绪直接填入，否则下载 + 校验 + 解压 + 写路径。</summary>
+    private static async Task InstallDependencyAsync(
+        string id, Button button, Action<string> apply, TextBlock status)
+    {
+        var spec = DependencyCore.Find(id);
+        if (spec is null) return;
+
+        var name = Strings.T("dep.name." + id);
+        var original = button.Content;
+        button.IsEnabled = false;
+        try
+        {
+            button.Content = Strings.T("dep.installing", name);
+            var progress = new Progress<(long Done, long Total)>(p =>
+            {
+                if (p.Total > 0)
+                    button.Content = Strings.T("dep.download.progress",
+                        (int)Math.Clamp(p.Done * 100 / p.Total, 0, 100));
+            });
+            var result = await AppServices.DependencyProvision
+                .EnsureAsync(spec, progress, CancellationToken.None).ConfigureAwait(true);
+            if (!result.Ok)
+            {
+                status.Text = Strings.T(string.IsNullOrWhiteSpace(result.Code) ? "dep.error.download" : result.Code,
+                    spec.Executable);
+                return;
+            }
+            apply(result.Path);
+            status.Text = Strings.T(
+                result.DigestVerified ? "dep.configure.autoDone" : "dep.configure.autoDoneNoDigest",
+                name, result.Path);
+        }
+        catch (Exception ex)
+        {
+            FileLogger.Warn("Dependency", $"一键安装 {id} 失败：{ex.Message}");
+            status.Text = Strings.T("dep.error.download");
+        }
+        finally
+        {
+            button.Content = original;
+            button.IsEnabled = true;
+        }
     }
 
     private void OnBrowseModel(object sender, RoutedEventArgs e)
@@ -505,6 +628,21 @@ public partial class InteractionPage : UserControl, INavigationAware
     {
         var dialog = new OpenFileDialog { Filter = "FFmpeg|ffmpeg.exe|可执行文件|*.exe" };
         if (dialog.ShowDialog() == true) FfmpegBox.Text = dialog.FileName;
+    }
+
+    private void OnScanRecordings(object sender, RoutedEventArgs e)
+    {
+        var root = RecordingLibraryService.DefaultRoot(AppServices.Obs.LastRecordFile);
+        var files = RecordingLibraryService.Scan(root);
+        RecordingLibraryList.Items.Clear();
+        foreach (var file in files)
+        {
+            RecordingLibraryList.Items.Add(
+                $"{file.ModifiedUtc.ToLocalTime():MM-dd HH:mm} · {file.Name} · {file.SizeBytes / 1024 / 1024} MB");
+        }
+        RecordingLibraryText.Text = files.Count == 0
+            ? Strings.T("clips.libraryEmpty", root ?? "")
+            : Strings.T("clips.libraryCount", files.Count, root ?? "");
     }
 
     private void OnFindHighlights(object sender, RoutedEventArgs e)

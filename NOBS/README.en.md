@@ -90,7 +90,8 @@ There are two channels for the same app — pick the one that matches how much "
 
 - **Fixed all plugin / dependency one-click downloads failing**: GitHub release assets now 302 to `release-assets.githubusercontent.com`; the old allowlist rejected the final host. The new CDN is allowed in the plugin, dependency and sidecar allowlists, with diagnostics and regression tests.
 - **Full Feature Center audit**: 17 items overclaim (phone microphone has no endpoint, "AI reply/director" are templates/rules, theme market is JSON import only, auto-archive needs a manual click, etc.). All are written into the Y3 guide, split into Y3 follow-up and Y4.
-- **Not shipped yet**: one-click dependency UI, whisper model download, phone camera QR / publish detection / one-click firewall rule. These are listed as Y3 must-do in the guide.
+- **Shipped in this build**: one-click dependency UI (whisper / FFmpeg / rclone with auto-fill), whisper model download, phone camera QR / publish detection / firewall rule, Feature Center runtime setup + status chips, Q05 auto-archive, C10 / E06 persistence, MediaMTX WebRTC watch + OBS WHIP URL, and a local recording-file index.
+- **Explicit boundaries**: LLM reply / partner, real AI director, online theme market, networked team collaboration, Twitch / YouTube viewer stats, and browser-as-camera are not wired. Guide §13 documents why, how to connect them yourself, and what is not claimed.
 
 ## X1031 highlights
 

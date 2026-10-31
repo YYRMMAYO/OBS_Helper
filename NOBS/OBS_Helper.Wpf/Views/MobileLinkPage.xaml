@@ -126,6 +126,28 @@
             </WrapPanel>
             <TextBlock x:Name="CameraUrlText" Style="{StaticResource MonoText}" Margin="0,8,0,0"
                        TextWrapping="Wrap" />
+            <WrapPanel Margin="0,10,0,0">
+              <Button x:Name="CameraCheckButton" Style="{StaticResource SecondaryButton}" Margin="0,0,8,6"
+                      Content="{DynamicResource Loc.mobile.camera.check}" Click="OnCheckCameraPublish" />
+              <Button Style="{StaticResource SecondaryButton}" Margin="0,0,8,6"
+                      Content="{DynamicResource Loc.mobile.camera.copySrt}" Click="OnCopySrt" />
+              <Button Style="{StaticResource SecondaryButton}" Margin="0,0,8,6"
+                      Content="{DynamicResource Loc.mobile.camera.copyRtmp}" Click="OnCopyRtmp" />
+              <Button Style="{StaticResource SecondaryButton}" Margin="0,0,8,6"
+                      Content="{DynamicResource Loc.mobile.camera.copyVideo}" Click="OnCopyVideo" />
+              <Button Style="{StaticResource SecondaryButton}" Margin="0,0,8,6"
+                      Content="{DynamicResource Loc.mobile.camera.copyWhip}" Click="OnCopyWhip" />
+              <Button x:Name="CameraFirewallButton" Style="{StaticResource GhostButton}" Margin="0,0,8,6"
+                      Content="{DynamicResource Loc.mobile.camera.firewall}" Click="OnCameraFirewall" />
+            </WrapPanel>
+            <TextBlock x:Name="CameraCheckText" Style="{StaticResource CaptionText}" Margin="0,4,0,0"
+                       TextWrapping="Wrap" />
+            <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
+              <Image x:Name="CameraQrImage" Width="140" Height="140" Stretch="Uniform" />
+              <TextBlock Style="{StaticResource CaptionText}" Margin="12,0,0,0" MaxWidth="300"
+                         VerticalAlignment="Center" TextWrapping="Wrap"
+                         Text="{DynamicResource Loc.mobile.camera.qr}" />
+            </StackPanel>
             <TextBlock Style="{StaticResource CaptionText}" Margin="0,8,0,0" TextWrapping="Wrap"
                        Text="{DynamicResource Loc.mobile.camera.steps}" />
           </StackPanel>

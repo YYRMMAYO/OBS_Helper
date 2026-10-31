@@ -96,6 +96,7 @@
     <Compile Include="..\OBS_Helper.Wpf\Services\Recording\RecordingArchiveCore.cs" Link="Linked\Recording\RecordingArchiveCore.cs" />
     <!-- V3.1.0 录像命名模板：变量替换 / 非法字符净化 / 冲突处理（纯 BCL） -->
     <Compile Include="..\OBS_Helper.Wpf\Services\Recording\RecordingNamingCore.cs" Link="Linked\Recording\RecordingNamingCore.cs" />
+    <Compile Include="..\OBS_Helper.Wpf\Services\Recording\RecordingLibraryService.cs" Link="Linked\Recording\RecordingLibraryService.cs" />
     <Compile Include="..\OBS_Helper.Wpf\Services\Diagnostics\ChecklistAutoFillCore.cs" Link="Linked\Diagnostics\ChecklistAutoFillCore.cs" />
     <Compile Include="..\OBS_Helper.Wpf\Services\Diagnostics\MachineProfileCore.cs" Link="Linked\Diagnostics\MachineProfileCore.cs" />
     <Compile Include="..\OBS_Helper.Wpf\Services\Diagnostics\SessionReviewCore.cs" Link="Linked\Diagnostics\SessionReviewCore.cs" />
@@ -175,6 +176,7 @@
     <Compile Include="..\OBS_Helper.Wpf\Services\Mobile\PhoneCameraCore.cs" Link="Linked\Mobile\PhoneCameraCore.cs" />
     <Compile Include="..\OBS_Helper.Wpf\Services\Chat\ChatCore.cs" Link="Linked\Chat\ChatCore.cs" />
     <Compile Include="..\OBS_Helper.Wpf\Services\Subtitles\AsrCore.cs" Link="Linked\Subtitles\AsrCore.cs" />
+    <Compile Include="..\OBS_Helper.Wpf\Services\Subtitles\WhisperModelCore.cs" Link="Linked\Subtitles\WhisperModelCore.cs" />
     <Compile Include="..\OBS_Helper.Wpf\Services\Stream\StreamCore.cs" Link="Linked\Stream\StreamCore.cs" />
     <Compile Include="..\OBS_Helper.Wpf\Services\Clips\ClipsCore.cs" Link="Linked\Clips\ClipsCore.cs" />
     <Compile Include="..\OBS_Helper.Wpf\Services\Analytics\InsightsCore.cs" Link="Linked\Analytics\InsightsCore.cs" />

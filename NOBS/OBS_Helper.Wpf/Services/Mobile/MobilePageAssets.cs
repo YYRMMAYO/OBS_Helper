@@ -56,6 +56,7 @@ public static class MobilePageAssets
         ["themeDark"] = ("深色", "Dark"),
         ["pairing"] = ("正在配对…", "Pairing…"),
         ["pairFailed"] = ("配对失败，请在电脑上重新生成二维码。", "Pairing failed. Generate a new QR code on the PC."),
+        ["deviceLimit"] = ("最多 5 台设备，请先在电脑端移除旧设备。", "Up to 5 devices. Remove an old device on the PC first."),
         ["pairNeeded"] = ("还没有配对信息，请重新扫码。", "Not paired yet. Scan the QR code again."),
         ["scenes"] = ("场景", "Scenes"),
         ["noScenes"] = ("暂无场景", "No scenes yet"),
@@ -532,8 +533,15 @@ async function pair() {
       method: "POST", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ pairId: pairIdFromPath(), secret: secret, deviceName: name, capabilities: ["remote", "preview", "prompter", "upload"] })
     });
-    const j = await r.json();
-    if (!r.ok || !j.ok) { pairFailed(); return false; }
+    const j = await r.json().catch(() => ({}));
+    if (!r.ok || !j.ok) {
+      if (j && j.code === "MOB_DEVICE_LIMIT") {
+        $("devname").textContent = t("deviceLimit");
+        showBanner(t("deviceLimit"));
+        return false;
+      }
+      pairFailed(); return false;
+    }
     state.token = j.token;
     writeStore("obshelper.token", j.token);
     state.role = j.role || "viewer";

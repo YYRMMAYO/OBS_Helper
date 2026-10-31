@@ -3,6 +3,7 @@ using System.Windows;
 using System.Windows.Controls;
 using Microsoft.Win32;
 using OBS_Helper.Wpf.Navigation;
+using OBS_Helper.Wpf.Services;
 using OBS_Helper.Wpf.Services.Analytics;
 using OBS_Helper.Wpf.Services.Shell;
 using OBS_Helper.Wpf.Services.Mobile;
@@ -17,9 +18,42 @@ public partial class InsightsPage : UserControl, INavigationAware
 
     public Task OnNavigatedToAsync(object? parameter)
     {
+        if (!_statsLoaded)
+        {
+            _statsLoaded = true;
+            try
+            {
+                var saved = AppServices.Store.GetObject<ViewerStatsCore.State>("insights.viewerstats");
+                if (saved is not null) AppServices.ViewerStats.ImportState(saved);
+            }
+            catch (Exception ex)
+            {
+                FileLogger.Warn("Insights", $"读取观众看板失败：{ex.Message}");
+            }
+        }
         RefreshFromLocal();
         RefreshDashboard();
         return Task.CompletedTask;
+    }
+
+    private static bool _statsLoaded;
+
+    public Task OnNavigatedFromAsync()
+    {
+        SaveStats();
+        return Task.CompletedTask;
+    }
+
+    private static void SaveStats()
+    {
+        try
+        {
+            AppServices.Store.SetObject("insights.viewerstats", AppServices.ViewerStats.ExportState());
+        }
+        catch (Exception ex)
+        {
+            FileLogger.Warn("Insights", $"保存观众看板失败：{ex.Message}");
+        }
     }
 
     /// <summary>指标自动回填：本地看板 + OBS 实时统计；用户仍可手动修正。</summary>

@@ -181,6 +181,8 @@ public sealed class PhoneCameraSession
     public int SrtPort { get; init; }
     public int RtmpPort { get; init; }
     public int RtspPort { get; init; }
+    /// <summary>MediaMTX WebRTC 端口（X1031Y3 / Y4 并入）；0 表示未启用。</summary>
+    public int WebrtcPort { get; init; }
     public string LanAddress { get; init; } = "";
     public PhoneCameraQuality Quality { get; init; } = PhoneCameraQuality.Hd720;
     public PhoneCameraLayout Layout { get; set; } = PhoneCameraLayout.Fullscreen;

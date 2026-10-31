@@ -34,7 +34,7 @@
 
 ## 3. 组合根：AppServices（无 DI 容器）
 
-`AppServices.cs` 是唯一的服务装配点：**92 个 Lazy 单例**，构造函数注入依赖，刻意不用 DI 容器（依赖是一棵静态树、零依赖、启动快、依赖关系一屏可见）。
+`AppServices.cs` 是唯一的服务装配点：**96 个 Lazy 单例**，构造函数注入依赖，刻意不用 DI 容器（依赖是一棵静态树、零依赖、启动快、依赖关系一屏可见）。
 
 ```text
 Store ─┬─ BookmarkService ── AssistantService

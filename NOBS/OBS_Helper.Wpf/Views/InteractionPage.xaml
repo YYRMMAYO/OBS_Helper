@@ -45,6 +45,8 @@
                 <TextBox x:Name="WhisperBox" Width="260" />
                 <Button Style="{StaticResource SecondaryButton}" Margin="8,0,0,0"
                         Content="{DynamicResource Loc.caption.browse}" Click="OnBrowseWhisper" />
+                <Button x:Name="WhisperInstallButton" Style="{StaticResource SecondaryButton}" Margin="8,0,0,0"
+                        Content="{DynamicResource Loc.caption.installWhisper}" Click="OnInstallWhisper" />
               </StackPanel>
             </StackPanel>
             <StackPanel Margin="0,0,10,8">
@@ -53,6 +55,8 @@
                 <TextBox x:Name="ModelBox" Width="220" />
                 <Button Style="{StaticResource SecondaryButton}" Margin="8,0,0,0"
                         Content="{DynamicResource Loc.caption.browse}" Click="OnBrowseModel" />
+                <Button x:Name="ModelDownloadButton" Style="{StaticResource SecondaryButton}" Margin="8,0,0,0"
+                        Content="{DynamicResource Loc.caption.downloadModel}" Click="OnDownloadWhisperModel" />
               </StackPanel>
             </StackPanel>
             <CheckBox x:Name="LoopbackCheck" Content="{DynamicResource Loc.caption.loopback}" Margin="12,0,0,0"
@@ -153,6 +157,10 @@
             </StackPanel>
             <Button Style="{StaticResource SecondaryButton}" Margin="8,0,0,0"
                     Content="{DynamicResource Loc.clips.browse}" Click="OnBrowseFfmpeg" />
+            <Button x:Name="FfmpegInstallButton" Style="{StaticResource SecondaryButton}" Margin="8,0,0,0"
+                    Content="{DynamicResource Loc.clips.installFfmpeg}" Click="OnInstallFfmpeg" />
+            <Button Style="{StaticResource SecondaryButton}" Margin="8,0,0,0"
+                    Content="{DynamicResource Loc.clips.library}" Click="OnScanRecordings" />
             <Button Style="{StaticResource SecondaryButton}" Margin="8,0,0,0"
                     Content="{DynamicResource Loc.clips.find}" Click="OnFindHighlights" />
             <Button Style="{StaticResource SecondaryButton}" Margin="8,0,0,0"
@@ -162,6 +170,8 @@
           </WrapPanel>
           <ListBox x:Name="ClipList" ctl:WheelForwarder.Enabled="True" Height="150" Margin="0,10,0,0" />
           <TextBlock x:Name="ClipStateText" Style="{StaticResource CaptionText}" Margin="0,6,0,0" TextWrapping="Wrap" />
+          <ListBox x:Name="RecordingLibraryList" ctl:WheelForwarder.Enabled="True" Height="110" Margin="0,8,0,0" />
+          <TextBlock x:Name="RecordingLibraryText" Style="{StaticResource CaptionText}" Margin="0,4,0,0" TextWrapping="Wrap" />
           <WrapPanel Margin="0,8,0,0">
             <StackPanel Margin="0,0,10,8">
               <TextBlock Style="{StaticResource CaptionText}" Text="{DynamicResource Loc.clips.searchHint}" />

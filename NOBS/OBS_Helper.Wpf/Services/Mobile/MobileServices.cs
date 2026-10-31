@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using System.IO;
 using System.Net;
+using System.Net.Http;
 using System.Net.Sockets;
 using System.Text;
 using System.Text.Json;
@@ -513,7 +514,7 @@ public sealed class MediaServerManager : IDisposable
     private readonly object _gate = new();
     private readonly Dictionary<string, PhoneCameraSession> _sessions = new(StringComparer.OrdinalIgnoreCase);
     private string? _configPath;
-    private int _rtspPort, _rtmpPort, _srtPort, _apiPort;
+    private int _rtspPort, _rtmpPort, _srtPort, _apiPort, _webrtcPort;
 
     public MediaServerManager(SidecarManager sidecars, ObsConnectionService obs, Func<Version>? osVersion = null)
     {
@@ -581,13 +582,14 @@ public sealed class MediaServerManager : IDisposable
                 _rtmpPort = FreePort();
                 _srtPort = FreePort();
                 _apiPort = FreePort();
+                _webrtcPort = FreePort();
             }
             catch (SocketException) { return (false, FeatureErrors.CamPortInUse, null); }
 
             var dir = Path.Combine(_sidecars.Root, "mediamtx", entry.Version, "runtime");
             Directory.CreateDirectory(dir);
             var config = Path.Combine(dir, "mediamtx.yml");
-            await File.WriteAllTextAsync(config, PhoneCameraCore.BuildConfig(_rtspPort, _rtmpPort, _srtPort, _apiPort), ct).ConfigureAwait(false);
+            await File.WriteAllTextAsync(config, PhoneCameraCore.BuildConfig(_rtspPort, _rtmpPort, _srtPort, _apiPort, _webrtcPort), ct).ConfigureAwait(false);
             if (!_sidecars.Start(entry, new[] { config })) return (false, FeatureErrors.CamSidecarStartFailed, null);
             _configPath = config;
             startedNow = true;
@@ -601,6 +603,7 @@ public sealed class MediaServerManager : IDisposable
             SrtPort = _srtPort,
             RtmpPort = _rtmpPort,
             RtspPort = _rtspPort,
+            WebrtcPort = _webrtcPort,
             LanAddress = lanAddress,
             Quality = quality,
             Layout = layout,
@@ -673,6 +676,45 @@ public sealed class MediaServerManager : IDisposable
         session.Layout = layout;
         return await ApplyLayoutAsync(session, layout, CancellationToken.None).ConfigureAwait(false)
             ? (true, "") : (false, FeatureErrors.MultiSourceFailed);
+    }
+
+    /// <summary>
+    /// 检测手机是否真的推上来了（X1031Y3）：查询 MediaMTX 本地 API 的 <c>/v3/paths/list</c>，
+    /// 判断当前机位的 <c>live/&lt;key&gt;</c> 是否 ready。只读、只连回环，不访问外网。
+    /// </summary>
+    public async Task<(bool Ok, string Code, bool Publishing)> CheckPublishAsync(CancellationToken ct = default)
+    {
+        var session = Session;
+        if (session is null) return (false, FeatureErrors.CamSidecarMissing, false);
+        if (_apiPort <= 0) return (false, FeatureErrors.CamSidecarStartFailed, false);
+
+        try
+        {
+            using var http = new HttpClient { Timeout = TimeSpan.FromSeconds(3) };
+            var json = await http.GetStringAsync($"http://127.0.0.1:{_apiPort}/v3/paths/list", ct)
+                .ConfigureAwait(false);
+            using var doc = JsonDocument.Parse(json);
+            if (!doc.RootElement.TryGetProperty("items", out var items) || items.ValueKind != JsonValueKind.Array)
+                return (true, "", false);
+
+            var expected = "live/" + session.StreamKey;
+            foreach (var item in items.EnumerateArray())
+            {
+                var name = item.TryGetProperty("name", out var n) && n.ValueKind == JsonValueKind.String
+                    ? n.GetString() ?? ""
+                    : "";
+                var ready = item.TryGetProperty("ready", out var r) && r.ValueKind == JsonValueKind.True;
+                if (ready && (string.Equals(name, expected, StringComparison.Ordinal)
+                              || name.EndsWith("/" + session.StreamKey, StringComparison.Ordinal)))
+                    return (true, "", true);
+            }
+            return (true, "", false);
+        }
+        catch (Exception ex)
+        {
+            FileLogger.Warn("Mobile", $"检测手机推流失败：{ex.GetType().Name}: {ex.Message}");
+            return (false, FeatureErrors.CamStreamTimeout, false);
+        }
     }
 
     public void StopAll()

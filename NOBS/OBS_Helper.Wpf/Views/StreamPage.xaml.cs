@@ -1,6 +1,8 @@
 using System.Windows;
 using System.Windows.Controls;
 using OBS_Helper.Wpf.Navigation;
+using OBS_Helper.Wpf.Services;
+using OBS_Helper.Wpf.Services.Dependencies;
 using OBS_Helper.Wpf.Services.Mobile;
 using OBS_Helper.Wpf.Services.Host;
 using OBS_Helper.Wpf.Services.Shell;
@@ -34,6 +36,9 @@ public partial class StreamPage : UserControl, INavigationAware
             RcloneBox.Text = ResolveSidecar("rclone", AppServices.ArchiveUpload.RclonePath);
         if (RelayFfmpegBox.Text.Trim().Length > 0) AppServices.Relay.SetFfmpegPath(RelayFfmpegBox.Text.Trim());
         if (RcloneBox.Text.Trim().Length > 0) AppServices.ArchiveUpload.SetRclonePath(RcloneBox.Text.Trim());
+        AutoArchiveCheck.IsChecked = AppServices.Store.GetItem("stream.archive.auto") == "1";
+        if (string.IsNullOrWhiteSpace(RemoteBox.Text))
+            RemoteBox.Text = AppServices.Store.GetItem("stream.archive.remote") ?? "";
         AppServices.Panic.Suggestion += OnSuggestion;
         return Task.CompletedTask;
     }
@@ -51,7 +56,17 @@ public partial class StreamPage : UserControl, INavigationAware
     public Task OnNavigatedFromAsync()
     {
         AppServices.Panic.Suggestion -= OnSuggestion;
+        SaveArchiveSettings();
         return Task.CompletedTask;
+    }
+
+    private void OnAutoArchiveToggle(object sender, RoutedEventArgs e)
+        => SaveArchiveSettings();
+
+    private void SaveArchiveSettings()
+    {
+        AppServices.Store.SetItem("stream.archive.auto", AutoArchiveCheck.IsChecked == true ? "1" : "0");
+        AppServices.Store.SetItem("stream.archive.remote", RemoteBox.Text.Trim());
     }
 
     private void OnSuggestion(IReadOnlyList<PanicCore.Action> actions, string reason)
@@ -174,6 +189,64 @@ public partial class StreamPage : UserControl, INavigationAware
         {
             RcloneBox.Text = dialog.FileName;
             AppServices.ArchiveUpload.SetRclonePath(dialog.FileName);
+        }
+    }
+
+    private async void OnInstallRelayFfmpeg(object sender, RoutedEventArgs e)
+        => await InstallDependencyAsync("ffmpeg", RelayFfmpegInstallButton, path =>
+        {
+            RelayFfmpegBox.Text = path;
+            AppServices.Relay.SetFfmpegPath(path);
+        }, RelayText).ConfigureAwait(true);
+
+    private async void OnInstallRclone(object sender, RoutedEventArgs e)
+        => await InstallDependencyAsync("rclone", RcloneInstallButton, path =>
+        {
+            RcloneBox.Text = path;
+            AppServices.ArchiveUpload.SetRclonePath(path);
+        }, ArchiveText).ConfigureAwait(true);
+
+    /// <summary>与互动页同口径的一键安装：已就绪直接填入，否则下载 + 校验 + 解压 + 写路径。</summary>
+    private static async Task InstallDependencyAsync(
+        string id, Button button, Action<string> apply, TextBlock status)
+    {
+        var spec = DependencyCore.Find(id);
+        if (spec is null) return;
+
+        var name = Strings.T("dep.name." + id);
+        var original = button.Content;
+        button.IsEnabled = false;
+        try
+        {
+            button.Content = Strings.T("dep.installing", name);
+            var progress = new Progress<(long Done, long Total)>(p =>
+            {
+                if (p.Total > 0)
+                    button.Content = Strings.T("dep.download.progress",
+                        (int)Math.Clamp(p.Done * 100 / p.Total, 0, 100));
+            });
+            var result = await AppServices.DependencyProvision
+                .EnsureAsync(spec, progress, CancellationToken.None).ConfigureAwait(true);
+            if (!result.Ok)
+            {
+                status.Text = Strings.T(string.IsNullOrWhiteSpace(result.Code) ? "dep.error.download" : result.Code,
+                    spec.Executable);
+                return;
+            }
+            apply(result.Path);
+            status.Text = Strings.T(
+                result.DigestVerified ? "dep.configure.autoDone" : "dep.configure.autoDoneNoDigest",
+                name, result.Path);
+        }
+        catch (Exception ex)
+        {
+            FileLogger.Warn("Dependency", $"一键安装 {id} 失败：{ex.Message}");
+            status.Text = Strings.T("dep.error.download");
+        }
+        finally
+        {
+            button.Content = original;
+            button.IsEnabled = true;
         }
     }
 

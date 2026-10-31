@@ -21,6 +21,14 @@ public static class PhoneCameraCore
 
     public static string RtspLoopbackUrl(int port, string key) => $"rtsp://127.0.0.1:{port}/live/{key}";
 
+    /// <summary>MediaMTX 内置 WebRTC 播放页（手机直接打开看视频流）。</summary>
+    public static string VideoWatchUrl(string lanAddress, int port, string key)
+        => $"http://{lanAddress}:{port}/live/{key}";
+
+    /// <summary>OBS 30.2+ 的 WHIP 输出地址（把节目画面推到 MediaMTX）。</summary>
+    public static string WhipPublishUrl(string lanAddress, int port, string key)
+        => $"http://{lanAddress}:{port}/live/{key}/whip";
+
     /// <summary>路径 key 必须是 URL 安全的高熵串（不允许枚举、不允许空）。</summary>
     public static bool IsValidKey(string? key)
         => !string.IsNullOrWhiteSpace(key) && key.Length >= 16 && key.All(ch =>
@@ -66,7 +74,24 @@ public static class PhoneCameraCore
 
     /// <summary>mediamtx 配置：只开需要的协议，HLS/WebRTC 关闭，API 只绑回环。</summary>
     public static string BuildConfig(int rtspPort, int rtmpPort, int srtPort, int apiPort)
-        => $"""
+        => BuildConfig(rtspPort, rtmpPort, srtPort, apiPort, 0);
+
+    /// <summary>
+    /// 带 WebRTC 的配置（X1031Y3 / Y4 并入）：<paramref name="webrtcPort"/> &gt; 0 时启用
+    /// MediaMTX 内置 WebRTC 播放页与 WHIP 输入，手机可直接打开
+    /// <see cref="VideoWatchUrl"/> 看视频流，OBS 用 <see cref="WhipPublishUrl"/> 推流。
+    /// </summary>
+    public static string BuildConfig(int rtspPort, int rtmpPort, int srtPort, int apiPort, int webrtcPort)
+    {
+        var webrtc = webrtcPort > 0
+            ? $"""
+webrtc: yes
+webrtcAddress: :{webrtcPort}
+webrtcIPsFromInterfaces: yes
+webrtcAllowOrigins: ['*']
+"""
+            : "webrtc: no\n";
+        return $"""
 logLevel: warn
 readTimeout: 10s
 writeTimeout: 10s
@@ -78,13 +103,13 @@ rtmpAddress: :{rtmpPort}
 srt: yes
 srtAddress: :{srtPort}
 hls: no
-webrtc: no
-api: yes
+{webrtc}api: yes
 apiAddress: 127.0.0.1:{apiPort}
 
 paths:
   all_others:
 """;
+    }
 }
 
 /// <summary>

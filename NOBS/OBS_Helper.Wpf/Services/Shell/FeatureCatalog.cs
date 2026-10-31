@@ -167,6 +167,39 @@ public static class FeatureCatalog
 
     public static int FeatureCount => Modules.Sum(m => m.Features.Count);
 
+    /// <summary>
+    /// 功能状态（X1031Y3 审查）：stable = 与宣传一致；experimental = 本地模板/规则/部分实现；
+    /// planned = 代码里还没有；local = 只在本机生效（不落云、不联机）。
+    /// 功能中心会把这些状态直接显示在能力 chip 上，避免「宣传了但做不到」。
+    /// </summary>
+    public static readonly IReadOnlyDictionary<string, string> KnownStatus =
+        new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["M04"] = "planned",      // 手机麦克风：没有端点/页面
+            ["M08"] = "experimental", // USB 摄像头：只做引导与探测
+            ["M10"] = "experimental", // 远程嘉宾：房间/权限，媒体未启用
+            ["C06"] = "experimental", // 观众投稿：主播代录，没有观众侧入口
+            ["C07"] = "experimental", // AI 回复：无引擎时是模板
+            ["C08"] = "experimental", // 弹幕翻译：无引擎时是本地短语表
+            ["C10"] = "local",        // 直播日历：本地落盘，无平台同步
+            ["S02"] = "experimental", // 双语字幕：依赖同一个翻译引擎
+            ["S04"] = "experimental", // AI 搭档：SAPI + 口型，无 LLM
+            ["S05"] = "experimental", // 高光切片：只按弹幕密度
+            ["S07"] = "experimental", // 封面文案：模板串
+            ["S09"] = "experimental", // AI 导播：规则查表
+            ["S10"] = "experimental", // 录制检索：只索引本次会话
+            ["Q04"] = "experimental", // 构图检查：手填滑块
+            ["D02"] = "experimental", // AI 助手：本地关键词检索
+            ["E03"] = "experimental", // 装修市场：JSON 导入，没有在线目录
+            ["E04"] = "experimental", // 团队协作：本地角色/邀请，没有联机
+            ["E06"] = "local",        // 观众看板：本地落盘，观众数仅 B 站
+        };
+
+    /// <summary>取功能状态；未标注的一律 stable。</summary>
+    public static string StatusOf(string id)
+        => KnownStatus.TryGetValue(id, out var status) ? status : "stable";
+
+
     public static FeatureModule? Find(string id)
         => Modules.FirstOrDefault(m => string.Equals(m.Id, id, StringComparison.OrdinalIgnoreCase));
 }

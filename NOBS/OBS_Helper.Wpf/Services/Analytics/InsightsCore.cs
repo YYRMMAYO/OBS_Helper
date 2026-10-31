@@ -180,5 +180,41 @@ public sealed class ViewerStatsCore
         return sb.ToString();
     }
 
+    /// <summary>落盘状态（X1031Y3）：分钟桶 + 礼物 + 切片数，重启后恢复。</summary>
+    public sealed class State
+    {
+        public List<MinuteBucket> Buckets { get; set; } = new();
+        public long GiftValue { get; set; }
+        public int ClipsExported { get; set; }
+    }
+
+    public State ExportState()
+    {
+        lock (_gate)
+        {
+            return new State
+            {
+                Buckets = _buckets.Values.ToList(),
+                GiftValue = _giftValue,
+                ClipsExported = _clipsExported,
+            };
+        }
+    }
+
+    public void ImportState(State? state)
+    {
+        lock (_gate)
+        {
+            _buckets.Clear();
+            if (state?.Buckets is not null)
+            {
+                foreach (var bucket in state.Buckets)
+                    _buckets[bucket.Minute.ToUnixTimeSeconds() / 60] = bucket;
+            }
+            _giftValue = state?.GiftValue ?? 0;
+            _clipsExported = state?.ClipsExported ?? 0;
+        }
+    }
+
     public void Clear() { lock (_gate) { _buckets.Clear(); _giftValue = 0; _clipsExported = 0; } }
 }

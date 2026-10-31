@@ -120,6 +120,20 @@ public static class AppServices
         new DependencyInstallService(
             System.IO.Path.Combine(HostBridge.AppDataDirectory, "dependencies"),
             _pluginSearch.Value));
+    // X1031Y3：依赖状态 / 路径持久化与一键准备器（字幕、切片、转推、归档、功能中心共用）
+    private static readonly Lazy<DependencyService> _dependencies = new(() =>
+        new DependencyService(
+            new SidecarDependencySource(Sidecars),
+            Store.GetItem,
+            (key, value) =>
+            {
+                if (string.IsNullOrWhiteSpace(value)) Store.RemoveItem(key);
+                else Store.SetItem(key, value!);
+            },
+            ApplyDependencyPath,
+            Host.OpenExternalAsync));
+    private static readonly Lazy<DependencyProvisioner> _dependencyProvision =
+        new(() => new DependencyProvisioner(_dependencyInstall.Value, _dependencies.Value));
 
     // 后台 / 遥控能力
     private static readonly Lazy<TrayService> _tray = new(() => new TrayService(Obs, Store));
@@ -191,6 +205,8 @@ public static class AppServices
         new MultiPlatformRelayService(Sidecars, Obs, Store, Host, InstalledSidecar("ffmpeg")));
     private static readonly Lazy<ArchiveService> _archiveUpload = new(() =>
         new ArchiveService(InstalledSidecar("rclone")));
+    private static readonly Lazy<AutoArchiveService> _autoArchive =
+        new(() => new AutoArchiveService(Obs, ArchiveUpload, Store));
     private static readonly Lazy<AudioChainService> _audioChain = new(() => new AudioChainService(Obs));
     private static readonly Lazy<PanicService> _panic = new(() => new PanicService(Obs));
     private static readonly Lazy<Services.Hardware.MidiService> _midi = new(() => new Services.Hardware.MidiService(Obs, Teleprompter));
@@ -216,6 +232,7 @@ public static class AppServices
     private static readonly Lazy<AsrService> _asr = new(() => new AsrService(Obs, Translator));
     private static readonly Lazy<Services.Subtitles.VoiceControlService> _voice =
         new(() => new Services.Subtitles.VoiceControlService(Asr, Obs));
+    private static readonly Lazy<WhisperModelService> _whisperModel = new(() => new WhisperModelService());
     private static readonly Lazy<ViewerStatsCore> _viewerStats = new(() => new ViewerStatsCore());
     private static readonly Lazy<RecordingSearchCore> _recordingSearch = new(() => new RecordingSearchCore());
 
@@ -310,6 +327,21 @@ public static class AppServices
 
     /// <summary>开源依赖一键配置（X1031Y2）：下载到 <c>%LocalAppData%\OBS_Helper\dependencies</c>。</summary>
     public static DependencyInstallService DependencyInstall => _dependencyInstall.Value;
+
+    /// <summary>依赖状态 / 路径持久化（X1031Y3）：功能页与依赖中心共用同一份设置。</summary>
+    public static DependencyService Dependencies => _dependencies.Value;
+
+    /// <summary>依赖准备器（X1031Y3）：已就绪直接返回，否则安装并接入。</summary>
+    public static DependencyProvisioner DependencyProvision => _dependencyProvision.Value;
+
+    /// <summary>依赖安装完成后的立即生效点（持久化由 DependencyService 负责）。</summary>
+    private static void ApplyDependencyPath(string id, string path)
+    {
+        if (string.Equals(id, "ffmpeg", StringComparison.OrdinalIgnoreCase))
+            Relay.SetFfmpegPath(path);
+        else if (string.Equals(id, "rclone", StringComparison.OrdinalIgnoreCase))
+            ArchiveUpload.SetRclonePath(path);
+    }
     public static ObsToolRegistry Tools => _tools.Value;
     public static LocalDiagnosticEngine LocalEngine => _localEngine.Value;
     public static CloudDiagnosticEngine CloudEngine => _cloudEngine.Value;
@@ -365,6 +397,8 @@ public static class AppServices
     public static Services.Live.RemoteGuestService RemoteGuests => _remoteGuests.Value;
     public static MultiPlatformRelayService Relay => _relay.Value;
     public static ArchiveService ArchiveUpload => _archiveUpload.Value;
+    /// <summary>录制结束自动归档（X1031Y3 / Q05）：只在用户勾选时工作。</summary>
+    public static AutoArchiveService AutoArchive => _autoArchive.Value;
     public static AudioChainService AudioChain => _audioChain.Value;
     public static PanicService Panic => _panic.Value;
     public static Services.Hardware.MidiService Midi => _midi.Value;
@@ -382,6 +416,8 @@ public static class AppServices
     public static ChatOverlayServer ChatOverlay => _chatOverlay.Value;
     public static TranslationCore Translator => _translator.Value;
     public static AsrService Asr => _asr.Value;
+    /// <summary>whisper.cpp 推荐模型（X1031Y3）：固定 URL + SHA-256 的一键下载。</summary>
+    public static WhisperModelService WhisperModel => _whisperModel.Value;
     /// <summary>语音控制（S03）：唤醒词 + 白名单 + 破坏性确认，默认关闭。</summary>
     public static Services.Subtitles.VoiceControlService VoiceControl => _voice.Value;
     public static ViewerStatsCore ViewerStats => _viewerStats.Value;
@@ -443,6 +479,10 @@ public static class AppServices
         // 消息/关注/礼物来自 ChatHub，人气值来自平台公开心跳（目前 B 站）。
         try { HookChatStats(); }
         catch (Exception ex) { FileLogger.Warn("ViewerStats", $"统计订阅失败：{ex.Message}"); }
+
+        // X1031Y3：录制结束自动归档需要常驻订阅，不能只在归档页可见时才生效。
+        try { _ = AutoArchive; }
+        catch (Exception ex) { FileLogger.Warn("Archive", $"自动归档初始化失败：{ex.Message}"); }
 
         // V3.1.0：提词器设置 / 脚本预加载（窗口仍然按需创建）
         try { Teleprompter.Initialize(); }
@@ -541,6 +581,7 @@ public static class AppServices
         try { if (_lighting.IsValueCreated) Lighting.Dispose(); } catch (Exception ex) { FileLogger.Warn("Shutdown", $"Lighting.Dispose 失败: {ex.Message}"); }
         try { if (_aiHost.IsValueCreated) AiHost.Dispose(); } catch (Exception ex) { FileLogger.Warn("Shutdown", $"AiHost.Dispose 失败: {ex.Message}"); }
         try { if (_relay.IsValueCreated) Relay.Dispose(); } catch (Exception ex) { FileLogger.Warn("Shutdown", $"Relay.Dispose 失败: {ex.Message}"); }
+        try { if (_autoArchive.IsValueCreated) AutoArchive.Dispose(); } catch (Exception ex) { FileLogger.Warn("Shutdown", $"AutoArchive.Dispose 失败: {ex.Message}"); }
         try { if (_remoteGuests.IsValueCreated) RemoteGuests.Dispose(); } catch (Exception ex) { FileLogger.Warn("Shutdown", $"RemoteGuests.Dispose 失败: {ex.Message}"); }
         try { if (_mediaServer.IsValueCreated) MediaServer.Dispose(); } catch (Exception ex) { FileLogger.Warn("Shutdown", $"MediaServer.Dispose 失败: {ex.Message}"); }
         try { if (_sidecars.IsValueCreated) Sidecars.Dispose(); } catch (Exception ex) { FileLogger.Warn("Shutdown", $"Sidecars.Dispose 失败: {ex.Message}"); }

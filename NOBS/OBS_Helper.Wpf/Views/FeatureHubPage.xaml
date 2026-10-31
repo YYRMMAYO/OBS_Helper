@@ -39,12 +39,24 @@
         </StackPanel>
       </Border>
 
+      <Border Style="{StaticResource SoftPanel}" Margin="0,14,0,0" Padding="14,12">
+        <StackPanel>
+          <TextBlock Text="{DynamicResource Loc.feature.ready.title}" Style="{StaticResource BodyText}"
+                     FontWeight="SemiBold" />
+          <TextBlock Text="{DynamicResource Loc.feature.ready.desc}" Style="{StaticResource CaptionText}"
+                     Margin="0,4,0,0" TextWrapping="Wrap" />
+          <StackPanel x:Name="ReadinessHost" Margin="0,8,0,0" />
+        </StackPanel>
+      </Border>
+
       <!-- V3.4.2：不再按「本版新增 / 常用」分段，也不在卡片上贴版本号；
            功能中心展示的是「现在能用的全部能力」，与版本号无关。 -->
       <TextBlock Text="{DynamicResource Loc.feature.hub.all}" Style="{StaticResource SectionTitle}" Margin="0,20,0,10" />
       <StackPanel x:Name="ModuleList" />
       <TextBlock Text="{DynamicResource Loc.feature.hub.note}" Style="{StaticResource CaptionText}"
                  Margin="0,14,0,0" TextWrapping="Wrap" />
+      <TextBlock Text="{DynamicResource Loc.feature.hub.statusNote}" Style="{StaticResource CaptionText}"
+                 Margin="0,6,0,0" TextWrapping="Wrap" />
     </StackPanel>
   </ScrollViewer>
 </UserControl>

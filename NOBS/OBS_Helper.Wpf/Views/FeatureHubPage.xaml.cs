@@ -3,6 +3,9 @@ using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Shapes;
 using OBS_Helper.Wpf.Navigation;
+using OBS_Helper.Wpf.Services;
+using OBS_Helper.Wpf.Services.Dependencies;
+using OBS_Helper.Wpf.Services.Mobile;
 using OBS_Helper.Wpf.Services.Shell;
 
 namespace OBS_Helper.Wpf.Views;
@@ -34,6 +37,7 @@ public partial class FeatureHubPage : UserControl, INavigationAware
             BuildModules();
         }
         RefreshStatus();
+        BuildReadiness();
         return Task.CompletedTask;
     }
 
@@ -204,7 +208,7 @@ public partial class FeatureHubPage : UserControl, INavigationAware
                 Margin = new Thickness(0, 0, 6, 6),
                 Child = new TextBlock
                 {
-                    Text = Strings.T(feature.TitleKey),
+                    Text = FeatureChipText(feature),
                     FontSize = (double)FindResource("FontSizeXs"),
                     Foreground = (Brush)FindResource("TextBrush"),
                 },
@@ -234,4 +238,127 @@ public partial class FeatureHubPage : UserControl, INavigationAware
         if (sender is not Button { Tag: ValueTuple<string, string> target }) return;
         AppServices.Navigation.Navigate(target.Item1, string.IsNullOrEmpty(target.Item2) ? null : target.Item2);
     }
+
+    /// <summary>功能 chip：把「实验性 / 规划中 / 本地」直接标在能力名后面。</summary>
+    private static string FeatureChipText(FeatureEntry feature)
+    {
+        var status = FeatureCatalog.StatusOf(feature.Id);
+        var title = Strings.T(feature.TitleKey);
+        return string.Equals(status, "stable", StringComparison.OrdinalIgnoreCase)
+            ? title
+            : title + " · " + Strings.T("feature.status." + status);
+    }
+
+    /// <summary>运行环境准备：5 个可自动安装的组件 + 当前状态 + 一键按钮。</summary>
+    private void BuildReadiness()
+    {
+        ReadinessHost.Children.Clear();
+
+        var media = AppServices.Sidecars.Manifest.Find("mediamtx");
+        AddReadinessRow("MediaMTX", media is not null && AppServices.Sidecars.IsInstalled(media),
+            async progress =>
+            {
+                if (media is null) return (false, "CAM_SIDECAR_MISSING");
+                var (ok, code, _) = await AppServices.Sidecars.InstallAsync(media, progress, CancellationToken.None);
+                return (ok, code);
+            });
+
+        AddReadinessRow("FFmpeg", DependencyReady("ffmpeg"),
+            progress => InstallDependencyAsync("ffmpeg", progress));
+        AddReadinessRow("rclone", DependencyReady("rclone"),
+            progress => InstallDependencyAsync("rclone", progress));
+        AddReadinessRow("whisper.cpp", DependencyReady("whisper"),
+            progress => InstallDependencyAsync("whisper", progress));
+        AddReadinessRow(Strings.T("feature.ready.model"), AppServices.WhisperModel.IsInstalled,
+            async progress =>
+            {
+                var result = await AppServices.WhisperModel.DownloadAsync(progress, CancellationToken.None);
+                return (result.Ok, result.Code);
+            });
+    }
+
+    private void AddReadinessRow(string name, bool ready,
+        Func<IProgress<(long Done, long Total)>, Task<(bool Ok, string Code)>> install)
+    {
+        var grid = new Grid { Margin = new Thickness(0, 0, 0, 6) };
+        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+
+        var text = new StackPanel();
+        text.Children.Add(new TextBlock { Text = name, FontWeight = FontWeights.SemiBold });
+        var status = new TextBlock
+        {
+            Text = Strings.T(ready ? "feature.ready.ready" : "feature.ready.missing"),
+            Margin = new Thickness(0, 2, 0, 0),
+        };
+        status.SetResourceReference(TextBlock.FontSizeProperty, "FontSizeXs");
+        status.SetResourceReference(TextBlock.ForegroundProperty, ready ? "OkBrush" : "WarnBrush");
+        text.Children.Add(status);
+        grid.Children.Add(text);
+
+        var button = new Button
+        {
+            Content = Strings.T("feature.ready.install"),
+            IsEnabled = !ready,
+            VerticalAlignment = VerticalAlignment.Center,
+        };
+        button.SetResourceReference(FrameworkElement.StyleProperty, "SecondaryButton");
+        button.Click += async (_, _) =>
+        {
+            var original = button.Content;
+            button.IsEnabled = false;
+            button.Content = Strings.T("feature.ready.installing");
+            try
+            {
+                var progress = new Progress<(long Done, long Total)>(p =>
+                {
+                    if (p.Total > 0)
+                        button.Content = Strings.T("dep.download.progress",
+                            (int)Math.Clamp(p.Done * 100 / p.Total, 0, 100));
+                });
+                var result = await install(progress);
+                if (result.Ok)
+                    AppServices.Toast.Show(Strings.T("feature.ready.done", name), "ok");
+                else
+                    AppServices.Toast.Show(Strings.T("feature.ready.failed", Describe(result.Code, name)), "warn");
+            }
+            catch (Exception ex)
+            {
+                FileLogger.Warn("FeatureHub", $"安装 {name} 失败：{ex.Message}");
+                AppServices.Toast.Show(Strings.T("feature.ready.failed", ex.Message), "warn");
+            }
+            finally
+            {
+                button.Content = original;
+                button.IsEnabled = true;
+                BuildReadiness();
+            }
+        };
+        Grid.SetColumn(button, 1);
+        grid.Children.Add(button);
+        ReadinessHost.Children.Add(grid);
+    }
+
+    private static bool DependencyReady(string id)
+    {
+        var spec = DependencyCore.Find(id);
+        if (spec is null) return false;
+        var path = AppServices.Dependencies.ResolvePath(spec);
+        return !string.IsNullOrWhiteSpace(path) && System.IO.File.Exists(path);
+    }
+
+    private static async Task<(bool Ok, string Code)> InstallDependencyAsync(
+        string id, IProgress<(long Done, long Total)> progress)
+    {
+        var spec = DependencyCore.Find(id);
+        if (spec is null) return (false, "dep.error.invalid");
+        var result = await AppServices.DependencyProvision
+            .EnsureAsync(spec, progress, CancellationToken.None).ConfigureAwait(false);
+        return (result.Ok, result.Code);
+    }
+
+    private static string Describe(string code, string name)
+        => string.IsNullOrWhiteSpace(code) ? Strings.T("dep.error.download")
+            : code.StartsWith("dep.", StringComparison.OrdinalIgnoreCase) ? Strings.T(code, name)
+            : FeatureErrors.Describe(code);
 }

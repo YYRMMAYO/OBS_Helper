@@ -21,6 +21,7 @@ public partial class MobileLinkPage : UserControl, INavigationAware
 {
     private PairingSession? _pairing;
     private string _guestInvite = "";
+    private string _cameraQrKey = "";
     private DateTimeOffset _pairingExpiry;
     private System.Windows.Threading.DispatcherTimer? _tick;
     private bool _subscribed;
@@ -338,6 +339,8 @@ public partial class MobileLinkPage : UserControl, INavigationAware
             CameraUrlText.Text = entry is null
                 ? ""
                 : $"{entry.Version} · {entry.License} · {entry.Source}";
+            CameraQrImage.Source = null;
+            _cameraQrKey = "";
             return;
         }
         var session = manager.Session;
@@ -345,6 +348,8 @@ public partial class MobileLinkPage : UserControl, INavigationAware
         {
             CameraStatusText.Text = "";
             CameraUrlText.Text = "";
+            CameraQrImage.Source = null;
+            _cameraQrKey = "";
             return;
         }
 
@@ -355,9 +360,34 @@ public partial class MobileLinkPage : UserControl, INavigationAware
         CameraStatusText.Text = session.Ready
             ? Strings.T("mobile.camera.running")
             : Strings.T("mobile.camera.obsPending");
+        var srt = PhoneCameraCore.SrtPublishUrl(session.LanAddress, session.SrtPort, session.StreamKey);
+        var rtmp = PhoneCameraCore.RtmpPublishUrl(session.LanAddress, session.RtmpPort, session.StreamKey);
         CameraUrlText.Text =
-            Strings.T("mobile.camera.srt") + ":\n" + PhoneCameraCore.SrtPublishUrl(session.LanAddress, session.SrtPort, session.StreamKey) +
-            "\n" + Strings.T("mobile.camera.rtmp") + ":\n" + PhoneCameraCore.RtmpPublishUrl(session.LanAddress, session.RtmpPort, session.StreamKey);
+            Strings.T("mobile.camera.srt") + ":\n" + srt +
+            "\n" + Strings.T("mobile.camera.rtmp") + ":\n" + rtmp;
+        if (session.WebrtcPort > 0)
+        {
+            CameraUrlText.Text +=
+                "\n" + Strings.T("mobile.camera.video") + ":\n" +
+                PhoneCameraCore.VideoWatchUrl(session.LanAddress, session.WebrtcPort, session.StreamKey) +
+                "\n" + Strings.T("mobile.camera.whip") + ":\n" +
+                PhoneCameraCore.WhipPublishUrl(session.LanAddress, session.WebrtcPort, session.StreamKey);
+        }
+
+        // 推流二维码：手机扫码直接导入 Larix，不再手抄长 URL。
+        if (!string.Equals(_cameraQrKey, srt, StringComparison.Ordinal))
+        {
+            try
+            {
+                CameraQrImage.Source = ToBitmap(QrCodeCore.Encode(srt));
+                _cameraQrKey = srt;
+            }
+            catch (Exception)
+            {
+                CameraQrImage.Source = null;
+                _cameraQrKey = "";
+            }
+        }
     }
 
     private async void OnCameraStartClick(object sender, RoutedEventArgs e)
@@ -382,6 +412,116 @@ public partial class MobileLinkPage : UserControl, INavigationAware
     {
         AppServices.MediaServer.StopAll();
         RefreshCamera();
+    }
+
+    private async void OnCheckCameraPublish(object sender, RoutedEventArgs e)
+    {
+        CameraCheckButton.IsEnabled = false;
+        try
+        {
+            var (ok, code, publishing) = await AppServices.MediaServer
+                .CheckPublishAsync(CancellationToken.None).ConfigureAwait(true);
+            if (!ok)
+            {
+                CameraCheckText.Text = Strings.T("mobile.camera.checkFailed", FeatureErrors.Describe(code));
+                CameraCheckText.SetResourceReference(TextBlock.ForegroundProperty, "WarnBrush");
+                return;
+            }
+            CameraCheckText.Text = publishing
+                ? Strings.T("mobile.camera.publishing")
+                : Strings.T("mobile.camera.notPublishing");
+            CameraCheckText.SetResourceReference(TextBlock.ForegroundProperty,
+                publishing ? "OkBrush" : "WarnBrush");
+        }
+        finally
+        {
+            CameraCheckButton.IsEnabled = true;
+        }
+    }
+
+    private void OnCopySrt(object sender, RoutedEventArgs e) => CopyCameraUrl(srt: true);
+
+    private void OnCopyRtmp(object sender, RoutedEventArgs e) => CopyCameraUrl(srt: false);
+
+    private void OnCopyVideo(object sender, RoutedEventArgs e) => CopyCameraExtra(watch: true);
+
+    private void OnCopyWhip(object sender, RoutedEventArgs e) => CopyCameraExtra(watch: false);
+
+    private void CopyCameraExtra(bool watch)
+    {
+        var session = AppServices.MediaServer.Session;
+        if (session is null)
+        {
+            AppServices.Toast.Show(Strings.T("mobile.camera.sidecarMissing"));
+            return;
+        }
+        if (session.WebrtcPort <= 0)
+        {
+            AppServices.Toast.Show(Strings.T("mobile.camera.videoUnavailable"));
+            return;
+        }
+        var url = watch
+            ? PhoneCameraCore.VideoWatchUrl(session.LanAddress, session.WebrtcPort, session.StreamKey)
+            : PhoneCameraCore.WhipPublishUrl(session.LanAddress, session.WebrtcPort, session.StreamKey);
+        try
+        {
+            Clipboard.SetText(url);
+            AppServices.Toast.Show(Strings.T("mobile.camera.copied"));
+        }
+        catch (Exception)
+        {
+            AppServices.Toast.Show(Strings.T("common.failed", ""));
+        }
+    }
+
+    private void CopyCameraUrl(bool srt)
+    {
+        var session = AppServices.MediaServer.Session;
+        if (session is null)
+        {
+            AppServices.Toast.Show(Strings.T("mobile.camera.sidecarMissing"));
+            return;
+        }
+        var url = srt
+            ? PhoneCameraCore.SrtPublishUrl(session.LanAddress, session.SrtPort, session.StreamKey)
+            : PhoneCameraCore.RtmpPublishUrl(session.LanAddress, session.RtmpPort, session.StreamKey);
+        try
+        {
+            Clipboard.SetText(url);
+            AppServices.Toast.Show(Strings.T("mobile.camera.copied"));
+        }
+        catch (Exception)
+        {
+            AppServices.Toast.Show(Strings.T("common.failed", ""));
+        }
+    }
+
+    private async void OnCameraFirewall(object sender, RoutedEventArgs e)
+    {
+        var entry = AppServices.Sidecars.Manifest.Find("mediamtx");
+        var exe = entry is null ? null : AppServices.Sidecars.InstalledExecutable(entry);
+        if (string.IsNullOrWhiteSpace(exe))
+        {
+            CameraCheckText.Text = Strings.T("mobile.camera.sidecarMissing");
+            return;
+        }
+
+        CameraFirewallButton.IsEnabled = false;
+        CameraCheckText.Text = Strings.T("common.busy");
+        try
+        {
+            var (ok, error) = await FirewallHelper
+                .AllowMediamtxAsync(exe, AppServices.Sidecars.Root, CancellationToken.None)
+                .ConfigureAwait(true);
+            CameraCheckText.Text = ok
+                ? Strings.T("mobile.camera.firewallDone")
+                : Strings.T("mobile.camera.firewallFailed", error) + "\n" + Strings.T("mobile.camera.firewallManual");
+            CameraCheckText.SetResourceReference(TextBlock.ForegroundProperty, ok ? "OkBrush" : "WarnBrush");
+        }
+        finally
+        {
+            CameraFirewallButton.IsEnabled = true;
+        }
     }
 
     private async void OnSidecarClick(object sender, RoutedEventArgs e)

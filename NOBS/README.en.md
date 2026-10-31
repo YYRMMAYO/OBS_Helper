@@ -4,9 +4,9 @@
 
 # OBS Helper · OBS帮助助手
 
-**Current release: V3.5.2** — trustworthy recording / streaming state: the desktop app and the phone page no longer keep showing “Recording / LIVE” after recording stops; the phone status pill distinguishes live from recording; batch status queries now use the correct obs-websocket protocol. See [RELEASE_NOTES_v3.5.2.md](RELEASE_NOTES_v3.5.2.md); the X series `X1031` / `X1031Y2` / `X1031Y3` is available too.
+**Current release: V3.5.3** — V3.5.3 syncs everything from X1031Y3 (except the X-specific icon): in-app one-click setup for plugins and open-source dependencies, local plugin uninstall / migration / adoption, phone-camera publish QR / detection / firewall rule, one-click whisper and model install, plus the GitHub release-asset download fix. See [RELEASE_NOTES_v3.5.3.md](RELEASE_NOTES_v3.5.3.md); the X series `X1031` / `X1031Y2` / `X1031Y3` is available too.
 
-> **V / X series**: V releases use `V3.5.2`-style versions; X releases use `X` + `MMdd` date codes such as `X1031`, with `Y1`/`Y2`/`Y3` appended for a second release on the same day. Both share features and the data folder, but each channel only checks its own tags: V builds only `V*`, X builds only `X*`.
+> **V / X series**: V releases use `V3.5.3`-style versions; X releases use `X` + `MMdd` date codes such as `X1031`, with `Y1`/`Y2`/`Y3` appended for a second release on the same day. Both share features and the data folder (the X series only adds its own icon), but each channel only checks its own tags: V builds only `V*`, X builds only `X*`.
 
 > **This is the developer-facing full documentation for the Windows native WPF version and it lives inside `NOBS/`**;
 > the repository-root [`README.md`](../README.md) is the complete user-facing guide (features · usage · installation),
@@ -19,11 +19,11 @@
 [![Platform](https://img.shields.io/badge/Platform-Windows_7_SP1%2B-0078D6.svg)]()
 [![.NET](https://img.shields.io/badge/.NET-10_%2F_6-512BD4.svg)]()
 [![Stack](https://img.shields.io/badge/Stack-WPF_%2F_C%23-239120.svg)]()
-[![Release](https://img.shields.io/badge/Release-3.5.1-38bdf8.svg)](https://github.com/YYRMMAYO/OBS_Helper/releases)
+[![Release](https://img.shields.io/badge/Release-3.5.3-38bdf8.svg)](https://github.com/YYRMMAYO/OBS_Helper/releases)
 [![OBS](https://img.shields.io/badge/OBS-32.2.2-302E31.svg)](https://github.com/obsproject/obs-studio/releases)
 [![Offline](https://img.shields.io/badge/offline--first-2ea44f.svg)]()
-[![Incremental Update](https://img.shields.io/badge/Incremental%20Update-2.5MB-7dd3fc.svg)]()
-[![Tests](https://img.shields.io/badge/Tests-1790%20passed-2ea44f.svg)]()
+[![Incremental Update](https://img.shields.io/badge/Incremental%20Update-3.9MB-7dd3fc.svg)]()
+[![Tests](https://img.shields.io/badge/Tests-1809%20passed-2ea44f.svg)]()
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](../LICENSE)
 
 **English** · [简体中文](README.md)
@@ -57,12 +57,21 @@ There are two channels for the same app — pick the one that matches how much "
 
 | Channel | Version style | What it is | Where updates come from |
 | --- | --- | --- | --- |
-| **Stable** | `V3.1.1` | **Stable first**: settled features, full regression and release verification — the right choice for everyday streaming / recording | The regular Releases page · the Lanzou mirror · in-app incremental updates |
+| **Stable** | `V3.5.3` | **Stable first**: settled features, full regression and release verification — the right choice for everyday streaming / recording | The regular Releases page · the Lanzou mirror · in-app incremental updates |
 | **DEV (test)** | `01`, `02`, `03` … (**no leading V**) | **Further ahead**: work in progress lands here first and **may include unstable features**, behaviour changes and known bugs | **Only** the **dev Releases page** |
 
-- **Why DEV has its own channel**: DEV builds are numbered by an auto-incrementing **build number**, which is not comparable to the stable `Vmajor.minor.patch` scheme. A DEV build therefore **only recognises plain-number tags (`01`)**, and a stable build **only recognises `V3.1.1`-style tags** — even though both kinds of tag live in the same repository, neither channel mistakes the other for a newer version.
+- **Why DEV has its own channel**: DEV builds are numbered by an auto-incrementing **build number**, which is not comparable to the stable `Vmajor.minor.patch` scheme. A DEV build therefore **only recognises plain-number tags (`01`)**, and a stable build **only recognises `V3.5.3`-style tags** — even though both kinds of tag live in the same repository, neither channel mistakes the other for a newer version.
 - **DEV builds are not packaged and do not use the Lanzou mirror yet**: the update prompt only points you at the dev Releases page (`/releases/tag/0X`). Incremental updates, the Lanzou mirror and installers keep serving stable users exactly as before.
 - **Which one should you pick?** Use stable for day-to-day work; take DEV if you want early features and can live with the occasional broken build. Please report DEV issues through *Help & feedback* and put `DEV 0X` (e.g. `DEV 03`) in the description.
+
+## V3.5.3 highlights
+
+- **One-click plugin / dependency setup**: plugin cards and pasted repos fetch the latest Release in-app; FFmpeg / rclone / whisper / MediaMTX download, verify, extract and auto-fill their paths; a new dependency provisioner avoids duplicate downloads.
+- **Local plugin management**: uninstall (backup first), move between user and global plugin roots, adopt into app management, and open the folder; managed-directory checks and download allowlists hardened.
+- **Phone camera**: publish QR code, publish detection and a one-click firewall rule; MediaMTX WebRTC watch and the OBS WHIP URL; a clear 5-device pairing limit message.
+- **Captions / archiving / review**: pinned-SHA-256 whisper model download; optional Q05 auto-archive after recording; C10 / E06 persistence; a local recording-file index.
+- **Feature Center**: a runtime-preparation card plus “experimental / planned / local” labels on 18 capabilities (stable items get no extra label), with a note explaining the gap to the full implementation.
+- **Download fix**: `release-assets.githubusercontent.com` is allowed again for plugins / dependencies / sidecars, with diagnostic logging on failure.
 
 ## V3.5.2 highlights
 

@@ -1,4 +1,5 @@
 using OBS_Helper.Wpf.Localization;
+using OBS_Helper.Wpf.Services.Security;
 using System.Diagnostics;
 using System.IO;
 using System.Net;
@@ -507,23 +508,16 @@ public sealed class HostBridge
     /// <summary>
     /// 用系统默认浏览器打开外链。
     ///
-    /// 策略（V3.0 与出站请求口径统一）：<b>只放行 http/https，且拒绝本机 / 私网 / 保留地址</b>。
-    /// 知识库、插件目录、排障指引都会经热更新通道下发，里面的链接是**外部数据**，
-    /// 不能因为「是用户点的」就当可信 —— 一条 <c>http://127.0.0.1:xxxx/…</c> 或
-    /// <c>http://192.168.x.x/…</c> 的链接足够把用户引到内网设备的管理页面上。
-    /// 公开站点的普通 https 链接照常放行（白名单只用于「下载 / 更新 / 反馈」这类本产品自己发起的跳转）。
+    /// 策略（V3.6.0 / G04 收紧）：外链来自热更新内容，属于**外部数据**，因此不再「只要是 https 就开」，
+    /// 而是交给 <see cref="ExternalLinkPolicy"/> 做域名白名单校验：
+    /// 只允许 https + 默认端口 + 白名单域名（含子域名），拒绝 userinfo、本机 / 私网与未知站点。
+    /// 拒绝时写日志并返回 false，由调用方显示可复制文本，不把用户带到未知页面。
     /// </summary>
     public Task<bool> OpenExternalAsync(string url)
     {
-        if (!Uri.TryCreate(url, UriKind.Absolute, out var uri)) return Task.FromResult(false);
-        if (uri.Scheme != Uri.UriSchemeHttp && uri.Scheme != Uri.UriSchemeHttps)
+        if (!ExternalLinkPolicy.TryNormalize(url, out var uri))
         {
-            FileLogger.Warn("OpenLink", $"拒绝打开非 http(s) 链接：{url}");
-            return Task.FromResult(false);
-        }
-        if (IsPrivateHost(uri.Host))
-        {
-            FileLogger.Warn("OpenLink", $"拒绝打开指向本机 / 内网的链接：{uri.Host}");
+            FileLogger.Warn("OpenLink", $"拒绝打开白名单外的链接：{url}");
             return Task.FromResult(false);
         }
         try

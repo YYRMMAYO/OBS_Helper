@@ -15,6 +15,7 @@ using OBS_Helper.Wpf.Services.Live;
 using OBS_Helper.Wpf.Services.Obs;
 using OBS_Helper.Wpf.Services.Security;
 using OBS_Helper.Wpf.Services.Shell;
+using OBS_Helper.Wpf.Services.Timing;
 
 namespace OBS_Helper.Wpf.Services.Mobile;
 
@@ -24,12 +25,15 @@ public sealed class MobileSnapshotService
     private readonly ObsConnectionService _obs;
     private readonly TeleprompterService _prompter;
     private readonly SystemMonitorService? _monitor;
+    private readonly TimerService? _timer;
 
-    public MobileSnapshotService(ObsConnectionService obs, TeleprompterService prompter, SystemMonitorService? monitor = null)
+    public MobileSnapshotService(ObsConnectionService obs, TeleprompterService prompter,
+        SystemMonitorService? monitor = null, TimerService? timer = null)
     {
         _obs = obs;
         _prompter = prompter;
         _monitor = monitor;
+        _timer = timer;
     }
 
     public MobileSnapshot Build(MobileDevice? device)
@@ -63,12 +67,29 @@ public sealed class MobileSnapshotService
                 Mirror = settings.MirrorHorizontal,
                 Script = _prompter.Script,
             },
+            Timer = BuildTimerState(),
             System = new MobileSystemState
             {
                 Cpu = sample?.CpuPercent ?? 0,
                 MemoryMb = sample?.MemUsedMb ?? 0,
                 DiskFreeMb = (sample?.LowestDisk?.FreeGb ?? 0) * 1024,
             },
+        };
+    }
+
+    private MobileTimerState BuildTimerState()
+    {
+        var snapshot = _timer?.Snapshot;
+        return new MobileTimerState
+        {
+            State = snapshot?.State.ToString().ToLowerInvariant() ?? "idle",
+            Mode = snapshot?.Mode == TimerMode.CountUp ? "countup" : "countdown",
+            Display = snapshot?.Display ?? "00:00",
+            Secondary = snapshot?.Secondary ?? "",
+            PlannedSeconds = (int)(snapshot?.Planned.TotalSeconds ?? 0),
+            ElapsedSeconds = (int)(snapshot?.Elapsed.TotalSeconds ?? 0),
+            OvertimeSeconds = (int)(snapshot?.Overtime.TotalSeconds ?? 0),
+            Visible = _timer?.IsWindowVisible == true,
         };
     }
 }
@@ -292,19 +313,22 @@ public sealed class MobileCommandRouter
     private readonly MobileSessionStore _sessions;
     private readonly MobileSnapshotService _snapshots;
     private readonly MobilePreviewService _preview;
+    private readonly TimerService _timer;
     private readonly LanPolicy.RateLimiter _limiter;
     private readonly MobileCommandCore.IdempotencyCache _idempotency = new();
     private readonly Action<string>? _revokeCallback;
 
     public MobileCommandRouter(
         ObsConnectionService obs, TeleprompterService prompter, MobileSessionStore sessions,
-        MobileSnapshotService snapshots, MobilePreviewService preview, Action<string>? revokeCallback = null)
+        MobileSnapshotService snapshots, MobilePreviewService preview, TimerService timer,
+        Action<string>? revokeCallback = null)
     {
         _obs = obs;
         _prompter = prompter;
         _sessions = sessions;
         _snapshots = snapshots;
         _preview = preview;
+        _timer = timer;
         _revokeCallback = revokeCallback;
         _limiter = new LanPolicy.RateLimiter(LanPolicy.CommandsPerSecond);
     }
@@ -463,6 +487,15 @@ public sealed class MobileCommandRouter
                 return MobileCommandResult.Success(requestId);
             }
 
+            case MobileCommandCore.TimerToggle:
+                _timer.ToggleStartPause();
+                return MobileCommandResult.Success(requestId, TimerPayload());
+            case MobileCommandCore.TimerReset:
+                _timer.Reset();
+                return MobileCommandResult.Success(requestId, TimerPayload());
+            case MobileCommandCore.TimerState:
+                return MobileCommandResult.Success(requestId, TimerPayload());
+
             case MobileCommandCore.DeviceRevoke:
             {
                 var target = Str("deviceId");
@@ -486,6 +519,23 @@ public sealed class MobileCommandRouter
             default:
                 return Fail(requestId, FeatureErrors.MobCommandUnknown);
         }
+    }
+
+    private JsonElement TimerPayload()
+    {
+        var s = _timer.Snapshot;
+        return JsonSerializer.SerializeToElement(new
+        {
+            state = s.State.ToString().ToLowerInvariant(),
+            mode = s.Mode == TimerMode.CountUp ? "countup" : "countdown",
+            display = s.Display,
+            secondary = s.Secondary,
+            overtime = s.IsOvertime,
+            plannedSeconds = (int)Math.Floor(s.Planned.TotalSeconds),
+            elapsedSeconds = (int)Math.Floor(s.Elapsed.TotalSeconds),
+            overtimeSeconds = (int)Math.Floor(s.Overtime.TotalSeconds),
+            visible = _timer.IsWindowVisible,
+        });
     }
 
     private static MobileCommandResult From(ObsRequestResult result, string requestId)

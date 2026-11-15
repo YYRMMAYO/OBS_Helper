@@ -326,7 +326,7 @@ public partial class ObsConfigPage : UserControl, INavigationAware
             var path = await AppServices.ObsBackups.CreateBackupAsync(
                 Strings.T("obsconfig.manualReason"), includeKey: includeKey, includePluginConfig: true);
             await RefreshBackupListAsync();
-            ShowResult("✅", Strings.T("obsconfig.backupCreated", path));
+            ShowResult("✅", AppendSkipped(Strings.T("obsconfig.backupCreated", path)));
         }
         catch (Exception ex)
         {
@@ -334,6 +334,19 @@ public partial class ObsConfigPage : UserControl, INavigationAware
             App.ReportError(ErrorCodes.BackupFailed, ex);
         }
         finally { SetBusy(false); }
+    }
+
+    /// <summary>
+    /// G02（V3.6.0）：备份/导出成功但个别文件被 OBS 占用时，界面必须如实说「跳过了几个」，
+    /// 不能只显示「备份已创建」让用户以为包是完整的。
+    /// </summary>
+    private static string AppendSkipped(string message)
+    {
+        var skipped = AppServices.ObsBackups.LastSkipped;
+        if (skipped.Count == 0) return message;
+        var sample = string.Join("\n", skipped.Take(8));
+        if (skipped.Count > 8) sample += "\n…";
+        return message + "\n\n" + Strings.T("obsconfig.backupSkipped", skipped.Count) + "\n" + sample;
     }
 
     private async void OnExportClick(object sender, RoutedEventArgs e)
@@ -355,7 +368,7 @@ public partial class ObsConfigPage : UserControl, INavigationAware
         {
             var includeKey = IncludeKeyCheck.IsChecked == true;
             await AppServices.ObsBackups.ExportToAsync(dialog.FileName, includeKey, true);
-            ShowResult("✅", Strings.T("obsconfig.exported", dialog.FileName));
+            ShowResult("✅", AppendSkipped(Strings.T("obsconfig.exported", dialog.FileName)));
         }
         catch (Exception ex)
         {

@@ -89,6 +89,7 @@ public sealed class MobileSnapshot
     public string DeviceName { get; set; } = "";
     public long ObsTimestamp { get; set; }
     public MobileTeleprompterState Teleprompter { get; set; } = new();
+    public MobileTimerState Timer { get; set; } = new();
     public MobileSystemState System { get; set; } = new();
 }
 
@@ -107,6 +108,19 @@ public sealed class MobileTeleprompterState
     public bool Mirror { get; set; }
     public double Offset { get; set; }
     public string Script { get; set; } = "";
+}
+
+/// <summary>导播计时器在手机端的只读状态（V3.6.0）。</summary>
+public sealed class MobileTimerState
+{
+    public string State { get; set; } = "idle";
+    public string Mode { get; set; } = "countdown";
+    public string Display { get; set; } = "00:00";
+    public string Secondary { get; set; } = "";
+    public int PlannedSeconds { get; set; }
+    public int ElapsedSeconds { get; set; }
+    public int OvertimeSeconds { get; set; }
+    public bool Visible { get; set; }
 }
 
 public sealed class MobileSystemState

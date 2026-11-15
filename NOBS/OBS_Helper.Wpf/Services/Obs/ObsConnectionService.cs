@@ -95,6 +95,24 @@ public sealed class ObsConnectionService : IAsyncDisposable
     public List<ObsSceneInfo> Scenes { get; private set; } = new();
     public string CurrentScene { get; private set; } = "";
     public List<ObsInputInfo> AudioInputs { get; private set; } = new();
+
+    private readonly object _meterGate = new();
+    private readonly Dictionary<string, ObsAudioMeterLevel> _audioMeters = new(StringComparer.Ordinal);
+    private DateTime _lastMeterRaiseUtc;
+
+    /// <summary>音量表最新快照（按输入名；服务层已节流到 10 Hz）。</summary>
+    public IReadOnlyDictionary<string, ObsAudioMeterLevel> AudioMeters
+    {
+        get
+        {
+            lock (_meterGate)
+                return new Dictionary<string, ObsAudioMeterLevel>(_audioMeters, StringComparer.Ordinal);
+        }
+    }
+
+    /// <summary>音量表刷新（V3.6.0 / G05）：最多 10 Hz，供控制台 / 小窗画电平条。</summary>
+    public event Action? AudioMetersChanged;
+
     public List<ObsSceneItemInfo> CurrentSceneItems { get; private set; } = new();
     public ObsOutputStatus RecordStatus { get; private set; } = new();
     public ObsOutputStatus StreamStatus { get; private set; } = new();
@@ -212,6 +230,11 @@ public sealed class ObsConnectionService : IAsyncDisposable
         _lastRecordEventUtc = DateTime.MinValue;
         _lastStreamEventActive = false;
         _lastStreamEventUtc = DateTime.MinValue;
+        lock (_meterGate)
+        {
+            _audioMeters.Clear();
+            _lastMeterRaiseUtc = DateTime.MinValue;
+        }
         // 演播室状态也要复位（V3.0 第三轮验证）：OBS 退出后缓存里的 true 会让控制台
         // 一直显示「已启用」，而点「切换」必然失败。
         SetStudioMode(false);
@@ -1176,6 +1199,10 @@ public sealed class ObsConnectionService : IAsyncDisposable
                     break;
                 }
 
+            case "InputVolumeMeters":
+                OnInputVolumeMeters(e);
+                break;
+
             case "SceneListChanged":
             case "SceneCreated":
             case "SceneRemoved":
@@ -1248,6 +1275,23 @@ public sealed class ObsConnectionService : IAsyncDisposable
         CurrentScene = Str(e.Data, "sceneName");
         foreach (var s in Scenes) s.IsCurrent = s.Name == CurrentScene;
         _ = FireAndForget(RefreshSceneItemsAsync);
+    }
+
+    private void OnInputVolumeMeters(ObsEventMessage e)
+    {
+        var levels = ObsAudioMeterCore.Parse(e.Data);
+        if (levels.Count == 0) return;
+
+        lock (_meterGate)
+        {
+            foreach (var level in levels) _audioMeters[level.InputName] = level;
+        }
+
+        // 音量表事件频率高（每个输入每秒数十次），界面只需要 10 Hz。
+        var now = DateTime.UtcNow;
+        if ((now - _lastMeterRaiseUtc).TotalMilliseconds < 100) return;
+        _lastMeterRaiseUtc = now;
+        AudioMetersChanged?.Invoke();
     }
 
     private void OnRecordStateChanged(ObsEventMessage e)

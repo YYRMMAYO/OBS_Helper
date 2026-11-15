@@ -25,7 +25,13 @@ public enum HotkeyAction
     /// <summary>提词器播放 / 暂停（V3.1.0）。</summary>
     TeleprompterPlayPause,
     /// <summary>提词器点击穿透（V3.1.0）。</summary>
-    TeleprompterClickThrough
+    TeleprompterClickThrough,
+    /// <summary>导播计时器开始 / 暂停 / 继续（V3.6.0）。</summary>
+    TimerStartPause,
+    /// <summary>导播计时器重置（V3.6.0）。</summary>
+    TimerReset,
+    /// <summary>显示 / 隐藏计时窗（V3.6.0）。</summary>
+    TimerToggleWindow
 }
 
 /// <summary>
@@ -62,7 +68,10 @@ public sealed class GlobalHotkeyService : IDisposable
         (HotkeyAction.ToggleWindow, 0xC104),
         (HotkeyAction.TeleprompterToggle, 0xC108),
         (HotkeyAction.TeleprompterPlayPause, 0xC109),
-        (HotkeyAction.TeleprompterClickThrough, 0xC10A)
+        (HotkeyAction.TeleprompterClickThrough, 0xC10A),
+        (HotkeyAction.TimerStartPause, 0xC10B),
+        (HotkeyAction.TimerReset, 0xC10C),
+        (HotkeyAction.TimerToggleWindow, 0xC10D)
     };
 
     private readonly LocalStore _store;
@@ -254,6 +263,15 @@ public sealed class GlobalHotkeyService : IDisposable
                 case HotkeyAction.TeleprompterClickThrough:
                     TeleprompterClickThroughRequested?.Invoke();
                     break;
+                case HotkeyAction.TimerStartPause:
+                    AppServices.TimerClock.ToggleStartPause();
+                    break;
+                case HotkeyAction.TimerReset:
+                    AppServices.TimerClock.Reset();
+                    break;
+                case HotkeyAction.TimerToggleWindow:
+                    AppServices.TimerClock.ToggleTimerWindow();
+                    break;
             }
         }
         catch (Exception ex)
@@ -264,7 +282,10 @@ public sealed class GlobalHotkeyService : IDisposable
             if (!_obs.IsConnected && action is not (
                     HotkeyAction.TeleprompterToggle or
                     HotkeyAction.TeleprompterPlayPause or
-                    HotkeyAction.TeleprompterClickThrough))
+                    HotkeyAction.TeleprompterClickThrough or
+                    HotkeyAction.TimerStartPause or
+                    HotkeyAction.TimerReset or
+                    HotkeyAction.TimerToggleWindow))
                 TrayNotify?.Invoke(Strings.T("hotkey.notConnected"));
         }
     }
@@ -284,6 +305,9 @@ public sealed class GlobalHotkeyService : IDisposable
         HotkeyAction.TeleprompterToggle => Settings.TeleprompterToggleEnabled,
         HotkeyAction.TeleprompterPlayPause => Settings.TeleprompterPlayPauseEnabled,
         HotkeyAction.TeleprompterClickThrough => Settings.TeleprompterClickThroughEnabled,
+        HotkeyAction.TimerStartPause => Settings.TimerStartPauseEnabled,
+        HotkeyAction.TimerReset => Settings.TimerResetEnabled,
+        HotkeyAction.TimerToggleWindow => Settings.TimerToggleWindowEnabled,
         _ => false
     };
 
@@ -299,6 +323,9 @@ public sealed class GlobalHotkeyService : IDisposable
         HotkeyAction.TeleprompterToggle => Settings.TeleprompterToggle,
         HotkeyAction.TeleprompterPlayPause => Settings.TeleprompterPlayPause,
         HotkeyAction.TeleprompterClickThrough => Settings.TeleprompterClickThrough,
+        HotkeyAction.TimerStartPause => Settings.TimerStartPause,
+        HotkeyAction.TimerReset => Settings.TimerReset,
+        HotkeyAction.TimerToggleWindow => Settings.TimerToggleWindow,
         _ => Settings.Record
     };
 
@@ -344,7 +371,8 @@ public sealed class GlobalHotkeyService : IDisposable
                  {
                      s.Record, s.Stream, s.VirtualCam, s.SaveReplay, s.MarkRecording,
                      s.MiniWindow, s.ToggleWindow,
-                     s.TeleprompterToggle, s.TeleprompterPlayPause, s.TeleprompterClickThrough
+                     s.TeleprompterToggle, s.TeleprompterPlayPause, s.TeleprompterClickThrough,
+                     s.TimerStartPause, s.TimerReset, s.TimerToggleWindow
                  })
         {
             b.Key = (b.Key ?? "").Trim();

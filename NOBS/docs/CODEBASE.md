@@ -40,7 +40,7 @@ NOBS/
 |---|---|
 | `App.xaml` | 应用资源字典装配（主题、图标、控件样式）。 |
 | `App.xaml.cs` | 启动入口：单实例 Mutex、异常三挂钩（Dispatcher/AppDomain/Unobserved）、启动服务装配、`HeadlessTest` 自检模式、新手引导重播事件。 |
-| `AppServices.cs` | 组合根：**96 个**服务的手工 Lazy 单例装配（刻意不用 DI 容器）。 |
+| `AppServices.cs` | 组合根：**98 个**服务的手工 Lazy 单例装配（刻意不用 DI 容器）。 |
 | `MainWindow.xaml` / `.xaml.cs` | 主窗口：导航框架、页面路由表、页面过渡动画、托盘联动、**新手引导覆盖层**（首启分步引导 + 设置页即时重播；V2.9.1 起每步自动跳转到对应页面并渲染站内/站外跳转按钮）、`OBS_SELFTEST=1` 的 **22 项**无界面自检。 |
 | `app.manifest` | Windows 清单（Per-Monitor V2 DPI 感知、执行级别、支持的 OS 版本）。 |
 
@@ -272,7 +272,7 @@ NOBS/
 
 | 文件 | 职责 |
 |---|---|
-| `Navigation/Routes.cs` | 应用内路由名常量表（**24 条**路由；纯常量、零 WPF 依赖，V2.9.1 起独立成文件，供单测校验引导跳转目标）。 |
+| `Navigation/Routes.cs` | 应用内路由名常量表（**25 条**路由；纯常量、零 WPF 依赖，V2.9.1 起独立成文件，供单测校验引导跳转目标）。 |
 | `Navigation/NavigationService.cs` | 页面导航服务（路由 → 页面实例、参数传递、缓存策略）。 |
 | `Errors/ErrorCodes.cs` | 统一错误码表与用户可读说明（含解决建议）。 |
 
@@ -306,8 +306,8 @@ NOBS/
 | 文件 | 职责 |
 |---|---|
 | `Localization/Strings.cs` | 文案表入口（纯 BCL、零 WPF）：当前语言、`T(key)` / `T(key, args)`、键集、语言标识归一化、缺键回退次序。 |
-| `Localization/StringTableZhHans.cs` | 简体中文文案（默认语言，**3502 条键**，按模块分段）。 |
-| `Localization/StringTableEnUs.cs` | English 文案（**3502 条键**，键集必须与中文表完全一致，有单测钉死）。 |
+| `Localization/StringTableZhHans.cs` | 简体中文文案（默认语言，**3589 条键**，按模块分段）。 |
+| `Localization/StringTableEnUs.cs` | English 文案（**3589 条键**，键集必须与中文表完全一致，有单测钉死）。 |
 | `Localization/ContentAssets.cs` | 随包离线内容的**按语言取资产**统一入口（V2.9.3）：外部缓存 → 当前语言内嵌 → 中文内嵌（最后一级兜底必写 WARN，否则英文用户会「安静地看到中文内容」）。 |
 | `Localization/DataValues.cs` | 数据驱动展示值的**跨语言**判定（severity / level / badge：中文「常见」与英文 `Common` 都认）。 |
 | `Services/LocalizationService.cs` | 语言服务：读 / 写偏好（`prefs.json` 的 `obshelper.language`）、解析首启语言（用户选择 > 安装向导 `language.ini` > 中文）、把整表写进 `Application.Resources`、广播 `Changed`。 |
@@ -391,3 +391,16 @@ NOBS/
 - `Services/Shell/SettingsSections.cs`：设置页分组与 12 页目录（左栏导航 / 卡片名 / 单测共用真源）
 - `Services/Tools/ToolboxSections.cs`：工具箱 7 组 18 节顺序与分组真源
 - `Assets/sidecars.json`：sidecar 清单（manual 项不含哈希，不自动下载）
+
+## V3.6.0 新增源码（按域）
+- `Services/Timer/TimerModels.cs`：计时设置 / 记录 / 快照 / 显示器与矩形模型
+- `Services/Timer/TimerCore.cs`：状态机、倒计时/顺计时、超时、格式化、TSV、clamp、窗口夹取（纯 BCL）
+- `Services/Timer/TimerService.cs`：Stopwatch + 休眠补时、DispatcherTimer、LocalStore 持久化、窗口工厂、OBS 联动、记录
+- `Services/Timer/TimerOverlayServer.cs`：回环 HTTP 叠加页 + 状态 JSON（token / CSP）
+- `Views/TimerPage.xaml(.cs)`、`Views/TimerWindow.xaml(.cs)`：控制页与无边框置顶计时窗
+- `Controls/TimerAttributionDialog.xaml(.cs)`：首次使用署名与许可证链接
+- `Services/Obs/ObsAudioMeterCore.cs`：`InputVolumeMeters` 解析（G05）
+- `Services/Security/ExternalLinkPolicy.cs`：外链域名白名单（G04）
+- `Services/Diagnostics/DiagnosticPackageCore.cs` / `DiagnosticPackageService.cs`：脱敏诊断包（G08）
+- `docs/V3.6.0_AUDIT.md`、`V3.6.0_TECH_GUIDE.md`、`V3.6.0_IMPLEMENTATION_STATUS.md`：审计 / 指引 / 实现状态
+- `third_party/meTimer/LICENSE.md` / `NOTICE.md` 与根 `THIRD_PARTY_NOTICES.md`：署名与许可证边界

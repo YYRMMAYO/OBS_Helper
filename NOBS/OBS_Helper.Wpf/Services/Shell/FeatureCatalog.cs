@@ -28,7 +28,26 @@ public static class FeatureCatalog
 
     public static readonly FeatureModule[] Modules =
     {
-        // ------------------------------------------------------------ 本版新增
+        // ------------------------------------------------------------ V3.6.0 新增
+        new("timer", "feature.module.timer.title", "feature.module.timer.desc", "IconGeomTimer",
+            "timer", "", "V3.6.0", false,
+            new FeatureEntry[]
+            {
+                new("T01", "feature.T01", "timer"),
+                new("T02", "feature.T02", "timer"),
+                new("T03", "feature.T03", "timer"),
+                new("T04", "feature.T04", "timer"),
+                new("T05", "feature.T05", "timer"),
+                new("T06", "feature.T06", "timer"),
+                new("T07", "feature.T07", "timer"),
+                new("T08", "feature.T08", "timer"),
+                new("T09", "feature.T09", "timer"),
+                new("T10", "feature.T10", "timer"),
+                new("T11", "feature.T11", "timer"),
+                new("T12", "feature.T12", "timer"),
+            }),
+
+        // ------------------------------------------------------------ 本版新增（V3.4.0 基线）
         new("mobile", "feature.module.mobile.title", "feature.module.mobile.desc", "IconGeomDeviceMobile",
             "mobile", "remote", CurrentVersion, true,
             new FeatureEntry[]

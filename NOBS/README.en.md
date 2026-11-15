@@ -4,9 +4,9 @@
 
 # OBS Helper · OBS帮助助手
 
-**Current release: V3.5.3** — V3.5.3 syncs everything from X1031Y3 (except the X-specific icon): in-app one-click setup for plugins and open-source dependencies, local plugin uninstall / migration / adoption, phone-camera publish QR / detection / firewall rule, one-click whisper and model install, plus the GitHub release-asset download fix. See [RELEASE_NOTES_v3.5.3.md](RELEASE_NOTES_v3.5.3.md); the X series `X1031` / `X1031Y2` / `X1031Y3` is available too.
+**Current release: V3.6.0** — adds a director timer (dual windows, countdown/count-up, overtime, multi-monitor, records + TSV, hotkeys, OBS/phone linkage, local browser overlay), console audio meters, a sanitized diagnostic package, an external-link allowlist, a ColorCheck path guard and honest backup-skip reporting. See [RELEASE_NOTES_v3.6.0.md](RELEASE_NOTES_v3.6.0.md).
 
-> **V / X series**: V releases use `V3.5.3`-style versions; X releases use `X` + `MMdd` date codes such as `X1031`, with `Y1`/`Y2`/`Y3` appended for a second release on the same day. Both share features and the data folder (the X series only adds its own icon), but each channel only checks its own tags: V builds only `V*`, X builds only `X*`.
+> **V / X series**: V releases use `V3.6.0`-style versions; X releases use `X` + `MMdd` date codes such as `X1031`, with `Y1`/`Y2`/`Y3` appended for a second release on the same day. Both share features and the data folder (the X series only adds its own icon), but each channel only checks its own tags: V builds only `V*`, X builds only `X*`.
 
 > **This is the developer-facing full documentation for the Windows native WPF version and it lives inside `NOBS/`**;
 > the repository-root [`README.md`](../README.md) is the complete user-facing guide (features · usage · installation),
@@ -19,11 +19,11 @@
 [![Platform](https://img.shields.io/badge/Platform-Windows_7_SP1%2B-0078D6.svg)]()
 [![.NET](https://img.shields.io/badge/.NET-10_%2F_6-512BD4.svg)]()
 [![Stack](https://img.shields.io/badge/Stack-WPF_%2F_C%23-239120.svg)]()
-[![Release](https://img.shields.io/badge/Release-3.5.3-38bdf8.svg)](https://github.com/YYRMMAYO/OBS_Helper/releases)
+[![Release](https://img.shields.io/badge/Release-3.6.0-38bdf8.svg)](https://github.com/YYRMMAYO/OBS_Helper/releases)
 [![OBS](https://img.shields.io/badge/OBS-32.2.2-302E31.svg)](https://github.com/obsproject/obs-studio/releases)
 [![Offline](https://img.shields.io/badge/offline--first-2ea44f.svg)]()
 [![Incremental Update](https://img.shields.io/badge/Incremental%20Update-3.9MB-7dd3fc.svg)]()
-[![Tests](https://img.shields.io/badge/Tests-1809%20passed-2ea44f.svg)]()
+[![Tests](https://img.shields.io/badge/Tests-1869%20passed-2ea44f.svg)]()
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](../LICENSE)
 
 **English** · [简体中文](README.md)
@@ -32,7 +32,7 @@
 
 > **The default branch `master` is the stable channel**: fully regression-tested and verified before release —
 > the right choice for everyday streaming and recording. There are only two release channels: **V series**
-> (`Vmajor.minor.patch`, e.g. `V3.5.3`) and **X series** (`X` + `MMdd`, e.g. `X1031`). There is no DEV test branch or test tag.
+> (`Vmajor.minor.patch`, e.g. `V3.6.0`) and **X series** (`X` + `MMdd`, e.g. `X1031`). There is no DEV test branch or test tag.
 
 > **What is it?** OBS Helper is a native **Windows (WPF)** desktop app that helps you get unstuck with OBS Studio — find a fix for that weird stutter, analyze your OBS logs, or control scenes, recording and streaming right from a hotkey or a tiny always-on-top window. The entire knowledge base, troubleshooting guide and log-analysis rules are **embedded in the app**: everything works with **zero internet connection**.
 >
@@ -57,14 +57,24 @@ There are two release channels for the same app:
 
 | Channel | Version style | What it is | Where updates come from |
 | --- | --- | --- | --- |
-| **V series** (`master`) | `V3.5.3` | **Stable first**: settled features, full regression and release verification — the right choice for everyday streaming / recording | The regular Releases page · the Lanzou mirror · in-app incremental updates |
+| **V series** (`master`) | `V3.6.0` | **Stable first**: settled features, full regression and release verification — the right choice for everyday streaming / recording | The regular Releases page · the Lanzou mirror · in-app incremental updates |
 | **X series** (`master`) | `X1031` / `X1031Y2` / `X1031Y3` | **Independent major line**: `X` + `MMdd` date codes and the X-specific icon; updates only look at `X` tags | X-series Releases · in-app update |
 
 - **Both series share features and the data folder**: install folder, assembly name and `%LocalAppData%\OBS_Helper` are unchanged, so the upgrade path is identical.
-- **Channel filtering happens in the parser**: V builds only recognise `V3.5.3`-style tags; X builds only recognise `X1031`-style tags. They never mistake one another for a newer version.
+- **Channel filtering happens in the parser**: V builds only recognise `V3.6.0`-style tags; X builds only recognise `X1031`-style tags. They never mistake one another for a newer version.
 - **X version rule**: the four digits after `X` are an `MMdd` date (`X1031` = October 31). A second release on the same day appends `Y1`, `Y2`, `Y3`…; update checks compare the date first, then the Y revision, so `X1031Y2 > X1031` and `X1101 > X1031Y99`.
 - **X update prompt**: when an update is found, the dialog fetches this release's notes from GitHub and shows them in place; a failed fetch never blocks checking or downloading.
 - **There is no DEV test channel**: no `dev` branch, no plain-number test tags and no test-only release assets.
+
+## V3.6.0 highlights
+
+> Full details: [RELEASE_NOTES_v3.6.0.md](RELEASE_NOTES_v3.6.0.md).
+
+- **Director timer**: control page + frameless always-on-top timer window; countdown stops at `00:00` while the control page keeps counting overtime; count-up turns red past the plan. Multi-monitor, opacity / font size / hours, pause-orange / overtime-red, drag & resize, position memory, capture exclusion, click-through; newest-first records + TSV; global hotkeys; optional OBS linkage; local browser overlay; phone remote start/pause/reset.
+- **Attribution**: the timer's feature design references zanjie1999's meTimer; first-use dialog, About page, [`third_party/meTimer`](third_party/meTimer/NOTICE.md) and the root [`THIRD_PARTY_NOTICES.md`](../THIRD_PARTY_NOTICES.md) keep the author, repository and Meow License 1.1 links. The implementation is independent (no source copied).
+- **Audio meters / diagnostics / security**: console `InputVolumeMeters` bars; one-click sanitized diagnostic package; HTTPS external-link allowlist; ColorCheck profile path guard; honest backup-skip reporting; Release builds drop pdb and use optimal compression.
+- **Quality**: 1869 unit tests, 37 headless self-test items, 52 XAML files / 2868 resource references, 3589 bilingual string keys.
+- **Deferred to V3.7**: plugin-query batch backoff, full first-screen sync-IO cleanup, safe mode, one-click hotkey conflict reset, in-app changelog and the remaining N-series polish.
 
 ## V3.5.3 highlights
 

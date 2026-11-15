@@ -41,9 +41,9 @@ public sealed class ColorCheckService
             }
 
             var globalIniText = TryRead(Path.Combine(loc.ConfigDir, "global.ini"));
-            var profileDir = PreflightCheckCore.ParseIni(globalIniText ?? "")
+            var rawProfileDir = PreflightCheckCore.ParseIni(globalIniText ?? "")
                 .TryGetValue("basic.profiledir", out var dir) ? dir : null;
-            if (string.IsNullOrWhiteSpace(profileDir))
+            if (string.IsNullOrWhiteSpace(rawProfileDir))
             {
                 return new ColorCheckResult
                 {
@@ -52,8 +52,20 @@ public sealed class ColorCheckService
                 };
             }
 
+            // G01（V3.6.0）：global.ini 可被「导入备份包」改写，profile 目录名必须先收敛成叶子名，
+            // 否则 ../.. 或绝对路径会把只读体检变成越界读。
+            var profileDir = ObsSafePath.SafeProfileDir(rawProfileDir);
+            if (profileDir is null)
+            {
+                return new ColorCheckResult
+                {
+                    Ok = false,
+                    Message = Strings.T("colorcheck.service.invalidProfile", rawProfileDir)
+                };
+            }
+
             var basicIniText = TryRead(Path.Combine(
-                loc.ConfigDir, "basic", "profiles", profileDir!, "basic.ini"));
+                loc.ConfigDir, "basic", "profiles", profileDir, "basic.ini"));
             if (basicIniText is null)
             {
                 return new ColorCheckResult

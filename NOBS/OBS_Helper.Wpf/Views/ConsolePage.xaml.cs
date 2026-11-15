@@ -30,6 +30,7 @@ public partial class ConsolePage : UserControl, INavigationAware
         public Button MuteButton = null!;
         public Slider VolumeSlider = null!;
         public TextBlock ValueText = null!;
+        public ProgressBar Meter = null!;
     }
 
     private static readonly CultureInfo Inv = CultureInfo.InvariantCulture;
@@ -78,6 +79,7 @@ public partial class ConsolePage : UserControl, INavigationAware
     private void OnLoaded(object sender, RoutedEventArgs e)
     {
         AppServices.Obs.StateChanged += OnObsStateChanged;
+        AppServices.Obs.AudioMetersChanged += OnAudioMetersChanged;
         AppServices.Timer.StateChanged += OnTimerStateChanged;
         // 录制中的每秒刷新（时长 / 剩余）由简单录像服务广播 —— 它只在录制时起计时器；
         // 不订它的话，从首页开录后切到本页，这里的时长会停在最后一次 OBS 状态事件那一刻。
@@ -91,6 +93,7 @@ public partial class ConsolePage : UserControl, INavigationAware
     {
         // 页面缓存复用，不退订就会越订越多；定时器不停就会在别的页面继续打请求
         AppServices.Obs.StateChanged -= OnObsStateChanged;
+        AppServices.Obs.AudioMetersChanged -= OnAudioMetersChanged;
         AppServices.Timer.StateChanged -= OnTimerStateChanged;
         AppServices.SimpleRecord.StateChanged -= OnSimpleRecordStateChanged;
         AppServices.Obs.StudioModeChanged -= OnStudioModeChanged;
@@ -135,6 +138,23 @@ public partial class ConsolePage : UserControl, INavigationAware
 
     /// <summary>连接服务可能在后台线程通知，必须回 UI 线程再动控件。</summary>
     private void OnObsStateChanged() => Dispatcher.BeginInvoke(new Action(Render));
+
+    private void OnAudioMetersChanged()
+    {
+        if (!Dispatcher.CheckAccess())
+        {
+            Dispatcher.BeginInvoke(new Action(RefreshMeters));
+            return;
+        }
+        RefreshMeters();
+    }
+
+    private void RefreshMeters()
+    {
+        var meters = AppServices.Obs.AudioMeters;
+        foreach (var (name, row) in _audioRows)
+            row.Meter.Value = meters.TryGetValue(name, out var level) ? level.Mul : 0;
+    }
 
     /// <summary>定时器每秒刷新倒计时（定时器本身跑在 UI 线程）。</summary>
     private void OnTimerStateChanged() => RenderTimer();
@@ -459,6 +479,7 @@ public partial class ConsolePage : UserControl, INavigationAware
                 row.VolumeSlider.Value = Math.Clamp(input.VolumeDb, -100d, 0d);
             }
             row.ValueText.Text = row.VolumeSlider.Value.ToString("0", Inv);
+            row.Meter.Value = obs.AudioMeters.TryGetValue(input.Name, out var level) ? level.Mul : 0;
         }
         _suppressInput = false;
 
@@ -468,6 +489,8 @@ public partial class ConsolePage : UserControl, INavigationAware
     private FrameworkElement BuildAudioRow(ObsInputInfo input)
     {
         var grid = new Grid { Margin = new Thickness(0, 0, 0, 10) };
+        grid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+        grid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(4) });
         grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
         grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
         grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
@@ -546,11 +569,30 @@ public partial class ConsolePage : UserControl, INavigationAware
         grid.Children.Add(valueText);
         grid.Children.Add(syncButton);
 
+        // V3.6.0 / G05：音量表。OBS 的 InputVolumeMeters 已订阅；这里只画 0–1 的电平条。
+        var meter = new ProgressBar
+        {
+            Minimum = 0,
+            Maximum = 1,
+            Value = 0,
+            Height = 3,
+            Margin = new Thickness(0, 2, 0, 0),
+            VerticalAlignment = VerticalAlignment.Bottom,
+            IsHitTestVisible = false,
+        };
+        meter.SetResourceReference(ProgressBar.ForegroundProperty, "BrandBrush");
+        meter.SetResourceReference(ProgressBar.BackgroundProperty, "LineBrush");
+        Grid.SetRow(meter, 1);
+        Grid.SetColumn(meter, 0);
+        Grid.SetColumnSpan(meter, 5);
+        grid.Children.Add(meter);
+
         _audioRows[input.Name] = new AudioRow
         {
             MuteButton = muteButton,
             VolumeSlider = slider,
-            ValueText = valueText
+            ValueText = valueText,
+            Meter = meter,
         };
         return grid;
     }

@@ -80,7 +80,7 @@ public enum ObsEventSubscription
     SceneItemTransformChanged = 1 << 19,
 
     /// <summary>助手默认订阅集合：足以驱动控制面板与状态监控，且不含高频事件。</summary>
-    Default = General | Config | Scenes | Inputs | Outputs | SceneItems | Ui
+    Default = General | Config | Scenes | Inputs | Outputs | SceneItems | Ui | InputVolumeMeters
 }
 
 /// <summary>obs-websocket 请求返回码（RequestStatus）中的常见取值。</summary>

@@ -46,6 +46,7 @@
     <Compile Include="..\OBS_Helper.Wpf\Services\Obs\ObsReconnectPolicy.cs" Link="Linked\ObsReconnectPolicy.cs" />
     <!-- V3.5.2：输出状态「事件 vs 查询」对账（纯 BCL） -->
     <Compile Include="..\OBS_Helper.Wpf\Services\Obs\ObsOutputStateCore.cs" Link="Linked\ObsOutputStateCore.cs" />
+    <Compile Include="..\OBS_Helper.Wpf\Services\Obs\ObsAudioMeterCore.cs" Link="Linked\ObsAudioMeterCore.cs" />
     <!-- V3.1.0 一键录制：连接结果分类 / 重试策略（纯 BCL） -->
     <Compile Include="..\OBS_Helper.Wpf\Services\Obs\ObsEnsureCore.cs" Link="Linked\ObsEnsureCore.cs" />
     <Compile Include="..\OBS_Helper.Wpf\Services\Ai\DiagnosticSeverity.cs" Link="Linked\DiagnosticSeverity.cs" />
@@ -100,6 +101,7 @@
     <Compile Include="..\OBS_Helper.Wpf\Services\Diagnostics\ChecklistAutoFillCore.cs" Link="Linked\Diagnostics\ChecklistAutoFillCore.cs" />
     <Compile Include="..\OBS_Helper.Wpf\Services\Diagnostics\MachineProfileCore.cs" Link="Linked\Diagnostics\MachineProfileCore.cs" />
     <Compile Include="..\OBS_Helper.Wpf\Services\Diagnostics\SessionReviewCore.cs" Link="Linked\Diagnostics\SessionReviewCore.cs" />
+    <Compile Include="..\OBS_Helper.Wpf\Services\Diagnostics\DiagnosticPackageCore.cs" Link="Linked\Diagnostics\DiagnosticPackageCore.cs" />
     <Compile Include="..\OBS_Helper.Wpf\Services\Search\SearchQueryCore.cs" Link="Linked\Search\SearchQueryCore.cs" />
     <Compile Include="..\OBS_Helper.Wpf\Services\Plugins\PluginCompatCore.cs" Link="Linked\Plugins\PluginCompatCore.cs" />
     <Compile Include="..\OBS_Helper.Wpf\Localization\LanguageRegistry.cs" Link="Linked\LanguageRegistry.cs" />
@@ -160,6 +162,7 @@
     <Compile Include="..\OBS_Helper.Wpf\Services\Plugins\GitHubSearchCore.cs" Link="Linked\Plugins\GitHubSearchCore.cs" />
     <!-- V3.4.0 批次 0：局域网安全策略 / 手写 HTTP 与 WS 报文 / 二维码 / sidecar 清单（纯 BCL） -->
     <Compile Include="..\OBS_Helper.Wpf\Services\Security\LanPolicy.cs" Link="Linked\Security\LanPolicy.cs" />
+    <Compile Include="..\OBS_Helper.Wpf\Services\Security\ExternalLinkPolicy.cs" Link="Linked\Security\ExternalLinkPolicy.cs" />
     <Compile Include="..\OBS_Helper.Wpf\Services\Security\HttpWireCore.cs" Link="Linked\Security\HttpWireCore.cs" />
     <Compile Include="..\OBS_Helper.Wpf\Services\Security\WebSocketFrameCore.cs" Link="Linked\Security\WebSocketFrameCore.cs" />
     <Compile Include="..\OBS_Helper.Wpf\Services\Mobile\QrCodeCore.cs" Link="Linked\Mobile\QrCodeCore.cs" />
@@ -183,6 +186,10 @@
     <Compile Include="..\OBS_Helper.Wpf\Services\Automation\AutomationCore.cs" Link="Linked\Automation\AutomationCore.cs" />
     <Compile Include="..\OBS_Helper.Wpf\Services\Live\MultiCamCore.cs" Link="Linked\Live\MultiCamCore.cs" />
     <Compile Include="..\OBS_Helper.Wpf\Services\Live\ThemeMarketService.cs" Link="Linked\Live\ThemeMarketService.cs" />
+
+    <!-- V3.6.0：计时器纯逻辑（零 WPF / 零 IO，时间由测试注入） -->
+    <Compile Include="..\OBS_Helper.Wpf\Services\Timer\TimerModels.cs" Link="Linked\Timer\TimerModels.cs" />
+    <Compile Include="..\OBS_Helper.Wpf\Services\Timer\TimerCore.cs" Link="Linked\Timer\TimerCore.cs" />
   </ItemGroup>
 
   <ItemGroup>

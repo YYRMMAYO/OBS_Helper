@@ -67,6 +67,7 @@ public partial class MainWindow : Window
             [Routes.Insights] = (null, "page.insights.title", "page.insights.subtitle"),
             [Routes.Stream] = (null, "page.stream.title", "page.stream.subtitle"),
             [Routes.Automation] = (null, "page.automation.title", "page.automation.subtitle"),
+            [Routes.Timer] = (null, "page.timer.title", "page.timer.subtitle"),
         };
 
         RegisterRoutes();
@@ -179,6 +180,8 @@ public partial class MainWindow : Window
         _nav.Register(Routes.Insights, () => new InsightsPage());
         _nav.Register(Routes.Stream, () => new StreamPage());
         _nav.Register(Routes.Automation, () => new AutomationPage());
+        // V3.6.0：导播计时器（功能中心 / 工具箱入口，不占一级导航）
+        _nav.Register(Routes.Timer, () => new TimerPage());
     }
 
     private void OnWallpaperNotice(string message)
@@ -883,6 +886,7 @@ public partial class MainWindow : Window
             (Routes.Insights, null),
             (Routes.Stream, null),
             (Routes.Automation, null),
+            (Routes.Timer, null),
         };
 
         foreach (var (route, param) in cases)

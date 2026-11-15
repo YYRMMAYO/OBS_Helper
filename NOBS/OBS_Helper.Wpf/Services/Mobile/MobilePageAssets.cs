@@ -105,6 +105,11 @@ public static class MobilePageAssets
         ["scriptTooLong"] = ("提词稿不能超过 20000 字", "Script must be 20000 characters or fewer"),
         ["scriptRequired"] = ("提词稿不能为空", "Script cannot be empty"),
         ["scriptDirty"] = ("有未保存的修改", "Unsaved changes"),
+        ["timerTitle"] = ("导播计时器", "Director timer"),
+        ["timerState"] = ("当前计时", "Current"),
+        ["timerOvertime"] = ("超时", "Overtime"),
+        ["timerToggle"] = ("开始 / 暂停", "Start / pause"),
+        ["timerReset"] = ("重置", "Reset"),
         ["offsetUp"] = ("上移", "Scroll up"),
         ["offsetDown"] = ("下移", "Scroll down"),
         ["openLight"] = ("打开补光 / 色卡", "Open light & color card"),
@@ -294,6 +299,15 @@ h2:first-child{margin-top:16px}
   <div class="timers">
     <div class="timer"><div class="k" data-i18n="record"></div><div class="v" data-timer="record">00:00:00</div></div>
     <div class="timer"><div class="k" data-i18n="stream"></div><div class="v" data-timer="stream">00:00:00</div></div>
+  </div>
+  <h2 data-i18n="timerTitle"></h2>
+  <div class="timers">
+    <div class="timer"><div class="k" data-i18n="timerState"></div><div class="v" id="timerDisplay">--:--</div></div>
+    <div class="timer"><div class="k" data-i18n="timerOvertime"></div><div class="v" id="timerOvertime">-</div></div>
+  </div>
+  <div class="grid actions">
+    <button class="btn" id="btnTimerToggle" type="button"></button>
+    <button class="btn" id="btnTimerReset" type="button"></button>
   </div>
   <h2 data-i18n="scenes"></h2>
   <div id="scenes" class="grid"></div>
@@ -621,6 +635,7 @@ function render(s) {
   renderAudio(s);
   renderPrompt(s);
   renderStats(s);
+  renderTimer(s);
   renderLabels();
 }
 function renderTally(s) {
@@ -761,6 +776,24 @@ function renderStats(s) {
   if ($("statMem")) $("statMem").textContent = formatMb(sys.memoryMb);
   if ($("statDisk")) $("statDisk").textContent = formatMb(sys.diskFreeMb);
 }
+function fmtSeconds(value) {
+  const total = Math.max(0, Math.floor(Number(value) || 0));
+  const h = Math.floor(total / 3600), m = Math.floor((total % 3600) / 60), sec = total % 60;
+  const mm = String(m).padStart(2, "0"), ss = String(sec).padStart(2, "0");
+  return h > 0 ? String(h).padStart(2, "0") + ":" + mm + ":" + ss : mm + ":" + ss;
+}
+function renderTimer(s) {
+  const tm = s.timer || {};
+  if ($("timerDisplay")) $("timerDisplay").textContent = tm.display || "--:--";
+  if ($("timerOvertime")) $("timerOvertime").textContent = (tm.overtimeSeconds > 0) ? fmtSeconds(tm.overtimeSeconds) : "-";
+  const toggle = $("btnTimerToggle");
+  if (toggle) {
+    toggle.textContent = tm.state === "running" ? t("pause") : t("timerToggle");
+    toggle.disabled = !canOperate();
+  }
+  const reset = $("btnTimerReset");
+  if (reset) { reset.textContent = t("timerReset"); reset.disabled = !canOperate(); }
+}
 function renderLabels() {
   const s = state.snapshot || {};
   if (!state.snapshot) {
@@ -877,6 +910,11 @@ $("pReloadScript").addEventListener("click", () => { state.scriptDirty = false; 
 $("pPlay").addEventListener("click", () => send("teleprompter.play"));
 $("pPause").addEventListener("click", () => send("teleprompter.pause"));
 $("pRestart").addEventListener("click", () => send("teleprompter.restart"));
+$("btnTimerToggle").addEventListener("click", () => send("timer.toggle"));
+$("btnTimerReset").addEventListener("click", () => {
+  if (!confirm(t("timerReset") + "?")) return;
+  send("timer.reset", { confirm: true });
+});
 function nudge(delta) {
   const p = (state.snapshot && state.snapshot.teleprompter) || {};
   const next = Math.max(0, Number(p.offset || 0) + delta);

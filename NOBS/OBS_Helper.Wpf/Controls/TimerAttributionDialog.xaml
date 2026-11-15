@@ -1,0 +1,25 @@
+<Window x:Class="OBS_Helper.Wpf.Controls.TimerAttributionDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="{DynamicResource Loc.timer.attribution.title}"
+        Width="560" SizeToContent="Height" ResizeMode="NoResize"
+        WindowStartupLocation="CenterOwner" ShowInTaskbar="False"
+        Background="{DynamicResource SurfaceBrush}">
+  <Border Padding="22">
+    <StackPanel>
+      <TextBlock Style="{StaticResource H2Text}" Text="{DynamicResource Loc.timer.attribution.title}" />
+      <TextBlock Style="{StaticResource BodyText}" TextWrapping="Wrap" Margin="0,12,0,0"
+                 Text="{DynamicResource Loc.timer.attribution.body}" />
+      <TextBlock Style="{StaticResource CaptionText}" TextWrapping="Wrap" Margin="0,10,0,0"
+                 Text="{DynamicResource Loc.timer.attribution.license}" />
+      <WrapPanel Margin="0,14,0,0">
+        <Button Style="{StaticResource SecondaryButton}" Content="{DynamicResource Loc.timer.attribution.openProject}"
+                Click="OnOpenProject" Margin="0,0,8,0" />
+        <Button Style="{StaticResource SecondaryButton}" Content="{DynamicResource Loc.timer.attribution.openLicense}"
+                Click="OnOpenLicense" />
+      </WrapPanel>
+      <Button Style="{StaticResource PrimaryButton}" Content="{DynamicResource Loc.timer.attribution.ack}"
+              Click="OnAck" HorizontalAlignment="Right" MinWidth="110" Margin="0,18,0,0" IsDefault="True" />
+    </StackPanel>
+  </Border>
+</Window>

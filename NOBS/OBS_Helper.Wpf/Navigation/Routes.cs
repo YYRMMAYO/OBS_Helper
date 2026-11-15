@@ -61,4 +61,8 @@ public static class Routes
     public const string Stream = "stream";
     /// <summary>自动化与生态：硬件 / 灯光 / 市场 / 团队 / 数字人 / AI 导播（V3.4.0）。</summary>
     public const string Automation = "automation";
+
+    // ---------------------------------------------------------------- V3.6.0
+    /// <summary>导播计时器（V3.6.0）：倒计时 / 顺计时、计时窗、记录与 OBS/手机联动。</summary>
+    public const string Timer = "timer";
 }

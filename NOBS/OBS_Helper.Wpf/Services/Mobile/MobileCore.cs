@@ -95,6 +95,9 @@ public static class MobileCommandCore
     public const string TeleprompterMirror = "teleprompter.mirror";
     public const string TeleprompterRestart = "teleprompter.restart";
     public const string TeleprompterSet = "teleprompter.set";
+    public const string TimerToggle = "timer.toggle";
+    public const string TimerReset = "timer.reset";
+    public const string TimerState = "timer.state";
     public const string DeviceRevoke = "device.revoke";
     public const string AppPanic = "app.panic";
 
@@ -123,6 +126,9 @@ public static class MobileCommandCore
             [TeleprompterMirror] = new(TeleprompterMirror, MobileRole.Operator, false, new[] { "mirror" }),
             [TeleprompterRestart] = new(TeleprompterRestart, MobileRole.Operator, false, Array.Empty<string>()),
             [TeleprompterSet] = new(TeleprompterSet, MobileRole.Operator, false, new[] { "text" }),
+            [TimerToggle] = new(TimerToggle, MobileRole.Operator, false, Array.Empty<string>()),
+            [TimerReset] = new(TimerReset, MobileRole.Operator, true, new[] { "confirm" }),
+            [TimerState] = new(TimerState, MobileRole.Viewer, false, Array.Empty<string>()),
             [DeviceRevoke] = new(DeviceRevoke, MobileRole.Admin, true, new[] { "deviceId" }),
             [AppPanic] = new(AppPanic, MobileRole.Admin, true, new[] { "stopStream" }),
         };
@@ -236,6 +242,10 @@ public static class MobileCommandCore
             case DeviceRevoke:
                 if (Str("deviceId").Length == 0) return Validation.Fail(FeatureErrors.MobCommandInvalid);
                 break;
+            case TimerReset:
+                // 重置会丢弃当前一轮（不写记录），必须显式确认。
+                if (!Bool("confirm")) return Validation.Fail(FeatureErrors.MobCommandInvalid);
+                break;
         }
         return Validation.Pass();
     }
@@ -296,6 +306,7 @@ public static class MobileCommandCore
         var c = (command ?? "").Trim().ToLowerInvariant();
         if (c == StateGet) return false;
         if (c.StartsWith("teleprompter.", StringComparison.Ordinal)) return false;
+        if (c.StartsWith("timer.", StringComparison.Ordinal)) return false;
         return true;
     }
 

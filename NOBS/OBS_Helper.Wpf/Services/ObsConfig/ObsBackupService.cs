@@ -58,8 +58,13 @@ public sealed class ObsBackupService
     private const double MaxRatio = 200.0;                       // 压缩比上限 200:1
 
     private readonly ObsPathService _paths;
+    private List<string>? _skippedDuringBuild;
+    private IReadOnlyList<string> _lastSkipped = Array.Empty<string>();
 
     public ObsBackupService(ObsPathService paths) => _paths = paths;
+
+    /// <summary>最近一次备份 / 导出中被跳过的条目（zip 内相对路径）；供界面如实上报，不再「报成功但漏文件」。</summary>
+    public IReadOnlyList<string> LastSkipped => _lastSkipped;
 
     // ---------------------------------------------------------------- 备份 / 导出
 
@@ -102,19 +107,29 @@ public sealed class ObsBackupService
         var scenes = new List<string>();
         var profiles = new List<string>();
         var redacted = new List<string>();
+        var skipped = new List<string>();
+        _skippedDuringBuild = skipped;
         int entryCount = 0;
 
-        using (var zip = ZipFile.Open(zipPath, ZipArchiveMode.Create))
+        try
         {
-            var configDir = loc.ConfigDir;
+            using (var zip = ZipFile.Open(zipPath, ZipArchiveMode.Create))
+            {
+                var configDir = loc.ConfigDir;
 
-            AddSceneCollections(zip, configDir, scenes, ref entryCount, p);
-            AddProfiles(zip, configDir, includeKey, profiles, redacted, ref entryCount, p);
-            AddGlobalSettings(zip, configDir, ref entryCount, p);
-            if (includePluginConfig)
-                AddPluginConfig(zip, configDir, ref entryCount, p);
+                AddSceneCollections(zip, configDir, scenes, ref entryCount, p);
+                AddProfiles(zip, configDir, includeKey, profiles, redacted, ref entryCount, p);
+                AddGlobalSettings(zip, configDir, ref entryCount, p);
+                if (includePluginConfig)
+                    AddPluginConfig(zip, configDir, ref entryCount, p);
 
-            AddManifest(zip, loc, includeKey, includePluginConfig, reason, scenes, profiles, redacted, entryCount, p);
+                AddManifest(zip, loc, includeKey, includePluginConfig, reason, scenes, profiles, redacted, entryCount, p);
+            }
+        }
+        finally
+        {
+            _lastSkipped = skipped;
+            _skippedDuringBuild = null;
         }
     }
 
@@ -623,7 +638,7 @@ public sealed class ObsBackupService
         }
     }
 
-    private static void AddFileRaw(ZipArchive zip, string entryName, string sourcePath)
+    private void AddFileRaw(ZipArchive zip, string entryName, string sourcePath)
     {
         try
         {
@@ -635,7 +650,9 @@ public sealed class ObsBackupService
         }
         catch (Exception ex)
         {
-            // 单文件失败（如被 OBS 占用）：只记警告，不毁整份备份
+            // 单文件失败（如被 OBS 占用）：只记警告，不毁整份备份；同时记入 LastSkipped，
+            // 让界面能说清「已备份 N 项、跳过 M 项」，而不是笼统报成功。
+            _skippedDuringBuild?.Add(entryName);
             Debug.WriteLine($"[ObsBackup] 跳过文件 {sourcePath}：{ex.Message}");
         }
     }

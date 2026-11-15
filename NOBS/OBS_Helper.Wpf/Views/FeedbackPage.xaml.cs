@@ -149,6 +149,20 @@ public partial class FeedbackPage : UserControl, INavigationAware
     private void OnOpenLogs(object sender, RoutedEventArgs e)
         => AppServices.Navigation.Navigate(Routes.Logs);
 
+    private async void OnExportDiagnostics(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            var path = await AppServices.Diagnostics.ExportAsync().ConfigureAwait(true);
+            ShowStatus(Strings.T("feedback.report.diagnosticsSaved", path), error: false);
+        }
+        catch (Exception ex)
+        {
+            ShowStatus(Strings.T("feedback.report.diagnosticsFailed", ex.Message), error: true);
+            App.ReportError(Errors.ErrorCodes.DiagnosticExportFailed, ex);
+        }
+    }
+
     private async void OnOpenAuthor(object sender, RoutedEventArgs e)
         => await OpenTrustedAsync(FeedbackLinks.AuthorProfile);
 

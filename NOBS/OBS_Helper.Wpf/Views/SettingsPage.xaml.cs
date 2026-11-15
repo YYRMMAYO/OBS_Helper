@@ -51,7 +51,8 @@ public partial class SettingsPage : UserControl, INavigationAware
         ("xUnit", "Apache-2.0", "https://github.com/xunit/xunit", "settings.about.oss.usage.test"),
         ("DistroAV", "GPL-2.0", "https://github.com/DistroAV/DistroAV", "settings.about.oss.usage.external"),
         ("obs-spout2-plugin", "GPL-2.0", "https://github.com/Off-World-Live/obs-spout2-plugin", "settings.about.oss.usage.external"),
-        ("Watt Toolkit", "GPL-3.0", "https://github.com/BeyondDimension/SteamTools", "settings.about.oss.usage.guidance")
+        ("Watt Toolkit", "GPL-3.0", "https://github.com/BeyondDimension/SteamTools", "settings.about.oss.usage.guidance"),
+        ("咩计时 meTimer", "咩License 1.1", "https://github.com/zanjie1999/meTimer", "settings.about.oss.usage.timer")
     };
 
     private void BuildOssList()

@@ -228,7 +228,7 @@ function New-PortableZip {
         robocopy $PubDir $stage /E /XF *.pdb selftest_result.txt /NFL /NDL /NJH /NJS /NP | Out-Null
         # robocopy 约定：0-7 都算成功，>=8 才是失败
         if ($LASTEXITCODE -ge 8) { throw "robocopy 暂存失败（exit $LASTEXITCODE）" }
-        Compress-Archive -Path (Join-Path $stage "*") -DestinationPath $zip
+        Compress-Archive -Path (Join-Path $stage "*") -DestinationPath $zip -CompressionLevel Optimal
     } finally {
         Remove-Item $stage -Recurse -Force -ErrorAction SilentlyContinue
     }
@@ -396,7 +396,7 @@ if ($prevManifestFile) {
             Copy-Item $src $dst -Force
         }
 
-        Compress-Archive -Path (Join-Path $stage "*") -DestinationPath $deltaZip
+        Compress-Archive -Path (Join-Path $stage "*") -DestinationPath $deltaZip -CompressionLevel Optimal
         Remove-Artifact $stage
         Write-Host "增量包：$deltaZip（变更 $($changed.Count) 个文件，删除 $($removed.Count) 个）" -ForegroundColor DarkGray
     }

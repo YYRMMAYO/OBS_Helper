@@ -247,4 +247,9 @@
     M3 12a9 9 0 1 0 18 0a9 9 0 0 0 -18 0 M12 9h.01 M11 12h1v4h1
   </StreamGeometry>
 
+  <!-- 导播计时器（V3.6.0）：表盘 + 指针 -->
+  <StreamGeometry x:Key="IconGeomTimer" PresentationOptions:Freeze="True">
+    M12 3a9 9 0 1 0 0 18a9 9 0 0 0 0 -18 M12 7v5l3.5 2
+  </StreamGeometry>
+
 </ResourceDictionary>

@@ -64,6 +64,12 @@
 | TwitchLib | MIT | Twitch IRC 参考 | 协议复刻，不复制代码 |
 | LiveKit / mediasoup | Apache-2.0 / ISC | 远程嘉宾 SFU（可选） | 外部进程；TLS 部署由用户负责 |
 
+## V3.6.0 新增署名与边界
+
+| 项目 | 许可证 | 用途 | 边界 |
+|---|---|---|---|
+| [咩计时 meTimer](https://github.com/zanjie1999/meTimer) | [咩License 1.1](https://github.com/zanjie1999/LICENSE) | 导播计时器的**功能设计参考** | **清洁室独立实现，不复制 `MeTimer.cs` 源代码、图标或截图**；本模块以 MIT 发布。署名与许可证原文见 [`third_party/meTimer/NOTICE.md`](third_party/meTimer/NOTICE.md)、[`third_party/meTimer/LICENSE.md`](third_party/meTimer/LICENSE.md) 与根 `THIRD_PARTY_NOTICES.md`。咩License 禁止商业用途并要求衍生作品同许可开源；本项目未复制其代码，因此不复用其许可证。 |
+
 ## 六、署名与反馈
 
 如果你认为本项目遗漏了某个应当署名的项目、或许可证标注有误，请通过

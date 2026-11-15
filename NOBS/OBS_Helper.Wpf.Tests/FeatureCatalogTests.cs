@@ -16,6 +16,17 @@ public class FeatureCatalogTests
         => Assert.True(FeatureCatalog.FeatureCount > 46);
 
     [Fact]
+    public void TimerModuleIsRegistered()
+    {
+        var timer = FeatureCatalog.Find("timer");
+        Assert.NotNull(timer);
+        Assert.Equal("V3.6.0", timer!.Version);
+        Assert.Equal(12, timer.Features.Count);
+        Assert.Contains(timer.Features, f => f.Id == "T01");
+        Assert.Contains(timer.Features, f => f.Id == "T12");
+    }
+
+    [Fact]
     public void FeatureIdsAreUnique()
     {
         var ids = FeatureCatalog.Modules.SelectMany(m => m.Features).Select(f => f.Id).ToList();
@@ -30,7 +41,7 @@ public class FeatureCatalogTests
             Routes.Features, Routes.MobileLink, Routes.Interaction, Routes.Insights, Routes.Stream, Routes.Automation,
             Routes.Home, Routes.Console, Routes.Toolbox, Routes.ObsConfig, Routes.VirtualLive, Routes.Plugins,
             Routes.Settings, Routes.Diagnostic, Routes.Assistant, Routes.Search, Routes.Logs, Routes.Setup,
-            Routes.Performance, Routes.Templates, Routes.Guide,
+            Routes.Performance, Routes.Templates, Routes.Guide, Routes.Timer,
         };
         foreach (var module in FeatureCatalog.Modules)
         {
@@ -57,7 +68,7 @@ public class FeatureCatalogTests
             Routes.MobileLink, Routes.Interaction, Routes.Insights, Routes.Stream, Routes.Automation,
             Routes.Home, Routes.Console, Routes.Toolbox, Routes.ObsConfig, Routes.VirtualLive, Routes.Plugins,
             Routes.Settings, Routes.Diagnostic, Routes.Assistant, Routes.Search, Routes.Logs, Routes.Setup,
-            Routes.Performance, Routes.Templates, Routes.Guide,
+            Routes.Performance, Routes.Templates, Routes.Guide, Routes.Timer,
         };
         foreach (var feature in FeatureCatalog.Modules.SelectMany(m => m.Features))
             Assert.Contains(feature.Route, routes);

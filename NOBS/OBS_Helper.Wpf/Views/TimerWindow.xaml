@@ -1,0 +1,51 @@
+<Window x:Class="OBS_Helper.Wpf.Views.TimerWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="{DynamicResource Loc.timer.window.name}"
+        Width="360" Height="160" MinWidth="220" MinHeight="100"
+        WindowStyle="None" AllowsTransparency="True" Background="Transparent"
+        Topmost="True" ShowInTaskbar="False" ShowActivated="False"
+        ResizeMode="CanResizeWithGrip"
+        AutomationProperties.Name="{DynamicResource Loc.timer.window.name}">
+  <Border x:Name="Root" CornerRadius="14" BorderThickness="1" BorderBrush="#44FFFFFF" Background="#E6000000">
+    <Border.ContextMenu>
+      <ContextMenu>
+        <MenuItem Header="{DynamicResource Loc.timer.action.nextScreen}" Click="OnMenuNextScreen" />
+        <MenuItem x:Name="ClickThroughMenuItem" Header="{DynamicResource Loc.timer.setting.clickThrough}"
+                  IsCheckable="True" Click="OnMenuClickThrough" />
+        <MenuItem x:Name="CaptureMenuItem" Header="{DynamicResource Loc.timer.setting.excludeCapture}"
+                  IsCheckable="True" Click="OnMenuCapture" />
+        <Separator />
+        <MenuItem Header="{DynamicResource Loc.timer.action.hideWindow}" Click="OnMenuHide" />
+      </ContextMenu>
+    </Border.ContextMenu>
+
+    <Grid>
+      <Grid.RowDefinitions>
+        <RowDefinition Height="30" />
+        <RowDefinition Height="*" />
+        <RowDefinition Height="Auto" />
+      </Grid.RowDefinitions>
+
+      <Grid Grid.Row="0" Background="Transparent" MouseLeftButtonDown="OnDrag">
+        <StackPanel Orientation="Horizontal" Margin="14,6,0,0">
+          <Ellipse x:Name="StateDot" Width="8" Height="8" VerticalAlignment="Center" Fill="#FF38BDF8" />
+          <TextBlock x:Name="StateLabel" Margin="6,0,0,0" VerticalAlignment="Center" FontSize="11"
+                     Foreground="#CCFFFFFF" Text="{DynamicResource Loc.timer.state.idle}" />
+        </StackPanel>
+        <Button x:Name="CloseButton" Content="✕" Width="28" Height="24" HorizontalAlignment="Right"
+                Margin="0,3,6,0" Padding="0" Style="{StaticResource GhostButton}"
+                Foreground="#CCFFFFFF" Click="OnCloseClick"
+                AutomationProperties.Name="{DynamicResource Loc.timer.action.hideWindow}" />
+      </Grid>
+
+      <TextBlock x:Name="TimeText" Grid.Row="1" Text="00:00" FontFamily="Consolas" FontSize="72"
+                 FontWeight="SemiBold" Foreground="#FFFFFFFF" HorizontalAlignment="Center"
+                 VerticalAlignment="Center" Margin="10,0" TextTrimming="CharacterEllipsis"
+                 MouseLeftButtonDown="OnDrag" MouseRightButtonDown="OnDrag" />
+
+      <TextBlock x:Name="SecondaryText" Grid.Row="2" FontSize="16" Foreground="#CCFFFFFF"
+                 HorizontalAlignment="Center" Margin="12,0,12,12" Text="" MouseLeftButtonDown="OnDrag" />
+    </Grid>
+  </Border>
+</Window>

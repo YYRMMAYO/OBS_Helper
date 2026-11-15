@@ -47,6 +47,20 @@ public sealed class HotkeySettings
     /// <summary>提词器点击穿透开关，默认 <c>Ctrl+Alt+L</c>（穿透后唯一的退出方式）。</summary>
     [JsonPropertyName("teleprompterClickThrough")] public HotkeyBinding TeleprompterClickThrough { get; set; } = new("L");
     [JsonPropertyName("teleprompterClickThroughEnabled")] public bool TeleprompterClickThroughEnabled { get; set; } = true;
+
+    // ---- 导播计时器（V3.6.0）----
+
+    /// <summary>开始 / 暂停 / 继续计时，默认 <c>Ctrl+Alt+J</c>。</summary>
+    [JsonPropertyName("timerStartPause")] public HotkeyBinding TimerStartPause { get; set; } = new("J");
+    [JsonPropertyName("timerStartPauseEnabled")] public bool TimerStartPauseEnabled { get; set; } = true;
+
+    /// <summary>重置当前一轮计时，默认 <c>Ctrl+Alt+U</c>。</summary>
+    [JsonPropertyName("timerReset")] public HotkeyBinding TimerReset { get; set; } = new("U");
+    [JsonPropertyName("timerResetEnabled")] public bool TimerResetEnabled { get; set; } = true;
+
+    /// <summary>显示 / 隐藏计时窗，默认 <c>Ctrl+Alt+H</c>。</summary>
+    [JsonPropertyName("timerToggleWindow")] public HotkeyBinding TimerToggleWindow { get; set; } = new("H");
+    [JsonPropertyName("timerToggleWindowEnabled")] public bool TimerToggleWindowEnabled { get; set; } = true;
 }
 
 /// <summary>

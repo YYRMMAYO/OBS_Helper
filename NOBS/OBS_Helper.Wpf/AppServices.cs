@@ -151,6 +151,9 @@ public static class AppServices
     // 会话复盘（V3.0 / D5）：把实时命中累计 + 上次会话摘要变成可导出报告
     private static readonly Lazy<SessionReviewService> _sessionReview =
         new(() => new SessionReviewService(LogTailer, Store));
+    // 一键诊断包（V3.6.0 / G08）：用户点按钮才生成，不上传
+    private static readonly Lazy<Services.Diagnostics.DiagnosticPackageService> _diagnostics =
+        new(() => new Services.Diagnostics.DiagnosticPackageService());
     // 本地知识库（V3.0 / D8）：用户自己的条目，与热更新文件同目录、同 schema
     private static readonly Lazy<Services.Knowledge.MyKnowledgeBaseService> _myKnowledge =
         new(() => new Services.Knowledge.MyKnowledgeBaseService(System.IO.Path.Combine(HostBridge.AppDataDirectory, "data")));
@@ -163,6 +166,10 @@ public static class AppServices
     // 提词器（V3.1.0 / §12.1）：独立窗口、脚本 / 设置持久化、场景联动
     private static readonly Lazy<TeleprompterService> _teleprompter =
         new(() => new TeleprompterService(Store));
+
+    // 导播计时器（V3.6.0）：与 ControlTimerService（定时停止录制/推流）区分，属性名用 TimerClock
+    private static readonly Lazy<Services.Timing.TimerService> _timerClock =
+        new(() => new Services.Timing.TimerService(Store, Obs));
 
     // ---------------------------------------------------------------- V3.4.0 手机联动
     // sidecar 管理器（mediamtx / whisper.cpp / ffmpeg / rclone）：清单随包，二进制按需下载
@@ -183,7 +190,7 @@ public static class AppServices
     private static readonly Lazy<MobileSessionStore> _mobileSessions = new(() =>
         new MobileSessionStore(System.IO.Path.Combine(HostBridge.AppDataDirectory, "mobile", "devices.json")));
     private static readonly Lazy<MobileSnapshotService> _mobileSnapshots = new(() =>
-        new MobileSnapshotService(Obs, Teleprompter, SystemMonitor));
+        new MobileSnapshotService(Obs, Teleprompter, SystemMonitor, TimerClock));
     private static readonly Lazy<MobilePreviewService> _mobilePreview = new(() => new MobilePreviewService(Obs));
     private static readonly Lazy<MobileUploadService> _mobileUploads = new(() => new MobileUploadService());
     // 声明顺序放在 _mobileRouter 之前：静态字段初始化按文本顺序执行，
@@ -191,7 +198,7 @@ public static class AppServices
     private static readonly Lazy<MobileLinkServer> _mobileLink = new(() =>
         new MobileLinkServer(Obs, MobileSessions, MobileSnapshots, MobileRouter, MobilePreview, MobileUploads));
     private static readonly Lazy<MobileCommandRouter> _mobileRouter = new(() =>
-        new MobileCommandRouter(Obs, Teleprompter, MobileSessions, MobileSnapshots, MobilePreview,
+        new MobileCommandRouter(Obs, Teleprompter, MobileSessions, MobileSnapshots, MobilePreview, TimerClock,
             deviceId =>
             {
                 if (_mobileLink.IsValueCreated) MobileLink.RevokeDevice(deviceId);
@@ -366,6 +373,9 @@ public static class AppServices
     /// <summary>会话复盘（V3.0 / D5）。</summary>
     public static SessionReviewService SessionReview => _sessionReview.Value;
 
+    /// <summary>一键诊断包导出（V3.6.0 / G08）：版本 / 系统 / 连接 / 自检 / 脱敏日志。</summary>
+    public static Services.Diagnostics.DiagnosticPackageService Diagnostics => _diagnostics.Value;
+
     /// <summary>本地知识库读写（V3.0 / D8）。</summary>
     public static Services.Knowledge.MyKnowledgeBaseService MyKnowledge => _myKnowledge.Value;
     /// <summary>简单录像（V2.9.4）：首页卡片、控制台录制行与托盘菜单共用同一个实例。</summary>
@@ -376,6 +386,9 @@ public static class AppServices
 
     /// <summary>提词器（V3.1.0）：窗口、脚本、设置与场景联动。</summary>
     public static TeleprompterService Teleprompter => _teleprompter.Value;
+
+    /// <summary>导播计时器（V3.6.0）：倒计时 / 顺计时、记录、计时窗与 OBS 联动。</summary>
+    public static Services.Timing.TimerService TimerClock => _timerClock.Value;
 
     // ---------------------------------------------------------------- V3.4.0 手机联动
     /// <summary>sidecar 清单与下载/启动（mediamtx / whisper.cpp / ffmpeg / rclone）。</summary>

@@ -4,19 +4,19 @@
 
 **OBS Helper · OBS帮助助手** — an OBS troubleshooting / recording / streaming assistant for streamers who are just getting started (native Windows WPF)
 
-**Current release: V3.5.3** (stable) · syncs everything from X series `X1031Y3` (except the X-specific icon)
+**Current release: V3.6.0** (stable) · adds a director timer, audio meters, diagnostic export and security hardening
 
-**Focus of this release**: **bringing the X1031Y2 / X1031Y3 capabilities to the V series** — plugins and open-source dependencies can be installed in-app with one click, and locally detected plugins can be uninstalled / migrated / adopted; the phone camera gains a publish QR code, publish detection and a firewall rule; whisper and its recommended model install in one click. Also fixes every plugin / dependency download failing after GitHub moved release assets to a new CDN. See [`NOBS/RELEASE_NOTES_v3.5.3.md`](NOBS/RELEASE_NOTES_v3.5.3.md).
+**Focus of this release**: a **director timer** — separate control and always-on-top timer windows, countdown/count-up, overtime, multi-monitor, records and TSV, global hotkeys, OBS/phone linkage and a local browser overlay. Also adds console audio meters, a one-click sanitized diagnostic package, an external-link domain allowlist, a ColorCheck path guard and honest backup-skip reporting. See [`NOBS/RELEASE_NOTES_v3.6.0.md`](NOBS/RELEASE_NOTES_v3.6.0.md).
 
 [![CI](https://github.com/YYRMMAYO/OBS_Helper/actions/workflows/ci.yml/badge.svg)](https://github.com/YYRMMAYO/OBS_Helper/actions/workflows/ci.yml)
 [![Platform](https://img.shields.io/badge/Platform-Windows_7_SP1%2B_%2F_10_%2F_11-0078D6.svg)]()
 [![.NET](https://img.shields.io/badge/.NET-10_%2F_6-512BD4.svg)]()
 [![Stack](https://img.shields.io/badge/Stack-WPF_%2F_C%23-239120.svg)]()
-[![Release](https://img.shields.io/badge/Release-3.5.3-38bdf8.svg)](https://github.com/YYRMMAYO/OBS_Helper/releases)
+[![Release](https://img.shields.io/badge/Release-3.6.0-38bdf8.svg)](https://github.com/YYRMMAYO/OBS_Helper/releases)
 [![OBS](https://img.shields.io/badge/OBS-32.2.2-302E31.svg)](https://github.com/obsproject/obs-studio/releases)
 [![offline-first](https://img.shields.io/badge/offline--first-2ea44f.svg)]()
 [![Incremental Update](https://img.shields.io/badge/Incremental%20Update-3.9MB-7dd3fc.svg)]()
-[![Tests](https://img.shields.io/badge/Tests-1809%20passed-2ea44f.svg)]()
+[![Tests](https://img.shields.io/badge/Tests-1869%20passed-2ea44f.svg)]()
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
 **English** · [简体中文](README.md)
@@ -24,7 +24,7 @@
 </div>
 
 > **The default branch of this repository is `master` (stable channel)**: settled features, full regression and release verification — the right choice for everyday streaming and recording.
-> **There are only two release channels: V series and X series.** V releases use `Vmajor.minor.patch` (such as `V3.5.3`); X releases use `X` + an `MMdd` date code (such as `X1031`). There is no DEV test branch or test tag.
+> **There are only two release channels: V series and X series.** V releases use `Vmajor.minor.patch` (such as `V3.6.0`); X releases use `X` + an `MMdd` date code (such as `X1031`). There is no DEV test branch or test tag.
 
 **OBS Helper** (known as 「OBS 排障助手」 before V2.9.6 — the same app on the same upgrade path) is an OBS Studio troubleshooting and recording assistant for streamers who are just getting started: **it works fully offline** — the 208-entry knowledge base, the troubleshooting guide and the log-analysis rules are all embedded in the app, so they are searchable without a connection; once connected to the local OBS you also get one-click health checks, remote control of scenes / recording / streaming, and recording-environment deployment. **Since V2.9.4** the whole journey from "configure OBS" to "start recording" fits into one card on the home page; **since V3.1.0** OBS can also be launched and recording started with one click when it is not running; **V3.1.1** completed the teleprompter's manual up/down movement and window nudging; **V3.3.0** adds the **Virtual Live** workspace (Live2D avatar · 6 room templates · 16-platform go-live guidance), one-click plugin install / rollback / GitHub search, and Accessibility / Elder modes; **V3.4.0** brings the phone into the streaming workflow: QR remote / monitor / teleprompter / fill light / file upload, phone as a Wi-Fi camera and microphone, plus chat aggregation, local live captions, review/clips, multi-platform relay, MIDI/lighting and team collaboration.
 
@@ -38,7 +38,7 @@ This is the **native WPF rewrite** of the original Blazor WebAssembly + WebView2
 
 ---
 
-**Contents**: [Start here](#start-here) · [5-minute quick start](#5-minute-quick-start) · [Highlights at a glance](#highlights-at-a-glance) · [Features](#features) · [Smart diagnostics engine](#smart-diagnostics-engine) · [Release channels: V series vs X series](#release-channels-v-series-vs-x-series) · [What's new in V3.5.3](#whats-new-in-v353) · [What's new in V3.5.2](#whats-new-in-v352) · [What's new in V3.5.1](#whats-new-in-v351) · [What's new in V3.5.0](#whats-new-in-v350) · [X1031](#x1031) · [What's new in V3.3.0](#whats-new-in-v330) · [What's new in V3.1.1](#whats-new-in-v311) · [Version history](#version-history) · [Privacy & security](#privacy--security) · [Installation & updates](#installation--updates) · [Build](#build) · [Project structure](#project-structure) · [Quality baseline & known limits](#quality-baseline--known-limits) · [Promo video](#promo-video) · [Donate](#donate) · [License](#license)
+**Contents**: [Start here](#start-here) · [5-minute quick start](#5-minute-quick-start) · [Highlights at a glance](#highlights-at-a-glance) · [Features](#features) · [Smart diagnostics engine](#smart-diagnostics-engine) · [Release channels: V series vs X series](#release-channels-v-series-vs-x-series) · [What's new in V3.6.0](#whats-new-in-v360) · [What's new in V3.5.3](#whats-new-in-v353) · [What's new in V3.5.2](#whats-new-in-v352) · [What's new in V3.5.1](#whats-new-in-v351) · [What's new in V3.5.0](#whats-new-in-v350) · [X1031](#x1031) · [What's new in V3.3.0](#whats-new-in-v330) · [What's new in V3.1.1](#whats-new-in-v311) · [Version history](#version-history) · [Privacy & security](#privacy--security) · [Installation & updates](#installation--updates) · [Build](#build) · [Project structure](#project-structure) · [Quality baseline & known limits](#quality-baseline--known-limits) · [Promo video](#promo-video) · [Donate](#donate) · [License](#license)
 
 ---
 
@@ -50,7 +50,7 @@ This is the **native WPF rewrite** of the original Blazor WebAssembly + WebView2
 | See what it can do and how to use it first | Read on: [5-minute quick start](#5-minute-quick-start) and [Features](#features) |
 | Read the developer-oriented full documentation (quality baseline · release history · code inventory) | [`NOBS/README.md`](NOBS/README.md) |
 | Full documentation in Chinese | [`README.md`](README.md) · [`NOBS/README.md`](NOBS/README.md) |
-| What changed in this release | [`NOBS/RELEASE_NOTES_v3.5.3.md`](NOBS/RELEASE_NOTES_v3.5.3.md) |
+| What changed in this release | [`NOBS/RELEASE_NOTES_v3.6.0.md`](NOBS/RELEASE_NOTES_v3.6.0.md) |
 | Before editing docs: which documents belong on master, which on dev | [`docs/BRANCH_AND_DOC_RULES.md`](docs/BRANCH_AND_DOC_RULES.md) |
 | Report a bug / disclose a security vulnerability | [Issues](https://github.com/YYRMMAYO/OBS_Helper/issues) · [SECURITY.md](SECURITY.md) |
 | License | [LICENSE](LICENSE) (MIT) |
@@ -238,14 +238,25 @@ This ships in the current build; you only fill in the OBS address once:
 
 | Channel | Version style | What it is | Where updates come from |
 | --- | --- | --- | --- |
-| **V series** (`master`) | `V3.5.3` | **Stable first**: settled features, full regression and release verification — the right choice for everyday streaming / recording | The regular Releases page · the Lanzou mirror · in-app incremental updates |
+| **V series** (`master`) | `V3.6.0` | **Stable first**: settled features, full regression and release verification — the right choice for everyday streaming / recording | The regular Releases page · the Lanzou mirror · in-app incremental updates |
 | **X series** (`master`) | `X1031` / `X1031Y2` / `X1031Y3` | **Independent major line**: `X` + `MMdd` date codes and the X-specific icon; updates only look at `X` tags | X-series Releases · in-app update |
 
 - **Both series share features and the data folder**: install folder, assembly name and `%LocalAppData%\OBS_Helper` are unchanged, so the upgrade path is identical.
-- **Channel filtering happens in the parser**: V builds only recognise `V3.5.3`-style tags; X builds only recognise `X1031`-style tags. They never mistake one another for a newer version.
+- **Channel filtering happens in the parser**: V builds only recognise `V3.6.0`-style tags; X builds only recognise `X1031`-style tags. They never mistake one another for a newer version.
 - **X version rule**: the four digits after `X` are an `MMdd` date (`X1031` = October 31). A second release on the same day appends `Y1`, `Y2`, `Y3`…; update checks compare the date first, then the Y revision, so `X1031Y2 > X1031` and `X1101 > X1031Y99`.
 - **X update prompt**: when an update is found, the dialog fetches this release's notes from GitHub and shows them in place; a failed fetch never blocks checking or downloading.
 - **X1031 is smaller than V3.5.0**: X1031 contains items 1–9 and the new icon, but not the global background UI refactor, mobile page layout or Feature Center UX work. V3.5.0 contains those UI changes but keeps the original icon as requested.
+
+## What's new in V3.6.0
+
+> Full details: [`NOBS/RELEASE_NOTES_v3.6.0.md`](NOBS/RELEASE_NOTES_v3.6.0.md).
+
+- **Director timer**: control page + frameless always-on-top timer window; a countdown stops at `00:00` in the timer window while the control page keeps accumulating overtime; count-up turns red past the planned duration. Multi-monitor, opacity / font size / hours, pause-orange / overtime-red, drag & resize, position memory, capture exclusion and click-through; newest-first records with one-click TSV copy; global hotkeys; optional OBS record/stream linkage (off by default); local browser overlay and phone remote start/pause/reset.
+- **Audio meters**: each console audio input shows a real-time `InputVolumeMeters` level bar; the service throttles to 10 Hz.
+- **Diagnostic package**: the Help & feedback page exports a Markdown package with version / OS / connection / pre-flight / recent toasts / sanitized logs; no paths or secrets by default.
+- **Security**: external links are restricted to an HTTPS domain allowlist; ColorCheck guards the profile folder name; backup/export honestly report skipped files; Release builds drop pdb and use optimal zip compression.
+- **Attribution**: the timer's feature design references zanjie1999's meTimer; the first-use dialog and About page keep the author, repository and Meow License 1.1 links. The implementation is independent. See [`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md).
+- **Deferred to V3.7**: plugin-query batch backoff, full first-screen sync-IO cleanup, safe mode, one-click hotkey conflict reset; code signing, real LLM, online marketplace, online collaboration and browser-based phone camera remain out of scope.
 
 ## What's new in V3.5.3
 
@@ -387,7 +398,7 @@ This ships in the current build; you only fill in the OBS address once:
 **Tests and release**
 
 - 4 new unit tests: scroll end, drag offset, window-move clamping and trailing blank lines in the script;
-- The full suite of **1670 unit tests** passed three rounds in a row, with both builds (`net10.0-windows` / `net6.0-windows`) + the 36-item headless self-test + static checks all green;
+- The full suite of **1869 unit tests** passed three rounds in a row, with both builds (`net10.0-windows` / `net6.0-windows`) + the 37-item headless self-test + static checks all green;
 - Full details and known limits are in [`NOBS/RELEASE_NOTES_v3.1.1.md`](NOBS/RELEASE_NOTES_v3.1.1.md).
 
 ## Privacy & security
@@ -527,7 +538,7 @@ Strings assembled in code are refreshed by `LocalizationService` broadcasting an
 ## Quality baseline & known limits
 
 - **All 1670 unit tests pass** (V3.4.0: three full rounds in a row + dual-target builds + headless self-test + static checks); the test project links the pure-logic source files directly instead of referencing the whole WPF project;
-- **All 36 headless self-test items PASS** (28 route cases plus 8 non-route checks: the first-run tutorial overlay (including step-by-step navigation checks), the mini window, string-resource resolution, a language-switch round trip, per-page language replay, the content-fallback banner, the D7 connection-state guard and protocol branches for both builds), **run once for the main build and once for the Win7-compatible build**;
+- **All 37 headless self-test items PASS** (29 route cases plus 8 non-route checks: the first-run tutorial overlay (including step-by-step navigation checks), the mini window, string-resource resolution, a language-switch round trip, per-page language replay, the content-fallback banner, the D7 connection-state guard and protocol branches for both builds), **run once for the main build and once for the Win7-compatible build**;
 - CI additionally gates on XAML resource references, zh/en string-key parity, accessibility static checks, the headless self-test and an end-to-end delta-package upgrade (full-file SHA-256 comparison); [`NOBS/docs/reviews/`](NOBS/docs/reviews/) keeps per-perspective review records that honestly mark which conclusions have machine evidence and which were only checked by hand;
 - **Known limits**: ① Windows 7 has not been verified on real hardware (only that the target framework compiles and the installer's MinVersion is set correctly), and the legacy protocol (obs-websocket 4.x) has not been verified against a real OBS 27; ② the English translation has not been proofread by a native speaker, nor have the English OBS menu paths been checked one by one; ③ both one-click deployment channels are implemented against the protocol / key names and covered by unit tests, but have never been run end-to-end against a real OBS; ④ accessibility stops at code-level adaptation + static checks, with no NVDA / Narrator testing (see [`ACCESSIBILITY.md`](ACCESSIBILITY.md)); ⑤ release artifacts are not code-signed, so SmartScreen may warn about an unknown publisher; ⑥ .NET 6 no longer receives security updates — the compatible build is the fallback for when you *must* run Windows 7; on a new machine use the main build.
 
@@ -535,6 +546,7 @@ Strings assembled in code are refreshed by `LocalizationService` broadcasting an
 
 | Version | Highlights | Release notes |
 | --- | --- | --- |
+| **V3.6.0** | Director timer (dual windows / overtime / multi-monitor / records TSV / hotkeys / OBS-phone linkage / browser overlay), audio meters, sanitized diagnostics, external-link allowlist, ColorCheck path guard, backup-skip reporting | [`RELEASE_NOTES_v3.6.0.md`](NOBS/RELEASE_NOTES_v3.6.0.md) |
 | **V3.5.3** | Syncs all X1031Y2 / X1031Y3 features (except the X icon): one-click plugin & dependency setup, local plugin management, phone-camera publish / detection / firewall, whisper model, Feature Center runtime prep, auto-archive and recording index; fixes release-asset redirect downloads | [`RELEASE_NOTES_v3.5.3.md`](NOBS/RELEASE_NOTES_v3.5.3.md) |
 | **V3.5.2** | Trustworthy recording / streaming state on desktop and phone; batch status protocol fix | [`RELEASE_NOTES_v3.5.2.md`](NOBS/RELEASE_NOTES_v3.5.2.md) |
 | **V3.5.1** | Detail-icon stroke fix and semantic mapping, phone teleprompter sync fix, sponsorship codes in Settings / feedback | [`RELEASE_NOTES_v3.5.1.md`](NOBS/RELEASE_NOTES_v3.5.1.md) |

@@ -115,15 +115,18 @@
         <RowDefinition Height="*" />
       </Grid.RowDefinitions>
 
-      <!-- 顶栏：A 靠底色分层；C 用一条发丝线把标题区与内容分开（V3.7.2） -->
-      <Border Grid.Row="0" Background="Transparent"
+      <!--
+        顶栏：A 靠底色分层；C 用一条发丝线把标题区与内容分开（V3.7.2）。
+        背景直接铺在最外层 Border 上，padding 只作用于内容 —— 否则自定义浅色背景会从
+        padding 的 13/24 px 缝隙里透出来，在深色顶栏上方形成一圈突兀的亮边。
+      -->
+      <Border Grid.Row="0" Background="{DynamicResource TopBarTintBrush}"
               BorderThickness="{DynamicResource SkinTopBarBorder}"
               BorderBrush="{DynamicResource SkinTopBarBorderBrush}"
-              Padding="24,13">
+              Padding="0">
         <Grid>
           <Border Background="{DynamicResource GlassWallpaperBrush}" />
-          <Border Background="{DynamicResource TopBarTintBrush}" />
-          <Grid>
+          <Grid Margin="24,13">
             <Grid.ColumnDefinitions>
               <ColumnDefinition Width="Auto" />
               <ColumnDefinition Width="*" />

@@ -1038,10 +1038,12 @@ public sealed class AppearanceService : IDisposable
         if (Settings.BackgroundMode == "color")
         {
             // V3.7.2：A · 导播台的正文是浅色。用户把纯色背景设成浅色时（例如默认 #e8f0fe），
-            // 浅字压在浅底上完全不可读；这里按皮肤自动压暗（72% 皮肤底色 + 28% 用户色），
-            // 既保留用户选的颜色倾向，也保证 WCAG 正文对比度。C 不需要压暗。
+            // 浅字压在浅底上完全不可读；这里按皮肤自动压暗（88% 皮肤底色 + 12% 用户色），
+            // 保留一点用户选的颜色倾向，同时让 A 仍然是一块深色底板；C 不需要压暗。
+            // 为什么是 88%：72% 会得到 #494D53 的中灰色，与 #0B0D10 的顶栏/导航拉开明显色阶，
+            // 看起来像「黑顶栏下面接了一块灰底」；88% 接近机柜黑，只留下极轻的色调。
             var color = dark
-                ? BlendHex(Settings.BackgroundColor, baseSurface, 0.72)
+                ? BlendHex(Settings.BackgroundColor, baseSurface, 0.88)
                 : Settings.BackgroundColor;
             var brush = TryParseBrush(color) ?? Frozen(baseSurface);
             res["ContentBackgroundBrush"] = brush;

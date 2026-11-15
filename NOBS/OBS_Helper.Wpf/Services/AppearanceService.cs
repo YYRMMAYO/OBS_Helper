@@ -123,6 +123,13 @@ public sealed class AppearanceSettings
     [JsonPropertyName("accent")]
     public string Accent { get; set; } = "teal";
 
+    /// <summary>
+    /// 强调色是否由用户显式选择（V3.7.2）。
+    /// 为 false 时强调色跟随皮肤：A 用信号青、C 用信号蓝；用户点过色板后置 true，不再被换肤覆盖。
+    /// </summary>
+    [JsonPropertyName("accentCustom")]
+    public bool AccentIsCustom { get; set; }
+
     // ------------------------------------------------------------ 无障碍 / 老年模式（V3.3.0）
 
     /// <summary>无障碍模式：字号下限 +15%、焦点始终可见、减少动画、显示跳转链接等。</summary>
@@ -182,6 +189,14 @@ public sealed record AccentScheme(
         new("violet", "#6c42c9",
             "#6c42c9", "#5c36b0", "#472a8e", "#ede5fc", "#4e2fa0",
             "#9b7ef0", "#ad94f5", "#9070e8", "#251c3f", "#c4aff8", "#140a30"),
+        // V3.7.2 双皮肤默认色：A 信号青 / C 信号蓝。用户不选时由皮肤自动取用，
+        // 也可以主动选中（此时 AccentIsCustom=true，换肤不再覆盖）。
+        new("signal", "#2BBFA6",
+            "#0B7F6B", "#0A6F5D", "#085E4F", "#E0F5F0", "#07564A",
+            "#38E0C0", "#62EBD1", "#1BBFA6", "#123A34", "#9CF2E2", "#04241F"),
+        new("cobalt", "#1F3BFF",
+            "#1F3BFF", "#334CFF", "#1630CC", "#E8EDFF", "#1428B8",
+            "#7C93FF", "#97A9FF", "#5F7BFF", "#1A2450", "#A9B8FF", "#0A1030"),
         // 彩蛋配色：解锁后才出现（默认隐藏，不影响现有 5 套）
         new("midnight", "#1f6f8b",
             "#155e78", "#125066", "#0e4254", "#d9eef5", "#114657",
@@ -257,6 +272,23 @@ public sealed class AppearanceService : IDisposable
         AppTheme.Light => false,
         _ => IsSystemDark()
     };
+
+    /// <summary>
+    /// 当前生效的界面皮肤（V3.7.2）。由 <see cref="IsDarkEffective"/> 唯一决定，
+    /// 因此不会出现「黑夜 + 排版手册」这种第四种组合；皮肤只影响视觉，不改变功能与路由。
+    /// </summary>
+    public UiSkin ActiveSkin => SkinRules.Resolve(IsDarkEffective);
+
+    /// <summary>当前是否为 C · 排版手册皮肤（白天）。</summary>
+    public bool IsManualSkin => ActiveSkin == UiSkin.ManualLight;
+
+    /// <summary>皮肤默认强调色 key：A 信号青 / C 信号蓝。</summary>
+    public static string DefaultAccentKeyFor(UiSkin skin) => SkinRules.DefaultAccentKey(skin);
+
+    /// <summary>实际生效的强调色 key：用户自定义优先，否则跟随皮肤。</summary>
+    public string EffectiveAccentKey => Settings.AccentIsCustom
+        ? AccentScheme.Resolve(Settings.Accent).Key
+        : DefaultAccentKeyFor(ActiveSkin);
 
     /// <summary>载入设置并套用。只会真正执行一次。</summary>
     public void Initialize()
@@ -388,13 +420,23 @@ public sealed class AppearanceService : IDisposable
         SaveAndApply();
     }
 
-    /// <summary>当前生效的强调色方案（未知 key 回退默认）。</summary>
-    public AccentScheme CurrentAccent => AccentScheme.Resolve(Settings.Accent);
+    /// <summary>当前生效的强调色方案（自定义优先，否则跟随皮肤；未知 key 回退默认）。</summary>
+    public AccentScheme CurrentAccent => AccentScheme.Resolve(EffectiveAccentKey);
 
     /// <summary>切换品牌强调色（按钮 / 选中态 / 小标等全局品牌色）。</summary>
     public void SetAccent(string key)
     {
         Settings.Accent = AccentScheme.Resolve(key).Key;
+        // V3.7.2：用户显式选色后不再被皮肤默认色覆盖。
+        Settings.AccentIsCustom = true;
+        SaveAndApply();
+    }
+
+    /// <summary>恢复「跟随皮肤」的默认强调色（V3.7.2）。</summary>
+    public void ResetAccentToSkin()
+    {
+        Settings.AccentIsCustom = false;
+        Settings.Accent = DefaultAccentKeyFor(ActiveSkin);
         SaveAndApply();
     }
 
@@ -689,10 +731,19 @@ public sealed class AppearanceService : IDisposable
         // 页面不再各自判断模式（避免「模式打架」与两套互相矛盾的规则）。
         var profile = CurrentUiProfile;
 
-        // ---- 品牌色（v2.7.1 强调色体系）：由用户在设置页选择，浅 / 深色各一套色阶。
-        // BrandBrush 既作主按钮背景（配 BrandForegroundBrush 反衬文字），也大量用作
-        // 前景文字 / 描边，因此深色模式用「亮品牌色」保证两类用途都可读（交叉检验 P1）。
-        var accent = AccentScheme.Resolve(Settings.Accent);
+        // ---- V3.7.2 双皮肤（A 导播台 / C 排版手册）
+        // 由 Theme 唯一决定：dark → A，light/system → 按系统明暗解析。
+        // 皮肤只写令牌与模板所需的资源，不重建视觉树，因此切换时焦点 / 滚动 / 连接状态天然保留。
+        var skin = SkinRules.Resolve(dark);
+        var manual = skin == UiSkin.ManualLight;
+        var palette = SkinPalette.For(skin);
+        if (hc) palette = palette.WithHighContrast(dark);
+
+        // ---- 品牌色（v2.7.1 强调色体系 / V3.7.2 跟随皮肤）
+        // 用户没有显式选色时：A 用信号青、C 用信号蓝；选过之后以用户选择为准。
+        var accent = AccentScheme.Resolve(Settings.AccentIsCustom
+            ? Settings.Accent
+            : DefaultAccentKeyFor(skin));
         res["BrandBrush"] = Frozen(dark ? accent.DarkBase : accent.LightBase);
         res["BrandDarkBrush"] = Frozen(dark ? accent.DarkDark : accent.LightDark);
         res["BrandSoftBrush"] = Frozen(dark ? accent.DarkSoft : accent.LightSoft);
@@ -703,7 +754,6 @@ public sealed class AppearanceService : IDisposable
         res["BrandForegroundBrush"] = dark ? Frozen(accent.DarkOn) : Frozen("#ffffff");
 
         // ---- 表面 / 文字 / 边框
-        // V3.5.0 简约视觉系统：中性背景 + 单一强调色 + 低阴影。
         // 图片背景覆盖整窗后，卡片 / 导航 / 顶栏使用可调透明度的半透明表面；
         // 默认 / 纯色 / 高对比仍保持不透明，保证对比度与性能。
         var glass = !hc && string.Equals(Settings.BackgroundMode, "image", StringComparison.Ordinal);
@@ -712,83 +762,91 @@ public sealed class AppearanceService : IDisposable
         var alpha2 = glass ? Math.Max(120, alpha - 22) : 255;
         var alpha3 = glass ? Math.Max(110, alpha - 38) : 255;
         static string Hex(int a, string rgb) => "#" + a.ToString("X2") + rgb.TrimStart('#');
-        var lightSurface = "#FFFFFF";
-        var lightSurface2 = "#F5F5F1";
-        var lightSurface3 = "#ECECE6";
-        var darkSurface = "#181A19";
-        var darkSurface2 = "#101211";
-        var darkSurface3 = "#242724";
-        res["SurfaceBrush"] = Frozen(Hex(alpha, dark ? darkSurface : lightSurface));
-        res["Surface2Brush"] = Frozen(Hex(alpha2, dark ? darkSurface2 : lightSurface2));
-        res["Surface3Brush"] = Frozen(Hex(alpha3, dark ? darkSurface3 : lightSurface3));
-        res["NavSurfaceBrush"] = Frozen(Hex(glass ? Math.Min(255, alpha + 12) : 255, dark ? "#121412" : "#FBFBF9"));
-        res["TopBarSurfaceBrush"] = Frozen(Hex(glass ? Math.Min(255, alpha + 18) : 255, dark ? "#121412" : "#FBFBF9"));
+        res["SurfaceBrush"] = Frozen(Hex(alpha, palette.Surface));
+        res["Surface2Brush"] = Frozen(Hex(alpha2, palette.Surface2));
+        res["Surface3Brush"] = Frozen(Hex(alpha3, palette.Surface3));
+        res["NavSurfaceBrush"] = Frozen(Hex(glass ? Math.Min(255, alpha + 12) : 255, palette.Nav));
+        res["TopBarSurfaceBrush"] = Frozen(Hex(glass ? Math.Min(255, alpha + 18) : 255, palette.TopBar));
         // 毛玻璃底之上再压一层很浅的主题色，保证文字对比度；图片模式下让壁纸透出来。
-        res["NavTintBrush"] = Frozen(Hex(glass ? 126 : 255, dark ? "#121412" : "#FBFBF9"));
+        res["NavTintBrush"] = Frozen(Hex(glass ? 126 : 255, palette.Nav));
+        // V3.7.2：非图片模式下顶栏改为不透明皮肤表面 —— 自定义纯色/壁纸只留在内容区，
+        // 否则 A 的浅色自定义背景会让顶栏白字直接消失（3.7.2 截图自检发现）。
         res["TopBarTintBrush"] = glass
-            ? Frozen(Hex(156, dark ? "#121412" : "#FBFBF9"))
-            : Brushes.Transparent;
-        res["TextBrush"] = Frozen(hc ? (dark ? "#ffffff" : "#000000") : (dark ? "#ececf5" : "#1c1d2b"));
-        // 【深色对比度 v2.7.1】MutedBrush 深色 #9a9bb0→#a9abbe：在 Surface(#1b1c26) 上
-        // 对比度约 6:1 → 7.5:1，弱光 / 低亮度屏幕下的次要文字不再发灰难读。
-        // 浅色同步对齐 Palette.xaml 的 #5c5d70（P3-1 结论），消除静态默认与运行时的漂移。
-        res["MutedBrush"] = Frozen(hc ? (dark ? "#e2e2e8" : "#222222") : (dark ? "#a9abbe" : "#5c5d70"));
-        // 【深色对比度 v2.7.1】LineBrush 深色 #2c2d3a→#3b3d50：边框与卡片底拉开层次
-        // （对 Surface 对比约 1.25:1 → 1.6:1），输入框 / 分隔线在深色下可辨。
-        res["LineBrush"] = Frozen(hc ? (dark ? "#ffffff" : "#000000") : (dark ? "#3b3d50" : "#e6e6f0"));
+            ? Frozen(Hex(156, palette.TopBar))
+            : Frozen(palette.TopBar);
+        res["TextBrush"] = Frozen(palette.Text);
+        res["MutedBrush"] = Frozen(palette.Muted);
+        res["DimBrush"] = Frozen(palette.Dim);
+        // LineBrush 只做装饰分隔；交互边界（按钮 / 输入框 / 可点击卡片）用 LineStrongBrush。
+        res["LineBrush"] = Frozen(palette.Line);
+        res["LineStrongBrush"] = Frozen(palette.LineStrong);
 
         // ---- 语义色（严重度 / 状态）
-        // 浅色 Danger 由 #d92d20 加深为 #c62828（P2-3）：保证 Danger 文字放在 DangerSoft 底
-        // 上的对比度 ≥4.5:1（原 4.23:1 不达标），白底 / Surface2 上同步达标。
-        res["DangerBrush"] = Frozen(dark ? "#ff6b6b" : "#c62828");
-        res["DangerSoftBrush"] = Frozen(dark ? "#3a1e1e" : "#fdeceb");
-        // 【UI 优化 v1.10】危险按钮悬停 / 按下色阶
-        res["DangerHoverBrush"] = Frozen(dark ? "#ff8080" : "#ab2121");
-        res["DangerPressedBrush"] = Frozen(dark ? "#ff9696" : "#8f1a1a");
-        // 【深色对比度 v2.7.1】危险底反衬文字：深色模式 #ff6b6b 偏亮，白字仅 2.8:1，
-        // 改用深红字压亮红底（约 6:1）；浅色维持白字压深红。
+        res["DangerBrush"] = Frozen(palette.Danger);
+        res["DangerSoftBrush"] = Frozen(palette.DangerSoft);
+        res["DangerHoverBrush"] = Frozen(palette.DangerHover);
+        res["DangerPressedBrush"] = Frozen(palette.DangerPressed);
+        // 危险底反衬文字：深色模式的亮红底用深字，浅色 / C 的深红底用白字。
         res["DangerForegroundBrush"] = dark ? Frozen("#340a0a") : Frozen("#ffffff");
 
-        res["WarnBrush"] = Frozen(dark ? "#f5a524" : "#b54708");
-        res["WarnSoftBrush"] = Frozen(dark ? "#3a2e14" : "#fef4e6");
-        res["OkBrush"] = Frozen(dark ? "#3ecf8e" : "#067647");
-        res["OkSoftBrush"] = Frozen(dark ? "#12301f" : "#e7f6ee");
-        res["InfoBrush"] = Frozen(dark ? "#63a8ff" : "#175cd3");
-        res["InfoSoftBrush"] = Frozen(dark ? "#152740" : "#e8f0fe");
+        res["WarnBrush"] = Frozen(palette.Warn);
+        res["WarnSoftBrush"] = Frozen(palette.WarnSoft);
+        res["OkBrush"] = Frozen(palette.Ok);
+        res["OkSoftBrush"] = Frozen(palette.OkSoft);
+        res["InfoBrush"] = Frozen(palette.Info);
+        res["InfoSoftBrush"] = Frozen(palette.InfoSoft);
 
-        // ---- 分类语义色（P2-1）：浅色与原 problems.json 硬编码一致，深色换柔和值避免刺眼
-        res["SemanticRedBrush"] = Frozen(dark ? "#e56a5c" : "#e74c3c");
-        res["SemanticOrangeBrush"] = Frozen(dark ? "#f0a35e" : "#e67e22");
-        res["SemanticYellowBrush"] = Frozen(dark ? "#e8cf6f" : "#f1c40f");
-        res["SemanticPurpleBrush"] = Frozen(dark ? "#c39bd3" : "#9b59b6");
-        res["SemanticBlueBrush"] = Frozen(dark ? "#7fb8e8" : "#3498db");
-        res["SemanticTealBrush"] = Frozen(dark ? "#63c9b5" : "#1abc9c");
-        res["SemanticGreenBrush"] = Frozen(dark ? "#4fbfa4" : "#16a085");
-        res["SemanticAzureBrush"] = Frozen(dark ? "#6fa8dc" : "#2980b9");
-        res["SemanticVioletBrush"] = Frozen(dark ? "#b08cd6" : "#8e44ad");
-        res["SemanticCrimsonBrush"] = Frozen(dark ? "#d96a63" : "#c0392b");
+        // ---- 分类语义色（P2-1）：A 用亮柔值，C 用深值保证纸白底可读。
+        res["SemanticRedBrush"] = Frozen(palette.SemanticRed);
+        res["SemanticOrangeBrush"] = Frozen(palette.SemanticOrange);
+        res["SemanticYellowBrush"] = Frozen(palette.SemanticYellow);
+        res["SemanticPurpleBrush"] = Frozen(palette.SemanticPurple);
+        res["SemanticBlueBrush"] = Frozen(palette.SemanticBlue);
+        res["SemanticTealBrush"] = Frozen(palette.SemanticTeal);
+        res["SemanticGreenBrush"] = Frozen(palette.SemanticGreen);
+        res["SemanticAzureBrush"] = Frozen(palette.SemanticAzure);
+        res["SemanticVioletBrush"] = Frozen(palette.SemanticViolet);
+        res["SemanticCrimsonBrush"] = Frozen(palette.SemanticCrimson);
 
-        // ---- 【深色对比度 v2.7.1】彩色小标（徽标 / 色板圆点 / 分类 pill）反衬文字：
-        // 深色模式语义色整体提亮后，白字普遍掉到 3:1 以下；统一改深色字压亮底，
-        // 浅色模式维持白字（浅色语义色都偏深，白字达标）。
+        // ---- 彩色小标（徽标 / 色板圆点 / 分类 pill）反衬文字：
+        // 深色 / A 的语义色整体提亮，改深色字压亮底；C 的语义色偏深，维持白字。
         res["PillForegroundBrush"] = dark ? Frozen("#11131c") : Frozen("#ffffff");
 
-        // ---- 阴影强度（用不透明度模拟 CSS 的 shadow-sm / md）
-        res["ShadowOpacity"] = dark ? 0.45 : 0.10;
+        // ---- 阴影强度：A 保留轻微层次；C 是纸面设计，不用投影（发丝线负责分节）。
+        res["ShadowOpacity"] = manual ? 0.0 : (dark ? 0.45 : 0.10);
 
         // ---- 【UI 优化 v1.10】卡片投影：带偏移 + 柔和的真实阴影（craft-floor：深度必须 offset+blur）
         // DropShadowEffect 是 Freezable，按主题生成同名资源，卡片 / 卡片按钮 / Toast 统一引用。
-        res["CardShadow"] = NewShadow(dark ? 0.24 : 0.055, blur: 10, depth: 1);
-        res["CardShadowStrong"] = NewShadow(dark ? 0.34 : 0.10, blur: 16, depth: 2);
+        res["CardShadow"] = manual
+            ? NewShadow(0, blur: 0, depth: 0)
+            : NewShadow(dark ? 0.24 : 0.055, blur: 10, depth: 1);
+        res["CardShadowStrong"] = manual
+            ? NewShadow(0, blur: 0, depth: 0)
+            : NewShadow(dark ? 0.34 : 0.10, blur: 16, depth: 2);
 
-        // ---- 圆角（紧凑风格，减少 AI 感）
+        // ---- 圆角：A 可按用户偏好微调（4–12 px）；C 是排版手册，固定直角。
         var radius = NormalizeUiRadius(Settings.UiRadius);
-        res["CornerRadiusLg"] = new CornerRadius(radius.Lg);
-        res["CornerRadiusMd"] = new CornerRadius(radius.Md);
-        res["CornerRadiusSm"] = new CornerRadius(radius.Sm);
-        // V3.1.0 UI 视觉刷新 1.0：设计令牌（间距 / 圆角 / 动效），新页面优先引用它们，
-        // 避免每处硬编码 8 / 12 / 16 造成视觉漂移；19 页的全量重设计留到 3.2。
-        res["CornerRadiusXl"] = new CornerRadius(radius.Xl);
+        var radiusScale = Settings.UiRadius switch { "sm" => 0.6, "lg" => 1.6, _ => 1.0 };
+        if (manual)
+        {
+            res["CornerRadiusLg"] = new CornerRadius(0);
+            res["CornerRadiusMd"] = new CornerRadius(0);
+            res["CornerRadiusSm"] = new CornerRadius(0);
+            res["CornerRadiusXl"] = new CornerRadius(0);
+            res["SkinCardRadius"] = new CornerRadius(0);
+            res["SkinButtonRadius"] = new CornerRadius(0);
+            res["SkinPillRadius"] = new CornerRadius(0);
+        }
+        else
+        {
+            res["CornerRadiusLg"] = new CornerRadius(radius.Lg);
+            res["CornerRadiusMd"] = new CornerRadius(radius.Md);
+            res["CornerRadiusSm"] = new CornerRadius(radius.Sm);
+            res["CornerRadiusXl"] = new CornerRadius(radius.Xl);
+            res["SkinCardRadius"] = new CornerRadius(Math.Max(2, Math.Round(7 * radiusScale)));
+            res["SkinButtonRadius"] = new CornerRadius(Math.Max(2, Math.Round(4 * radiusScale)));
+            res["SkinPillRadius"] = new CornerRadius(999);
+        }
         res["SpacingXs"] = 4.0;
         res["SpacingSm"] = 8.0;
         res["SpacingMd"] = 12.0;
@@ -817,6 +875,75 @@ public sealed class AppearanceService : IDisposable
         res["FontSizeH1"] = Math.Round(28 * f, 1);
         res["AppFontFamily"] = new FontFamily(ResolveFontFamily(Settings.FontFamily));
 
+        // ---- V3.7.2 皮肤版式令牌
+        // 页面标题：A 17/600 紧凑；C 37/300 细体大标题（中文回退到 YaHei Regular，见技术方案 §3.4）。
+        res["SkinPageTitleSize"] = Math.Round((manual ? 37 : 17) * f, 1);
+        res["SkinPageTitleWeight"] = manual ? FontWeights.Light : FontWeights.SemiBold;
+        res["SkinTitleFont"] = new FontFamily(manual
+            ? "Segoe UI Light, Microsoft YaHei UI"
+            : "Bahnschrift SemiCondensed, Microsoft YaHei UI");
+        // 导航：A 图标 + 文字；C 编号 + 文字（编号是目录序号，不是快捷键）。
+        res["SkinNavIconVisibility"] = manual ? Visibility.Collapsed : Visibility.Visible;
+        res["SkinNavNumberVisibility"] = manual ? Visibility.Visible : Visibility.Collapsed;
+        res["SkinNavNumberSize"] = Math.Round(11 * f, 1);
+        res["SkinNavGroupFontSize"] = Math.Round((manual ? 10 : 10.5) * f, 1);
+        res["SkinNavGroupMargin"] = manual ? new Thickness(20, 22, 0, 6) : new Thickness(14, 14, 0, 5);
+        // 卡片 / 按钮形态：A 填充 + 圆角 + 全边细线；C 透明 + 仅上边发丝线。
+        res["SkinCardBackground"] = manual ? Brushes.Transparent : Frozen(palette.Surface);
+        res["CardBorderBrush"] = Frozen(palette.Line);
+        res["SkinCardBorder"] = manual ? new Thickness(0, 1, 0, 0) : new Thickness(1);
+        res["SkinCardRadius"] = manual ? new CornerRadius(0) : res["SkinCardRadius"];
+        res["SkinCardBorderBrush"] = Frozen(palette.Line);
+        // Pill：A 圆角填充；C 直角描边（状态不只靠颜色，仍有文字）。
+        res["SkinPillBackground"] = manual ? Brushes.Transparent : Frozen(palette.Surface3);
+        res["SkinPillBorder"] = manual ? new Thickness(1) : new Thickness(0);
+        res["SkinPillBorderBrush"] = manual ? Frozen(palette.Line) : Brushes.Transparent;
+        // 交互边界：输入框 / 下拉 / 可点击卡片必须 ≥3:1，A 用 #6B768C，C 用 #111。
+        res["SkinInputBorderBrush"] = Frozen(palette.LineStrong);
+        // 分段选择（主题 / 字号 / 语言）：A 强调色选中；C 墨黑底白字直角。
+        res["SkinSegmentBackground"] = manual ? Frozen("#FFFFFF") : Frozen(palette.Surface2);
+        res["SkinSegmentSelectedBackground"] = manual
+            ? Frozen("#111111")
+            : Frozen(dark ? accent.DarkBase : accent.LightBase);
+        res["SkinSegmentSelectedForeground"] = manual
+            ? Frozen("#FFFFFF")
+            : (dark ? Frozen(accent.DarkOn) : Frozen("#FFFFFF"));
+        res["SkinSegmentSelectedBorder"] = manual
+            ? Frozen("#111111")
+            : Frozen(dark ? accent.DarkBase : accent.LightBase);
+        // 顶栏：C 用一条发丝线把标题区与内容分开；A 靠底色分层。
+        res["SkinTopBarBorder"] = manual ? new Thickness(0, 0, 0, 1) : new Thickness(0);
+        res["SkinTopBarBorderBrush"] = Frozen(palette.Line);
+        res["SkinKey"] = manual ? "manual" : "signal";
+        res["SkinIsManual"] = manual;
+        // 主操作按钮：A 用皮肤强调色；C 用墨黑直角按钮（设计板 C 的“黑底白字”）。
+        res["SkinPrimaryBackground"] = manual
+            ? Frozen("#111111")
+            : Frozen(dark ? accent.DarkBase : accent.LightBase);
+        res["SkinPrimaryForeground"] = manual
+            ? Frozen("#FFFFFF")
+            : (dark ? Frozen(accent.DarkOn) : Frozen("#FFFFFF"));
+        res["SkinPrimaryHover"] = manual
+            ? Frozen("#2B2B2B")
+            : Frozen(dark ? accent.DarkHover : accent.LightHover);
+        res["SkinPrimaryPressed"] = manual
+            ? Frozen("#000000")
+            : Frozen(dark ? accent.DarkPressed : accent.LightPressed);
+        // 导航选中态：A 品牌柔和底；C 浅灰底 + 左侧 2 px 黑线 + 加粗（不只靠颜色）。
+        res["SkinNavCheckedBackground"] = manual
+            ? Frozen(palette.Surface3)
+            : Frozen(dark ? accent.DarkSoft : accent.LightSoft);
+        res["SkinNavCheckedForeground"] = manual
+            ? Frozen(palette.Text)
+            : Frozen(dark ? accent.DarkBase : accent.LightBase);
+        res["SkinNavCheckedBorderBrush"] = manual ? Frozen(palette.LineStrong) : Brushes.Transparent;
+        res["SkinNavCheckedBorder"] = manual ? new Thickness(2, 0, 0, 0) : new Thickness(0);
+        // 基础边框与选中态同宽，避免选中时文字被推走 2 px。
+        res["SkinNavBaseBorder"] = manual ? new Thickness(2, 0, 0, 0) : new Thickness(0);
+        // 签名元素可见性：A 的 tally / 时间码只在 A 出现；C 的目录序号只在 C 出现。
+        res["SkinTallyVisibility"] = manual ? Visibility.Collapsed : Visibility.Visible;
+        res["SkinPageNumberVisibility"] = manual ? Visibility.Visible : Visibility.Collapsed;
+
         // ---- 动画时长：减少动画时直接归零，样式里的 Duration 统一引用它
         res["MotionDuration"] = profile.ReduceMotion
             ? new Duration(TimeSpan.Zero)
@@ -825,7 +952,9 @@ public sealed class AppearanceService : IDisposable
 
         // ---- 无障碍 / 老年模式的布局令牌（V3.3.0 / P0-1）
         // 页面与样式只引用这些键，不再各写一套 if；切换模式后 DynamicResource 即时生效。
-        res["NavWidth"] = new GridLength(profile.NavWidth);
+        // V3.7.2：基线宽度由皮肤决定（A 204 / C 232），无障碍 / 老年模式的加宽叠加在其上。
+        var profileNavDelta = Math.Max(0, profile.NavWidth - 212);
+        res["NavWidth"] = new GridLength(Math.Max(profile.NavWidth, (manual ? 232 : 204) + profileNavDelta));
         // V3.5.0：整体放松间距，减少「所有元素挤在一起」的视觉疲劳。
         res["NavItemMinHeight"] = profile.NavItemMinHeight + 6;
         res["NavItemPadding"] = new Thickness(
@@ -844,7 +973,7 @@ public sealed class AppearanceService : IDisposable
 
         // ---- 【自定义背景 v1.10】内容区背景：默认跟随主题；可选纯色 / 本地图片。
         // 高对比模式强制回退默认底，保证可读性优先于个性化。
-        ApplyBackgroundResources(res, dark, hc);
+        ApplyBackgroundResources(res, dark, hc, palette.Surface2);
     }
 
     // ------------------------------------------------------------ 自定义背景
@@ -893,19 +1022,24 @@ public sealed class AppearanceService : IDisposable
     }
 
     /// <summary>按当前设置写入内容区背景资源：ContentBackgroundBrush / ContentBackgroundImage / ContentBackgroundDim。</summary>
-    private void ApplyBackgroundResources(ResourceDictionary res, bool dark, bool hc)
+    private void ApplyBackgroundResources(ResourceDictionary res, bool dark, bool hc, string baseSurface)
     {
         if (hc || Settings.BackgroundMode == "default")
         {
-            res["ContentBackgroundBrush"] = Frozen(dark ? "#0F1110" : "#F7F7F4");
+            res["ContentBackgroundBrush"] = Frozen(baseSurface);
             ClearWallpaperResources(res);
             return;
         }
 
         if (Settings.BackgroundMode == "color")
         {
-            var brush = TryParseBrush(Settings.BackgroundColor)
-                        ?? Frozen(dark ? "#0F1110" : "#F7F7F4");
+            // V3.7.2：A · 导播台的正文是浅色。用户把纯色背景设成浅色时（例如默认 #e8f0fe），
+            // 浅字压在浅底上完全不可读；这里按皮肤自动压暗（72% 皮肤底色 + 28% 用户色），
+            // 既保留用户选的颜色倾向，也保证 WCAG 正文对比度。C 不需要压暗。
+            var color = dark
+                ? BlendHex(Settings.BackgroundColor, baseSurface, 0.72)
+                : Settings.BackgroundColor;
+            var brush = TryParseBrush(color) ?? Frozen(baseSurface);
             res["ContentBackgroundBrush"] = brush;
             ClearWallpaperResources(res);
             return;
@@ -913,7 +1047,7 @@ public sealed class AppearanceService : IDisposable
 
         // 图片模式（V3.1.0）：底仍是主题默认底，图片、压暗、铺放方式由 WallpaperService 写入。
         // 高对比已在上面强制回退；文件丢失 / 损坏时服务层回退默认底并给出一次可见提示。
-        res["ContentBackgroundBrush"] = Frozen(dark ? "#0F1110" : "#F7F7F4");
+        res["ContentBackgroundBrush"] = Frozen(baseSurface);
         res["ContentBackgroundDim"] = Brushes.Transparent;
         res["ContentBackgroundImage"] = null;
         res["ContentBackgroundImageA"] = null;
@@ -932,6 +1066,28 @@ public sealed class AppearanceService : IDisposable
         res["ContentBackgroundOpacity"] = 1.0;
         res["ContentBackgroundBlurRadius"] = 0.0;
         res["ContentBackgroundFadeDuration"] = new Duration(TimeSpan.Zero);
+    }
+
+    /// <summary>
+    /// 把 <paramref name="hex"/> 按 <paramref name="amount"/> 混向 <paramref name="targetHex"/>。
+    /// 用于 A 皮肤自动压暗浅色自定义背景；色值非法时原样返回。
+    /// </summary>
+    private static string BlendHex(string? hex, string targetHex, double amount)
+    {
+        try
+        {
+            if (ColorConverter.ConvertFromString(hex ?? "") is not Color from
+                || ColorConverter.ConvertFromString(targetHex) is not Color to)
+                return hex ?? targetHex;
+
+            var a = Math.Clamp(amount, 0, 1);
+            byte Mix(byte f, byte t) => (byte)Math.Round(f * (1 - a) + t * a);
+            return $"#FF{Mix(from.R, to.R):X2}{Mix(from.G, to.G):X2}{Mix(from.B, to.B):X2}";
+        }
+        catch (Exception)
+        {
+            return hex ?? targetHex;
+        }
     }
 
     private static SolidColorBrush? TryParseBrush(string hex)

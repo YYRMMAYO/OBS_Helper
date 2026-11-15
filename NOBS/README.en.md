@@ -4,9 +4,9 @@
 
 # OBS Helper · OBS帮助助手
 
-**Current release: V3.7.0** — completes the 16 feasible items deferred from V3.6.0: timer CSV / home card / settings section / tray status, console scene search, log filters, error-code knowledge search, connection wizard, tray menu customization, one-click hotkey restore, safe mode and plugin-query exponential backoff. See [RELEASE_NOTES_v3.7.0.md](RELEASE_NOTES_v3.7.0.md).
+**Current release: V3.7.2** — dual-theme UI: dark “Signal Desk” / light “Field Manual”, numbered contents, hairline sections, tally timecode, skin tokens and contrast fixes. 1902 unit tests, 37 headless self-test items and 50 dual-skin screenshots pass. See [RELEASE_NOTES_v3.7.2.md](RELEASE_NOTES_v3.7.2.md).
 
-> **V / X series**: V releases use `V3.7.0`-style versions; X releases use `X` + `MMdd` date codes such as `X1031`, with `Y1`/`Y2`/`Y3` appended for a second release on the same day. Both share features and the data folder (the X series only adds its own icon), but each channel only checks its own tags: V builds only `V*`, X builds only `X*`.
+> **V / X series**: V releases use `V3.7.2`-style versions; X releases use `X` + `MMdd` date codes such as `X1031`, with `Y1`/`Y2`/`Y3` appended for a second release on the same day. Both share features and the data folder (the X series only adds its own icon), but each channel only checks its own tags: V builds only `V*`, X builds only `X*`.
 
 > **This is the developer-facing full documentation for the Windows native WPF version and it lives inside `NOBS/`**;
 > the repository-root [`README.md`](../README.md) is the complete user-facing guide (features · usage · installation),

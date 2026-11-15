@@ -312,7 +312,9 @@ public partial class App : Application
 
         // V3.5.0 启动动画：深色品牌面板 + 进度线，主窗口出现后淡出；自检不显示。
         Views.SplashWindow? splash = null;
-        if (!HeadlessTest && !AppServices.Appearance.Settings.ReduceMotion && Environment.GetEnvironmentVariable("OBS_SELFTEST") != "1")
+        if (!HeadlessTest && !AppServices.Appearance.Settings.ReduceMotion
+            && Environment.GetEnvironmentVariable("OBS_SELFTEST") != "1"
+            && Environment.GetEnvironmentVariable("OBS_SHOT") != "1")
         {
             try
             {
@@ -340,7 +342,8 @@ public partial class App : Application
     /// </summary>
     private static bool DetectSafeMode()
     {
-        if (Environment.GetEnvironmentVariable("OBS_SELFTEST") == "1") return false;
+        if (Environment.GetEnvironmentVariable("OBS_SELFTEST") == "1"
+            || Environment.GetEnvironmentVariable("OBS_SHOT") == "1") return false;
         try
         {
             var store = AppServices.Store;

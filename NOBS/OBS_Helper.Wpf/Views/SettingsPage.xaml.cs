@@ -102,6 +102,13 @@ public partial class SettingsPage : UserControl, INavigationAware
     /// 按当前搜索词重建左栏。先 <c>Clear()</c> 是关键：语言切换与每次进入设置页都会调用它，
     /// 只追加不清空会让同一项出现两份（工具箱的「跳到小节」在 V3.4.1 就踩过这个坑）。
     /// </summary>
+    /// <summary>截图自检用：直接切到指定设置页（外观面板在首屏之下，需要单独取一张）。</summary>
+    internal void ShowSectionForScreenshot(string id)
+    {
+        ShowSettingsSection(id);
+        SettingsContentScroll.ScrollToTop();
+    }
+
     private void BuildSettingsNav()
     {
         var query = SettingsSearchBox.Text?.Trim() ?? "";
@@ -113,6 +120,8 @@ public partial class SettingsPage : UserControl, INavigationAware
             ? Visibility.Visible
             : Visibility.Collapsed;
 
+        // V3.7.2：C · 排版手册的左栏是编号目录；编号跨分组连续，和主窗口导航同一种读法。
+        var navNumber = 0;
         foreach (var group in SettingsSections.Groups)
         {
             var sections = matched
@@ -130,6 +139,7 @@ public partial class SettingsPage : UserControl, INavigationAware
 
             foreach (var section in sections)
             {
+                navNumber++;
                 var radio = new RadioButton
                 {
                     GroupName = "SettingsSection",
@@ -139,6 +149,7 @@ public partial class SettingsPage : UserControl, INavigationAware
                     CommandParameter = section.Id,
                     IsChecked = string.Equals(section.Id, _currentSectionId, StringComparison.Ordinal),
                 };
+                Controls.Nav.SetNumber(radio, navNumber);   // 无编号时模板显示 00，因此必须显式赋值
                 radio.Checked += OnSettingsSectionChecked;
                 _sectionButtons[section.Id] = radio;
                 SettingsNavPanel.Children.Add(radio);
@@ -352,6 +363,14 @@ public partial class SettingsPage : UserControl, INavigationAware
             FontXl.IsChecked = ap.FontScale == AppFontScale.Xl;
 
             SyncUiCustomCombos(ap.Settings.UiRadius, ap.Settings.PanelOpacity);
+            // V3.7.2：皮肤说明与「C 固定直角」的可用性；圆角下拉在 C 下禁用，避免改了没效果。
+            SkinValueText.Text = Strings.T(ap.IsManualSkin
+                ? "settings.appearance.skin.manual"
+                : "settings.appearance.skin.signal");
+            UiRadiusCombo.IsEnabled = !ap.IsManualSkin;
+            AccentSkinDefaultButton.Visibility = ap.Settings.AccentIsCustom
+                ? Visibility.Visible
+                : Visibility.Collapsed;
 
             HighContrastSwitch.IsChecked = ap.Settings.HighContrast;
             ReduceMotionSwitch.IsChecked = ap.Settings.ReduceMotion;
@@ -1224,6 +1243,14 @@ public partial class SettingsPage : UserControl, INavigationAware
             ReferenceEquals(sender, ThemeLight) ? AppTheme.Light :
             ReferenceEquals(sender, ThemeDark) ? AppTheme.Dark :
             AppTheme.System);
+    }
+
+    /// <summary>V3.7.2：把强调色恢复为跟随皮肤（A 信号青 / C 信号蓝）。</summary>
+    private void OnResetAccentToSkin(object sender, RoutedEventArgs e)
+    {
+        if (_syncing) return;
+        AppServices.Appearance.ResetAccentToSkin();
+        BuildAccentSwatches();
     }
 
     private void OnFontScaleChecked(object sender, RoutedEventArgs e)

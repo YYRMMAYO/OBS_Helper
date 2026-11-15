@@ -5,7 +5,11 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
+using System.Windows.Automation;
+using System.Windows.Automation.Peers;
 using System.Windows.Media.Animation;
+using System.Windows.Media.Imaging;
+using System.Windows.Threading;
 using OBS_Helper.Wpf.Controls;
 using OBS_Helper.Wpf.Navigation;
 using OBS_Helper.Wpf.Services;
@@ -289,6 +293,15 @@ public partial class MainWindow : Window
         Activated += OnWallpaperPauseChanged;
         Deactivated += OnWallpaperPauseChanged;
         UpdateWallpaperPause();
+
+        InitSkinShell();
+
+        // V3.7.2 截图自检：A/C 两套皮肤逐页渲染 PNG，供本地视觉核对。
+        if (Environment.GetEnvironmentVariable("OBS_SHOT") == "1")
+        {
+            await RunScreenshotAsync();
+            return;
+        }
 
         // 自检测试：逐个导航所有路由，把异常写到 selftest_result.txt 后退出。
         // 用环境变量触发，避免影响正常启动。
@@ -837,6 +850,145 @@ public partial class MainWindow : Window
         {
             // 更新检查属于锦上添花，任何异常都不得打断主流程
         }
+    }
+
+    /// <summary>
+    /// V3.7.2 截图自检：A / C 两套皮肤逐页导航并渲染成 PNG。
+    ///
+    /// 为什么放在应用内而不是外部截屏：RenderTargetBitmap 直接渲染 WPF 视觉树，
+    /// 不受桌面遮挡 / 缩放 / 主题影响，CI 与本地都能得到同一份结果。
+    /// 触发方式：设置 <c>OBS_SHOT=1</c>，可选 <c>OBS_SHOT_DIR</c> 指定输出目录。
+    /// </summary>
+    private async Task RunScreenshotAsync()
+    {
+        App.HeadlessTest = true;
+        FileLogger.Info("Shot", "截图自检启动");
+        var dir = Environment.GetEnvironmentVariable("OBS_SHOT_DIR");
+        if (string.IsNullOrWhiteSpace(dir))
+            dir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                "OBS_Helper", "shots");
+        Directory.CreateDirectory(dir);
+        void Log(string message)
+        {
+            try { File.AppendAllText(Path.Combine(dir, "shot-progress.log"), message + Environment.NewLine); }
+            catch (Exception) { /* 日志失败不影响截图 */ }
+        }
+        Log($"[{DateTime.Now:HH:mm:ss}] start dir={dir}");
+        FileLogger.Info("Shot", $"截图输出目录：{dir}");
+
+        // 截图期间关闭页面入场动画，避免抓到淡入中的半透明帧。
+        var appearance = AppServices.Appearance;
+        var originalTheme = appearance.Settings.Theme;
+        var originalReduceMotion = appearance.Settings.ReduceMotion;
+        var originalBackgroundMode = appearance.Settings.BackgroundMode;
+        appearance.Settings.ReduceMotion = true;
+        // 设计验收用默认底：自定义纯色 / 壁纸会覆盖 A/C 的机柜黑与纸白（用户设置仍保留）。
+        appearance.Settings.BackgroundMode = "default";
+        // 截图用更大窗口，尽量在一屏内看到更多内容（1920×1080 桌面可容纳 1400×900）。
+        Width = 1400;
+        Height = 900;
+        WindowState = WindowState.Normal;
+        appearance.Apply();
+
+        var shotCases = new (string Route, object? Param)[]
+        {
+            (Routes.Home, null), (Routes.Features, null), (Routes.MobileLink, "remote"),
+            (Routes.VirtualLive, "avatar"), (Routes.Templates, null), (Routes.Plugins, null),
+            (Routes.Console, null), (Routes.Performance, null), (Routes.Toolbox, null),
+            (Routes.Setup, null), (Routes.Search, null), (Routes.Assistant, null),
+            (Routes.Diagnostic, null), (Routes.Guide, null), (Routes.Feedback, null),
+            (Routes.Settings, null), (Routes.Logs, null), (Routes.ObsConfig, null),
+            (Routes.Interaction, null), (Routes.Insights, null), (Routes.Stream, null),
+            (Routes.Automation, null), (Routes.Timer, null),
+        };
+
+        var limit = int.TryParse(Environment.GetEnvironmentVariable("OBS_SHOT_LIMIT"), out var parsedLimit)
+            ? parsedLimit
+            : shotCases.Length;
+        if (limit > 0 && limit < shotCases.Length) shotCases = shotCases.Take(limit).ToArray();
+
+        try
+        {
+            foreach (var (theme, skinKey) in new[] { (AppTheme.Dark, "A-signal"), (AppTheme.Light, "C-manual") })
+            {
+                appearance.SetTheme(theme);
+                await WaitForUiIdleAsync().ConfigureAwait(true);
+
+                var index = 0;
+                foreach (var (route, param) in shotCases)
+                {
+                    index++;
+                    Log($"[{DateTime.Now:HH:mm:ss}] NAV {skinKey} {index:00} {route}");
+                    try
+                    {
+                        // 截图不依赖页面数据是否加载完：网络慢的页面最多等 3 秒，避免整轮卡死。
+                        var navigation = _nav.NavigateAsync(route, param, pushHistory: false);
+                        await Task.WhenAny(navigation, Task.Delay(TimeSpan.FromSeconds(3))).ConfigureAwait(true);
+                        await WaitForUiIdleAsync().ConfigureAwait(true);
+                        var suffix = param is null ? "" : "-" + param;
+                        var file = Path.Combine(dir, $"{skinKey}-{index:00}-{route}{suffix}.png");
+                        SaveScreenshot(file);
+                        Log($"[{DateTime.Now:HH:mm:ss}] {skinKey} {index:00} {route} -> {Path.GetFileName(file)} ({new FileInfo(file).Length} B)");
+
+                        // 设置页额外截一张「外观与无障碍」：皮肤说明 / 圆角禁用 / 强调色复位都在这一屏。
+                        if (route == Routes.Settings && PageHost.Content is SettingsPage settingsPage)
+                        {
+                            settingsPage.ShowSectionForScreenshot("appearance");
+                            await WaitForUiIdleAsync().ConfigureAwait(true);
+                            SaveScreenshot(Path.Combine(dir, $"{skinKey}-16b-settings-appearance.png"));
+                            Log($"[{DateTime.Now:HH:mm:ss}] {skinKey} settings appearance saved");
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Log($"[{DateTime.Now:HH:mm:ss}] FAIL {skinKey} {index:00} {route}: {ex.GetType().Name} {ex.Message}");
+                        FileLogger.Warn("Shot", $"截图失败（{route}/{param}）：{ex.Message}");
+                    }
+                }
+            }
+
+            // 额外留证：恢复用户的自定义背景后，A 会自动压暗、C 保持原色（可读性处理）。
+            appearance.Settings.BackgroundMode = originalBackgroundMode;
+            foreach (var (theme, skinKey) in new[] { (AppTheme.Dark, "A-signal"), (AppTheme.Light, "C-manual") })
+            {
+                appearance.SetTheme(theme);
+                await _nav.NavigateAsync(Routes.Home, null, pushHistory: false).ConfigureAwait(true);
+                await WaitForUiIdleAsync().ConfigureAwait(true);
+                SaveScreenshot(Path.Combine(dir, $"{skinKey}-99-custom-background-home.png"));
+            }
+        }
+        finally
+        {
+            appearance.Settings.ReduceMotion = originalReduceMotion;
+            appearance.Settings.BackgroundMode = originalBackgroundMode;
+            appearance.Settings.Theme = originalTheme;
+            appearance.Apply();
+        }
+
+        Log($"[{DateTime.Now:HH:mm:ss}] done");
+        await File.WriteAllTextAsync(Path.Combine(dir, "shots.txt"),
+            $"OBS_Helper V3.7.2 截图自检  {DateTime.Now:yyyy-MM-dd HH:mm:ss}{Environment.NewLine}" +
+            $"窗口 {ActualWidth:0}x{ActualHeight:0} DIP；{shotCases.Length} 条路由 × 2 套皮肤（A 导播台 / C 排版手册）");
+        Application.Current.Shutdown();
+    }
+
+    /// <summary>把当前窗口内容渲染成 PNG（不含系统标题栏）。</summary>
+    private void SaveScreenshot(string path)
+    {
+        // 渲染窗口的根内容而不是 Window：ActualHeight 含标题栏 / 边框，
+        // 直接渲染 Window 会在底部留下一条未绘制白边（截图自检第 3 轮发现）。
+        if (Content is not FrameworkElement root) return;
+        root.UpdateLayout();
+        var width = (int)Math.Ceiling(root.ActualWidth);
+        var height = (int)Math.Ceiling(root.ActualHeight);
+        if (width <= 0 || height <= 0) return;
+
+        var bitmap = new RenderTargetBitmap(width, height, 96, 96, PixelFormats.Pbgra32);
+        bitmap.Render(root);
+        var encoder = new PngBitmapEncoder();
+        encoder.Frames.Add(BitmapFrame.Create(bitmap));
+        using var stream = File.Create(path);
+        encoder.Save(stream);
     }
 
     /// <summary>
@@ -1475,6 +1627,132 @@ public partial class MainWindow : Window
             }
         }));
 
+    // ------------------------------------------------------------ 双皮肤壳层（V3.7.2）
+
+    /// <summary>tally / 时间码每秒刷新；没有录制或推流时停表，避免空转。</summary>
+    private readonly DispatcherTimer _tallyTimer = new() { Interval = TimeSpan.FromSeconds(1) };
+
+    /// <summary>上一次观察到的皮肤，用于判断「真的换肤了」而不是同一次重刷。</summary>
+    private UiSkin? _lastSkin;
+
+    /// <summary>
+    /// 接上双皮肤的窗口级行为：皮肤变化时重刷编号目录、目录序号、tally 并播报。
+    /// 注意不重建页面：令牌变化由 DynamicResource 推送，焦点 / 滚动 / 输入天然保留。
+    /// </summary>
+    private void InitSkinShell()
+    {
+        _tallyTimer.Tick += (_, _) => UpdateTally();
+        AppServices.Appearance.Changed += OnSkinAppearanceChanged;
+        AppServices.Obs.StateChanged += OnObsStateChangedForTally;
+        _lastSkin = AppServices.Appearance.ActiveSkin;
+        RefreshShellSkin(announce: false);
+    }
+
+    /// <summary>外观（含主题 / 高对比 / 字号）变化：只处理与皮肤相关的壳层元素。</summary>
+    private void OnSkinAppearanceChanged()
+    {
+        if (!Dispatcher.CheckAccess())
+        {
+            Dispatcher.BeginInvoke(new Action(OnSkinAppearanceChanged));
+            return;
+        }
+
+        var skin = AppServices.Appearance.ActiveSkin;
+        var changed = _lastSkin != skin;
+        _lastSkin = skin;
+        RefreshShellSkin(announce: changed);
+    }
+
+    /// <summary>重刷壳层里不受纯令牌控制的元素（可访问名称、目录序号、tally）。</summary>
+    private void RefreshShellSkin(bool announce)
+    {
+        RefreshNavAccessibility();
+        UpdatePageNumber();
+        UpdateTally();
+
+        if (!announce) return;
+
+        // V3.7.2 / §5.6：换肤后只播报一句，不重读整页；视觉树没被替换，焦点不需要恢复。
+        var dark = AppServices.Appearance.ActiveSkin == UiSkin.SignalDark;
+        SkinLiveRegion.Text = Strings.T(dark ? "theme.switched.dark" : "theme.switched.light");
+        var peer = UIElementAutomationPeer.FromElement(SkinLiveRegion)
+                   ?? UIElementAutomationPeer.CreatePeerForElement(SkinLiveRegion);
+        peer?.RaiseAutomationEvent(AutomationEvents.LiveRegionChanged);
+    }
+
+    /// <summary>
+    /// C 的编号目录读屏名称 = 「第 01 项，首页」，不能只读一个数字；
+    /// A 用页面名本身即可。语言切换后重新取文案。
+    /// </summary>
+    private void RefreshNavAccessibility()
+    {
+        var manual = AppServices.Appearance.IsManualSkin;
+        foreach (var (tab, titleKey, _) in _meta.Values)
+        {
+            if (tab is null) continue;
+            var title = Strings.T(titleKey);
+            var number = Controls.Nav.GetNumber(tab);
+            AutomationProperties.SetName(tab,
+                manual && number > 0 ? Strings.T("nav.numberName", number.ToString("00"), title) : title);
+        }
+    }
+
+    /// <summary>顶栏的目录序号（C）：与左侧导航同源；非导航路由不显示。</summary>
+    private void UpdatePageNumber()
+    {
+        var number = 0;
+        var route = _nav.CurrentRoute;
+        if (!string.IsNullOrEmpty(route) && _meta.TryGetValue(route, out var meta) && meta.Tab is { } tab)
+            number = Controls.Nav.GetNumber(tab);
+
+        var text = number > 0 ? number.ToString("00") : "";
+        PageNumberText.Text = text;
+        PageNumberText.Visibility = text.Length > 0 && AppServices.Appearance.IsManualSkin
+            ? Visibility.Visible
+            : Visibility.Collapsed;
+    }
+
+    private void OnObsStateChangedForTally()
+        => Dispatcher.BeginInvoke(new Action(UpdateTally));
+
+    /// <summary>
+    /// A 的签名元素：OFF AIR / ON AIR + 时间码。
+    /// 状态同时用文字与圆点表达（不只靠颜色）；未录制 / 未推流时不跑计时器。
+    /// </summary>
+    private void UpdateTally()
+    {
+        try
+        {
+            var obs = AppServices.Obs;
+            var streaming = obs.StreamStatus.Active;
+            var recording = obs.RecordStatus.Active;
+            var live = streaming || recording;
+
+            var elapsed = streaming ? obs.StreamElapsed
+                : recording ? obs.RecordElapsed
+                : TimeSpan.Zero;
+            if (elapsed < TimeSpan.Zero) elapsed = TimeSpan.Zero;
+
+            TallyText.Text = Strings.T(live ? "app.tally.onAir" : "app.tally.offAir");
+            TallyTime.Text = $"{(int)elapsed.TotalHours:00}:{elapsed.Minutes:00}:{elapsed.Seconds:00}";
+
+            var liveBrush = (Brush)FindResource("DangerBrush");
+            var idleBrush = (Brush)FindResource("MutedBrush");
+            TallyDot.Fill = live ? liveBrush : idleBrush;
+            TallyText.Foreground = live ? liveBrush : idleBrush;
+            TallyChip.BorderBrush = live ? liveBrush : (Brush)FindResource("SkinInputBorderBrush");
+            AutomationProperties.SetName(TallyChip,
+                Strings.T("app.tally.aria", TallyText.Text, TallyTime.Text));
+
+            if (live && !_tallyTimer.IsEnabled) _tallyTimer.Start();
+            else if (!live && _tallyTimer.IsEnabled) _tallyTimer.Stop();
+        }
+        catch (Exception)
+        {
+            // tally 只是签名装饰，任何异常都不能影响主界面
+        }
+    }
+
     // ------------------------------------------------------------ 导航联动
 
     /// <summary>
@@ -1502,10 +1780,19 @@ public partial class MainWindow : Window
             _syncingNav = true;
             foreach (var (tab, _, _) in _meta.Values)
             {
-                if (tab is not null) tab.IsChecked = false;
+                if (tab is null) continue;
+                tab.IsChecked = false;
+                AutomationProperties.SetItemStatus(tab, "");
             }
-            if (meta.Tab is not null) meta.Tab.IsChecked = true;
+            if (meta.Tab is not null)
+            {
+                meta.Tab.IsChecked = true;
+                // C 的编号目录要给读屏补「当前页」（V3.7.2 / §5.5）
+                AutomationProperties.SetItemStatus(meta.Tab, Strings.T("nav.currentItem"));
+            }
             _syncingNav = false;
+
+            UpdatePageNumber();
         }
 
         SyncBackButton();
@@ -1581,6 +1868,8 @@ public partial class MainWindow : Window
         SideBadge.Refresh();
         AppServices.Tray.RefreshLanguage();
         RefreshFallbackBanner();   // 语言变了要重新判定（中文界面下不该提示回退）
+        RefreshNavAccessibility(); // V3.7.2：编号目录的可访问名称含「第 N 项」，随语言重取
+        UpdateTally();             // tally 文案（OFF AIR / ON AIR 的本地化）
 
         var route = _nav.CurrentRoute;
         if (string.IsNullOrEmpty(route)) return;

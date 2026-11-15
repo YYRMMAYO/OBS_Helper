@@ -35,6 +35,9 @@
 
   <ItemGroup>
     <Compile Include="..\OBS_Helper.Wpf\Services\Obs\ObsAuth.cs" Link="Linked\ObsAuth.cs" />
+    <!-- V3.7.2 双皮肤：枚举 / 解析规则 / 语义色板（纯 BCL），用于对比度与解析单测 -->
+    <Compile Include="..\OBS_Helper.Wpf\Services\UiSkin.cs" Link="Linked\UiSkin.cs" />
+    <Compile Include="..\OBS_Helper.Wpf\Services\Appearance\SkinPalette.cs" Link="Linked\Appearance\SkinPalette.cs" />
     <!-- 文案表（V2.9.2）：纯 BCL、零 WPF 依赖，被上面这些「纯逻辑」文件共用 -->
     <Compile Include="..\OBS_Helper.Wpf\Localization\Strings.cs" Link="Linked\Strings.cs" />
     <Compile Include="..\OBS_Helper.Wpf\Localization\StringTableZhHans.cs" Link="Linked\StringTableZhHans.cs" />

@@ -90,18 +90,18 @@
   <!-- ============================================================ 卡片 / 容器 -->
 
   <Style x:Key="NavGroupLabel" TargetType="TextBlock">
-    <Setter Property="FontSize" Value="{DynamicResource FontSizeXs}" />
+    <Setter Property="FontSize" Value="{DynamicResource SkinNavGroupFontSize}" />
     <Setter Property="FontWeight" Value="SemiBold" />
-    <Setter Property="Foreground" Value="{DynamicResource MutedBrush}" />
-    <Setter Property="Margin" Value="14,14,0,5" />
+    <Setter Property="Foreground" Value="{DynamicResource DimBrush}" />
+    <Setter Property="Margin" Value="{DynamicResource SkinNavGroupMargin}" />
     <Setter Property="TextOptions.TextFormattingMode" Value="Ideal" />
   </Style>
 
   <Style x:Key="Card" TargetType="Border">
-    <Setter Property="Background" Value="{DynamicResource SurfaceBrush}" />
-    <Setter Property="BorderBrush" Value="{DynamicResource LineBrush}" />
-    <Setter Property="BorderThickness" Value="1" />
-    <Setter Property="CornerRadius" Value="{DynamicResource CornerRadiusLg}" />
+    <Setter Property="Background" Value="{DynamicResource SkinCardBackground}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource SkinCardBorderBrush}" />
+    <Setter Property="BorderThickness" Value="{DynamicResource SkinCardBorder}" />
+    <Setter Property="CornerRadius" Value="{DynamicResource SkinCardRadius}" />
     <Setter Property="Padding" Value="{DynamicResource CardPadding}" />
     <Setter Property="Effect" Value="{DynamicResource CardShadow}" />
     <Setter Property="SnapsToDevicePixels" Value="True" />
@@ -109,7 +109,7 @@
 
   <Style x:Key="CardTight" TargetType="Border" BasedOn="{StaticResource Card}">
     <Setter Property="Padding" Value="12" />
-    <Setter Property="CornerRadius" Value="{DynamicResource CornerRadiusMd}" />
+    <Setter Property="CornerRadius" Value="{DynamicResource SkinCardRadius}" />
   </Style>
 
   <Style x:Key="SoftPanel" TargetType="Border">
@@ -119,8 +119,10 @@
   </Style>
 
   <Style x:Key="Pill" TargetType="Border">
-    <Setter Property="Background" Value="{DynamicResource Surface3Brush}" />
-    <Setter Property="CornerRadius" Value="999" />
+    <Setter Property="Background" Value="{DynamicResource SkinPillBackground}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource SkinPillBorderBrush}" />
+    <Setter Property="BorderThickness" Value="{DynamicResource SkinPillBorder}" />
+    <Setter Property="CornerRadius" Value="{DynamicResource SkinPillRadius}" />
     <Setter Property="Padding" Value="8,3" />
     <Setter Property="VerticalAlignment" Value="Center" />
   </Style>
@@ -220,7 +222,7 @@
                   Background="{TemplateBinding Background}"
                   BorderBrush="{TemplateBinding BorderBrush}"
                   BorderThickness="{TemplateBinding BorderThickness}"
-                  CornerRadius="{DynamicResource CornerRadiusSm}"
+                  CornerRadius="{DynamicResource SkinButtonRadius}"
                   Padding="{TemplateBinding Padding}">
             <Border.RenderTransform>
               <ScaleTransform x:Name="PressScale" ScaleX="1" ScaleY="1" />
@@ -271,19 +273,18 @@
     </Setter>
   </Style>
 
+  <!-- V3.7.2：A 用信号青实心；C 用墨黑直角实心（排版手册的“黑底白字”按钮）。 -->
   <Style x:Key="PrimaryButton" TargetType="Button" BasedOn="{StaticResource BaseButton}">
-    <Setter Property="Background" Value="{DynamicResource BrandBrush}" />
-    <Setter Property="Foreground" Value="{DynamicResource BrandForegroundBrush}" />
-    <Setter Property="BorderBrush" Value="{DynamicResource BrandDarkBrush}" />
-    <Setter Property="BorderThickness" Value="0,0,0,1" />
+    <Setter Property="Background" Value="{DynamicResource SkinPrimaryBackground}" />
+    <Setter Property="Foreground" Value="{DynamicResource SkinPrimaryForeground}" />
+    <Setter Property="BorderThickness" Value="0" />
     <Setter Property="FontWeight" Value="SemiBold" />
     <Style.Triggers>
       <Trigger Property="IsMouseOver" Value="True">
-        <Setter Property="Background" Value="{DynamicResource BrandHoverBrush}" />
+        <Setter Property="Background" Value="{DynamicResource SkinPrimaryHover}" />
       </Trigger>
       <Trigger Property="IsPressed" Value="True">
-        <Setter Property="Background" Value="{DynamicResource BrandPressedBrush}" />
-        <Setter Property="BorderThickness" Value="0" />
+        <Setter Property="Background" Value="{DynamicResource SkinPrimaryPressed}" />
       </Trigger>
     </Style.Triggers>
   </Style>
@@ -291,7 +292,8 @@
   <Style x:Key="SecondaryButton" TargetType="Button" BasedOn="{StaticResource BaseButton}">
     <Setter Property="Background" Value="{DynamicResource SurfaceBrush}" />
     <Setter Property="Foreground" Value="{DynamicResource TextBrush}" />
-    <Setter Property="BorderBrush" Value="{DynamicResource LineBrush}" />
+    <!-- V3.7.2：交互边界用 LineStrong（A #6B768C / C #111），装饰线不得当按钮描边。 -->
+    <Setter Property="BorderBrush" Value="{DynamicResource SkinInputBorderBrush}" />
     <Setter Property="BorderThickness" Value="1" />
     <Style.Triggers>
       <Trigger Property="IsMouseOver" Value="True">
@@ -372,10 +374,10 @@
       <Setter.Value>
         <ControlTemplate TargetType="Button">
           <Border x:Name="Bd"
-                  Background="{DynamicResource SurfaceBrush}"
-                  BorderBrush="{DynamicResource LineBrush}"
-                  BorderThickness="1"
-                  CornerRadius="{DynamicResource CornerRadiusLg}"
+                  Background="{DynamicResource SkinCardBackground}"
+                  BorderBrush="{DynamicResource SkinCardBorderBrush}"
+                  BorderThickness="{DynamicResource SkinCardBorder}"
+                  CornerRadius="{DynamicResource SkinCardRadius}"
                   Padding="14"
                   Effect="{DynamicResource CardShadow}"
                   SnapsToDevicePixels="True">
@@ -413,14 +415,25 @@
       <Setter.Value>
         <ControlTemplate TargetType="RadioButton">
           <Border x:Name="Bd" Background="Transparent" CornerRadius="{DynamicResource CornerRadiusSm}"
+                  BorderBrush="Transparent" BorderThickness="{DynamicResource SkinNavBaseBorder}"
                   RenderTransformOrigin="0.5,0.5"
                   Padding="{TemplateBinding Padding}" MinHeight="{TemplateBinding MinHeight}">
             <Border.RenderTransform>
               <ScaleTransform x:Name="NavScale" ScaleX="1" ScaleY="1" />
             </Border.RenderTransform>
             <StackPanel Orientation="Horizontal">
-              <!-- 矢量图标：描边色跟随主题（Muted），选中切品牌色；Tag 为空时宽度为 0 不占位 -->
+              <!-- C · 排版手册的编号目录：01–16，跨分组连续；只是目录序号，不是快捷键。 -->
+              <TextBlock x:Name="Number"
+                         Text="{Binding Path=(conv:Nav.Number), RelativeSource={RelativeSource TemplatedParent}, StringFormat={}{0:00}}"
+                         Visibility="{DynamicResource SkinNavNumberVisibility}"
+                         FontFamily="Cascadia Mono, Consolas, Courier New"
+                         FontSize="{DynamicResource SkinNavNumberSize}"
+                         Foreground="{DynamicResource DimBrush}"
+                         MinWidth="22" Margin="0,0,8,0"
+                         VerticalAlignment="Center" />
+              <!-- 矢量图标：A 显示，C 隐藏（改由编号承担定位） -->
               <Path x:Name="Icon" Data="{TemplateBinding Tag}" Stretch="Uniform"
+                    Visibility="{DynamicResource SkinNavIconVisibility}"
                     Width="18" Height="18" Margin="0,0,8,0"
                     Stroke="{DynamicResource MutedBrush}" StrokeThickness="1.8"
                     StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"
@@ -460,9 +473,13 @@
               </Trigger.ExitActions>
             </Trigger>
             <Trigger Property="IsChecked" Value="True">
-              <Setter TargetName="Bd" Property="Background" Value="{DynamicResource BrandSoftBrush}" />
-              <Setter TargetName="Icon" Property="Stroke" Value="{DynamicResource BrandBrush}" />
-              <Setter TargetName="Label" Property="Foreground" Value="{DynamicResource BrandBrush}" />
+              <Setter TargetName="Bd" Property="Background" Value="{DynamicResource SkinNavCheckedBackground}" />
+              <Setter TargetName="Bd" Property="BorderBrush" Value="{DynamicResource SkinNavCheckedBorderBrush}" />
+              <Setter TargetName="Bd" Property="BorderThickness" Value="{DynamicResource SkinNavCheckedBorder}" />
+              <Setter TargetName="Icon" Property="Stroke" Value="{DynamicResource SkinNavCheckedForeground}" />
+              <Setter TargetName="Number" Property="Foreground" Value="{DynamicResource SkinNavCheckedForeground}" />
+              <Setter TargetName="Number" Property="FontWeight" Value="SemiBold" />
+              <Setter TargetName="Label" Property="Foreground" Value="{DynamicResource SkinNavCheckedForeground}" />
               <Setter TargetName="Label" Property="FontWeight" Value="SemiBold" />
             </Trigger>
             <Trigger Property="IsKeyboardFocused" Value="True">
@@ -484,9 +501,9 @@
     <Setter Property="Template">
       <Setter.Value>
         <ControlTemplate TargetType="RadioButton">
-          <Border x:Name="Bd" Background="{DynamicResource Surface2Brush}"
-                  BorderBrush="{DynamicResource LineBrush}" BorderThickness="1"
-                  CornerRadius="{DynamicResource CornerRadiusSm}" RenderTransformOrigin="0.5,0.5"
+          <Border x:Name="Bd" Background="{DynamicResource SkinSegmentBackground}"
+                  BorderBrush="{DynamicResource SkinInputBorderBrush}" BorderThickness="1"
+                  CornerRadius="{DynamicResource SkinButtonRadius}" RenderTransformOrigin="0.5,0.5"
                   Padding="{TemplateBinding Padding}" Margin="0,0,8,8">
             <Border.RenderTransform>
               <ScaleTransform x:Name="SegScale" ScaleX="1" ScaleY="1" />
@@ -533,10 +550,10 @@
               <Setter Property="Padding" Value="11,5" />
             </Trigger>
             <Trigger Property="IsChecked" Value="True">
-              <Setter TargetName="Bd" Property="Background" Value="{DynamicResource BrandBrush}" />
-              <Setter TargetName="Bd" Property="BorderBrush" Value="{DynamicResource BrandBrush}" />
-              <!-- 【v2.7.1】选中段控件的反衬文字走资源，深色模式不再白字压亮底 -->
-              <Setter Property="Foreground" Value="{DynamicResource BrandForegroundBrush}" />
+              <Setter TargetName="Bd" Property="Background" Value="{DynamicResource SkinSegmentSelectedBackground}" />
+              <Setter TargetName="Bd" Property="BorderBrush" Value="{DynamicResource SkinSegmentSelectedBorder}" />
+              <!-- A 用信号青底 + 深字；C 用墨黑底 + 白字（排版手册的直角选中态） -->
+              <Setter Property="Foreground" Value="{DynamicResource SkinSegmentSelectedForeground}" />
               <Setter Property="FontWeight" Value="SemiBold" />
             </Trigger>
             <!-- 选中且聚焦：焦点框不能因为底色变成品牌色就看不见 -->
@@ -562,7 +579,7 @@
     <Setter Property="CaretBrush" Value="{DynamicResource TextBrush}" />
     <Setter Property="SelectionBrush" Value="{DynamicResource BrandBrush}" />
     <Setter Property="Background" Value="{DynamicResource SurfaceBrush}" />
-    <Setter Property="BorderBrush" Value="{DynamicResource LineBrush}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource SkinInputBorderBrush}" />
     <Setter Property="BorderThickness" Value="1" />
     <Setter Property="Padding" Value="10,8" />
     <Setter Property="MinHeight" Value="36" />
@@ -632,7 +649,7 @@
     <Setter Property="Foreground" Value="{DynamicResource TextBrush}" />
     <Setter Property="CaretBrush" Value="{DynamicResource TextBrush}" />
     <Setter Property="Background" Value="{DynamicResource SurfaceBrush}" />
-    <Setter Property="BorderBrush" Value="{DynamicResource LineBrush}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource SkinInputBorderBrush}" />
     <Setter Property="BorderThickness" Value="1" />
     <Setter Property="Padding" Value="10,8" />
     <Setter Property="MinHeight" Value="36" />
@@ -802,8 +819,8 @@
             <Popup x:Name="PART_Popup" AllowsTransparency="True" Placement="Bottom"
                    IsOpen="{TemplateBinding IsDropDownOpen}" Focusable="False" PopupAnimation="Fade">
               <Border Background="{DynamicResource SurfaceBrush}"
-                      BorderBrush="{DynamicResource LineBrush}" BorderThickness="1"
-                      CornerRadius="{DynamicResource CornerRadiusMd}" Padding="4"
+                      BorderBrush="{DynamicResource SkinInputBorderBrush}" BorderThickness="1"
+                      CornerRadius="{DynamicResource SkinCardRadius}" Padding="4"
                       Effect="{DynamicResource CardShadowStrong}"
                       MinWidth="{Binding ActualWidth, RelativeSource={RelativeSource TemplatedParent}}"
                       MaxHeight="280">

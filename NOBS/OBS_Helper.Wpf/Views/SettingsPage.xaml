@@ -223,9 +223,23 @@
                          Style="{StaticResource SegmentButton}" Checked="OnThemeChecked" />
           </WrapPanel>
 
+          <!-- V3.7.2：当前皮肤说明（A 导播台 / C 排版手册）。切换主题即时更新，不新增独立开关。 -->
+          <Border Style="{StaticResource SoftPanel}" Margin="0,8,0,2" Padding="12,10">
+            <StackPanel>
+              <TextBlock Text="{DynamicResource Loc.settings.appearance.skin}" Style="{StaticResource CaptionText}" />
+              <TextBlock x:Name="SkinValueText" Style="{StaticResource BodyText}" FontWeight="SemiBold" Margin="0,2,0,0" />
+              <TextBlock Text="{DynamicResource Loc.settings.appearance.skin.desc}" Style="{StaticResource CaptionText}"
+                         Margin="0,4,0,0" TextWrapping="Wrap" />
+            </StackPanel>
+          </Border>
+
           <!-- 【v2.7.1 强调色体系】品牌主色色板：按钮 / 选中态 / 小标等全局品牌色 -->
           <TextBlock Text="{DynamicResource Loc.settings.appearance.accent}" Style="{StaticResource MutedText}" Margin="0,10,0,7" />
           <WrapPanel x:Name="AccentPanel" Margin="0,0,0,2" />
+          <TextBlock Style="{StaticResource CaptionText}" Margin="2,6,0,0"
+                     Text="{DynamicResource Loc.settings.appearance.accent.skinHint}" TextWrapping="Wrap" />
+          <Button x:Name="AccentSkinDefaultButton" Content="{DynamicResource Loc.settings.appearance.accent.followSkin}"
+                  Style="{StaticResource LinkButton}" Margin="0,4,0,0" Click="OnResetAccentToSkin" />
 
           <TextBlock Text="{DynamicResource Loc.settings.appearance.font}" Style="{StaticResource MutedText}" Margin="0,10,0,7" />
           <WrapPanel>
@@ -259,6 +273,8 @@
                         SelectionChanged="OnPanelOpacityChanged" />
             </StackPanel>
           </Grid>
+          <TextBlock Style="{StaticResource CaptionText}" Margin="2,6,0,0"
+                     Text="{DynamicResource Loc.settings.appearance.radius.skinHint}" TextWrapping="Wrap" />
           <TextBlock Text="{DynamicResource Loc.settings.appearance.fontFamily}" Style="{StaticResource CaptionText}"
                      Margin="2,10,0,5" />
           <ComboBox x:Name="FontFamilyCombo" Style="{StaticResource AppComboBox}"

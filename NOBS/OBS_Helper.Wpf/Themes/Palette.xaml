@@ -42,7 +42,12 @@
   <SolidColorBrush PresentationOptions:Freeze="True" x:Key="Surface3Brush" Color="#ecece6" />
   <SolidColorBrush PresentationOptions:Freeze="True" x:Key="TextBrush" Color="#1b1b19" />
   <SolidColorBrush PresentationOptions:Freeze="True" x:Key="MutedBrush" Color="#63635d" />
+  <!-- V3.7.2：DimBrush 只用于功能性小标签（导航组名 / 单位 / 字段名），对比度按 §5.3 修正； -->
+  <SolidColorBrush PresentationOptions:Freeze="True" x:Key="DimBrush" Color="#6B6B66" />
   <SolidColorBrush PresentationOptions:Freeze="True" x:Key="LineBrush" Color="#e4e4dd" />
+  <!-- 交互边界（输入框 / 可点击卡片 / 按钮描边）：必须 ≥3:1，与装饰线分开 -->
+  <SolidColorBrush PresentationOptions:Freeze="True" x:Key="LineStrongBrush" Color="#111111" />
+  <SolidColorBrush PresentationOptions:Freeze="True" x:Key="CardBorderBrush" Color="#e4e4dd" />
   <SolidColorBrush PresentationOptions:Freeze="True" x:Key="OverlayBrush" Color="#80000000" />
 
   <!-- 【自定义背景 v1.10】内容区背景默认值（运行时由 AppearanceService 覆盖）：默认即 Surface2 -->
@@ -121,5 +126,62 @@
   <sys:Boolean x:Key="UiSimplifyLayout">False</sys:Boolean>
   <sys:Boolean x:Key="UiAssistMode">False</sys:Boolean>
   <sys:String x:Key="UiDensity">compact</sys:String>
+
+  <!--
+    ============================================================ V3.7.2 双皮肤令牌
+
+    这里的静态值 = C · 排版手册（白天），运行时由 AppearanceService.Apply() 按皮肤覆盖。
+    为什么要有静态默认：check_resources.py 会校验 XAML 里引用的每个资源键都能解析，
+    而运行时注入的键在启动前并不存在；同时设计器 / 预览也能用上一套完整的默认值。
+  -->
+  <sys:String x:Key="SkinKey">manual</sys:String>
+  <sys:Boolean x:Key="SkinIsManual">True</sys:Boolean>
+
+  <!-- 卡片 / 按钮 / 药丸形态 -->
+  <SolidColorBrush PresentationOptions:Freeze="True" x:Key="SkinCardBackground" Color="#00000000" />
+  <SolidColorBrush PresentationOptions:Freeze="True" x:Key="SkinCardBorderBrush" Color="#DCDCD6" />
+  <Thickness x:Key="SkinCardBorder">0,1,0,0</Thickness>
+  <CornerRadius x:Key="SkinCardRadius">0</CornerRadius>
+  <CornerRadius x:Key="SkinButtonRadius">0</CornerRadius>
+  <CornerRadius x:Key="SkinPillRadius">0</CornerRadius>
+  <SolidColorBrush PresentationOptions:Freeze="True" x:Key="SkinPillBackground" Color="#00000000" />
+  <SolidColorBrush PresentationOptions:Freeze="True" x:Key="SkinPillBorderBrush" Color="#DCDCD6" />
+  <Thickness x:Key="SkinPillBorder">1</Thickness>
+  <SolidColorBrush PresentationOptions:Freeze="True" x:Key="SkinInputBorderBrush" Color="#111111" />
+  <SolidColorBrush PresentationOptions:Freeze="True" x:Key="SkinSegmentBackground" Color="#FFFFFF" />
+  <SolidColorBrush PresentationOptions:Freeze="True" x:Key="SkinSegmentSelectedBackground" Color="#111111" />
+  <SolidColorBrush PresentationOptions:Freeze="True" x:Key="SkinSegmentSelectedForeground" Color="#FFFFFF" />
+  <SolidColorBrush PresentationOptions:Freeze="True" x:Key="SkinSegmentSelectedBorder" Color="#111111" />
+
+  <!-- 主操作按钮：A 用信号青底，C 用墨黑底（设计板 C 的“黑底白字”直角按钮） -->
+  <SolidColorBrush PresentationOptions:Freeze="True" x:Key="SkinPrimaryBackground" Color="#111111" />
+  <SolidColorBrush PresentationOptions:Freeze="True" x:Key="SkinPrimaryForeground" Color="#FFFFFF" />
+  <SolidColorBrush PresentationOptions:Freeze="True" x:Key="SkinPrimaryHover" Color="#2B2B2B" />
+  <SolidColorBrush PresentationOptions:Freeze="True" x:Key="SkinPrimaryPressed" Color="#000000" />
+
+  <!-- 导航：A 图标 + 文字；C 编号 + 文字 -->
+  <Visibility x:Key="SkinNavIconVisibility">Collapsed</Visibility>
+  <Visibility x:Key="SkinNavNumberVisibility">Visible</Visibility>
+  <sys:Double x:Key="SkinNavNumberSize">11</sys:Double>
+  <sys:Double x:Key="SkinNavGroupFontSize">10</sys:Double>
+  <Thickness x:Key="SkinNavGroupMargin">20,22,0,6</Thickness>
+  <SolidColorBrush PresentationOptions:Freeze="True" x:Key="SkinNavCheckedBackground" Color="#F0F0EB" />
+  <SolidColorBrush PresentationOptions:Freeze="True" x:Key="SkinNavCheckedForeground" Color="#111111" />
+  <SolidColorBrush PresentationOptions:Freeze="True" x:Key="SkinNavCheckedBorderBrush" Color="#111111" />
+  <Thickness x:Key="SkinNavCheckedBorder">2,0,0,0</Thickness>
+  <Thickness x:Key="SkinNavBaseBorder">2,0,0,0</Thickness>
+
+  <!-- 页标题：A 17/600；C 37/300 细体 -->
+  <sys:Double x:Key="SkinPageTitleSize">37</sys:Double>
+  <FontWeight x:Key="SkinPageTitleWeight">Light</FontWeight>
+  <FontFamily x:Key="SkinTitleFont">Segoe UI Light, Microsoft YaHei UI</FontFamily>
+
+  <!-- 顶栏发丝线 -->
+  <Thickness x:Key="SkinTopBarBorder">0,0,0,1</Thickness>
+  <SolidColorBrush PresentationOptions:Freeze="True" x:Key="SkinTopBarBorderBrush" Color="#DCDCD6" />
+
+  <!-- A 的 tally / 时间码签名元素：C 下隐藏 -->
+  <Visibility x:Key="SkinTallyVisibility">Collapsed</Visibility>
+  <Visibility x:Key="SkinPageNumberVisibility">Visible</Visibility>
 
 </ResourceDictionary>

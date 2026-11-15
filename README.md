@@ -4,19 +4,19 @@
 
 **OBS帮助助手 · OBS Helper** —— 面向直播新手的 OBS 排障 / 录制 / 推流助手（Windows 原生 WPF）
 
-**当前版本：V3.7.1**（正式版） · 手机当摄像头链路深化：Larix Grove 扫码、WHIP 低延迟、推流鉴权与 WebRTC 来源收口
+**当前版本：V3.7.2**（正式版） · 双主题 UI：黑夜「导播台」/ 白天「排版手册」，编号目录、发丝线分节与 tally 时间码
 
-**本版主线**：把「手机当摄像头（Wi-Fi）」从“能推流”推进到“扫码即连、可撤销、可收口”——二维码改为 Larix Grove 深链，补齐 Larix 安装入口与 WHIP 低延迟入口，给 mediamtx 加回环 HTTP 鉴权，停止机位即失效旧 key，并把 WebRTC 允许来源从 `*` 收窄到本机与当前局域网。详见 [`NOBS/RELEASE_NOTES_v3.7.1.md`](NOBS/RELEASE_NOTES_v3.7.1.md)。
+**本版主线**：把界面拆成两套设计语言——**黑夜 → A · 导播台**（机柜黑、信号青、圆角面板、图标导航、OFF AIR/ON AIR tally 与时间码），**白天 → C · 排版手册**（纸白、信号蓝、发丝线分节、01–16 编号目录、37 px 细体标题、黑色直角按钮）。两套皮肤共用同一路由与页面逻辑，切换不丢焦点、不重连 OBS；自定义浅色背景在 A 下自动压暗。详见 [`NOBS/RELEASE_NOTES_v3.7.2.md`](NOBS/RELEASE_NOTES_v3.7.2.md)。
 
 [![CI](https://github.com/YYRMMAYO/OBS_Helper/actions/workflows/ci.yml/badge.svg)](https://github.com/YYRMMAYO/OBS_Helper/actions/workflows/ci.yml)
 [![平台](https://img.shields.io/badge/Platform-Windows_7_SP1%2B_%2F_10_%2F_11-0078D6.svg)]()
 [![.NET](https://img.shields.io/badge/.NET-10_%2F_6-512BD4.svg)]()
 [![技术栈](https://img.shields.io/badge/Stack-WPF_%2F_C%23-239120.svg)]()
-[![版本](https://img.shields.io/badge/Release-3.7.1-38bdf8.svg)](https://github.com/YYRMMAYO/OBS_Helper/releases)
+[![版本](https://img.shields.io/badge/Release-3.7.2-38bdf8.svg)](https://github.com/YYRMMAYO/OBS_Helper/releases)
 [![OBS](https://img.shields.io/badge/OBS-32.2.2-302E31.svg)](https://github.com/obsproject/obs-studio/releases)
 [![离线可用](https://img.shields.io/badge/offline--first-2ea44f.svg)]()
 [![增量更新](https://img.shields.io/badge/Incremental%20Update-3.9MB-7dd3fc.svg)]()
-[![测试](https://img.shields.io/badge/Tests-1891%20passed-2ea44f.svg)]()
+[![测试](https://img.shields.io/badge/Tests-1902%20passed-2ea44f.svg)]()
 [![许可](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
 [English](README.en.md) · **简体中文**
@@ -24,7 +24,7 @@
 </div>
 
 > **本仓库默认分支是 `master`（正式版 / 稳定通道）**：功能收敛、经过完整回归与发布验证，适合日常直播 / 录制。
-> **只有 V 系列与 X 系列两个发布通道**：V 系列使用 `V主.次.修`（如 `V3.7.1`），X 系列使用 `X` + `MMdd` 日期码（如 `X1031`）；没有 DEV 测试版分支或测试标签。
+> **只有 V 系列与 X 系列两个发布通道**：V 系列使用 `V主.次.修`（如 `V3.7.2`），X 系列使用 `X` + `MMdd` 日期码（如 `X1031`）；没有 DEV 测试版分支或测试标签。
 
 **OBS帮助助手**（V2.9.6 前的名字是「OBS 排障助手」，同一个软件、同一条升级链路）是面向直播新手的 OBS Studio 排障与录制助手：**纯离线可用**——208 条问题的知识库、排障指引、日志分析规则全部内嵌在程序里，不联网也能查；连上本机 OBS 之后还能做一键体检、远程控制场景 / 录制 / 推流、部署录制环境。**V2.9.4 起**，从「配好 OBS」到「开始录制」被收进首页一张卡；**V3.1.0 起** OBS 没开也能一键拉起并开录；**V3.1.1** 补齐了提词器的手动上下移动与窗口位置微调；**V3.3.0** 新增「虚拟直播」工作台（Live2D 形象 · 6 套直播间模板 · 16 个平台开播引导）、插件广场一键安装 / 回滚 / GitHub 搜索导入，以及无障碍模式与老年模式；**V3.4.0** 把手机接进直播工作流：扫码遥控 / 监看 / 提词 / 补光 / 快传、手机当 Wi-Fi 摄像头与麦克风，并交付弹幕聚合、本地实时字幕、复盘/切片、多平台转推、MIDI/灯光与团队协作。
 
@@ -50,7 +50,7 @@
 | 先看它能干什么、怎么用 | 往下读「[5 分钟上手](#5-分钟上手)」与「[功能详解](#功能详解)」 |
 | 读开发向的完整文档（质量基线 · 历史版本 · 代码清单） | [`NOBS/README.md`](NOBS/README.md) |
 | Full documentation in English | [`README.en.md`](README.en.md) · [`NOBS/README.en.md`](NOBS/README.en.md) |
-| 这一版改了什么 | [`NOBS/RELEASE_NOTES_v3.7.1.md`](NOBS/RELEASE_NOTES_v3.7.1.md) |
+| 这一版改了什么 | [`NOBS/RELEASE_NOTES_v3.7.2.md`](NOBS/RELEASE_NOTES_v3.7.2.md) |
 | 改文档前先看：哪类文档放 master / 哪类放 dev | [`docs/BRANCH_AND_DOC_RULES.md`](docs/BRANCH_AND_DOC_RULES.md) |
 | 反馈问题 / 上报安全漏洞 | [Issues](https://github.com/YYRMMAYO/OBS_Helper/issues) · [SECURITY.md](SECURITY.md) |
 | 许可证 | [LICENSE](LICENSE)（MIT） |
@@ -239,11 +239,11 @@
 
 | 通道 | 版本号样式 | 定位 | 更新来源 |
 | --- | --- | --- | --- |
-| **V 系列**（`master`） | `V3.7.1` | **稳定优先**：功能收敛、经过完整回归与发布验证，适合日常直播 / 录制 | 正式 Release 页 · 蓝奏云 · 应用内增量更新 |
+| **V 系列**（`master`） | `V3.7.2` | **稳定优先**：功能收敛、经过完整回归与发布验证，适合日常直播 / 录制 | 正式 Release 页 · 蓝奏云 · 应用内增量更新 |
 | **X 系列**（`master`） | `X1031` / `X1031Y2` / `X1031Y3` | **独立大版本**：`X` + `MMdd` 日期码，含 X 专属图标；更新检查只看 `X` 标签 | X 系列 Release 页 · 应用内更新 |
 
 - **两个系列共用功能与数据目录**：安装目录、程序集名、`%LocalAppData%\OBS_Helper` 都不变，升级链路一致。
-- **通道过滤在解析层完成**：V 构建只认 `V3.7.1` 这类 V tag，X 构建只认 `X1031` 这类 X tag；两类 tag 挂在同一个仓库里，也不会互相被当成新版本。
+- **通道过滤在解析层完成**：V 构建只认 `V3.7.2` 这类 V tag，X 构建只认 `X1031` 这类 X tag；两类 tag 挂在同一个仓库里，也不会互相被当成新版本。
 - **X 版本号规则**：`X` 后面的四位是日期 `MMdd`（`X1031` = 10 月 31 日）。同一天再次发版时追加 `Y1`、`Y2`、`Y3`…；更新检测先比日期，日期相同再比 Y 序号，所以 `X1031Y2 > X1031`、`X1101 > X1031Y99`。
 - **X 更新提示**：检测到新版本后，更新弹窗会直接从 GitHub Release 拉取本版更新说明并展示；拉取失败时不影响检查与下载。
 - **X1031 范围小于 V3.5.0**：X1031 含需求 1–9 与新图标，但不含全局背景 UI 重构、手机连接页重排与功能中心体验优化；V3.5.0 含这些 UI 内容，但按需求继续使用原应用图标。
@@ -384,7 +384,7 @@ XAML 一律用 `DynamicResource`（主题键直接用、文案键写作 `Loc.<�
 
 ## 质量基线与已知边界
 
-- **1891 项单元测试全部通过**（V3.7.1：连续 4 轮全量 + 双目标构建 + Headless 自检 + 静态检查）；测试工程直接链接纯逻辑源文件，不引用整个 WPF 工程；
+- **1902 项单元测试全部通过**（V3.7.2：连续 4 轮全量 + 双目标构建 + Headless 自检 + 静态检查）；测试工程直接链接纯逻辑源文件，不引用整个 WPF 工程；
 - **Headless 自检 37 项全部 PASS**（覆盖 29 条路由用例 + 8 项非路由检查：新手引导覆盖层（含逐步跳转校验）、迷你小窗、文案资源解析、语言切换往返、逐页语言重放、内容回退提示条、D7 连接态护栏、双构建协议分支），**主构建与 Win7 兼容构建各跑一次**；
 - CI 接入 XAML 资源引用、中英文案键对等、无障碍静态检查、Headless 自检与增量包端到端升级（全文件 SHA-256 比对）等门禁；[`NOBS/docs/reviews/`](NOBS/docs/reviews/) 下保留分视角审校记录，并如实标注哪些结论有机器证据、哪些只是人工核对；
 - **已知边界**：① Windows 7 真机未验证（只做到目标框架可编译 + 安装包 MinVersion 正确下发），旧协议（obs-websocket 4.x）也未对真实 OBS 27 验证；② 英译未经母语者校订、未逐条核对英文版 OBS 菜单路径；③ 一键部署的两条通道按协议 / 键名实现并有单测，但未对真实 OBS 跑过端到端落地；④ 无障碍只做到代码级适配 + 静态检查，未经 NVDA / Narrator 实测（详见 [`ACCESSIBILITY.md`](ACCESSIBILITY.md)）；⑤ 发布产物未做代码签名，SmartScreen 可能提示未知发布者；⑥ .NET 6 已停止安全更新，兼容构建是「必须跑 Win7」时的退路，新机器请用主构建。
@@ -393,6 +393,7 @@ XAML 一律用 `DynamicResource`（主题键直接用、文案键写作 `Loc.<�
 
 | 版本 | 重点 | 发布说明 |
 | --- | --- | --- |
+| **V3.7.2** | 双主题 UI：黑夜「导播台」/ 白天「排版手册」；编号目录、发丝线分节、tally 时间码、皮肤令牌与对比度修正；1902 项单测 + 50 张截图自检 | [`RELEASE_NOTES_v3.7.2.md`](NOBS/RELEASE_NOTES_v3.7.2.md) |
 | **V3.7.1** | 手机当摄像头链路深化：Larix Grove 扫码、Larix 安装入口、WHIP 低延迟、回环推流鉴权与 key 撤销、WebRTC Origin 收口、浏览器 HTTPS 边界 | [`RELEASE_NOTES_v3.7.1.md`](NOBS/RELEASE_NOTES_v3.7.1.md) |
 | **V3.7.0** | 落实 V3.6 待办：计时器 CSV / 首页卡 / 设置分区 / 托盘状态、控制台搜索、日志筛选、错误码查知识库、连接向导、托盘菜单自定义、热键一键恢复、安全模式、插件查询退避 | [`RELEASE_NOTES_v3.7.0.md`](NOBS/RELEASE_NOTES_v3.7.0.md) |
 | **V3.6.0** | 导播计时器（双窗口 / 超时 / 多屏 / 记录 TSV / 热键 / OBS-手机联动 / 浏览器叠加层）、音频电平表、脱敏诊断包、外链白名单、ColorCheck 路径护栏、备份跳过上报 | [`RELEASE_NOTES_v3.6.0.md`](NOBS/RELEASE_NOTES_v3.6.0.md) |

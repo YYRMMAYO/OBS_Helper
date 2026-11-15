@@ -4,7 +4,7 @@
         xmlns:ctl="clr-namespace:OBS_Helper.Wpf.Controls"
         Title="{DynamicResource Loc.app.name}"
         Height="780" Width="1160"
-        MinHeight="620" MinWidth="920"
+        MinHeight="620" MinWidth="1024"
         WindowStartupLocation="CenterScreen"
         Background="{DynamicResource Surface2Brush}"
         TextOptions.TextFormattingMode="Ideal"
@@ -80,28 +80,28 @@
         <ScrollViewer VerticalScrollBarVisibility="Auto" Style="{StaticResource PageScroll}">
           <StackPanel x:Name="NavPanel" Margin="0,4,0,10">
             <TextBlock Text="{DynamicResource Loc.nav.group.overview}" Style="{StaticResource NavGroupLabel}" />
-            <RadioButton x:Name="NavHome"       Style="{StaticResource NavTabButton}" Content="{DynamicResource Loc.nav.home}"   Tag="{StaticResource IconGeomHome}"       Checked="OnNavChecked" />
-            <RadioButton x:Name="NavFeatures" Style="{StaticResource NavTabButton}" Content="{DynamicResource Loc.nav.features}" Tag="{StaticResource IconGeomLayoutGrid}" Checked="OnNavChecked" />
+            <RadioButton x:Name="NavHome"       Style="{StaticResource NavTabButton}" Content="{DynamicResource Loc.nav.home}"   Tag="{StaticResource IconGeomHome}"       ctl:Nav.Number="1" Checked="OnNavChecked" />
+            <RadioButton x:Name="NavFeatures" Style="{StaticResource NavTabButton}" Content="{DynamicResource Loc.nav.features}" Tag="{StaticResource IconGeomLayoutGrid}" ctl:Nav.Number="2" Checked="OnNavChecked" />
 
             <TextBlock Text="{DynamicResource Loc.nav.group.live}" Style="{StaticResource NavGroupLabel}" />
-            <RadioButton x:Name="NavMobileLink" Style="{StaticResource NavTabButton}" Content="{DynamicResource Loc.nav.mobile}" Tag="{StaticResource IconGeomDeviceMobile}" Checked="OnNavChecked" />
-            <RadioButton x:Name="NavVirtualLive" Style="{StaticResource NavTabButton}" Content="{DynamicResource Loc.nav.virtuallive}" Tag="{StaticResource IconGeomSparkles}" Checked="OnNavChecked" />
-            <RadioButton x:Name="NavTemplates" Style="{StaticResource NavTabButton}" Content="{DynamicResource Loc.nav.templates}"   Tag="{StaticResource IconGeomTemplates}" Checked="OnNavChecked" />
-            <RadioButton x:Name="NavPlugins"   Style="{StaticResource NavTabButton}" Content="{DynamicResource Loc.nav.plugins}"   Tag="{StaticResource IconGeomPackage}" Checked="OnNavChecked" />
+            <RadioButton x:Name="NavMobileLink" Style="{StaticResource NavTabButton}" Content="{DynamicResource Loc.nav.mobile}" Tag="{StaticResource IconGeomDeviceMobile}" ctl:Nav.Number="3" Checked="OnNavChecked" />
+            <RadioButton x:Name="NavVirtualLive" Style="{StaticResource NavTabButton}" Content="{DynamicResource Loc.nav.virtuallive}" Tag="{StaticResource IconGeomSparkles}" ctl:Nav.Number="4" Checked="OnNavChecked" />
+            <RadioButton x:Name="NavTemplates" Style="{StaticResource NavTabButton}" Content="{DynamicResource Loc.nav.templates}"   Tag="{StaticResource IconGeomTemplates}" ctl:Nav.Number="5" Checked="OnNavChecked" />
+            <RadioButton x:Name="NavPlugins"   Style="{StaticResource NavTabButton}" Content="{DynamicResource Loc.nav.plugins}"   Tag="{StaticResource IconGeomPackage}" ctl:Nav.Number="6" Checked="OnNavChecked" />
 
             <TextBlock Text="{DynamicResource Loc.nav.group.workbench}" Style="{StaticResource NavGroupLabel}" />
-            <RadioButton x:Name="NavConsole"    Style="{StaticResource NavTabButton}" Content="{DynamicResource Loc.nav.console}" Tag="{StaticResource IconGeomConsole}"    Checked="OnNavChecked" />
-            <RadioButton x:Name="NavPerformance" Style="{StaticResource NavTabButton}" Content="{DynamicResource Loc.nav.performance}"   Tag="{StaticResource IconGeomPerformance}" Checked="OnNavChecked" />
-            <RadioButton x:Name="NavToolbox"   Style="{StaticResource NavTabButton}" Content="{DynamicResource Loc.nav.toolbox}" Tag="{StaticResource IconGeomTool}" Checked="OnNavChecked" />
-            <RadioButton x:Name="NavSetup"      Style="{StaticResource NavTabButton}" Content="{DynamicResource Loc.nav.setup}"   Tag="{StaticResource IconGeomSetup}"      Checked="OnNavChecked" />
-            <RadioButton x:Name="NavSearch"     Style="{StaticResource NavTabButton}" Content="{DynamicResource Loc.nav.search}"   Tag="{StaticResource IconGeomSearch}"     Checked="OnNavChecked" />
-            <RadioButton x:Name="NavAssistant"  Style="{StaticResource NavTabButton}" Content="{DynamicResource Loc.nav.assistant}"   Tag="{StaticResource IconGeomAssistant}"  Checked="OnNavChecked" />
-            <RadioButton x:Name="NavDiagnostic" Style="{StaticResource NavTabButton}" Content="{DynamicResource Loc.nav.diagnostic}"   Tag="{StaticResource IconGeomDiagnostic}" Checked="OnNavChecked" />
+            <RadioButton x:Name="NavConsole"    Style="{StaticResource NavTabButton}" Content="{DynamicResource Loc.nav.console}" Tag="{StaticResource IconGeomConsole}"    ctl:Nav.Number="7" Checked="OnNavChecked" />
+            <RadioButton x:Name="NavPerformance" Style="{StaticResource NavTabButton}" Content="{DynamicResource Loc.nav.performance}"   Tag="{StaticResource IconGeomPerformance}" ctl:Nav.Number="8" Checked="OnNavChecked" />
+            <RadioButton x:Name="NavToolbox"   Style="{StaticResource NavTabButton}" Content="{DynamicResource Loc.nav.toolbox}" Tag="{StaticResource IconGeomTool}" ctl:Nav.Number="9" Checked="OnNavChecked" />
+            <RadioButton x:Name="NavSetup"      Style="{StaticResource NavTabButton}" Content="{DynamicResource Loc.nav.setup}"   Tag="{StaticResource IconGeomSetup}"      ctl:Nav.Number="10" Checked="OnNavChecked" />
+            <RadioButton x:Name="NavSearch"     Style="{StaticResource NavTabButton}" Content="{DynamicResource Loc.nav.search}"   Tag="{StaticResource IconGeomSearch}"     ctl:Nav.Number="11" Checked="OnNavChecked" />
+            <RadioButton x:Name="NavAssistant"  Style="{StaticResource NavTabButton}" Content="{DynamicResource Loc.nav.assistant}"   Tag="{StaticResource IconGeomAssistant}"  ctl:Nav.Number="12" Checked="OnNavChecked" />
+            <RadioButton x:Name="NavDiagnostic" Style="{StaticResource NavTabButton}" Content="{DynamicResource Loc.nav.diagnostic}"   Tag="{StaticResource IconGeomDiagnostic}" ctl:Nav.Number="13" Checked="OnNavChecked" />
 
             <TextBlock Text="{DynamicResource Loc.nav.group.help}" Style="{StaticResource NavGroupLabel}" />
-            <RadioButton x:Name="NavGuide"      Style="{StaticResource NavTabButton}" Content="{DynamicResource Loc.nav.guide}"   Tag="{StaticResource IconGeomGuide}"      Checked="OnNavChecked" />
-            <RadioButton x:Name="NavFeedback"   Style="{StaticResource NavTabButton}" Content="{DynamicResource Loc.nav.feedback}" Tag="{StaticResource IconGeomFeedback}" Checked="OnNavChecked" />
-            <RadioButton x:Name="NavSettings"   Style="{StaticResource NavTabButton}" Content="{DynamicResource Loc.nav.settings}"   Tag="{StaticResource IconGeomSettings}"   Checked="OnNavChecked" />
+            <RadioButton x:Name="NavGuide"      Style="{StaticResource NavTabButton}" Content="{DynamicResource Loc.nav.guide}"   Tag="{StaticResource IconGeomGuide}"      ctl:Nav.Number="14" Checked="OnNavChecked" />
+            <RadioButton x:Name="NavFeedback"   Style="{StaticResource NavTabButton}" Content="{DynamicResource Loc.nav.feedback}" Tag="{StaticResource IconGeomFeedback}" ctl:Nav.Number="15" Checked="OnNavChecked" />
+            <RadioButton x:Name="NavSettings"   Style="{StaticResource NavTabButton}" Content="{DynamicResource Loc.nav.settings}"   Tag="{StaticResource IconGeomSettings}"   ctl:Nav.Number="16" Checked="OnNavChecked" />
           </StackPanel>
         </ScrollViewer>
         </DockPanel>
@@ -115,9 +115,10 @@
         <RowDefinition Height="*" />
       </Grid.RowDefinitions>
 
-      <!-- 顶栏 -->
+      <!-- 顶栏：A 靠底色分层；C 用一条发丝线把标题区与内容分开（V3.7.2） -->
       <Border Grid.Row="0" Background="Transparent"
-              BorderThickness="0"
+              BorderThickness="{DynamicResource SkinTopBarBorder}"
+              BorderBrush="{DynamicResource SkinTopBarBorderBrush}"
               Padding="24,13">
         <Grid>
           <Border Background="{DynamicResource GlassWallpaperBrush}" />
@@ -145,15 +146,50 @@
           </Button>
 
           <StackPanel Grid.Column="1" VerticalAlignment="Center">
-            <TextBlock x:Name="PageTitle" Text="{DynamicResource Loc.page.home.title}"
-                       FontSize="{DynamicResource FontSizeXl}" FontWeight="SemiBold"
-                       Foreground="{DynamicResource TextBrush}" />
+            <StackPanel Orientation="Horizontal">
+              <!-- C · 排版手册的目录序号：与左侧编号目录同源，非导航页自动隐藏 -->
+              <TextBlock x:Name="PageNumberText" Text=""
+                         Visibility="{DynamicResource SkinPageNumberVisibility}"
+                         FontFamily="Cascadia Mono, Consolas, Courier New"
+                         FontSize="{DynamicResource FontSizeSm}"
+                         Foreground="{DynamicResource DimBrush}"
+                         VerticalAlignment="Bottom" Margin="0,0,10,6" />
+              <TextBlock x:Name="PageTitle" Text="{DynamicResource Loc.page.home.title}"
+                         FontSize="{DynamicResource SkinPageTitleSize}"
+                         FontWeight="{DynamicResource SkinPageTitleWeight}"
+                         FontFamily="{DynamicResource SkinTitleFont}"
+                         Foreground="{DynamicResource TextBrush}"
+                         AutomationProperties.HeadingLevel="Level1" />
+            </StackPanel>
             <TextBlock x:Name="PageSubtitle" Text="{DynamicResource Loc.page.home.subtitle}"
                        FontSize="{DynamicResource FontSizeXs}"
                        Foreground="{DynamicResource MutedBrush}" />
           </StackPanel>
 
           <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
+            <!--
+              A · 导播台的签名元素：OFF AIR / ON AIR + 时间码。
+              只在 A 显示（SkinTallyVisibility），状态同时用文字 + 圆点表达，不只靠颜色。
+            -->
+            <Border x:Name="TallyChip" Visibility="{DynamicResource SkinTallyVisibility}"
+                    Background="{DynamicResource Surface2Brush}"
+                    BorderBrush="{DynamicResource SkinInputBorderBrush}" BorderThickness="1"
+                    CornerRadius="{DynamicResource SkinButtonRadius}"
+                    Padding="9,4" Margin="0,0,10,0"
+                    AutomationProperties.Name="{DynamicResource Loc.app.tally.offAir}">
+              <StackPanel Orientation="Horizontal">
+                <Ellipse x:Name="TallyDot" Width="7" Height="7" VerticalAlignment="Center"
+                         Fill="{DynamicResource MutedBrush}" />
+                <TextBlock x:Name="TallyText" Text="{DynamicResource Loc.app.tally.offAir}"
+                           FontFamily="Cascadia Mono, Consolas, Courier New"
+                           FontSize="{DynamicResource FontSizeXs}" FontWeight="SemiBold"
+                           Foreground="{DynamicResource MutedBrush}" Margin="6,0,0,0" />
+                <TextBlock x:Name="TallyTime" Text="00:00:00"
+                           FontFamily="Cascadia Mono, Consolas, Courier New"
+                           FontSize="{DynamicResource FontSizeXs}"
+                           Foreground="{DynamicResource TextBrush}" Margin="8,0,0,0" />
+              </StackPanel>
+            </Border>
             <Button Style="{StaticResource GhostButton}" Content="{DynamicResource Loc.nav.search}"
                     Foreground="{DynamicResource MutedBrush}"
                     Padding="10,6" Margin="0,0,8,0" Click="OnQuickSearchClick" />
@@ -228,6 +264,14 @@
          跳转了也看不见，这是「跳转式引导」的关键取舍。
       遮罩仍然拦住底下的点击（保持「跟着引导走」的语义），热键同理（见 OnFindExecuted / OnBrowseBackExecuted）。
     -->
+    <!--
+      V3.7.2：皮肤切换播报。切换后通过 LiveRegionChanged 播报「已切换到黑夜/白天模式」，
+      只播报这一句，不重读整页；视觉上不可见，但不使用 Collapsed（Collapsed 的实时区域不会被朗读）。
+    -->
+    <TextBlock x:Name="SkinLiveRegion" Grid.ColumnSpan="2"
+               Width="1" Height="1" Opacity="0" IsHitTestVisible="False"
+               AutomationProperties.LiveSetting="Polite" />
+
     <Grid x:Name="OnboardingLayer" Grid.ColumnSpan="2"
           Visibility="Collapsed"
           IsHitTestVisible="True">

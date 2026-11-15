@@ -11,6 +11,7 @@ using OBS_Helper.Wpf.Navigation;
 using OBS_Helper.Wpf.Services;
 using OBS_Helper.Wpf.Services.ObsConfig;
 using OBS_Helper.Wpf.Services.Shell;
+using OBS_Helper.Wpf.Services.Timing;
 using OBS_Helper.Wpf.Services.Update;
 using OBS_Helper.Wpf.Views;
 
@@ -267,6 +268,9 @@ public partial class MainWindow : Window
         AppServices.Tray.MiniWindowRequested += OnMiniWindowRequested;
         AppServices.Tray.OpenRecordingFolderRequested += OnOpenRecordingFolderRequested;
         AppServices.Tray.TeleprompterRequested += OnTeleprompterToggle;
+        AppServices.Tray.TimerRequested += OnTrayTimerRequested;
+        AppServices.TimerClock.Changed += OnTimerChanged;
+        UpdateTrayTimer();
         AppServices.Hotkeys.ToggleWindowRequested += OnToggleWindowRequested;
         AppServices.Hotkeys.ToggleMiniWindowRequested += OnMiniWindowRequested;
         AppServices.Hotkeys.TeleprompterToggleRequested += OnTeleprompterToggle;
@@ -1337,6 +1341,43 @@ public partial class MainWindow : Window
     private void OnTrayShowRequested()
         => Dispatcher.BeginInvoke(new Action(() =>
         {
+            Show();
+            if (WindowState == WindowState.Minimized) WindowState = WindowState.Normal;
+            Activate();
+        }));
+
+    // ------------------------------------------------------------ 计时器托盘状态（V3.7 / N19）
+
+    private void OnTimerChanged()
+    {
+        if (!Dispatcher.CheckAccess())
+        {
+            Dispatcher.BeginInvoke(new Action(OnTimerChanged));
+            return;
+        }
+        UpdateTrayTimer();
+    }
+
+    private void UpdateTrayTimer()
+    {
+        var snapshot = AppServices.TimerClock.Snapshot;
+        var state = Strings.T(snapshot.State switch
+        {
+            TimerState.Running => "timer.state.running",
+            TimerState.Paused => "timer.state.paused",
+            TimerState.Finished => "timer.state.finished",
+            _ => "timer.state.idle",
+        });
+        var text = snapshot.State == TimerState.Idle
+            ? Strings.T("tray.timerIdle")
+            : Strings.T("tray.timerStatus", snapshot.Display, state);
+        AppServices.Tray.SetTimerStatus(text);
+    }
+
+    private void OnTrayTimerRequested()
+        => Dispatcher.BeginInvoke(new Action(() =>
+        {
+            AppServices.Navigation.Navigate(Routes.Timer);
             Show();
             if (WindowState == WindowState.Minimized) WindowState = WindowState.Normal;
             Activate();

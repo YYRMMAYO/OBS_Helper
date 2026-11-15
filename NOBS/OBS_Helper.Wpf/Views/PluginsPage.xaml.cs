@@ -2147,7 +2147,15 @@ public partial class PluginsPage : UserControl, INavigationAware
         try
         {
             var info = await AppServices.PluginReleases.GetLatestAsync(slot.Entry.Repo).ConfigureAwait(true);
-            if (info is null) return;
+            if (info is null)
+            {
+                if (AppServices.PluginReleases.IsCoolingDown(slot.Entry.Repo))
+                {
+                    slot.LatestBadge.Text = Strings.T("plugin.latestCooldown");
+                    slot.LatestBadge.Visibility = Visibility.Visible;
+                }
+                return;
+            }
 
             // 页面可能在等待期间被重建（目录换版 / LRU 逐出）：只有仍属于当前卡片池的角标才更新
             if (!_cardPool.TryGetValue(slot.Entry.Id, out var current) || !ReferenceEquals(current, slot))

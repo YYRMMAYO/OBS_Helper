@@ -70,6 +70,23 @@
       -->
       <ctl:SimpleStreamCard x:Name="SimpleStream" Margin="0,14,0,0" />
 
+      <!-- 导播计时器（V3.7 / N24）：显示上次模式与时长，一键进入计时页 -->
+      <Border Style="{StaticResource Card}" Margin="0,14,0,0" Padding="16">
+        <Grid>
+          <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*" />
+            <ColumnDefinition Width="Auto" />
+          </Grid.ColumnDefinitions>
+          <StackPanel>
+            <TextBlock Text="{DynamicResource Loc.home.timer.title}" Style="{StaticResource H3Text}" />
+            <TextBlock x:Name="TimerSummaryText" Style="{StaticResource MutedText}"
+                       Margin="0,6,0,0" TextWrapping="Wrap" />
+          </StackPanel>
+          <Button Grid.Column="1" Style="{StaticResource SecondaryButton}" VerticalAlignment="Center"
+                  Content="{DynamicResource Loc.home.timer.open}" Click="OnOpenTimer" />
+        </Grid>
+      </Border>
+
       <!-- 新手引导：未连 OBS 时显示，连接后由代码隐藏（P1） -->
       <Border x:Name="WelcomeCard" Style="{StaticResource Card}" Margin="0,14,0,0"
               Background="{DynamicResource BrandSoftBrush}"
@@ -116,8 +133,17 @@
       <!-- 数据加载失败时的提示（带报错码，便于用户反馈） -->
       <Border x:Name="LoadErrorPanel" Style="{StaticResource SoftPanel}"
               Margin="0,14,0,0" Visibility="Collapsed">
-        <TextBlock x:Name="LoadErrorText" Style="{StaticResource BodyText}"
-                   Foreground="{DynamicResource DangerBrush}" />
+        <Grid>
+          <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*" />
+            <ColumnDefinition Width="Auto" />
+          </Grid.ColumnDefinitions>
+          <TextBlock x:Name="LoadErrorText" Style="{StaticResource BodyText}"
+                     Foreground="{DynamicResource DangerBrush}" TextWrapping="Wrap" />
+          <Button x:Name="LoadErrorSearchButton" Grid.Column="1" Style="{StaticResource LinkButton}"
+                  Content="{DynamicResource Loc.home.error.search}" Click="OnSearchErrorCode"
+                  VerticalAlignment="Top" Margin="10,0,0,0" />
+        </Grid>
       </Border>
 
       <TextBlock Text="{DynamicResource Loc.home.categories}" Style="{StaticResource SectionTitle}" Margin="0,20,0,10" />

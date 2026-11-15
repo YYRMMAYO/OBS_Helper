@@ -102,6 +102,18 @@
                        VerticalAlignment="Center" Margin="2,0,0,8" Visibility="Collapsed" />
           </WrapPanel>
 
+          <WrapPanel Margin="0,10,0,0">
+            <TextBox x:Name="FindingFilterBox" Style="{StaticResource AppTextBox}" Width="220"
+                     Tag="{DynamicResource Loc.logs.filter.keyword}" TextChanged="OnFindingFilterChanged"
+                     AutomationProperties.Name="{DynamicResource Loc.logs.filter.keyword}" />
+            <ComboBox x:Name="FindingSeverityBox" Style="{StaticResource AppComboBox}" Width="150"
+                      Margin="8,0,0,0" SelectionChanged="OnFindingSeverityChanged">
+              <ComboBoxItem Content="{DynamicResource Loc.logs.filter.all}" Tag="all" IsSelected="True" />
+              <ComboBoxItem Content="{DynamicResource Loc.logs.filter.error}" Tag="error" />
+              <ComboBoxItem Content="{DynamicResource Loc.logs.filter.warn}" Tag="warn" />
+            </ComboBox>
+          </WrapPanel>
+
           <TextBlock x:Name="NoFindingText" Style="{StaticResource MutedText}"
                      Margin="0,4,0,0" Visibility="Collapsed"
                      Text="{DynamicResource Loc.logs.noFindings}" />

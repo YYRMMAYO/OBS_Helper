@@ -44,6 +44,7 @@ public partial class ConsolePage : UserControl, INavigationAware
 
     // 列表指纹：内容没变就只做就地更新，避免 2 秒一次的统计刷新把列表整个重建（会丢焦点、闪烁）
     private string _sceneSignature = "";
+    private string _sceneFilter = "";
     private string _sceneItemSignature = "";
     private string _audioSignature = "";
 
@@ -156,6 +157,21 @@ public partial class ConsolePage : UserControl, INavigationAware
             row.Meter.Value = meters.TryGetValue(name, out var level) ? level.Mul : 0;
     }
 
+    private void OnCopyDiagnosticCommand(object sender, RoutedEventArgs e)
+    {
+        if (sender is not Button { Tag: string command }) return;
+        try
+        {
+            Clipboard.SetText(command);
+            AppServices.Toast?.Show(Strings.T("console.diag.copied"), "ok");
+        }
+        catch (Exception ex)
+        {
+            FileLogger.Warn("Console", $"复制诊断命令失败：{ex.Message}");
+            AppServices.Toast?.Show(Strings.T("console.diag.copyFailed"), "warn");
+        }
+    }
+
     /// <summary>定时器每秒刷新倒计时（定时器本身跑在 UI 线程）。</summary>
     private void OnTimerStateChanged() => RenderTimer();
 
@@ -184,6 +200,7 @@ public partial class ConsolePage : UserControl, INavigationAware
         var showError = !connected && !string.IsNullOrEmpty(obs.LastError);
         ConnectErrorText.Text = obs.LastError ?? "";
         ConnectErrorText.Visibility = showError ? Visibility.Visible : Visibility.Collapsed;
+        ConnectDiagnosticsPanel.Visibility = showError ? Visibility.Visible : Visibility.Collapsed;
 
         if (!connected)
         {
@@ -217,7 +234,7 @@ public partial class ConsolePage : UserControl, INavigationAware
     /// 列表本身与连接状态无关（OBS 关着也能看自己的录像），因此这个方法在 Render 的两条分支里都会走到。
     /// 每次重建（最多 10 行）比做增量更新简单得多，且这页本来就在按秒刷新。
     /// </summary>
-    private void RenderRecentRecordings()
+    private async void RenderRecentRecordings()
     {
         try
         {
@@ -231,8 +248,13 @@ public partial class ConsolePage : UserControl, INavigationAware
             if (signature == _recentSignature) return;
             _recentSignature = signature;
 
+            // G10（V3.7）：File.Exists 是同步 IO，移到后台；只有列表内容真变了才检查这最多 10 条。
+            var existing = await Task.Run(() =>
+                entries.Where(e => File.Exists(e.Path)).Select(e => e.Path).ToHashSet()).ConfigureAwait(true);
+
             RecentRecordsPanel.Children.Clear();
-            foreach (var entry in entries) RecentRecordsPanel.Children.Add(BuildRecentRow(entry));
+            foreach (var entry in entries)
+                RecentRecordsPanel.Children.Add(BuildRecentRow(entry, existing.Contains(entry.Path)));
         }
         catch (Exception ex)
         {
@@ -240,9 +262,9 @@ public partial class ConsolePage : UserControl, INavigationAware
         }
     }
 
-    private UIElement BuildRecentRow(RecordingArchiveEntry entry)
+    private UIElement BuildRecentRow(RecordingArchiveEntry entry, bool exists)
     {
-        var health = entry.Health(File.Exists(entry.Path));
+        var health = entry.Health(exists);
 
         var panel = new StackPanel { Margin = new Thickness(0, 0, 0, 12) };
 
@@ -353,16 +375,28 @@ public partial class ConsolePage : UserControl, INavigationAware
         DiskText.Text = (s.AvailableDiskSpaceMb / 1024.0).ToString("0.0", Inv) + "G";
     }
 
+    private void OnSceneSearchChanged(object sender, TextChangedEventArgs e)
+    {
+        var filter = SceneSearchBox.Text?.Trim() ?? "";
+        if (string.Equals(filter, _sceneFilter, StringComparison.Ordinal)) return;
+        _sceneFilter = filter;
+        RenderScenes(AppServices.Obs);
+        RenderSceneItems(AppServices.Obs);
+    }
+
     private void RenderScenes(ObsConnectionService obs)
     {
-        var signature = string.Join("\u0001", obs.Scenes.Select(x => x.Name));
+        var scenes = string.IsNullOrEmpty(_sceneFilter)
+            ? obs.Scenes
+            : obs.Scenes.Where(s => s.Name.Contains(_sceneFilter, StringComparison.OrdinalIgnoreCase)).ToList();
+        var signature = _sceneFilter + "\u0001" + string.Join("\u0001", scenes.Select(x => x.Name));
         if (signature != _sceneSignature)
         {
             _sceneSignature = signature;
             ScenesPanel.Children.Clear();
             _sceneButtons.Clear();
 
-            foreach (var scene in obs.Scenes)
+            foreach (var scene in scenes)
             {
                 var nameText = new TextBlock
                 {
@@ -404,20 +438,22 @@ public partial class ConsolePage : UserControl, INavigationAware
             }
         }
 
-        foreach (var scene in obs.Scenes)
+        foreach (var scene in scenes)
         {
             if (!_sceneButtons.TryGetValue(scene.Name, out var row)) continue;
             ApplyActiveLook(row.Button, scene.IsCurrent);
             row.Flag.Visibility = scene.IsCurrent ? Visibility.Visible : Visibility.Collapsed;
         }
 
-        ScenesEmptyText.Visibility = obs.Scenes.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
+        ScenesEmptyText.Visibility = scenes.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
     }
 
     private void RenderSceneItems(ObsConnectionService obs)
     {
-        var items = obs.CurrentSceneItems;
-        var signature = string.Join("\u0001", items.Select(x => x.Id + ":" + x.SourceName));
+        var items = string.IsNullOrEmpty(_sceneFilter)
+            ? obs.CurrentSceneItems
+            : obs.CurrentSceneItems.Where(x => x.SourceName.Contains(_sceneFilter, StringComparison.OrdinalIgnoreCase)).ToList();
+        var signature = _sceneFilter + "\u0001" + string.Join("\u0001", items.Select(x => x.Id + ":" + x.SourceName));
         if (signature != _sceneItemSignature)
         {
             _sceneItemSignature = signature;

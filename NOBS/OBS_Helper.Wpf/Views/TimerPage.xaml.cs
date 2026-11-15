@@ -234,6 +234,26 @@ public partial class TimerPage : UserControl, INavigationAware
         }
     }
 
+    private void OnCopyCsv(object sender, RoutedEventArgs e)
+    {
+        var csv = _service.CopyCsv();
+        if (string.IsNullOrEmpty(csv))
+        {
+            AppServices.Toast?.Show(Strings.T("timer.error.export"), "warn");
+            return;
+        }
+        try
+        {
+            Clipboard.SetText(csv);
+            AppServices.Toast?.Show(Strings.T("timer.records.csvCopied"), "ok");
+        }
+        catch (Exception ex)
+        {
+            FileLogger.Warn("Timer", $"复制 CSV 失败：{ex.Message}");
+            AppServices.Toast?.Show(Strings.T("timer.error.export"), "warn");
+        }
+    }
+
     private void OnClearRecords(object sender, RoutedEventArgs e)
     {
         if (_service.Records.Count == 0) return;

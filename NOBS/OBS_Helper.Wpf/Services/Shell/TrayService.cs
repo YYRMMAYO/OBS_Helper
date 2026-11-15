@@ -53,6 +53,9 @@ public sealed class TrayService : IDisposable
     private ToolStripMenuItem? _replaySaveItem;
     private ToolStripMenuItem? _replayToggleItem;
     private ToolStripMenuItem? _markItem;
+    private ToolStripMenuItem? _timerItem;
+    private ToolStripMenuItem? _miniItem;
+    private ToolStripMenuItem? _prompterItem;
 
     /// <summary>
     /// 简单录像服务（打点用）。由组合根在装配完成后注入，而不是直接读 <c>AppServices.SimpleRecord</c> ——
@@ -85,6 +88,9 @@ public sealed class TrayService : IDisposable
 
     /// <summary>托盘菜单「提词器」时触发（V3.1.0；由 MainWindow 切到 UI 线程）。</summary>
     public event Action? TeleprompterRequested;
+
+    /// <summary>托盘菜单「计时器」时触发（V3.7 / N19；由 MainWindow 切到 UI 线程并导航）。</summary>
+    public event Action? TimerRequested;
 
     public TrayService(ObsConnectionService obs, LocalStore store)
     {
@@ -384,9 +390,18 @@ public sealed class TrayService : IDisposable
     /// 语言切换后重建托盘菜单与提示文本（V2.9.2）：菜单项在托盘线程上创建，
     /// 必须在同一线程重建，否则 WinForms 控件会跨线程访问。
     /// </summary>
-    public void RefreshLanguage() => Post(() =>
+    /// <summary>更新托盘菜单里的计时状态（V3.7 / N19）。由 MainWindow 在计时状态变化时调用。</summary>
+    public void SetTimerStatus(string text)
     {
-        if (_icon is null) return;
+        if (string.IsNullOrWhiteSpace(text)) text = Strings.T("tray.timerIdle");
+        Post(() =>
+        {
+            if (_timerItem is not null) _timerItem.Text = text;
+        });
+    }
+
+    public void RefreshLanguage() => Post(() =>
+    {        if (_icon is null) return;
         _icon.ContextMenuStrip = BuildMenu();
         RefreshState();
     });
@@ -419,6 +434,10 @@ public sealed class TrayService : IDisposable
         var show = new ToolStripMenuItem(Strings.T("tray.showWindow"));
         show.Click += (_, _) => ShowRequested?.Invoke();
 
+        // V3.7 / N19：托盘直接显示计时状态；点击回到计时页
+        _timerItem = new ToolStripMenuItem(Strings.T("tray.timerIdle"));
+        _timerItem.Click += (_, _) => TimerRequested?.Invoke();
+
         _recordItem = new ToolStripMenuItem(Strings.T("tray.startRecord"));
         _recordItem.Click += (_, _) => FireAndForget(_obs.ToggleRecordAsync);
 
@@ -439,11 +458,11 @@ public sealed class TrayService : IDisposable
         _markItem = new ToolStripMenuItem(Strings.T("tray.mark"));
         _markItem.Click += (_, _) => FireAndForget(AddMarkerAsync);
 
-        var miniItem = new ToolStripMenuItem(Strings.T("tray.miniWindow"));
-        miniItem.Click += (_, _) => MiniWindowRequested?.Invoke();
+        _miniItem = new ToolStripMenuItem(Strings.T("tray.miniWindow"));
+        _miniItem.Click += (_, _) => MiniWindowRequested?.Invoke();
 
-        var teleprompterItem = new ToolStripMenuItem(Strings.T("tray.teleprompterShow"));
-        teleprompterItem.Click += (_, _) => TeleprompterRequested?.Invoke();
+        _prompterItem = new ToolStripMenuItem(Strings.T("tray.teleprompterShow"));
+        _prompterItem.Click += (_, _) => TeleprompterRequested?.Invoke();
 
         var openDirItem = new ToolStripMenuItem(Strings.T("tray.openRecordDir"));
         openDirItem.Click += (_, _) => OpenRecordingFolderRequested?.Invoke();
@@ -451,6 +470,8 @@ public sealed class TrayService : IDisposable
         var exit = new ToolStripMenuItem(Strings.T("tray.exit"));
         exit.Click += (_, _) => ExitRequested?.Invoke();
 
+        menu.Items.Add(_timerItem);
+        menu.Items.Add(new ToolStripSeparator());
         menu.Items.Add(show);
         menu.Items.Add(new ToolStripSeparator());
         menu.Items.Add(_recordItem);
@@ -461,12 +482,25 @@ public sealed class TrayService : IDisposable
         menu.Items.Add(_replayToggleItem);
         menu.Items.Add(_markItem);
         menu.Items.Add(new ToolStripSeparator());
-        menu.Items.Add(miniItem);
-        menu.Items.Add(teleprompterItem);
+        menu.Items.Add(_miniItem);
+        menu.Items.Add(_prompterItem);
         menu.Items.Add(openDirItem);
         menu.Items.Add(new ToolStripSeparator());
         menu.Items.Add(exit);
+        ApplyMenuVisibilityCore();
         return menu;
+    }
+
+    /// <summary>托盘菜单自定义（V3.7 / N05）：按设置显隐不常用项。</summary>
+    public void RefreshMenuVisibility() => Post(ApplyMenuVisibilityCore);
+
+    private void ApplyMenuVisibilityCore()
+    {
+        if (_miniItem is not null) _miniItem.Visible = Settings.TrayShowMiniWindow;
+        if (_prompterItem is not null) _prompterItem.Visible = Settings.TrayShowTeleprompter;
+        if (_replaySaveItem is not null) _replaySaveItem.Visible = Settings.TrayShowReplay;
+        if (_replayToggleItem is not null) _replayToggleItem.Visible = Settings.TrayShowReplay;
+        if (_markItem is not null) _markItem.Visible = Settings.TrayShowMark;
     }
 
     // ------------------------------------------------------------ 辅助

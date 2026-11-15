@@ -26,25 +26,27 @@ public sealed class PluginReleaseService
     /// <summary>单条缓存的保鲜期。GitHub 上多数活跃插件月更一次，24h 足够。</summary>
     public static readonly TimeSpan CacheTtl = TimeSpan.FromHours(24);
 
-    /// <summary>
-    /// 失败记忆的保鲜期。取 5~10 分钟这一档：比「一次会话」长（够挡住连续输入与来回切页），
-    /// 又比成功缓存短得多（限流窗口过去后能自己恢复，不需要用户重启）。
-    /// </summary>
-    public static readonly TimeSpan FailureTtl = TimeSpan.FromMinutes(10);
+    /// <summary>失败冷却的最大间隔。指数退避从 10 秒起步，最多 5 分钟。</summary>
+    public static readonly TimeSpan FailureTtl = TimeSpan.FromMinutes(5);
+
+    /// <summary>首次失败的冷却时间；连续失败按 2 倍递增，封顶 <see cref="FailureTtl"/>。</summary>
+    public static readonly TimeSpan FailureBaseDelay = TimeSpan.FromSeconds(10);
 
     private const string ApiBase = "https://api.github.com/repos/";
 
     private static readonly HttpClient Http = CreateClient();
-    private static readonly SemaphoreSlim NetworkGate = new(1, 1);
+    private static readonly SemaphoreSlim NetworkGate = new(2, 2);
     private static readonly ConcurrentDictionary<string, Lazy<Task<PluginReleaseInfo?>>> InFlight = new(StringComparer.OrdinalIgnoreCase);
 
     private static string CacheFile => Path.Combine(Host.HostBridge.AppDataDirectory, "data", "plugin_releases.json");
 
+    private sealed record FailureState(int Count, DateTime NextAttemptUtc);
+
     /// <summary>
-    /// 「这个仓库刚刚查失败过」的内存记忆（仓库 → 失败时刻）。刻意与成功缓存分开：
-    /// 成功缓存 24h 且落盘，失败记忆只活在进程内、10 分钟自动失效，两者语义完全不同，混在一起会让失败也变成「新鲜结果」。
+    /// 「这个仓库刚刚查失败过」的内存记忆（仓库 → 失败次数 + 下次可重试时刻）。
+    /// 成功缓存 24h 且落盘；失败记忆只活在进程内，按指数退避自动失效。
     /// </summary>
-    private readonly ConcurrentDictionary<string, DateTime> _failures = new(StringComparer.OrdinalIgnoreCase);
+    private readonly ConcurrentDictionary<string, FailureState> _failures = new(StringComparer.OrdinalIgnoreCase);
 
     private Dictionary<string, PluginReleaseInfo>? _diskCache = LoadDiskCache();
 
@@ -105,16 +107,29 @@ public sealed class PluginReleaseService
             return fetched;
         }
 
-        // 记下这次失败：在途合并只覆盖「并发的那一瞬间」，这里覆盖的是随后十分钟里的每一次同样的询问
-        _failures[key] = DateTime.UtcNow;
+        // 记下这次失败：按连续失败次数指数退避（10s → 20s → 40s …，封顶 5 分钟）
+        _failures.AddOrUpdate(key,
+            _ => new FailureState(1, DateTime.UtcNow + FailureBaseDelay),
+            (_, old) =>
+            {
+                var next = old.Count + 1;
+                var seconds = Math.Min(
+                    FailureBaseDelay.TotalSeconds * Math.Pow(2, Math.Min(next - 1, 6)),
+                    FailureTtl.TotalSeconds);
+                return new FailureState(next, DateTime.UtcNow + TimeSpan.FromSeconds(seconds));
+            });
 
         // 网络失败：有过期缓存就先用着
         return GetStale(key);
     }
 
     /// <summary>该仓库是否处在失败冷却期内（此刻不该再打网络）。</summary>
-    private bool IsCoolingDown(string key)
-        => _failures.TryGetValue(key, out var at) && DateTime.UtcNow - at < FailureTtl;
+    private bool IsCoolingDownCore(string key)
+        => _failures.TryGetValue(key, out var state) && DateTime.UtcNow < state.NextAttemptUtc;
+
+    /// <summary>供页面显示「查询冷却中」；仓库为空时返回 false。</summary>
+    public bool IsCoolingDown(string repo)
+        => IsCoolingDownCore(NormalizeRepo(repo));
 
     /// <summary>取仍然可用的过期磁盘缓存；没有则 null（失败回退与冷却期返回的是同一个东西）。</summary>
     private PluginReleaseInfo? GetStale(string key)

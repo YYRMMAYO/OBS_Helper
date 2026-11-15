@@ -61,6 +61,9 @@ public static class SettingsSections
         new("hotkey", "recording", "CardHotkey",
             "settings.hotkey.title", "settings.hotkey.desc", "IconGeomKeyboard",
             new[] { "热键", "快捷键", "hotkey", "shortcut", "组合键", "全局" }),
+        new("timer", "recording", "CardTimer",
+            "settings.timer.title", "settings.timer.desc", "IconGeomTimer",
+            new[] { "计时器", "timer", "倒计时", "countdown", "顺计时", "导播", "时长" }),
 
         // ------------------------------------------------------------ AI 与诊断
         new("ai", "ai", "CardAi",

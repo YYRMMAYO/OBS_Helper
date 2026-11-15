@@ -23,6 +23,12 @@ public sealed class ShellSettings
     /// </summary>
     [JsonPropertyName("audioMuteAlert")] public bool AudioMuteAlertEnabled { get; set; } = true;
 
+    // ---- 托盘菜单自定义（V3.7 / N05）----
+    [JsonPropertyName("trayShowMini")] public bool TrayShowMiniWindow { get; set; } = true;
+    [JsonPropertyName("trayShowTeleprompter")] public bool TrayShowTeleprompter { get; set; } = true;
+    [JsonPropertyName("trayShowReplay")] public bool TrayShowReplay { get; set; } = true;
+    [JsonPropertyName("trayShowMark")] public bool TrayShowMark { get; set; } = true;
+
     /// <summary>
     /// 简单录像（V2.9.4）：文件通道落地后允许本工具自动拉起 OBS 并开始录制。
     /// 关掉时只改配置并提示用户自己启动 OBS —— 有些用户不希望工具去启动别的程序。

@@ -406,6 +406,19 @@ public sealed class AppearanceService : IDisposable
         SaveAndApply();
     }
 
+    /// <summary>
+    /// 安全模式（V3.7 / N01）：连续异常退出后禁用壁纸与动画，保留主题 / 字体 / 高对比。
+    /// 由 App 在启动早期调用一次；不改用户的其它外观设置。
+    /// </summary>
+    public void ApplySafeMode()
+    {
+        Settings.ReduceMotion = true;
+        Settings.ReduceMotionOverride = "on";
+        Settings.BackgroundMode = "default";
+        Settings.BackgroundWallpaperId = "";
+        SaveAndApply();
+    }
+
     // ------------------------------------------------------------ 无障碍 / 老年模式（V3.3.0）
 
     /// <summary>无障碍模式是否开启。</summary>

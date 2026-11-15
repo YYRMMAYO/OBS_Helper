@@ -306,6 +306,20 @@ public sealed class TimerService : IDisposable
         }
     }
 
+    /// <summary>生成 CSV（Excel 直接打开）；与 TSV 共用同一份记录与排序。</summary>
+    public string CopyCsv()
+    {
+        try
+        {
+            return TimerCore.BuildCsv(_records);
+        }
+        catch (Exception ex)
+        {
+            FileLogger.Warn("Timer", $"生成 CSV 失败：{ex.Message}");
+            return "";
+        }
+    }
+
     /// <summary>启动浏览器叠加服务并返回页面地址；失败返回 null（不影响计时）。</summary>
     public string? EnsureOverlayUrl()
     {

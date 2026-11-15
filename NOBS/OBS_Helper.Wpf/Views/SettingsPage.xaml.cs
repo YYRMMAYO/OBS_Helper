@@ -12,6 +12,7 @@ using OBS_Helper.Wpf.Services.Ai;
 using OBS_Helper.Wpf.Services.ObsConfig;
 using OBS_Helper.Wpf.Services.Recording;
 using OBS_Helper.Wpf.Services.Shell;
+using OBS_Helper.Wpf.Services.Timing;
 
 namespace OBS_Helper.Wpf.Views;
 
@@ -217,6 +218,73 @@ public partial class SettingsPage : UserControl, INavigationAware
         }
 
         SettingsContentScroll.ScrollToTop();
+
+        if (section.Id == "timer") LoadTimerSettings();
+    }
+
+    // ------------------------------------------------------------ 导播计时器（V3.7 / N26）
+
+    private void LoadTimerSettings()
+    {
+        var s = AppServices.TimerClock.Settings;
+        _syncing = true;
+        try
+        {
+            TimerDefaultBox.Text = TimerCore.FormatDuration(TimeSpan.FromSeconds(s.PlannedSeconds));
+            TimerShowHoursCheck.IsChecked = s.ShowHours;
+            TimerExcludeCaptureCheck.IsChecked = s.ExcludeFromCapture;
+            TimerAutoStartCheck.IsChecked = s.AutoStartWithRecording;
+            TimerAutoStopCheck.IsChecked = s.AutoStopWithRecording;
+            TimerSoundCheck.IsChecked = s.SoundOnOvertime;
+            TimerSettingsStatusText.Text = "";
+        }
+        finally
+        {
+            _syncing = false;
+        }
+    }
+
+    private void OnApplyTimerSettings(object sender, RoutedEventArgs e)
+    {
+        if (_syncing) return;
+
+        var planned = TimerCore.ParseDuration(TimerDefaultBox.Text);
+        var seconds = (int)Math.Floor(planned.TotalSeconds);
+        if (AppServices.TimerClock.Settings.Mode == TimerMode.CountDown && seconds <= 0)
+        {
+            TimerSettingsStatusText.Text = Strings.T("timer.error.durationRequired");
+            return;
+        }
+
+        AppServices.TimerClock.UpdateSettings(s =>
+        {
+            s.PlannedSeconds = seconds;
+            s.ShowHours = TimerShowHoursCheck.IsChecked == true;
+            s.ExcludeFromCapture = TimerExcludeCaptureCheck.IsChecked == true;
+            s.AutoStartWithRecording = TimerAutoStartCheck.IsChecked == true;
+            s.AutoStopWithRecording = TimerAutoStopCheck.IsChecked == true;
+            s.SoundOnOvertime = TimerSoundCheck.IsChecked == true;
+        });
+
+        TimerDefaultBox.Text = TimerCore.FormatDuration(planned);
+        TimerSettingsStatusText.Text = Strings.T("settings.timer.saved");
+    }
+
+    private void OnResetTimerHotkeys(object sender, RoutedEventArgs e)
+    {
+        var h = AppServices.Hotkeys.Settings;
+        h.TimerStartPause = new HotkeyBinding("J");
+        h.TimerReset = new HotkeyBinding("U");
+        h.TimerToggleWindow = new HotkeyBinding("H");
+        h.TimerStartPauseEnabled = true;
+        h.TimerResetEnabled = true;
+        h.TimerToggleWindowEnabled = true;
+        AppServices.Hotkeys.SaveAndReapply();
+
+        TimerSettingsStatusText.Text = AppServices.Hotkeys.RegistrationErrors.Count == 0
+            ? Strings.T("settings.timer.hotkeysReset")
+            : Strings.T("settings.timer.hotkeysResetFailed",
+                string.Join("; ", AppServices.Hotkeys.RegistrationErrors));
     }
 
     public async Task OnNavigatedToAsync(object? parameter)
@@ -478,6 +546,10 @@ public partial class SettingsPage : UserControl, INavigationAware
             RecordWatchdogSwitch.IsChecked = tray.RecordWatchdogEnabled;
             RealtimeLogAlertSwitch.IsChecked = tray.RealtimeLogAlertEnabled;
             AudioAlertSwitch.IsChecked = tray.AudioMuteAlertEnabled;
+            TrayShowMiniSwitch.IsChecked = tray.TrayShowMiniWindow;
+            TrayShowPrompterSwitch.IsChecked = tray.TrayShowTeleprompter;
+            TrayShowReplaySwitch.IsChecked = tray.TrayShowReplay;
+            TrayShowMarkSwitch.IsChecked = tray.TrayShowMark;
 
             var h = AppServices.Hotkeys.Settings;
             RecHotkeyEnabled.IsChecked = h.RecordEnabled;
@@ -557,7 +629,12 @@ public partial class SettingsPage : UserControl, INavigationAware
         s.RecordWatchdogEnabled = RecordWatchdogSwitch.IsChecked == true;
         s.RealtimeLogAlertEnabled = RealtimeLogAlertSwitch.IsChecked == true;
         s.AudioMuteAlertEnabled = AudioAlertSwitch.IsChecked == true;
+        s.TrayShowMiniWindow = TrayShowMiniSwitch.IsChecked == true;
+        s.TrayShowTeleprompter = TrayShowPrompterSwitch.IsChecked == true;
+        s.TrayShowReplay = TrayShowReplaySwitch.IsChecked == true;
+        s.TrayShowMark = TrayShowMarkSwitch.IsChecked == true;
         AppServices.Tray.SaveSettings();
+        AppServices.Tray.RefreshMenuVisibility();
 
         // V2.8 守护开关即时生效
         if (AppServices.RecordWatchdog.Enabled != watchdogBefore) AppServices.RecordWatchdog.ApplyEnabled();
@@ -757,6 +834,30 @@ public partial class SettingsPage : UserControl, INavigationAware
         h.ToggleWindow = ReadBinding(WinHotkeyCtrl, WinHotkeyAlt, WinHotkeyShift, WinHotkeyWin, WinHotkeyKey);
 
         AppServices.Hotkeys.SaveAndReapply();
+        RefreshHotkeyStatus();
+    }
+
+    /// <summary>热键冲突一键重设（V3.7 / N02）：恢复全部默认键位并重新注册。</summary>
+    private void OnResetHotkeysToDefaults(object sender, RoutedEventArgs e)
+    {
+        var h = AppServices.Hotkeys.Settings;
+        h.Record = new HotkeyBinding("R");
+        h.Stream = new HotkeyBinding("S");
+        h.VirtualCam = new HotkeyBinding("C");
+        h.SaveReplay = new HotkeyBinding("V");
+        h.MarkRecording = new HotkeyBinding("K");
+        h.MiniWindow = new HotkeyBinding("M");
+        h.ToggleWindow = new HotkeyBinding("O");
+        h.TeleprompterToggle = new HotkeyBinding("T");
+        h.TeleprompterPlayPause = new HotkeyBinding("P");
+        h.TeleprompterClickThrough = new HotkeyBinding("L");
+        h.TimerStartPause = new HotkeyBinding("J");
+        h.TimerReset = new HotkeyBinding("U");
+        h.TimerToggleWindow = new HotkeyBinding("H");
+
+        AppServices.Hotkeys.SaveAndReapply();
+        ShellSync();
+        RefreshHotkeyDisplays();
         RefreshHotkeyStatus();
     }
 

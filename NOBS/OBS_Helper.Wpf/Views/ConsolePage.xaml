@@ -64,6 +64,23 @@
                      FontSize="{DynamicResource FontSizeSm}"
                      Foreground="{DynamicResource DangerBrush}"
                      TextWrapping="Wrap" Visibility="Collapsed" />
+
+          <Border x:Name="ConnectDiagnosticsPanel" Style="{StaticResource SoftPanel}"
+                  Margin="0,10,0,0" Visibility="Collapsed">
+            <StackPanel>
+              <TextBlock Text="{DynamicResource Loc.console.diag.title}" Style="{StaticResource BodyText}"
+                         FontWeight="SemiBold" TextWrapping="Wrap" />
+              <TextBlock Text="{DynamicResource Loc.console.diag.step1}" Style="{StaticResource CaptionText}"
+                         TextWrapping="Wrap" Margin="0,6,0,0" />
+              <TextBlock Text="{DynamicResource Loc.console.diag.step2}" Style="{StaticResource CaptionText}"
+                         TextWrapping="Wrap" Margin="0,4,0,0" />
+              <TextBlock Text="{DynamicResource Loc.console.diag.step3}" Style="{StaticResource CaptionText}"
+                         TextWrapping="Wrap" Margin="0,4,0,0" />
+              <Button Content="{DynamicResource Loc.console.diag.copy}" Style="{StaticResource GhostButton}"
+                      HorizontalAlignment="Left" Margin="0,8,0,0" Tag="netstat -ano | findstr 4455"
+                      Click="OnCopyDiagnosticCommand" />
+            </StackPanel>
+          </Border>
         </StackPanel>
       </Border>
 
@@ -144,6 +161,10 @@
             </StackPanel>
           </Border>
         </UniformGrid>
+
+        <TextBox x:Name="SceneSearchBox" Style="{StaticResource AppTextBox}" Margin="0,18,0,8"
+                 Tag="{DynamicResource Loc.console.searchPlaceholder}" TextChanged="OnSceneSearchChanged"
+                 AutomationProperties.Name="{DynamicResource Loc.console.searchPlaceholder}" />
 
         <TextBlock Style="{StaticResource SectionTitle}" Text="{DynamicResource Loc.console.scenes}" Margin="0,18,0,10" />
         <StackPanel x:Name="ScenesPanel" />

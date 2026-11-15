@@ -3,6 +3,7 @@ using System.Windows.Controls;
 using OBS_Helper.Wpf.Controls;
 using OBS_Helper.Wpf.Models;
 using OBS_Helper.Wpf.Navigation;
+using OBS_Helper.Wpf.Services.Timing;
 
 namespace OBS_Helper.Wpf.Views;
 
@@ -62,7 +63,11 @@ public partial class HomePage : UserControl, INavigationAware
 
             var error = AppServices.Problems.LoadError;
             LoadErrorPanel.Visibility = error is null ? Visibility.Collapsed : Visibility.Visible;
-            if (error is not null) LoadErrorText.Text = Errors.ErrorCodes.Format(error);
+            if (error is not null)
+            {
+                LoadErrorText.Text = Errors.ErrorCodes.Format(error);
+                LoadErrorSearchButton.Tag = error;
+            }
 
             RefreshBookmarks();
             RefreshWelcome();
@@ -72,6 +77,8 @@ public partial class HomePage : UserControl, INavigationAware
 
             // 简单开播卡（V3.0 / D2）：同理，回来就重查一次推流服务是否填全
             await SimpleStream.RefreshAsync();
+
+            RefreshTimerSummary();
         }
         catch (Exception ex)
         {
@@ -90,6 +97,29 @@ public partial class HomePage : UserControl, INavigationAware
         SimpleStream.Detach();
         DetachEvents();
         return Task.CompletedTask;
+    }
+
+    /// <summary>导播计时器（V3.7 / N24）：首页显示上次模式/时长与记录数，一键进入计时页。</summary>
+    private void RefreshTimerSummary()
+    {
+        var settings = AppServices.TimerClock.Settings;
+        var mode = Strings.T(settings.Mode == TimerMode.CountDown
+            ? "timer.mode.countdown" : "timer.mode.countup");
+        var planned = settings.PlannedSeconds <= 0
+            ? Strings.T("timer.unlimited")
+            : TimerCore.FormatDuration(TimeSpan.FromSeconds(settings.PlannedSeconds));
+        TimerSummaryText.Text = Strings.T("home.timer.summary", mode, planned,
+            AppServices.TimerClock.Records.Count);
+    }
+
+    private void OnOpenTimer(object sender, RoutedEventArgs e)
+        => AppServices.Navigation.Navigate(Routes.Timer);
+
+    /// <summary>错误码一键查知识库（V3.7 / N10）：把错误码带进搜索页。</summary>
+    private void OnSearchErrorCode(object sender, RoutedEventArgs e)
+    {
+        if (sender is Button { Tag: string code } && !string.IsNullOrWhiteSpace(code))
+            AppServices.Navigation.Navigate(Routes.Search, code);
     }
 
     /// <summary>收藏可能在详情页 / 搜索页被改动，连接状态会在控制台 / 托盘变化：进页面时订阅（幂等）。</summary>

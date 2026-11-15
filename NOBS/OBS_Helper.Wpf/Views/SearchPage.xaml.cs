@@ -52,6 +52,8 @@ public partial class SearchPage : UserControl, INavigationAware
 
     public async Task OnNavigatedToAsync(object? parameter)
     {
+        if (parameter is string query && !string.IsNullOrWhiteSpace(query))
+            QueryBox.Text = query;
         try
         {
             await BuildChipsAsync();

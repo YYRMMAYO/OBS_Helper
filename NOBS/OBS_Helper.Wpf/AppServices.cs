@@ -396,6 +396,10 @@ public static class AppServices
     /// <summary>导播计时器（V3.6.0）：倒计时 / 顺计时、记录、计时窗与 OBS 联动。</summary>
     public static Services.Timing.TimerService TimerClock => _timerClock.Value;
 
+    /// <summary>已装配时返回计时器，未装配返回 null（退出清理用，避免无谓初始化）。</summary>
+    public static Services.Timing.TimerService? TimerClockOrNull()
+        => _timerClock.IsValueCreated ? _timerClock.Value : null;
+
     // ---------------------------------------------------------------- V3.4.0 手机联动
     /// <summary>sidecar 清单与下载/启动（mediamtx / whisper.cpp / ffmpeg / rclone）。</summary>
     public static SidecarManager Sidecars => _sidecars.Value;

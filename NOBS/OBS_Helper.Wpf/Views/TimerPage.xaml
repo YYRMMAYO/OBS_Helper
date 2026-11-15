@@ -100,6 +100,8 @@
         <StackPanel Grid.Column="1" Orientation="Horizontal">
           <Button Style="{StaticResource SecondaryButton}" Content="{DynamicResource Loc.timer.action.copyTsv}"
                   Click="OnCopyTsv" Margin="0,0,8,0" />
+          <Button Style="{StaticResource SecondaryButton}" Content="{DynamicResource Loc.timer.action.copyCsv}"
+                  Click="OnCopyCsv" Margin="0,0,8,0" />
           <Button Style="{StaticResource GhostButton}" Content="{DynamicResource Loc.timer.action.clearRecords}"
                   Click="OnClearRecords" />
         </StackPanel>

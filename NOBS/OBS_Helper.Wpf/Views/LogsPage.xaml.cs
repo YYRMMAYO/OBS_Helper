@@ -37,6 +37,8 @@ public partial class LogsPage : UserControl, INavigationAware
     private string? _selectedPath;
     private ObsLogReport? _report;
     private bool _busy;
+    private string _findingKeyword = "";
+    private LogSeverity? _findingMinSeverity;
 
     public LogsPage()
     {
@@ -406,8 +408,45 @@ public partial class LogsPage : UserControl, INavigationAware
 
         NoFindingText.Visibility = _report.Findings.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
 
+        var findings = _report.Findings.Where(MatchesFindingFilter).ToList();
+        NoFindingText.Visibility = findings.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
         FindingList.Children.Clear();
-        foreach (var f in _report.Findings) FindingList.Children.Add(BuildFindingCard(f));
+        foreach (var f in findings) FindingList.Children.Add(BuildFindingCard(f));
+    }
+
+    private void OnFindingFilterChanged(object sender, TextChangedEventArgs e)
+    {
+        if (FindingFilterBox is null) return;
+        _findingKeyword = (FindingFilterBox.Text ?? "").Trim();
+        RenderReport();
+    }
+
+    private void OnFindingSeverityChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (FindingSeverityBox is null) return;
+        _findingMinSeverity = (FindingSeverityBox.SelectedItem as ComboBoxItem)?.Tag switch
+        {
+            "error" => LogSeverity.Error,
+            "warn" => LogSeverity.Warning,
+            _ => null,
+        };
+        RenderReport();
+    }
+
+    /// <summary>只看严重度与关键字命中的条目；空关键字 = 全部。</summary>
+    private bool MatchesFindingFilter(LogFinding f)
+    {
+        if (_findingMinSeverity is LogSeverity min && f.Severity < min) return false;
+        if (_findingKeyword.Length == 0) return true;
+
+        static bool Hit(string? value, string keyword)
+            => !string.IsNullOrEmpty(value) && value.Contains(keyword, StringComparison.OrdinalIgnoreCase);
+
+        return Hit(f.Code, _findingKeyword)
+            || Hit(f.Title, _findingKeyword)
+            || Hit(f.Evidence, _findingKeyword)
+            || Hit(f.Suggestion, _findingKeyword)
+            || Hit(f.ProblemId, _findingKeyword);
     }
 
     private Border BuildFindingCard(LogFinding f)

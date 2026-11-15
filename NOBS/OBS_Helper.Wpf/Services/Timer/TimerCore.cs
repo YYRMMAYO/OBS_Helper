@@ -113,6 +113,33 @@ public static class TimerCore
         return sb.ToString();
     }
 
+    /// <summary>生成 CSV（Excel 可直接打开）；序号按展示顺序从 1 开始。</summary>
+    public static string BuildCsv(IEnumerable<TimerRecord> records)
+    {
+        var sb = new StringBuilder();
+        sb.Append("序号,开始时间,模式,计划时长,实际用时,超时\r\n");
+        var ordered = OrderForDisplay(records);
+        for (var i = 0; i < ordered.Count; i++)
+        {
+            var r = ordered[i];
+            sb.Append(i + 1).Append(',')
+              .Append(CsvEscape(r.StartedAt.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture))).Append(',')
+              .Append(r.Mode == TimerMode.CountDown ? "CountDown" : "CountUp").Append(',')
+              .Append(CsvEscape(FormatDuration(TimeSpan.FromSeconds(r.PlannedSeconds)))).Append(',')
+              .Append(CsvEscape(FormatDuration(TimeSpan.FromSeconds(r.ActualSeconds)))).Append(',')
+              .Append(r.OvertimeSeconds > 0
+                  ? CsvEscape(FormatSignedOvertime(TimeSpan.FromSeconds(r.OvertimeSeconds)))
+                  : "-")
+              .Append("\r\n");
+        }
+        return sb.ToString();
+    }
+
+    private static string CsvEscape(string value)
+        => value.IndexOfAny(new[] { ',', '"', '\r', '\n' }) < 0
+            ? value
+            : "\"" + value.Replace("\"", "\"\"") + "\"";
+
     private static string Escape(string value)
         => value.Replace('\t', ' ').Replace('\r', ' ').Replace('\n', ' ');
 

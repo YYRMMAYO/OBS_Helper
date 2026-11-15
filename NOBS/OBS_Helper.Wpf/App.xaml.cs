@@ -304,7 +304,9 @@ public partial class App : Application
         }
 
         // 外观必须在主窗体创建前套用，否则会先闪一帧默认浅色
+        var safeMode = DetectSafeMode();
         AppServices.Appearance.Initialize();
+        if (safeMode) AppServices.Appearance.ApplySafeMode();
         // 语言同理：DynamicResource 的 Loc.* 键要在首帧渲染前就位，否则先闪一帧原始键名
         AppServices.Localization.Initialize();
 
@@ -327,7 +329,32 @@ public partial class App : Application
         var window = new MainWindow();
         MainWindow = window;
         window.Show();
+        if (safeMode)
+            AppServices.Toast?.Show(Strings.T("app.safeMode"), "warn");
         splash?.CloseAfter(TimeSpan.FromMilliseconds(900));
+    }
+
+    /// <summary>
+    /// 安全模式检测（V3.7 / N01）：正常退出会在 OnExit 清零；进程被强杀 / 崩溃时保留计数。
+    /// 连续 2 次未正常退出 → 下一次启动禁用壁纸与动画，避免坏配置反复拖垮首屏。
+    /// </summary>
+    private static bool DetectSafeMode()
+    {
+        if (Environment.GetEnvironmentVariable("OBS_SELFTEST") == "1") return false;
+        try
+        {
+            var store = AppServices.Store;
+            var streak = int.TryParse(store.GetItem("app.crashStreak"), out var n) ? n : 0;
+            var safe = streak >= 2;
+            store.SetItem("app.crashStreak", (streak + 1).ToString());
+            if (safe) FileLogger.Warn("App", "连续异常退出，本次以安全模式启动（禁用壁纸与动画）");
+            return safe;
+        }
+        catch (Exception ex)
+        {
+            FileLogger.Warn("App", $"安全模式检测失败：{ex.Message}");
+            return false;
+        }
     }
 
     protected override void OnExit(ExitEventArgs e)
@@ -345,6 +372,12 @@ public partial class App : Application
         }
         _singleMutex?.Dispose();
         _showEvent?.Dispose();
+        // 正常退出：清掉崩溃计数，避免下次误入安全模式
+        try { AppServices.Store.SetItem("app.crashStreak", "0"); }
+        catch (Exception) { /* 退出阶段忽略 */ }
+        // 先收计时器：隐藏计时窗、停止叠加服务、保存设置与记录
+        try { AppServices.TimerClockOrNull()?.Dispose(); }
+        catch (Exception ex) { FileLogger.Warn("Timer", $"退出时释放计时器失败：{ex.Message}"); }
         // 退出前把日志队列写盘（最多等 2 秒），保证本次会话的异常记录不丢
         FileLogger.Flush();
         base.OnExit(e);

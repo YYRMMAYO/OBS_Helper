@@ -231,6 +231,33 @@ public class TimerCoreTests
     }
 
     [Fact]
+    public void Csv_OrdersNewestFirst_AndEscapes()
+    {
+        var records = new[]
+        {
+            new TimerRecord
+            {
+                Id = 1, StartedAt = T0, Mode = TimerMode.CountDown,
+                PlannedSeconds = 60, ActualSeconds = 60, OvertimeSeconds = 0,
+            },
+            new TimerRecord
+            {
+                Id = 2, StartedAt = T0.AddMinutes(1), Mode = TimerMode.CountUp,
+                PlannedSeconds = 30, ActualSeconds = 45, OvertimeSeconds = 15,
+            },
+        };
+
+        var csv = TimerCore.BuildCsv(records);
+        var lines = csv.Split("\r\n", StringSplitOptions.RemoveEmptyEntries);
+
+        Assert.Equal("序号,开始时间,模式,计划时长,实际用时,超时", lines[0]);
+        Assert.StartsWith("1,", lines[1]);
+        Assert.Contains("CountUp", lines[1]);
+        Assert.Contains("+00:15", lines[1]);
+        Assert.StartsWith("2,", lines[2]);
+    }
+
+    [Fact]
     public void OrderForDisplay_IsDescendingById()
     {
         var ordered = TimerCore.OrderForDisplay(new[]

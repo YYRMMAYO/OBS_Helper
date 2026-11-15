@@ -520,6 +520,25 @@
                      Checked="OnShellSettingToggled" Unchecked="OnShellSettingToggled" />
           <TextBlock Style="{StaticResource CaptionText}" Margin="52,5,0,0" TextWrapping="Wrap"
                      Text="{DynamicResource Loc.settings.shell.audioAlertDesc}" />
+
+          <!-- V3.7 / N05：托盘菜单自定义 -->
+          <Border Style="{StaticResource HLine}" Margin="0,14,0,0" />
+          <TextBlock Text="{DynamicResource Loc.settings.shell.trayMenu}" Style="{StaticResource MutedText}"
+                     Margin="0,10,0,6" />
+          <WrapPanel>
+            <CheckBox x:Name="TrayShowMiniSwitch" Style="{StaticResource AppCheckBox}" Margin="0,0,18,8"
+                      Content="{DynamicResource Loc.settings.shell.showMini}"
+                      Checked="OnShellSettingToggled" Unchecked="OnShellSettingToggled" />
+            <CheckBox x:Name="TrayShowPrompterSwitch" Style="{StaticResource AppCheckBox}" Margin="0,0,18,8"
+                      Content="{DynamicResource Loc.settings.shell.showTeleprompter}"
+                      Checked="OnShellSettingToggled" Unchecked="OnShellSettingToggled" />
+            <CheckBox x:Name="TrayShowReplaySwitch" Style="{StaticResource AppCheckBox}" Margin="0,0,18,8"
+                      Content="{DynamicResource Loc.settings.shell.showReplay}"
+                      Checked="OnShellSettingToggled" Unchecked="OnShellSettingToggled" />
+            <CheckBox x:Name="TrayShowMarkSwitch" Style="{StaticResource AppCheckBox}" Margin="0,0,18,8"
+                      Content="{DynamicResource Loc.settings.shell.showMark}"
+                      Checked="OnShellSettingToggled" Unchecked="OnShellSettingToggled" />
+          </WrapPanel>
         </StackPanel>
       </Border>
 
@@ -741,11 +760,52 @@
               <ColumnDefinition Width="Auto" />
               <ColumnDefinition Width="*" />
             </Grid.ColumnDefinitions>
-            <Button Grid.Column="0" Content="{DynamicResource Loc.settings.hotkey.save}" Style="{StaticResource PrimaryButton}"
-                    HorizontalAlignment="Left" Click="OnSaveHotkeys" />
+            <StackPanel Grid.Column="0" Orientation="Horizontal">
+              <Button Content="{DynamicResource Loc.settings.hotkey.save}" Style="{StaticResource PrimaryButton}"
+                      HorizontalAlignment="Left" Click="OnSaveHotkeys" />
+              <Button Content="{DynamicResource Loc.settings.hotkey.resetDefaults}" Style="{StaticResource GhostButton}"
+                      Margin="8,0,0,0" Click="OnResetHotkeysToDefaults" />
+            </StackPanel>
             <TextBlock x:Name="HotkeyStatusText" Grid.Column="1" Style="{StaticResource CaptionText}"
                        VerticalAlignment="Center" Margin="12,0,0,0" TextWrapping="Wrap" />
           </Grid>
+        </StackPanel>
+      </Border>
+
+      <!-- ==================================================== 导播计时器（V3.7 / N26） -->
+      <Border x:Name="CardTimer" Style="{StaticResource Card}" Margin="0,0,0,16" Visibility="Collapsed">
+        <StackPanel>
+          <TextBlock Text="{DynamicResource Loc.settings.timer.title}" Style="{StaticResource SectionTitle}" />
+          <TextBlock Style="{StaticResource MutedText}" Margin="0,6,0,12" TextWrapping="Wrap"
+                     Text="{DynamicResource Loc.settings.timer.desc}" />
+
+          <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+            <TextBlock Text="{DynamicResource Loc.settings.timer.defaultDuration}" VerticalAlignment="Center"
+                       Foreground="{DynamicResource TextBrush}" FontSize="{DynamicResource FontSizeSm}" />
+            <TextBox x:Name="TimerDefaultBox" Style="{StaticResource AppTextBox}" Width="120"
+                     Margin="10,0,0,0" VerticalAlignment="Center"
+                     ToolTip="{DynamicResource Loc.settings.timer.defaultDurationHint}" />
+            <Button Content="{DynamicResource Loc.settings.timer.apply}" Style="{StaticResource SecondaryButton}"
+                    Margin="8,0,0,0" Click="OnApplyTimerSettings" />
+          </StackPanel>
+
+          <WrapPanel Margin="0,4,0,0">
+            <CheckBox x:Name="TimerShowHoursCheck" Style="{StaticResource AppCheckBox}" Margin="0,0,18,8"
+                      Content="{DynamicResource Loc.timer.setting.showHours}" />
+            <CheckBox x:Name="TimerExcludeCaptureCheck" Style="{StaticResource AppCheckBox}" Margin="0,0,18,8"
+                      Content="{DynamicResource Loc.timer.setting.excludeCapture}" />
+            <CheckBox x:Name="TimerAutoStartCheck" Style="{StaticResource AppCheckBox}" Margin="0,0,18,8"
+                      Content="{DynamicResource Loc.timer.setting.autoStart}" />
+            <CheckBox x:Name="TimerAutoStopCheck" Style="{StaticResource AppCheckBox}" Margin="0,0,18,8"
+                      Content="{DynamicResource Loc.timer.setting.autoStop}" />
+            <CheckBox x:Name="TimerSoundCheck" Style="{StaticResource AppCheckBox}" Margin="0,0,18,8"
+                      Content="{DynamicResource Loc.timer.setting.sound}" />
+          </WrapPanel>
+
+          <Button Content="{DynamicResource Loc.settings.timer.resetHotkeys}" Style="{StaticResource GhostButton}"
+                  HorizontalAlignment="Left" Margin="0,4,0,0" Click="OnResetTimerHotkeys" />
+          <TextBlock x:Name="TimerSettingsStatusText" Style="{StaticResource CaptionText}"
+                     Margin="0,8,0,0" TextWrapping="Wrap" />
         </StackPanel>
       </Border>
 
@@ -934,6 +994,8 @@
                     Margin="0,0,10,0" Click="OnCheckUpdate" />
             <Button x:Name="CheckKbButton" Content="{DynamicResource Loc.settings.about.checkKb}" Style="{StaticResource SecondaryButton}"
                     Margin="0,0,10,0" Click="OnCheckKbUpdate" />
+            <Button Content="{DynamicResource Loc.settings.about.whatsNew}" Style="{StaticResource LinkButton}"
+                    Tag="https://github.com/YYRMMAYO/OBS_Helper/releases/latest" Margin="0,0,10,0" Click="OnOpenLink" />
             <TextBlock x:Name="UpdateStatusText" Style="{StaticResource CaptionText}"
                        VerticalAlignment="Center" Text="{DynamicResource Loc.settings.about.notChecked}" />
           </StackPanel>

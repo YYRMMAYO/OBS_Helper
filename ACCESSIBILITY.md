@@ -7,31 +7,16 @@
 > （文件与行为都写出来了），但那是对源码的**静态核对**，不是用辅助技术实测出来的结论 ——
 > 详见 §5 的证据边界。请不要把 §1 的承诺读成「已经做到」。
 
-### V3.5.0 更新摘要（2026-10-31）
+### 当前无障碍支持概览
 
-- **全面 UI 重构**：中性简约配色、低阴影卡片、导航分组、简化顶栏；默认主色从青绿改为低饱和「雾蓝」（key 仍为 `teal`，兼容旧配置）。
-- **毛玻璃与整窗背景**：壁纸层覆盖整个窗口；导航 / 顶栏使用「缩小 + 高斯模糊的壁纸底 + 主题色薄层」，卡片使用可调透明度的半透明表面。图片模式之外自动回退不透明表面。
-- **自定义外观**：设置页可调界面圆角、图片模式面板不透明度与界面字体；字体列表只引用系统已安装字体，不随包分发。
-- **点击动画**：按钮 / 导航 / 分段控件按下缩放 95%~97%，松开回弹；动效时长走 `MotionFast` / `MotionSlow` 令牌，减少动画开启时归零。
-- **启动动画**：深色品牌面板 + 进度线，主窗口出现后淡出；自检模式与减少动画开启时不显示。
-- **间距令牌**：`CardPadding`、`NavItemMinHeight`、`NavItemPadding`、`ControlMinHeight` 统一放松，减少拥挤感。
-- **仍然没有经过 NVDA / Narrator 实测**：以上为代码与静态检查结论，不代表读屏实际体验。
+> 本节只描述**当前支持**，不按版本记录变更；具体行为以源码与静态检查为准。
 
-### V3.3.0 更新摘要（2026-10-30）
-
-- **新增无障碍模式 / 老年模式**：模式组合由 `Services/Appearance/UiProfileCore.cs` 统一计算，
-  输出字号、密度、控件高度、焦点框粗细、导航宽度、行高与「跳到主内容」显隐等令牌；
-  系统文本缩放与系统「减少动画」是**下限**，用户显式改过的单项优先于预设。
-- **新增「跳到主内容」链接**：无障碍 / 老年模式自动出现，键盘 / 读屏用户不必每次 Tab 穿过侧栏。
-- **减少动画现在跟随系统**：`SystemParameters.ClientAreaAnimation` 为 false 时直接归零动效，
-  应用内开关只作为显式覆盖（见 §3.6 已更新）。
-- **焦点与尺寸令牌化**：`FocusThickness` / `ControlMinHeight` / `NavWidth` 等由令牌驱动，
-  无障碍模式按钮 ≥ 44×44、老年模式 ≥ 48×48。
-- **新页面（虚拟直播、插件安装）**：所有可交互控件有可访问名称，状态区带实时区域声明；
-  `scripts/check_accessibility.py` 继续拦截「无名称的图标按钮」与「只声明不抛事件的实时区域」。
-- **自动化**：`UiProfileCoreTests` 11 项（模式组合 / 系统下限 / 用户覆盖 / 空间计算），
-  并有 `check_resources.py` / `check_accessibility.py` 常驻检查。
-- **仍然没有经过 NVDA / Narrator 实测**：本节只代表代码与静态检查，不代表读屏实际体验。
+- **屏幕阅读器**：原生控件默认一层 + Toast 实时区域；计时页 / 计时窗、日志筛选、控制台场景 / 来源搜索、错误码搜索、连接诊断向导、托盘计时状态均提供可访问名称。
+- **键盘**：主要流程可 Tab 到达；分段控件有焦点指示，危险确认框默认焦点在「取消」；自检模式覆盖全部路由。
+- **字体与高对比**：字号跟随系统「文本大小」，应用内档位可覆盖；高对比同时跟随系统与内置开关。
+- **减少动画**：跟随系统；安全模式启动时会临时关闭壁纸与动画，避免首屏被拖垮。
+- **跳转与实时提示**：无障碍 / 老年模式提供「跳到主内容」；Toast 与关键状态区声明实时区域。
+- **证据边界**：以上是代码级适配 + 静态检查，**未经 NVDA / Narrator 实测**；发现障碍请见 §4。
 
 ## 中文版
 
@@ -297,22 +282,16 @@ UI Automation 支持，文字内容一般能被读到；Toast 是实时区域且
 
 ---
 
-### V3.3.0 update summary (2026-10-30)
+### Current accessibility support
 
-- **Accessibility and Elder modes**: mode composition is computed by
-  `Services/Appearance/UiProfileCore.cs`, producing tokens for text size, density, control height,
-  focus thickness, sidebar width, line height and the skip link. System text scaling and
-  system reduce-motion are the floor; explicit user choices override the presets.
-- **Skip link**: shown automatically in Accessibility / Elder modes so keyboard and screen-reader
-  users do not have to tab through the whole sidebar.
-- **Reduce motion now follows the system**: `SystemParameters.ClientAreaAnimation == false` zeroes
-  the shared motion durations; the in-app toggle is an explicit override (see updated §3.6).
-- **Focus and sizing tokens**: `FocusThickness`, `ControlMinHeight`, `NavWidth` etc. are token-driven;
-  buttons are at least 44×44 in Accessibility mode and 48×48 in Elder mode.
-- **New pages** (Virtual Live, plugin install) give every interactive control an accessible name and
-  declare live regions for status text; `scripts/check_accessibility.py` keeps guarding these rules.
-- **Automation**: 11 `UiProfileCoreTests` plus the existing resource / accessibility static checks.
-- **Still not tested with NVDA / Narrator**: this section reflects code and static checks only.
+> This section describes **current support only**; it is not a per-release changelog.
+
+- **Screen readers**: native-control defaults plus a live region for toasts; the timer page/window, log filters, console scene/source search, error-code search, connection wizard and tray timer status all expose accessible names.
+- **Keyboard**: primary flows are tab-reachable; segment controls show focus, and destructive confirmations default to Cancel; the headless self-test covers every route.
+- **Text size and high contrast**: font size follows the Windows text-size setting with in-app steps as overrides; high contrast follows both the system theme and the in-app switch.
+- **Reduce motion**: follows the system; safe mode also temporarily disables wallpaper and animations.
+- **Skip link and live regions**: Accessibility/Elder modes provide a skip link; toasts and key status areas declare live regions.
+- **Evidence boundary**: code-level adaptation plus static checks, **not tested with NVDA/Narrator**; see §4 to report a barrier.
 
 ## English
 

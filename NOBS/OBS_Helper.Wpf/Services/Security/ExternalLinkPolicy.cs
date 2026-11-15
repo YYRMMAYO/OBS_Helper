@@ -70,6 +70,9 @@ public static class ExternalLinkPolicy
         "bigmodel.cn",
         "pollinations.ai",
 
+        // 手机摄像头推流 App（用户自行安装，仅提供官方入口）
+        "softvelum.com",
+
         // 常见排障资料站（知识库 / 指引会引用）
         "w3.org",
         "csdn.net",

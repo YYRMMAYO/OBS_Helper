@@ -22,6 +22,7 @@ public partial class MobileLinkPage : UserControl, INavigationAware
     private PairingSession? _pairing;
     private string _guestInvite = "";
     private string _cameraQrKey = "";
+    private string _cameraWhipQrKey = "";
     private DateTimeOffset _pairingExpiry;
     private System.Windows.Threading.DispatcherTimer? _tick;
     private bool _subscribed;
@@ -341,6 +342,8 @@ public partial class MobileLinkPage : UserControl, INavigationAware
                 : $"{entry.Version} · {entry.License} · {entry.Source}";
             CameraQrImage.Source = null;
             _cameraQrKey = "";
+            CameraWhipQrImage.Source = null;
+            _cameraWhipQrKey = "";
             return;
         }
         var session = manager.Session;
@@ -350,6 +353,8 @@ public partial class MobileLinkPage : UserControl, INavigationAware
             CameraUrlText.Text = "";
             CameraQrImage.Source = null;
             _cameraQrKey = "";
+            CameraWhipQrImage.Source = null;
+            _cameraWhipQrKey = "";
             return;
         }
 
@@ -374,19 +379,52 @@ public partial class MobileLinkPage : UserControl, INavigationAware
                 PhoneCameraCore.WhipPublishUrl(session.LanAddress, session.WebrtcPort, session.StreamKey);
         }
 
-        // 推流二维码：手机扫码直接导入 Larix，不再手抄长 URL。
-        if (!string.Equals(_cameraQrKey, srt, StringComparison.Ordinal))
+        // V3.7.1：二维码优先放 Larix Grove 深链，扫码即新增连接；容量不够时退回裸 SRT。
+        var qr = PhoneCameraCore.BuildLarixQrPayload("OBS Helper " + session.CameraId, srt);
+        if (!string.Equals(_cameraQrKey, qr.Payload, StringComparison.Ordinal))
         {
             try
             {
-                CameraQrImage.Source = ToBitmap(QrCodeCore.Encode(srt));
-                _cameraQrKey = srt;
+                CameraQrImage.Source = ToBitmap(QrCodeCore.Encode(qr.Payload));
+                _cameraQrKey = qr.Payload;
+                CameraQrHint.SetResourceReference(TextBlock.TextProperty,
+                    qr.IsGrove ? "Loc.mobile.camera.qrGrove" : "Loc.mobile.camera.qrFallback");
             }
             catch (Exception)
             {
                 CameraQrImage.Source = null;
                 _cameraQrKey = "";
+                CameraQrHint.SetResourceReference(TextBlock.TextProperty, "Loc.mobile.camera.qrFallback");
             }
+        }
+
+        // WHIP 低延迟二维码：Larix Premium 可直接扫码新增；容量不足时同样回退为复制。
+        if (session.WebrtcPort > 0)
+        {
+            var whip = PhoneCameraCore.WhipPublishUrl(session.LanAddress, session.WebrtcPort, session.StreamKey);
+            var whipQr = PhoneCameraCore.BuildLarixQrPayload("OBS Helper WHIP " + session.CameraId, whip);
+            if (!string.Equals(_cameraWhipQrKey, whipQr.Payload, StringComparison.Ordinal))
+            {
+                try
+                {
+                    CameraWhipQrImage.Source = ToBitmap(QrCodeCore.Encode(whipQr.Payload));
+                    _cameraWhipQrKey = whipQr.Payload;
+                    CameraWhipQrHint.SetResourceReference(TextBlock.TextProperty,
+                        whipQr.IsGrove ? "Loc.mobile.camera.whipQrGrove" : "Loc.mobile.camera.whipQrFallback");
+                }
+                catch (Exception)
+                {
+                    CameraWhipQrImage.Source = null;
+                    _cameraWhipQrKey = "";
+                    CameraWhipQrHint.SetResourceReference(TextBlock.TextProperty, "Loc.mobile.camera.whipQrFallback");
+                }
+            }
+        }
+        else
+        {
+            CameraWhipQrImage.Source = null;
+            _cameraWhipQrKey = "";
+            CameraWhipQrHint.SetResourceReference(TextBlock.TextProperty, "Loc.mobile.camera.videoUnavailable");
         }
     }
 
@@ -494,6 +532,21 @@ public partial class MobileLinkPage : UserControl, INavigationAware
         {
             AppServices.Toast.Show(Strings.T("common.failed", ""));
         }
+    }
+
+    private async void OnOpenLarixIos(object sender, RoutedEventArgs e)
+        => await OpenCameraLinkAsync(PhoneCameraLinks.LarixIos);
+
+    private async void OnOpenLarixAndroid(object sender, RoutedEventArgs e)
+        => await OpenCameraLinkAsync(PhoneCameraLinks.LarixAndroid);
+
+    private async void OnOpenLarixApk(object sender, RoutedEventArgs e)
+        => await OpenCameraLinkAsync(PhoneCameraLinks.LarixApk);
+
+    private async Task OpenCameraLinkAsync(string url)
+    {
+        if (!await AppServices.Host.OpenExternalAsync(url).ConfigureAwait(true))
+            AppServices.Toast.Show(Strings.T("common.openLinkFailed"), "warn");
     }
 
     private async void OnCameraFirewall(object sender, RoutedEventArgs e)

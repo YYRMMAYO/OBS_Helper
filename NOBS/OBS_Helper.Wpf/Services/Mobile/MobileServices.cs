@@ -563,6 +563,7 @@ public sealed class MediaServerManager : IDisposable
     private readonly Func<Version> _osVersion;
     private readonly object _gate = new();
     private readonly Dictionary<string, PhoneCameraSession> _sessions = new(StringComparer.OrdinalIgnoreCase);
+    private PhoneCameraAuthServer? _authServer;
     private string? _configPath;
     private int _rtspPort, _rtmpPort, _srtPort, _apiPort, _webrtcPort;
 
@@ -636,11 +637,27 @@ public sealed class MediaServerManager : IDisposable
             }
             catch (SocketException) { return (false, FeatureErrors.CamPortInUse, null); }
 
+            _authServer = new PhoneCameraAuthServer(IsActivePath);
+            var auth = _authServer.Start();
+            if (!auth.Ok)
+            {
+                _authServer.Dispose();
+                _authServer = null;
+                return (false, auth.Code, null);
+            }
+
             var dir = Path.Combine(_sidecars.Root, "mediamtx", entry.Version, "runtime");
             Directory.CreateDirectory(dir);
             var config = Path.Combine(dir, "mediamtx.yml");
-            await File.WriteAllTextAsync(config, PhoneCameraCore.BuildConfig(_rtspPort, _rtmpPort, _srtPort, _apiPort, _webrtcPort), ct).ConfigureAwait(false);
-            if (!_sidecars.Start(entry, new[] { config })) return (false, FeatureErrors.CamSidecarStartFailed, null);
+            await File.WriteAllTextAsync(config, PhoneCameraCore.BuildConfig(
+                _rtspPort, _rtmpPort, _srtPort, _apiPort, _webrtcPort, lanAddress, _authServer.Port), ct)
+                .ConfigureAwait(false);
+            if (!_sidecars.Start(entry, new[] { config }))
+            {
+                _authServer.Dispose();
+                _authServer = null;
+                return (false, FeatureErrors.CamSidecarStartFailed, null);
+            }
             _configPath = config;
             startedNow = true;
         }
@@ -663,6 +680,9 @@ public sealed class MediaServerManager : IDisposable
             StartedUtc = DateTimeOffset.UtcNow,
         };
 
+        // V3.7.1：先登记会话，再建 OBS 来源；鉴权服务看到 path 已活动，OBS 回环 RTSP 才不会被误拒。
+        lock (_gate) _sessions[id] = session;
+
         // V3.5.0：先让媒体服务跑起来，OBS 未连接不再是启动的硬阻断。
         // 用户常见顺序是「先开摄像头链路，再开 OBS」；旧实现直接返回失败，
         // 于是页面永远提示启动失败。未连接时把来源绑定留到 BindPendingAsync。
@@ -672,6 +692,7 @@ public sealed class MediaServerManager : IDisposable
             prepared = await EnsureObsMediaSourceAsync(session, ct).ConfigureAwait(false);
             if (!prepared)
             {
+                lock (_gate) _sessions.Remove(id);
                 if (startedNow) StopAll();
                 return (false, FeatureErrors.CamSidecarStartFailed, null);
             }
@@ -681,6 +702,17 @@ public sealed class MediaServerManager : IDisposable
         if (prepared) await ApplyLayoutAsync(session, layout, ct).ConfigureAwait(false);
         lock (_gate) _sessions[id] = session;
         return (true, "", session);
+    }
+
+    /// <summary>mediamtx 鉴权回调：path 必须对应一个仍在活动表中的会话。</summary>
+    private bool IsActivePath(string path)
+    {
+        if (string.IsNullOrWhiteSpace(path)) return false;
+        lock (_gate)
+        {
+            return _sessions.Values.Any(s =>
+                string.Equals("live/" + s.StreamKey, path, StringComparison.Ordinal));
+        }
     }
 
     /// <summary>
@@ -715,6 +747,8 @@ public sealed class MediaServerManager : IDisposable
             if (!_sessions.Remove(cameraId, out session)) return;
         }
         _ = _obs.RawRequestAsync("RemoveInput", new Dictionary<string, object?> { ["inputName"] = session.SourceName });
+        // 会话已从活动表移除：鉴权服务立即拒绝该 path 的新连接；已建立的连接尽量踢掉。
+        _ = KickConnectionsAsync(session.StreamKey);
         if (Sessions.Count == 0) StopAll();
     }
 
@@ -771,16 +805,67 @@ public sealed class MediaServerManager : IDisposable
     {
         string? config;
         int count;
+        PhoneCameraAuthServer? auth;
         lock (_gate)
         {
             count = _sessions.Count;
             _sessions.Clear();
             config = _configPath;
             _configPath = null;
+            auth = _authServer;
+            _authServer = null;
         }
+        auth?.Dispose();
         var entry = _sidecars.Manifest.Find("mediamtx");
         if (count > 0 && entry is not null) _sidecars.Stop(entry);
         try { if (config is not null) File.Delete(config); } catch { }
+    }
+
+    /// <summary>
+    /// 停止机位后踢掉该 path 已建立的 SRT / RTMP / WebRTC / RTSP 连接。
+    /// 只访问回环 Control API，失败静默（鉴权已经能阻止后续重连）。
+    /// </summary>
+    private async Task KickConnectionsAsync(string key)
+    {
+        if (_apiPort <= 0) return;
+        var path = "live/" + key;
+        var endpoints = new (string List, string Kick)[]
+        {
+            ("srt/conns/list", "srt/conns/kick"),
+            ("rtmp/conns/list", "rtmp/conns/kick"),
+            ("webrtc/sessions/list", "webrtc/sessions/kick"),
+            ("rtsp/sessions/list", "rtsp/sessions/kick"),
+        };
+
+        using var http = new HttpClient { Timeout = TimeSpan.FromSeconds(2) };
+        foreach (var (list, kick) in endpoints)
+        {
+            try
+            {
+                var json = await http.GetStringAsync($"http://127.0.0.1:{_apiPort}/v3/{list}")
+                    .ConfigureAwait(false);
+                using var doc = JsonDocument.Parse(json);
+                if (!doc.RootElement.TryGetProperty("items", out var items) ||
+                    items.ValueKind != JsonValueKind.Array) continue;
+                foreach (var item in items.EnumerateArray())
+                {
+                    var itemPath = item.TryGetProperty("path", out var p) && p.ValueKind == JsonValueKind.String
+                        ? p.GetString() ?? ""
+                        : "";
+                    var id = item.TryGetProperty("id", out var i) && i.ValueKind == JsonValueKind.String
+                        ? i.GetString() ?? ""
+                        : "";
+                    if (id.Length == 0 || !string.Equals(itemPath, path, StringComparison.Ordinal)) continue;
+                    using var request = new HttpRequestMessage(HttpMethod.Post,
+                        $"http://127.0.0.1:{_apiPort}/v3/{kick}/{Uri.EscapeDataString(id)}");
+                    using var response = await http.SendAsync(request).ConfigureAwait(false);
+                }
+            }
+            catch (Exception ex)
+            {
+                FileLogger.Warn("Mobile", $"踢出手机推流连接失败（{list}）：{ex.Message}");
+            }
+        }
     }
 
     private async Task<bool> EnsureObsMediaSourceAsync(PhoneCameraSession session, CancellationToken ct)

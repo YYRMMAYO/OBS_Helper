@@ -1,9 +1,20 @@
 using System.IO;
+using System.Net;
 using OBS_Helper.Wpf.Models.Mobile;
 using OBS_Helper.Wpf.Services.Mobile;
 using OBS_Helper.Wpf.Services.Security;
 
 namespace OBS_Helper.Wpf.Services.Mobile;
+
+/// <summary>手机摄像头（Wi-Fi）的外部依赖入口。只放官方来源，便于 UI 与单测共用。</summary>
+public static class PhoneCameraLinks
+{
+    public const string LarixIos = "https://apps.apple.com/app/larix-broadcaster/id1042474385";
+    public const string LarixAndroid = "https://play.google.com/store/apps/details?id=com.wmspanel.larix_broadcaster";
+    public const string LarixApk = "https://softvelum.com/larix/larix-broadcaster-android-apk/";
+
+    public static readonly string[] All = { LarixIos, LarixAndroid, LarixApk };
+}
 
 /// <summary>
 /// 摄像头 URL / 布局 / 私网校验（纯逻辑，单测覆盖）。与 mediamtx 的路径约定：
@@ -12,6 +23,39 @@ namespace OBS_Helper.Wpf.Services.Mobile;
 public static class PhoneCameraCore
 {
     public static string NewStreamKey() => LanPolicy.NewToken(16);
+
+    /// <summary>
+    /// Larix Grove 深链（V3.7.1）：扫码后 Larix 直接新增连接，而不是只把 URL 显示出来。
+    /// 格式以 Softvelum 官方文档为准：
+    /// <c>larix://set/v1?conn[][url]=...&amp;conn[][name]=...</c>。
+    /// 只对参数值做 URL 编码，参数名保留文档里的 <c>conn[][...]</c> 形态。
+    /// </summary>
+    public static string LarixGroveUrl(string name, string publishUrl)
+    {
+        if (string.IsNullOrWhiteSpace(publishUrl))
+            throw new ArgumentException("Publish URL is required.", nameof(publishUrl));
+        var displayName = string.IsNullOrWhiteSpace(name) ? "OBS Helper" : name.Trim();
+        return "larix://set/v1?conn[][url]=" + Uri.EscapeDataString(publishUrl)
+            + "&conn[][name]=" + Uri.EscapeDataString(displayName);
+    }
+
+    /// <summary>
+    /// 选择二维码内容：优先 Grove 深链；超过当前二维码容量（版本 10 / M）时退回裸推流地址。
+    /// 返回的 <c>IsGrove=false</c> 表示扫码只能拿到地址文本，界面必须提示用户改用复制。
+    /// </summary>
+    public static (string Payload, bool IsGrove) BuildLarixQrPayload(string name, string publishUrl)
+    {
+        var grove = LarixGroveUrl(name, publishUrl);
+        try
+        {
+            _ = QrCodeCore.Encode(grove);
+            return (grove, true);
+        }
+        catch (QrCodeCore.QrTooLongException)
+        {
+            return (publishUrl, false);
+        }
+    }
 
     public static string SrtPublishUrl(string lanAddress, int port, string key)
         => $"srt://{lanAddress}:{port}?streamid=publish:live/{key}";
@@ -36,6 +80,23 @@ public static class PhoneCameraCore
 
     /// <summary>只接受私网来源推流（RFC1918 / 链路本地 / 回环）。</summary>
     public static bool AllowsPublishFrom(string? remoteAddress) => LanPolicy.IsPrivateAddress(remoteAddress);
+
+    /// <summary>
+    /// 浏览器摄像头安全上下文判断（V3.7.1）。只用于边界说明与单测：
+    /// <list type="bullet">
+    ///   <item><c>https://</c> 是安全上下文，但证书必须被手机信任；</item>
+    ///   <item><c>http://localhost</c> / <c>http://127.0.0.1</c> 是安全上下文，
+    ///         但手机上的 localhost 指手机自己，不能直接访问电脑；</item>
+    ///   <item>局域网 <c>http://192.168.x.x</c> 不是安全上下文，<c>getUserMedia</c> 不可用。</item>
+    /// </list>
+    /// 本产品不默认提供网页直采；这里返回 true 也不代表证书已被信任。
+    /// </summary>
+    public static bool IsBrowserCameraSecureContext(string? url)
+    {
+        if (!Uri.TryCreate(url, UriKind.Absolute, out var uri)) return false;
+        if (uri.Scheme == Uri.UriSchemeHttps) return true;
+        return uri.Scheme == Uri.UriSchemeHttp && uri.IsLoopback;
+    }
 
     /// <summary>
     /// 计算画布上的目标矩形（像素）。竖屏裁切按源画面居中裁成 9:16，再等比放进画布。
@@ -82,15 +143,43 @@ public static class PhoneCameraCore
     /// <see cref="VideoWatchUrl"/> 看视频流，OBS 用 <see cref="WhipPublishUrl"/> 推流。
     /// </summary>
     public static string BuildConfig(int rtspPort, int rtmpPort, int srtPort, int apiPort, int webrtcPort)
+        => BuildConfig(rtspPort, rtmpPort, srtPort, apiPort, webrtcPort, "127.0.0.1", 0);
+
+    /// <summary>
+    /// V3.7.1：带推流鉴权与 WebRTC Origin 收口的配置。
+    /// <paramref name="authPort"/> &gt; 0 时启用回环 HTTP 鉴权；<paramref name="lanAddress"/> 只用于
+    /// 把 WebRTC 的允许来源限定为「本机 + 当前局域网地址」，不再使用 <c>*</c>。
+    /// </summary>
+    public static string BuildConfig(
+        int rtspPort, int rtmpPort, int srtPort, int apiPort, int webrtcPort,
+        string lanAddress, int authPort)
     {
+        var origins = new List<string>
+        {
+            $"http://127.0.0.1:{webrtcPort}",
+            $"http://localhost:{webrtcPort}",
+        };
+        if (!string.IsNullOrWhiteSpace(lanAddress) && IPAddress.TryParse(lanAddress, out _))
+            origins.Add($"http://{lanAddress}:{webrtcPort}");
+        var originList = string.Join(", ", origins.Distinct().Select(o => $"'{o}'"));
         var webrtc = webrtcPort > 0
             ? $"""
 webrtc: yes
 webrtcAddress: :{webrtcPort}
 webrtcIPsFromInterfaces: yes
-webrtcAllowOrigins: ['*']
+webrtcAllowOrigins: [{originList}]
 """
             : "webrtc: no\n";
+        var auth = authPort > 0
+            ? $"""
+authMethod: http
+authHTTPAddress: http://127.0.0.1:{authPort}/auth
+authHTTPExclude:
+  - action: api
+  - action: metrics
+  - action: pprof
+"""
+            : "";
         return $"""
 logLevel: warn
 readTimeout: 10s
@@ -103,7 +192,7 @@ rtmpAddress: :{rtmpPort}
 srt: yes
 srtAddress: :{srtPort}
 hls: no
-{webrtc}api: yes
+{webrtc}{auth}api: yes
 apiAddress: 127.0.0.1:{apiPort}
 
 paths:

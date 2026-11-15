@@ -142,14 +142,50 @@
             </WrapPanel>
             <TextBlock x:Name="CameraCheckText" Style="{StaticResource CaptionText}" Margin="0,4,0,0"
                        TextWrapping="Wrap" />
-            <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
-              <Image x:Name="CameraQrImage" Width="140" Height="140" Stretch="Uniform" />
-              <TextBlock Style="{StaticResource CaptionText}" Margin="12,0,0,0" MaxWidth="300"
-                         VerticalAlignment="Center" TextWrapping="Wrap"
-                         Text="{DynamicResource Loc.mobile.camera.qr}" />
-            </StackPanel>
+            <WrapPanel Margin="0,10,0,0">
+              <StackPanel Orientation="Horizontal" Margin="0,0,18,10" MaxWidth="310">
+                <Image x:Name="CameraQrImage" Width="120" Height="120" Stretch="Uniform" />
+                <TextBlock x:Name="CameraQrHint" Style="{StaticResource CaptionText}" Margin="12,0,0,0" MaxWidth="260"
+                           VerticalAlignment="Center" TextWrapping="Wrap"
+                           Text="{DynamicResource Loc.mobile.camera.qr}" />
+              </StackPanel>
+              <StackPanel Orientation="Horizontal" Margin="0,0,0,10" MaxWidth="310">
+                <Image x:Name="CameraWhipQrImage" Width="120" Height="120" Stretch="Uniform" />
+                <TextBlock x:Name="CameraWhipQrHint" Style="{StaticResource CaptionText}" Margin="12,0,0,0" MaxWidth="260"
+                           VerticalAlignment="Center" TextWrapping="Wrap"
+                           Text="{DynamicResource Loc.mobile.camera.whipQr}" />
+              </StackPanel>
+            </WrapPanel>
+            <TextBlock Style="{StaticResource CaptionText}" Margin="0,0,0,2" TextWrapping="Wrap"
+                       Text="{DynamicResource Loc.mobile.camera.whipHint}" />
             <TextBlock Style="{StaticResource CaptionText}" Margin="0,8,0,0" TextWrapping="Wrap"
                        Text="{DynamicResource Loc.mobile.camera.steps}" />
+
+            <TextBlock Style="{StaticResource H3Text}" Margin="0,14,0,4"
+                       Text="{DynamicResource Loc.mobile.camera.installTitle}" />
+            <TextBlock Style="{StaticResource CaptionText}" TextWrapping="Wrap"
+                       Text="{DynamicResource Loc.mobile.camera.installDesc}" />
+            <WrapPanel Margin="0,8,0,0">
+              <Button Style="{StaticResource SecondaryButton}" Margin="0,0,8,6"
+                      Content="{DynamicResource Loc.mobile.camera.installIos}" Click="OnOpenLarixIos" />
+              <Button Style="{StaticResource SecondaryButton}" Margin="0,0,8,6"
+                      Content="{DynamicResource Loc.mobile.camera.installAndroid}" Click="OnOpenLarixAndroid" />
+              <Button Style="{StaticResource SecondaryButton}" Margin="0,0,8,6"
+                      Content="{DynamicResource Loc.mobile.camera.installApk}" Click="OnOpenLarixApk" />
+            </WrapPanel>
+            <TextBlock Style="{StaticResource CaptionText}" Margin="0,2,0,0" TextWrapping="Wrap"
+                       Text="{DynamicResource Loc.mobile.camera.installHint}" />
+
+            <TextBlock Style="{StaticResource H3Text}" Margin="0,14,0,4"
+                       Text="{DynamicResource Loc.mobile.camera.browserTitle}" />
+            <Border Style="{StaticResource SoftPanel}" Padding="12">
+              <StackPanel>
+                <TextBlock Style="{StaticResource CaptionText}" TextWrapping="Wrap"
+                           Text="{DynamicResource Loc.mobile.camera.browserBoundary}" />
+                <TextBlock Style="{StaticResource CaptionText}" Margin="0,6,0,0" TextWrapping="Wrap"
+                           Text="{DynamicResource Loc.mobile.camera.browserAdvanced}" />
+              </StackPanel>
+            </Border>
           </StackPanel>
         </Border>
 

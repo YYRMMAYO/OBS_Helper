@@ -4,19 +4,19 @@
 
 **OBS Helper · OBS帮助助手** — an OBS troubleshooting / recording / streaming assistant for streamers who are just getting started (native Windows WPF)
 
-**Current release: V3.7.0** (stable) · completes the V3.6 backlog: timer polish, console/log lookup, tray/hotkeys/safe mode
+**Current release: V3.7.1** (stable) · phone-camera link hardening: Larix Grove QR, WHIP low latency, publish auth/key revocation and WebRTC origin narrowing
 
-**Focus of this release**: **all 16 feasible items deferred from V3.6.0** — timer CSV / home card / settings section / tray status, console scene search, log filters, error-code knowledge search, connection wizard, tray menu customization, one-click hotkey restore, safe mode and plugin-query exponential backoff. See [`NOBS/RELEASE_NOTES_v3.7.0.md`](NOBS/RELEASE_NOTES_v3.7.0.md).
+**Focus of this release**: the phone-as-camera Wi-Fi path now supports Larix Grove QR import, one-time Larix install links, a WHIP low-latency entry, loopback publish authentication with key revocation, and narrowed WebRTC origins. See [`NOBS/RELEASE_NOTES_v3.7.1.md`](NOBS/RELEASE_NOTES_v3.7.1.md).
 
 [![CI](https://github.com/YYRMMAYO/OBS_Helper/actions/workflows/ci.yml/badge.svg)](https://github.com/YYRMMAYO/OBS_Helper/actions/workflows/ci.yml)
 [![Platform](https://img.shields.io/badge/Platform-Windows_7_SP1%2B_%2F_10_%2F_11-0078D6.svg)]()
 [![.NET](https://img.shields.io/badge/.NET-10_%2F_6-512BD4.svg)]()
 [![Stack](https://img.shields.io/badge/Stack-WPF_%2F_C%23-239120.svg)]()
-[![Release](https://img.shields.io/badge/Release-3.7.0-38bdf8.svg)](https://github.com/YYRMMAYO/OBS_Helper/releases)
+[![Release](https://img.shields.io/badge/Release-3.7.1-38bdf8.svg)](https://github.com/YYRMMAYO/OBS_Helper/releases)
 [![OBS](https://img.shields.io/badge/OBS-32.2.2-302E31.svg)](https://github.com/obsproject/obs-studio/releases)
 [![offline-first](https://img.shields.io/badge/offline--first-2ea44f.svg)]()
 [![Incremental Update](https://img.shields.io/badge/Incremental%20Update-3.9MB-7dd3fc.svg)]()
-[![Tests](https://img.shields.io/badge/Tests-1870%20passed-2ea44f.svg)]()
+[![Tests](https://img.shields.io/badge/Tests-1891%20passed-2ea44f.svg)]()
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
 **English** · [简体中文](README.md)
@@ -24,7 +24,7 @@
 </div>
 
 > **The default branch of this repository is `master` (stable channel)**: settled features, full regression and release verification — the right choice for everyday streaming and recording.
-> **There are only two release channels: V series and X series.** V releases use `Vmajor.minor.patch` (such as `V3.7.0`); X releases use `X` + an `MMdd` date code (such as `X1031`). There is no DEV test branch or test tag.
+> **There are only two release channels: V series and X series.** V releases use `Vmajor.minor.patch` (such as `V3.7.1`); X releases use `X` + an `MMdd` date code (such as `X1031`). There is no DEV test branch or test tag.
 
 **OBS Helper** (known as 「OBS 排障助手」 before V2.9.6 — the same app on the same upgrade path) is an OBS Studio troubleshooting and recording assistant for streamers who are just getting started: **it works fully offline** — the 208-entry knowledge base, the troubleshooting guide and the log-analysis rules are all embedded in the app, so they are searchable without a connection; once connected to the local OBS you also get one-click health checks, remote control of scenes / recording / streaming, and recording-environment deployment. **Since V2.9.4** the whole journey from "configure OBS" to "start recording" fits into one card on the home page; **since V3.1.0** OBS can also be launched and recording started with one click when it is not running; **V3.1.1** completed the teleprompter's manual up/down movement and window nudging; **V3.3.0** adds the **Virtual Live** workspace (Live2D avatar · 6 room templates · 16-platform go-live guidance), one-click plugin install / rollback / GitHub search, and Accessibility / Elder modes; **V3.4.0** brings the phone into the streaming workflow: QR remote / monitor / teleprompter / fill light / file upload, phone as a Wi-Fi camera and microphone, plus chat aggregation, local live captions, review/clips, multi-platform relay, MIDI/lighting and team collaboration.
 
@@ -38,7 +38,7 @@ This is the **native WPF rewrite** of the original Blazor WebAssembly + WebView2
 
 ---
 
-**Contents**: [Start here](#start-here) · [5-minute quick start](#5-minute-quick-start) · [Highlights at a glance](#highlights-at-a-glance) · [Features](#features) · [Smart diagnostics engine](#smart-diagnostics-engine) · [Release channels: V series vs X series](#release-channels-v-series-vs-x-series) · [What's new in V3.7.0](#whats-new-in-v370) · [What's new in V3.6.0](#whats-new-in-v360) · [What's new in V3.5.3](#whats-new-in-v353) · [What's new in V3.5.2](#whats-new-in-v352) · [What's new in V3.5.1](#whats-new-in-v351) · [What's new in V3.5.0](#whats-new-in-v350) · [X1031](#x1031) · [What's new in V3.3.0](#whats-new-in-v330) · [What's new in V3.1.1](#whats-new-in-v311) · [Version history](#version-history) · [Privacy & security](#privacy--security) · [Installation & updates](#installation--updates) · [Build](#build) · [Project structure](#project-structure) · [Quality baseline & known limits](#quality-baseline--known-limits) · [Promo video](#promo-video) · [Donate](#donate) · [License](#license)
+**Contents**: [Start here](#start-here) · [5-minute quick start](#5-minute-quick-start) · [Highlights at a glance](#highlights-at-a-glance) · [Features](#features) · [Smart diagnostics engine](#smart-diagnostics-engine) · [Release channels: V series vs X series](#release-channels-v-series-vs-x-series) · [Version history](#version-history) · [Privacy & security](#privacy--security) · [Installation & updates](#installation--updates) · [Build](#build) · [Project structure](#project-structure) · [Quality baseline & known limits](#quality-baseline--known-limits) · [Promo video](#promo-video) · [Donate](#donate) · [License](#license)
 
 ---
 
@@ -50,7 +50,7 @@ This is the **native WPF rewrite** of the original Blazor WebAssembly + WebView2
 | See what it can do and how to use it first | Read on: [5-minute quick start](#5-minute-quick-start) and [Features](#features) |
 | Read the developer-oriented full documentation (quality baseline · release history · code inventory) | [`NOBS/README.md`](NOBS/README.md) |
 | Full documentation in Chinese | [`README.md`](README.md) · [`NOBS/README.md`](NOBS/README.md) |
-| What changed in this release | [`NOBS/RELEASE_NOTES_v3.7.0.md`](NOBS/RELEASE_NOTES_v3.7.0.md) |
+| What changed in this release | [`NOBS/RELEASE_NOTES_v3.7.1.md`](NOBS/RELEASE_NOTES_v3.7.1.md) |
 | Before editing docs: which documents belong on master, which on dev | [`docs/BRANCH_AND_DOC_RULES.md`](docs/BRANCH_AND_DOC_RULES.md) |
 | Report a bug / disclose a security vulnerability | [Issues](https://github.com/YYRMMAYO/OBS_Helper/issues) · [SECURITY.md](SECURITY.md) |
 | License | [LICENSE](LICENSE) (MIT) |
@@ -238,178 +238,14 @@ This ships in the current build; you only fill in the OBS address once:
 
 | Channel | Version style | What it is | Where updates come from |
 | --- | --- | --- | --- |
-| **V series** (`master`) | `V3.7.0` | **Stable first**: settled features, full regression and release verification — the right choice for everyday streaming / recording | The regular Releases page · the Lanzou mirror · in-app incremental updates |
+| **V series** (`master`) | `V3.7.1` | **Stable first**: settled features, full regression and release verification — the right choice for everyday streaming / recording | The regular Releases page · the Lanzou mirror · in-app incremental updates |
 | **X series** (`master`) | `X1031` / `X1031Y2` / `X1031Y3` | **Independent major line**: `X` + `MMdd` date codes and the X-specific icon; updates only look at `X` tags | X-series Releases · in-app update |
 
 - **Both series share features and the data folder**: install folder, assembly name and `%LocalAppData%\OBS_Helper` are unchanged, so the upgrade path is identical.
-- **Channel filtering happens in the parser**: V builds only recognise `V3.7.0`-style tags; X builds only recognise `X1031`-style tags. They never mistake one another for a newer version.
+- **Channel filtering happens in the parser**: V builds only recognise `V3.7.1`-style tags; X builds only recognise `X1031`-style tags. They never mistake one another for a newer version.
 - **X version rule**: the four digits after `X` are an `MMdd` date (`X1031` = October 31). A second release on the same day appends `Y1`, `Y2`, `Y3`…; update checks compare the date first, then the Y revision, so `X1031Y2 > X1031` and `X1101 > X1031Y99`.
 - **X update prompt**: when an update is found, the dialog fetches this release's notes from GitHub and shows them in place; a failed fetch never blocks checking or downloading.
 - **X1031 is smaller than V3.5.0**: X1031 contains items 1–9 and the new icon, but not the global background UI refactor, mobile page layout or Feature Center UX work. V3.5.0 contains those UI changes but keeps the original icon as requested.
-
-## What's new in V3.7.0
-
-> Full details: [`NOBS/RELEASE_NOTES_v3.7.0.md`](NOBS/RELEASE_NOTES_v3.7.0.md).
-
-- **Timer polish**: CSV copy, home “last timer” card, settings timer section (default duration / display / OBS linkage / restore hotkeys), tray timer status, and explicit timer teardown on exit.
-- **Console & logs**: scene/source search; log filters by “error and above / warning and above” plus keyword; one-click error-code search from the home page; a three-step connection wizard with a copyable port-check command.
-- **Tray & hotkeys**: show/hide mini window, teleprompter, replay buffer and recording marker in the tray menu; restore all default hotkeys with one click.
-- **Safety & stability**: safe mode after repeated unclean exits (disables wallpaper/animations); plugin queries at concurrency 2 with 10s→5min exponential backoff and a cooldown badge; recent-recording `File.Exists` moved off the UI thread.
-- **Quality**: 1870 unit tests, 37 headless self-test items, 3628 bilingual string keys.
-
-## What's new in V3.6.0
-
-> Full details: [`NOBS/RELEASE_NOTES_v3.6.0.md`](NOBS/RELEASE_NOTES_v3.6.0.md).
-
-- **Director timer**: control page + frameless always-on-top timer window; a countdown stops at `00:00` in the timer window while the control page keeps accumulating overtime; count-up turns red past the planned duration. Multi-monitor, opacity / font size / hours, pause-orange / overtime-red, drag & resize, position memory, capture exclusion and click-through; newest-first records with one-click TSV copy; global hotkeys; optional OBS record/stream linkage (off by default); local browser overlay and phone remote start/pause/reset.
-- **Audio meters**: each console audio input shows a real-time `InputVolumeMeters` level bar; the service throttles to 10 Hz.
-- **Diagnostic package**: the Help & feedback page exports a Markdown package with version / OS / connection / pre-flight / recent toasts / sanitized logs; no paths or secrets by default.
-- **Security**: external links are restricted to an HTTPS domain allowlist; ColorCheck guards the profile folder name; backup/export honestly report skipped files; Release builds drop pdb and use optimal zip compression.
-- **Attribution**: the timer's feature design references zanjie1999's meTimer; the first-use dialog and About page keep the author, repository and Meow License 1.1 links. The implementation is independent. See [`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md).
-- **Deferred to V3.7**: plugin-query batch backoff, full first-screen sync-IO cleanup, safe mode, one-click hotkey conflict reset; code signing, real LLM, online marketplace, online collaboration and browser-based phone camera remain out of scope.
-
-## What's new in V3.5.3
-
-> Full details: [`NOBS/RELEASE_NOTES_v3.5.3.md`](NOBS/RELEASE_NOTES_v3.5.3.md). This release syncs everything from the X series `X1031Y2` / `X1031Y3` back into the V series **except the X-specific icon**; V builds keep the original app icon.
-
-- **One-click plugin setup**: curated cards and pasted `owner/repo` values query the latest Release, download, SHA-256 verify, extract and install in-app; a GitHub-accelerator confirmation comes first and the download page remains as fallback.
-- **One-click dependency setup**: FFmpeg / rclone / whisper / MediaMTX download, verify, extract safely and auto-fill their paths in-app; an already-ready dependency is reused instead of downloaded again.
-- **Local plugin management**: uninstall (backup first), move between user and global plugin roots, adopt into app management, and open the plugin folder.
-- **Phone camera**: publish QR code, publish detection and a one-click firewall rule; MediaMTX WebRTC video watch and the OBS WHIP publish URL.
-- **Captions & archiving**: one-click whisper model download with a pinned SHA-256; optional auto-archive when recording stops; a local recording-file index sorted by modification time.
-- **Feature Center**: a runtime-preparation card and “experimental / planned / local” labels on 18 capabilities (stable items get no extra label); the live calendar and audience board now persist locally.
-- **Download fix**: GitHub release assets that redirect to `release-assets.githubusercontent.com` are no longer rejected; plugin / dependency downloads work again, and failures log host / HTTP status / size.
-- **Explicit boundaries**: LLM reply / partner, real AI director, online theme market, networked team collaboration, automatic multi-platform stats and browser-as-camera are still not wired.
-
-## What's new in V3.5.2
-
-> Full details: [`NOBS/RELEASE_NOTES_v3.5.2.md`](NOBS/RELEASE_NOTES_v3.5.2.md).
-
-- **“Recording” stuck after stop**: after the stop event, OBS may briefly keep reporting `outputActive=true` from `GetRecordStatus`; the old code wrote that query result back and flipped the UI to “in progress” again. Events are now authoritative, queries only fill duration / bytes, and a lightweight reconciliation runs every 3 seconds. Fixed in the console, mini window, tray and phone page.
-- **Phone page falsely showed LIVE / REC after refresh**: the page now reconciles with OBS before rendering a refreshed state; the status pill distinguishes “LIVE”, “REC” and “LIVE · REC”, and the record timer is `00:00:00` whenever nothing is being recorded.
-- **Batch status protocol fixed**: switched to `RequestBatch` (op 8 / 9) with numeric execution types; recording / streaming / virtual-camera state plus audio mute and volume refresh live again (the old batch request was rejected with 204 or 4004 and failed silently).
-- **Mini window**: “~X min left” is now an integer instead of a long unformatted decimal.
-
-## What's new in V3.5.1
-
-> Full details: [`NOBS/RELEASE_NOTES_v3.5.1.md`](NOBS/RELEASE_NOTES_v3.5.1.md).
-
-- **Detail icon fix**: the settings detail header and Feature Center module cards now render outline geometry with `Stroke` instead of `Fill`, so circles and boxes no longer become solid blobs (Language & Region used to show a single dot).
-- **Semantic icon mapping**: language = globe, appearance = palette, background = tray, recording = camera, auto-switch = arrows, hotkeys = keyboard, AI = chip, guide = pulse, data = database, OBS config = archive, onboarding = compass, about = info circle (Tabler Icons, MIT).
-- **Phone script editing fixed**: teleprompter commands now marshal window updates onto the UI thread; saving from the phone's Prompt → Edit script → Save to PC immediately refreshes the desktop teleprompter, with the old script backed up.
-- **Sponsorship**: Settings → About and Help & Feedback → About this tool now show Alipay / WeChat sponsorship codes, with an explicit note that sponsorship unlocks no special features and changes no permissions.
-
-## What's new in V3.5.0
-
-> Full details: [`NOBS/RELEASE_NOTES_v3.5.0.md`](NOBS/RELEASE_NOTES_v3.5.0.md).
-
-- **Global background UI refactor**: the wallpaper layer now covers the left navigation, top bar and pages; image mode gives the navigation/top bar a frosted-glass treatment (downscaled + Gaussian-blurred wallpaper) and translucent cards. The previous UI is saved as tag `ui-baseline-v3.4.2`.
-- **Minimal visual system**: indigo default accent, lighter shadows, smaller button radii, grouped navigation and roomier spacing. Settings can adjust corner radius, panel opacity and UI font (Microsoft YaHei / Noto Sans SC / HarmonyOS Sans / MiSans / Alibaba PuHuiTi / Smiley Sans / LXGW WenKai, if installed).
-- **Startup animation**: a dark brand panel with a progress line fades out after the main window appears.
-- **Mobile connection page**: hero area, equal-width segmented navigation, pairing card and device cards.
-- **Feature Center**: a “what works right now” status strip (OBS / phone service / media server / teleprompter).
-- **Plugins**: GitHub accelerator guidance with re-check; installed list merges managed and locally detected plugins.
-- **Phone camera**: pinned mediamtx version with SHA-256 and one-click install; the server can start before OBS connects.
-- **VTuber templates**: 10 templates (karaoke, study, duo collab, hand camera); the chat/avatar overlap is fixed.
-- **Mini window / teleprompter**: replay, scenes, mute, teleprompter, studio mode and main window; phone-side script editing.
-- **Guide & icons**: a 5-minute setup section in both languages; corrected icon semantics in the Tabler style.
-- **X1031**: the same shared features plus the new icon and the independent X channel, without this UI refactor.
-
-## What's new in X1031Y3
-
-> Full details: [`NOBS/RELEASE_NOTES_x1031.md`](NOBS/RELEASE_NOTES_x1031.md) (Chinese) and [`12_X1031Y3_FEATURE_CENTER_READINESS.md`](NOBS/docs/x1031_v350/12_X1031Y3_FEATURE_CENTER_READINESS.md).
-
-- **Fixed all plugin / dependency one-click downloads failing**: GitHub release assets now 302 to `release-assets.githubusercontent.com`; the old allowlist rejected the final host. The new CDN is allowed, download diagnostics now log host / HTTP status, and regression tests cover it.
-- **Full Feature Center audit**: compared advertised capabilities with the code; 17 items overclaim (phone microphone has no endpoint, "AI reply/director" are templates/rules, theme market is JSON import only, auto-archive needs a manual click, etc.). All are written into the development guide, split into Y3 follow-up and Y4.
-- **Shipped in this build**: one-click dependency UI (whisper / FFmpeg / rclone with auto-fill), whisper model download, phone camera QR / publish detection / firewall rule, Feature Center runtime setup + status chips, Q05 auto-archive, C10 / E06 persistence, MediaMTX WebRTC watch + OBS WHIP URL, and a local recording-file index.
-- **Explicit boundaries**: LLM reply / partner, real AI director, online theme market, networked team collaboration, automatic Twitch / YouTube stats, and browser-as-camera are not wired. Configuration-only integrations are covered in the [self-integration guide](#self-integration-guide); items that need app-level development are not given step-by-step instructions, and none of them are presented as finished.
-
-## What's new in X1031Y2
-
-> Full details: [`NOBS/RELEASE_NOTES_x1031.md`](NOBS/RELEASE_NOTES_x1031.md) (Chinese) and [`11_X1031Y2_PLUGIN_MANAGEMENT.md`](NOBS/docs/x1031_v350/11_X1031Y2_PLUGIN_MANAGEMENT.md).
-
-- **Syncs all of V3.5.2 and earlier** (except the X-specific icon): recording / streaming state fixes, glass effects and fonts, phone layout and Feature Center are all included.
-- **One-click plugin install**: curated cards query the latest Release, download, verify, extract, and install in-app; paste an `owner/repo` and press Enter to do the same without a browser.
-- **Network / accelerator confirmation**: before any automatic download the app asks you to enable Watt Toolkit (Steam++) GitHub acceleration or confirm your network; failures bring the accelerator guide back.
-- **One-click dependency setup**: FFmpeg / rclone / whisper / MediaMTX can be downloaded, SHA-256 verified, safely extracted, located, and wired up in-app; manual file picking, the Releases page, and the repo link remain.
-- **Local plugin management**: uninstall (backup first), move between user and global plugin roots, adopt into app management, and open the plugin folder.
-- **Leaner knowledge base**: 212 -> 208 entries, 9 duplicates removed and 5 new entries added; four missing categories added (14 total).
-- **Security hardening**: managed-directory checks on uninstall / rollback, download digest and GitHub host allowlists, and extraction limits for sidecars and delta packages.
-
-## X1031
-
-> Full details: [`NOBS/RELEASE_NOTES_x1031.md`](NOBS/RELEASE_NOTES_x1031.md) (Chinese).
-
-- Independent X channel (only `X*` tags, ordered by date and then the same-day `Yn` revision) and the minimal “OBS helper” icon.
-- The update dialog shows this release's GitHub Release notes; a failed fetch does not affect updating.
-- Shared plugin, phone camera, template, mini window, teleprompter and guide improvements.
-
-## What's new in V3.4.0
-
-> Full details: [`RELEASE_NOTES_v3.4.0.md`](NOBS/RELEASE_NOTES_v3.4.0.md).
-
-**Theme: Phone Link — turn your phone into a second screen, a second camera and a second microphone.**
-
-### Phones & multi-device
-- QR pairing, viewer/operator/admin roles, command whitelist, rate limiting and device revocation; every LAN feature is off by default, bound to private addresses and can be switched off at any time.
-- Phone remote: scenes, source visibility, mute/volume, record/replay/virtual camera/studio mode and teleprompter play/speed/font size/mirror.
-- Phone monitor: 480p JPEG at 1–5 fps, tally, recording/streaming timers; stops when the page is hidden; up to 3 read-only sessions.
-- Fill light / colour card / countdown offline pages; file upload (50 MB, JPEG/PNG/MP4 magic-byte checks, enters OBS only after confirmation).
-- Wi-Fi camera: mediamtx + SRT/RTMP → OBS media source, multi-cam layout/switching; phone mic with sync offset; USB guidance.
-- Remote guest room/permissions/kick/recording consent; phone notification/clipboard on screen (Android + ADB only; verification codes and passwords are blocked by default).
-
-### Interaction / captions / clips
-- Read-only Bilibili/Twitch chat aggregation, overlay, sensitive-word/spam alerts, TTS and chat translation.
-- Song requests / polls / raffles / Q&A, gift-triggered scenes, submission review, stream calendar and AI reply suggestions (suggestions only).
-- Local live captions (WASAPI → VAD → whisper.cpp), bilingual captions and voice control (wake word + whitelist + confirmation for destructive actions).
-- Highlight clips / vertical export and transcript search.
-
-### Insights / quality / distribution / ecosystem
-- Session review report, cover candidates, stream health, composition check, go-live runbook and incident replay.
-- AI director, safety sentinel, AI audio chain, multi-platform relay and rclone archive.
-- MIDI/foot pedal, WLED lighting, viewer dashboard, plugin signature checks, theme market, team collaboration and AI co-host.
-- The four module pages (Interaction / Insights / Stream / Automation) share a read-only **Run self-check** that lists each dependency as OK / needs setup / unavailable.
-
-**Compatibility**: main build `net10.0-windows`, Windows 7 compatible build `net6.0-windows`; on Win7, Wi-Fi camera, captions, multicam and relay are explicitly degraded with a reason.
-
-## What's new in V3.3.0
-
-> Full details: [`RELEASE_NOTES_v3.3.0.md`](NOBS/RELEASE_NOTES_v3.3.0.md).
-
-- **Virtual Live workspace**: a top-level entry with Avatar (Live2D) / Room (templates) / Go live (platform guidance) tabs.
-- **Live2D setup**: model safety checks (path traversal / symlinks / executables), SHA-256 manifest, VTube Studio public WebSocket API (auth / model load), OBS capture (NDI → Spout2 → virtual camera → window capture) and layout presets.
-- **Virtual rooms**: 6 templates + local overlay pages (chat, frame, BRB, ending, countdown; loopback + random token + CSP) and an after-apply checklist.
-- **Go-live guidance**: 16 platforms (direct / virtual camera / manual); direct streaming does write → verify → start → confirm; stream keys stay in memory unless explicitly remembered.
-- **Plugin marketplace**: transactional install (SHA-256 / x64 PE / OBS closed / backup & rollback), installed management, `owner/repo` import, native GitHub search (topic:obs-plugin) and a one-click catalog update.
-- **Accessibility / Elder modes**: mode composition → global tokens (text, density, focus, sidebar width, skip link), with system reduce-motion and text scaling as the floor.
-- **Open-source attribution**: README, repository intro and the in-app About page list projects and licenses; see [`NOBS/docs/OPEN_SOURCE_ATTRIBUTION.md`](NOBS/docs/OPEN_SOURCE_ATTRIBUTION.md).
-
-## What's new in V3.1.1
-
-> This release does one thing: it completes the teleprompter's **manual up/down movement** — toolbar, mouse drag, wheel and keyboard all work, and the window itself can be nudged with `Ctrl + arrow keys`; it also fixes auto-scroll ending on a blank screen.
-> Everything else — features, data formats and the upgrade path — is identical to V3.1.0, so incremental updates just work.
-
-**Teleprompter: manual up/down movement (P0)**
-
-- New toolbar buttons `⤒` (back to start) / `▲` (one line up) / `▼` (one line down): one click and it moves, **no keyboard focus needed**;
-- **Drag the text**: hold and drag vertically in the body and the content follows your hand (like dragging a sheet of paper); auto-scroll pauses temporarily while dragging;
-- **Keyboard**: `↑` / `↓` one line, `PgUp` / `PgDn` one screen, `Home` / `End` jump to the start / end, space to pause / resume; click the body once to activate the window and the keys work immediately (previously they did nothing right after opening);
-- **Wheel**: with the pointer over the body, about 72 px per notch for fine adjustments;
-- **Window position**: `Ctrl + ↑ / ↓ / ← / →` moves the window in 10 px steps, always clamped to the virtual screen;
-- Position / size are saved automatically 600 ms after a drag or nudge (previously only on close), and restored in place the next time it opens;
-- The whole top-bar background can be used to drag the window (previously only the tiny "teleprompter" label in the top-left corner worked).
-
-**Scroll end fixed (P1)**
-
-- The old scroll limit used `ScrollableHeight`, which included the 220 px bottom padding: once the last line slid out of the viewport, all that was left was black;
-- The end is now computed so that **the last line stops exactly at the reading guide** (`TeleprompterCore.ScrollEnd`), and both auto and manual scrolling stop there;
-- Trailing blank lines / spaces at the end of the script are trimmed on save and load, so the last "empty line" cannot eat into the scroll range.
-
-**Tests and release**
-
-- 4 new unit tests: scroll end, drag offset, window-move clamping and trailing blank lines in the script;
-- The full suite of **1870 unit tests** passed three rounds in a row, with both builds (`net10.0-windows` / `net6.0-windows`) + the 37-item headless self-test + static checks all green;
-- Full details and known limits are in [`NOBS/RELEASE_NOTES_v3.1.1.md`](NOBS/RELEASE_NOTES_v3.1.1.md).
 
 ## Privacy & security
 
@@ -547,7 +383,7 @@ Strings assembled in code are refreshed by `LocalizationService` broadcasting an
 
 ## Quality baseline & known limits
 
-- **All 1670 unit tests pass** (V3.4.0: three full rounds in a row + dual-target builds + headless self-test + static checks); the test project links the pure-logic source files directly instead of referencing the whole WPF project;
+- **All 1891 unit tests pass** (V3.7.1: four full rounds + dual-target builds + headless self-test + static checks); the test project links the pure-logic source files directly instead of referencing the whole WPF project;
 - **All 37 headless self-test items PASS** (29 route cases plus 8 non-route checks: the first-run tutorial overlay (including step-by-step navigation checks), the mini window, string-resource resolution, a language-switch round trip, per-page language replay, the content-fallback banner, the D7 connection-state guard and protocol branches for both builds), **run once for the main build and once for the Win7-compatible build**;
 - CI additionally gates on XAML resource references, zh/en string-key parity, accessibility static checks, the headless self-test and an end-to-end delta-package upgrade (full-file SHA-256 comparison); [`NOBS/docs/reviews/`](NOBS/docs/reviews/) keeps per-perspective review records that honestly mark which conclusions have machine evidence and which were only checked by hand;
 - **Known limits**: ① Windows 7 has not been verified on real hardware (only that the target framework compiles and the installer's MinVersion is set correctly), and the legacy protocol (obs-websocket 4.x) has not been verified against a real OBS 27; ② the English translation has not been proofread by a native speaker, nor have the English OBS menu paths been checked one by one; ③ both one-click deployment channels are implemented against the protocol / key names and covered by unit tests, but have never been run end-to-end against a real OBS; ④ accessibility stops at code-level adaptation + static checks, with no NVDA / Narrator testing (see [`ACCESSIBILITY.md`](ACCESSIBILITY.md)); ⑤ release artifacts are not code-signed, so SmartScreen may warn about an unknown publisher; ⑥ .NET 6 no longer receives security updates — the compatible build is the fallback for when you *must* run Windows 7; on a new machine use the main build.
@@ -556,6 +392,7 @@ Strings assembled in code are refreshed by `LocalizationService` broadcasting an
 
 | Version | Highlights | Release notes |
 | --- | --- | --- |
+| **V3.7.1** | Phone-camera path hardening: Larix Grove QR import, Larix install links, WHIP low latency, loopback publish auth and key revocation, narrowed WebRTC origins, browser HTTPS boundary | [`RELEASE_NOTES_v3.7.1.md`](NOBS/RELEASE_NOTES_v3.7.1.md) |
 | **V3.7.0** | Completes the V3.6 backlog: timer CSV / home card / settings section / tray status, console search, log filters, error-code search, connection wizard, tray menu customization, one-click hotkey restore, safe mode, plugin-query backoff | [`RELEASE_NOTES_v3.7.0.md`](NOBS/RELEASE_NOTES_v3.7.0.md) |
 | **V3.6.0** | Director timer (dual windows / overtime / multi-monitor / records TSV / hotkeys / OBS-phone linkage / browser overlay), audio meters, sanitized diagnostics, external-link allowlist, ColorCheck path guard, backup-skip reporting | [`RELEASE_NOTES_v3.6.0.md`](NOBS/RELEASE_NOTES_v3.6.0.md) |
 | **V3.5.3** | Syncs all X1031Y2 / X1031Y3 features (except the X icon): one-click plugin & dependency setup, local plugin management, phone-camera publish / detection / firewall, whisper model, Feature Center runtime prep, auto-archive and recording index; fixes release-asset redirect downloads | [`RELEASE_NOTES_v3.5.3.md`](NOBS/RELEASE_NOTES_v3.5.3.md) |

@@ -15,6 +15,9 @@ public class ExternalLinkPolicyTests
     [InlineData("https://wwbpq.lanzouu.com/abc")]
     [InlineData("https://GITHUB.COM/YYRMMAYO/OBS_Helper")]
     [InlineData("https://github.com./YYRMMAYO/OBS_Helper")]
+    [InlineData("https://apps.apple.com/app/larix-broadcaster/id1042474385")]
+    [InlineData("https://play.google.com/store/apps/details?id=com.wmspanel.larix_broadcaster")]
+    [InlineData("https://softvelum.com/larix/larix-broadcaster-android-apk/")]
     public void Allowed(string url) => Assert.True(ExternalLinkPolicy.IsAllowed(url), url);
 
     [Theory]

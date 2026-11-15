@@ -169,6 +169,36 @@ public class MobileCoreTests
     }
 
     [Fact]
+    public void CameraQrUsesLarixGroveAndFallsBackWhenTooLong()
+    {
+        var key = PhoneCameraCore.NewStreamKey();
+        var srt = PhoneCameraCore.SrtPublishUrl("192.168.1.9", 9000, key);
+        var grove = PhoneCameraCore.LarixGroveUrl("OBS Helper cam1", srt);
+
+        Assert.StartsWith("larix://set/v1?conn[][url]=srt%3A%2F%2F", grove);
+        Assert.Contains("&conn[][name]=OBS%20Helper%20cam1", grove);
+        Assert.Contains(Uri.EscapeDataString(srt), grove);
+
+        var (payload, isGrove) = PhoneCameraCore.BuildLarixQrPayload("OBS Helper cam1", srt);
+        Assert.True(isGrove);
+        Assert.Equal(grove, payload);
+        Assert.InRange(QrCodeCore.Encode(payload).Version, 1, 10);
+
+        // Grove 链接超出 V10/M 容量时，必须回退成仍然能扫的裸 SRT 地址。
+        var longUrl = "srt://" + new string('a', 160);
+        var (fallback, fallbackIsGrove) = PhoneCameraCore.BuildLarixQrPayload("OBS Helper cam1", longUrl);
+        Assert.False(fallbackIsGrove);
+        Assert.Equal(longUrl, fallback);
+        Assert.InRange(QrCodeCore.Encode(fallback).Version, 1, 10);
+
+        var whip = PhoneCameraCore.WhipPublishUrl("192.168.1.9", 8889, key);
+        var (whipPayload, whipIsGrove) = PhoneCameraCore.BuildLarixQrPayload("OBS Helper WHIP cam1", whip);
+        Assert.True(whipIsGrove);
+        Assert.Contains(Uri.EscapeDataString(whip), whipPayload);
+        Assert.InRange(QrCodeCore.Encode(whipPayload).Version, 1, 10);
+    }
+
+    [Fact]
     public void CameraOnlyAcceptsPrivatePublishers()
     {
         Assert.True(PhoneCameraCore.AllowsPublishFrom("192.168.1.20"));
@@ -208,16 +238,56 @@ public class MobileCoreTests
     [Fact]
     public void MediaServerConfigWithWebRtcEnablesWatchAndWhip()
     {
-        var yml = PhoneCameraCore.BuildConfig(8554, 1935, 8890, 9997, 8889);
+        var yml = PhoneCameraCore.BuildConfig(8554, 1935, 8890, 9997, 8889, "192.168.1.10", 9998);
         Assert.Contains("webrtc: yes", yml);
         Assert.Contains("webrtcAddress: :8889", yml);
         Assert.Contains("webrtcIPsFromInterfaces: yes", yml);
-        Assert.Contains("webrtcAllowOrigins: ['*']", yml);
+        Assert.Contains("webrtcAllowOrigins: ['http://127.0.0.1:8889', 'http://localhost:8889', 'http://192.168.1.10:8889']", yml);
+        Assert.DoesNotContain("'*'", yml);
+        Assert.Contains("authMethod: http", yml);
+        Assert.Contains("authHTTPAddress: http://127.0.0.1:9998/auth", yml);
+        Assert.Contains("  - action: api", yml);
         Assert.Equal("http://192.168.1.10:8889/live/key",
             PhoneCameraCore.VideoWatchUrl("192.168.1.10", 8889, "key"));
         Assert.Equal("http://192.168.1.10:8889/live/key/whip",
             PhoneCameraCore.WhipPublishUrl("192.168.1.10", 8889, "key"));
     }
+
+    [Theory]
+    [InlineData("publish", "srt", "live/key", "192.168.1.20", true, true)]
+    [InlineData("publish", "rtmp", "live/key", "192.168.1.20", true, true)]
+    [InlineData("publish", "webrtc", "live/key", "192.168.1.20", true, true)]
+    [InlineData("read", "rtsp", "live/key", "127.0.0.1", true, true)]
+    [InlineData("read", "webrtc", "live/key", "192.168.1.20", true, true)]
+    [InlineData("publish", "srt", "live/other", "192.168.1.20", false, false)]
+    [InlineData("publish", "srt", "live/key", "8.8.8.8", true, false)]
+    [InlineData("publish", "srt", "live/key", "192.168.1.20", false, false)]
+    [InlineData("api", "http", "live/key", "127.0.0.1", true, false)]
+    [InlineData("playback", "http", "live/key", "127.0.0.1", true, false)]
+    public void CameraAuthOnlyAllowsActivePrivatePaths(
+        string action, string protocol, string path, string ip, bool active, bool expected)
+        => Assert.Equal(expected, PhoneCameraAuthCore.IsAllowed(action, protocol, path, ip, active));
+
+    [Fact]
+    public void CameraAuthServerBindsLoopbackAndStopsCleanly()
+    {
+        using var server = new PhoneCameraAuthServer(_ => true);
+        var (ok, code) = server.Start();
+        Assert.True(ok, code);
+        Assert.True(server.Port > 0);
+        server.Stop();
+        Assert.False(server.IsRunning);
+    }
+
+    [Theory]
+    [InlineData("https://192.168.1.5:8443/", true)]
+    [InlineData("http://localhost:8080/", true)]
+    [InlineData("http://127.0.0.1:8080/", true)]
+    [InlineData("http://192.168.1.5:8080/", false)]
+    [InlineData("http://example.com/", false)]
+    [InlineData("not a url", false)]
+    public void BrowserCameraOnlyAllowedInSecureContext(string url, bool expected)
+        => Assert.Equal(expected, PhoneCameraCore.IsBrowserCameraSecureContext(url));
 
     [Fact]
     public void NotifyCoreBlocksSensitiveContent()

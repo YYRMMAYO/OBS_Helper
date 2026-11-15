@@ -177,6 +177,7 @@
     <Compile Include="..\OBS_Helper.Wpf\Services\Mobile\MobileCore.cs" Link="Linked\Mobile\MobileCore.cs" />
     <Compile Include="..\OBS_Helper.Wpf\Services\Mobile\MobilePageAssets.cs" Link="Linked\Mobile\MobilePageAssets.cs" />
     <Compile Include="..\OBS_Helper.Wpf\Services\Mobile\PhoneCameraCore.cs" Link="Linked\Mobile\PhoneCameraCore.cs" />
+    <Compile Include="..\OBS_Helper.Wpf\Services\Mobile\PhoneCameraAuthServer.cs" Link="Linked\Mobile\PhoneCameraAuthServer.cs" />
     <Compile Include="..\OBS_Helper.Wpf\Services\Chat\ChatCore.cs" Link="Linked\Chat\ChatCore.cs" />
     <Compile Include="..\OBS_Helper.Wpf\Services\Subtitles\AsrCore.cs" Link="Linked\Subtitles\AsrCore.cs" />
     <Compile Include="..\OBS_Helper.Wpf\Services\Subtitles\WhisperModelCore.cs" Link="Linked\Subtitles\WhisperModelCore.cs" />

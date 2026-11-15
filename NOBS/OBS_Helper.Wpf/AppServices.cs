@@ -168,8 +168,14 @@ public static class AppServices
         new(() => new TeleprompterService(Store));
 
     // 导播计时器（V3.6.0）：与 ControlTimerService（定时停止录制/推流）区分，属性名用 TimerClock
-    private static readonly Lazy<Services.Timing.TimerService> _timerClock =
-        new(() => new Services.Timing.TimerService(Store, Obs));
+    private static readonly Lazy<Services.Timing.TimerService> _timerClock = new(() =>
+    {
+        var service = new Services.Timing.TimerService(Store, Obs);
+        // 全局热键可能在用户第一次打开计时页之前触发；工厂必须在这里就位，
+        // 否则 Ctrl+Alt+H 只会改设置、不创建窗口。窗口本身仍是惰性创建。
+        service.SetViewFactory(() => new Views.TimerWindow());
+        return service;
+    });
 
     // ---------------------------------------------------------------- V3.4.0 手机联动
     // sidecar 管理器（mediamtx / whisper.cpp / ffmpeg / rclone）：清单随包，二进制按需下载

@@ -882,6 +882,10 @@ public sealed class AppearanceService : IDisposable
         res["SkinTitleFont"] = new FontFamily(manual
             ? "Segoe UI Light, Microsoft YaHei UI"
             : "Bahnschrift SemiCondensed, Microsoft YaHei UI");
+        // 首页 hero：C 是手册大标题；A 用更紧凑的导播台标题，避免占满首屏。
+        res["SkinHeroTitleSize"] = Math.Round((manual ? 36 : 24) * f, 1);
+        res["SkinHeroTitleWeight"] = manual ? FontWeights.Light : FontWeights.SemiBold;
+        res["SkinIconTileRadius"] = new CornerRadius(manual ? 0 : 12);
         // 导航：A 图标 + 文字；C 编号 + 文字（编号是目录序号，不是快捷键）。
         res["SkinNavIconVisibility"] = manual ? Visibility.Collapsed : Visibility.Visible;
         res["SkinNavNumberVisibility"] = manual ? Visibility.Visible : Visibility.Collapsed;

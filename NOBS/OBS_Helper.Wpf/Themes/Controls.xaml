@@ -83,6 +83,14 @@
   </Style>
 
   <!-- 分节小标题：上方留白 + 品牌色竖条 -->
+  <!-- V3.7.2：手册式分节小标题（如「01 / 手机联动」「STREAM / 简单开播」）。 -->
+  <Style x:Key="SectionEyebrow" TargetType="TextBlock">
+    <Setter Property="FontFamily" Value="Cascadia Mono, Consolas, Courier New" />
+    <Setter Property="FontSize" Value="{DynamicResource FontSizeXs}" />
+    <Setter Property="Foreground" Value="{DynamicResource DimBrush}" />
+    <Setter Property="TextWrapping" Value="NoWrap" />
+  </Style>
+
   <Style x:Key="SectionTitle" TargetType="TextBlock" BasedOn="{StaticResource H3Text}">
     <Setter Property="Margin" Value="0,4,0,10" />
   </Style>

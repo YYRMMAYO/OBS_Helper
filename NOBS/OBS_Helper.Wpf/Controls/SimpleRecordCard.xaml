@@ -11,11 +11,9 @@
   <Border Style="{StaticResource Card}" Padding="14">
     <StackPanel>
 
-      <TextBlock Text="{DynamicResource Loc.simple.home.title}" FontWeight="SemiBold"
-                 FontSize="{DynamicResource FontSizeMd}"
-                 Foreground="{DynamicResource TextBrush}" />
+      <!-- 标题由首页的「02 / 简单录像」分节小标题承担，卡片内不再重复 -->
       <TextBlock Text="{DynamicResource Loc.simple.home.desc}" Style="{StaticResource MutedText}"
-                 Margin="0,6,0,0" TextWrapping="Wrap" />
+                 Margin="0,0,0,0" TextWrapping="Wrap" />
 
       <!-- 预设三选 -->
       <StackPanel Orientation="Horizontal" Margin="0,10,0,0">

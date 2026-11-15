@@ -4,131 +4,160 @@
              xmlns:ctl="clr-namespace:OBS_Helper.Wpf.Controls">
 
   <!--
-    首页 = 快捷入口 + 简单录像 + 分类九宫格 + 我的收藏。
-    页面大标题由 MainWindow 顶栏负责，这里不再重复，只保留原版 hero 里的两个入口按钮。
+    首页（V3.7.2 手册式重排）。
+
+    参照 design/ui-concepts-2026-11/03-field-manual.png 的「01 首页」版面：
+      ① 顶部实时数据条（时钟 / 连接 / 录制 / 推流 / FPS / CPU + 快捷入口）
+      ② 大字号 hero（编号分节 + 手机联动侧栏）
+      ③ 简单录像 / 简单开播并排（02 / STREAM）
+      ④ 导播计时器大读数（03）
+      ⑤ 欢迎条（04，未连 OBS 时显示）
+      ⑥ 问题分类目录（05）+ 我的收藏（06）
+
+    版式本身不再依赖「一张大卡片套所有入口」：分节用编号 + 发丝线组织，
+    卡片形态、字号、圆角全部由 A/C 皮肤令牌决定 —— 同一份 XAML 在导播台
+    与排版手册下是两种密度，而不是两套硬编码。
   -->
+  <UserControl.Resources>
+    <!-- 顶部数据条：等宽小字，A 像硬件读数，C 像手册页眉 -->
+    <Style x:Key="SignalText" TargetType="TextBlock" BasedOn="{StaticResource MonoText}">
+      <Setter Property="FontSize" Value="{DynamicResource FontSizeXs}" />
+      <Setter Property="Foreground" Value="{DynamicResource DimBrush}" />
+      <Setter Property="VerticalAlignment" Value="Center" />
+    </Style>
+
+    <Style x:Key="TimerReadout" TargetType="TextBlock" BasedOn="{StaticResource MonoText}">
+      <Setter Property="FontSize" Value="{DynamicResource FontSizeH1}" />
+      <Setter Property="FontWeight" Value="SemiBold" />
+      <Setter Property="Foreground" Value="{DynamicResource TextBrush}" />
+      <Setter Property="VerticalAlignment" Value="Center" />
+    </Style>
+  </UserControl.Resources>
+
   <ScrollViewer Style="{StaticResource PageScroll}">
-    <StackPanel Margin="22,18,22,26">
+    <StackPanel Margin="30,18,30,32" MaxWidth="1180" HorizontalAlignment="Left">
 
-      <!-- 快捷入口：对应原版 hero 里的「搜索问题 / 问我一下」 -->
-      <StackPanel Orientation="Horizontal">
-        <Button Style="{StaticResource PrimaryButton}" Content="{DynamicResource Loc.home.action.search}"
-                Margin="0,0,10,0" Click="OnSearchClick" />
-        <Button Style="{StaticResource SecondaryButton}" Content="{DynamicResource Loc.home.action.ask}"
-                Margin="0,0,10,0" Click="OnAssistantClick" />
-        <!--
-          「反馈」放在首页快捷入口（V2.9.4）：V2.9.3 只在工具箱 / 搭建页底部有反馈卡，
-          要反馈的用户得先猜到它在哪一页 —— 那等于没有入口。
-        -->
-        <Button Style="{StaticResource GhostButton}" Content="{DynamicResource Loc.nav.feedback}"
-                Click="OnFeedbackClick" />
-      </StackPanel>
+      <!-- ============================================ 顶部实时数据条 -->
+      <Grid>
+        <Grid.ColumnDefinitions>
+          <ColumnDefinition Width="*" />
+          <ColumnDefinition Width="Auto" />
+        </Grid.ColumnDefinitions>
 
-      <!--
-        V3.4.0 新功能入口（显眼）：手机联动是这一版的主题，放在首页第一屏；
-        另外四个新页面也在这里给出标题 + 一句话说明，避免用户不知道有新功能。
-      -->
-      <Border Style="{StaticResource Card}" Margin="0,18,0,0" Padding="20"
-              Background="{DynamicResource BrandSoftBrush}" BorderBrush="{DynamicResource BrandBrush}" BorderThickness="1">
-        <Grid>
-          <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="*" />
-            <ColumnDefinition Width="Auto" />
-          </Grid.ColumnDefinitions>
-          <StackPanel>
-            <TextBlock Text="{DynamicResource Loc.home.hero.title}" Style="{StaticResource H2Text}"
-                       Foreground="{DynamicResource BrandBrush}" />
-            <TextBlock Text="{DynamicResource Loc.home.hero.desc}" Style="{StaticResource BodyText}"
-                       Margin="0,8,0,0" TextWrapping="Wrap" MaxWidth="680" />
-            <WrapPanel Margin="0,14,0,0">
-              <Button Style="{StaticResource PrimaryButton}" Tag="remote" Click="OnHeroAction"
-                      Content="{DynamicResource Loc.feature.hub.hero.remote}" />
-              <Button Style="{StaticResource SecondaryButton}" Margin="8,0,0,0" Tag="camera" Click="OnHeroAction"
-                      Content="{DynamicResource Loc.feature.hub.hero.camera}" />
-              <Button Style="{StaticResource SecondaryButton}" Margin="8,0,0,0" Tag="multicam" Click="OnHeroAction"
-                      Content="{DynamicResource Loc.feature.hub.hero.multicam}" />
-            </WrapPanel>
+        <WrapPanel Grid.Column="0" VerticalAlignment="Center">
+          <TextBlock x:Name="HomeClockText" Style="{StaticResource SignalText}" Text="--:--:--" />
+          <Border Width="1" Height="10" Background="{DynamicResource LineBrush}" Margin="10,0" />
+          <Ellipse x:Name="HomeConnectionDot" Width="6" Height="6" Margin="0,0,6,0"
+                   VerticalAlignment="Center" Fill="{DynamicResource MutedBrush}" />
+          <TextBlock x:Name="HomeConnectionText" Style="{StaticResource SignalText}"
+                     Text="{DynamicResource Loc.home.signal.disconnected}" />
+          <TextBlock x:Name="HomeRecordText" Style="{StaticResource SignalText}"
+                     Foreground="{DynamicResource DangerBrush}" Margin="10,0,0,0"
+                     Visibility="Collapsed" />
+          <TextBlock x:Name="HomeStreamText" Style="{StaticResource SignalText}"
+                     Foreground="{DynamicResource BrandBrush}" Margin="10,0,0,0"
+                     Visibility="Collapsed" />
+          <TextBlock x:Name="HomeFpsText" Style="{StaticResource SignalText}"
+                     Margin="10,0,0,0" Text="— fps" />
+          <TextBlock x:Name="HomeCpuText" Style="{StaticResource SignalText}"
+                     Margin="10,0,0,0" Text="CPU —" />
+        </WrapPanel>
+
+        <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+          <Button Style="{StaticResource LinkButton}" Content="{DynamicResource Loc.home.action.search}"
+                  Foreground="{DynamicResource MutedBrush}" Click="OnSearchClick" />
+          <TextBlock Text="·" Style="{StaticResource CaptionText}" Margin="6,0" VerticalAlignment="Center" />
+          <Button Style="{StaticResource LinkButton}" Content="{DynamicResource Loc.home.action.ask}"
+                  Foreground="{DynamicResource MutedBrush}" Click="OnAssistantClick" />
+          <TextBlock Text="·" Style="{StaticResource CaptionText}" Margin="6,0" VerticalAlignment="Center" />
+          <Button Style="{StaticResource LinkButton}" Content="{DynamicResource Loc.nav.feedback}"
+                  Foreground="{DynamicResource MutedBrush}" Click="OnFeedbackClick" />
+        </StackPanel>
+      </Grid>
+
+      <Border Style="{StaticResource HLine}" Margin="0,12,0,0" />
+
+      <!-- ============================================ 01 / 手机联动（hero） -->
+      <Grid Margin="0,24,0,8">
+        <Grid.ColumnDefinitions>
+          <ColumnDefinition Width="*" />
+          <ColumnDefinition Width="Auto" />
+        </Grid.ColumnDefinitions>
+
+        <StackPanel Grid.Column="0" Margin="0,0,24,0">
+          <TextBlock Style="{StaticResource SectionEyebrow}">
+            <Run Text="01 / " /><Run Text="{DynamicResource Loc.nav.mobile}" />
+          </TextBlock>
+
+          <TextBlock Text="{DynamicResource Loc.home.hero.title}"
+                     FontSize="{DynamicResource SkinHeroTitleSize}"
+                     FontWeight="{DynamicResource SkinHeroTitleWeight}"
+                     FontFamily="{DynamicResource SkinTitleFont}"
+                     Foreground="{DynamicResource TextBrush}"
+                     TextWrapping="Wrap" MaxWidth="760" Margin="0,8,0,0"
+                     AutomationProperties.HeadingLevel="Level2" />
+
+          <TextBlock Text="{DynamicResource Loc.home.hero.desc}" Style="{StaticResource BodyText}"
+                     Margin="0,10,0,0" MaxWidth="660" />
+
+          <WrapPanel Margin="0,16,0,0">
+            <Button Style="{StaticResource PrimaryButton}" Tag="remote" Click="OnHeroAction"
+                    Margin="0,0,8,8" Content="{DynamicResource Loc.feature.hub.hero.remote}" />
+            <Button Style="{StaticResource SecondaryButton}" Tag="camera" Click="OnHeroAction"
+                    Margin="0,0,8,8" Content="{DynamicResource Loc.feature.hub.hero.camera}" />
+            <Button Style="{StaticResource SecondaryButton}" Tag="multicam" Click="OnHeroAction"
+                    Margin="0,0,8,8" Content="{DynamicResource Loc.feature.hub.hero.multicam}" />
+            <Button Style="{StaticResource GhostButton}" Click="OnOpenFeatures"
+                    Margin="0,0,8,8" Content="{DynamicResource Loc.home.hero.all}" />
+          </WrapPanel>
+        </StackPanel>
+
+        <!-- 手机联动侧栏：整块可点、可键盘进入；二维码在「手机联动」页生成，避免首页创建临时会话 -->
+        <Button Grid.Column="1" Style="{StaticResource CardButton}" Width="250"
+                Tag="remote" Click="OnHeroAction"
+                AutomationProperties.Name="{DynamicResource Loc.home.hero.openMobile}">
+          <StackPanel Margin="4">
+            <Path Data="{StaticResource IconGeomDeviceMobile}" Width="36" Height="36"
+                  Stretch="Uniform" HorizontalAlignment="Left"
+                  Stroke="{DynamicResource BrandBrush}" StrokeThickness="1.4"
+                  StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round" />
+            <TextBlock Text="{DynamicResource Loc.nav.mobile}" Margin="0,12,0,0"
+                       FontWeight="SemiBold" FontSize="{DynamicResource FontSizeMd}"
+                       Foreground="{DynamicResource TextBrush}" />
+            <TextBlock Text="{DynamicResource Loc.home.hero.scanCaption}"
+                       Style="{StaticResource CaptionText}" Margin="0,4,0,0" />
+            <TextBlock Text="{DynamicResource Loc.home.hero.qrHint}"
+                       Style="{StaticResource CaptionText}" Margin="0,8,0,0" TextWrapping="Wrap" />
+            <TextBlock Text="{DynamicResource Loc.home.hero.openMobile}"
+                       Foreground="{DynamicResource BrandBrush}" FontSize="{DynamicResource FontSizeSm}"
+                       Margin="0,12,0,0" />
           </StackPanel>
-          <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="16,0,0,0">
-            <!-- V3.4.2：去掉版本号大字，避免被理解成「只有这一版才有这些功能」 -->
-            <Button Style="{StaticResource PrimaryButton}" Click="OnOpenFeatures"
-                    Content="{DynamicResource Loc.home.hero.all}" />
-          </StackPanel>
-        </Grid>
-      </Border>
+        </Button>
+      </Grid>
 
-      <!--
-        简单录像（V2.9.4）：放在首页而不是只留在「搭建」页 ——
-        「我就想录个像」是最常见的进入意图，不该先让人翻三个页面找入口。
-      -->
-      <ctl:SimpleRecordCard x:Name="SimpleRecord" Margin="0,14,0,0" />
+      <!-- ============================================ 02 / 简单录像 · STREAM / 简单开播 -->
+      <Grid Margin="0,22,0,0">
+        <Grid.ColumnDefinitions>
+          <ColumnDefinition Width="*" />
+          <ColumnDefinition Width="18" />
+          <ColumnDefinition Width="*" />
+        </Grid.ColumnDefinitions>
 
-      <!--
-        简单开播（V3.0 / D2）：与简单录像并列放在首页 —— 两者是同一种进入意图
-        （「我要录 / 我要播」），而「按了开始推流没反应」的头号原因是推流服务没填全，
-        这张卡在按之前就把这件事查清楚。
-      -->
-      <ctl:SimpleStreamCard x:Name="SimpleStream" Margin="0,14,0,0" />
+        <StackPanel Grid.Column="0">
+          <TextBlock Style="{StaticResource SectionEyebrow}">
+            <Run Text="02 / " /><Run Text="{DynamicResource Loc.simple.home.title}" />
+          </TextBlock>
+          <!-- 标题由分节小标题承担，卡片内部不再重复 -->
+          <ctl:SimpleRecordCard x:Name="SimpleRecord" Margin="0,8,0,0" />
+        </StackPanel>
 
-      <!-- 导播计时器（V3.7 / N24）：显示上次模式与时长，一键进入计时页 -->
-      <Border Style="{StaticResource Card}" Margin="0,14,0,0" Padding="16">
-        <Grid>
-          <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="*" />
-            <ColumnDefinition Width="Auto" />
-          </Grid.ColumnDefinitions>
-          <StackPanel>
-            <TextBlock Text="{DynamicResource Loc.home.timer.title}" Style="{StaticResource H3Text}" />
-            <TextBlock x:Name="TimerSummaryText" Style="{StaticResource MutedText}"
-                       Margin="0,6,0,0" TextWrapping="Wrap" />
-          </StackPanel>
-          <Button Grid.Column="1" Style="{StaticResource SecondaryButton}" VerticalAlignment="Center"
-                  Content="{DynamicResource Loc.home.timer.open}" Click="OnOpenTimer" />
-        </Grid>
-      </Border>
-
-      <!-- 新手引导：未连 OBS 时显示，连接后由代码隐藏（P1） -->
-      <Border x:Name="WelcomeCard" Style="{StaticResource Card}" Margin="0,14,0,0"
-              Background="{DynamicResource BrandSoftBrush}"
-              BorderBrush="{DynamicResource BrandBrush}" BorderThickness="1,1,1,1"
-              Visibility="Collapsed">
-        <Grid>
-          <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="*" />
-            <ColumnDefinition Width="Auto" />
-          </Grid.ColumnDefinitions>
-          <StackPanel Grid.Column="0">
-            <TextBlock Text="{DynamicResource Loc.home.welcome.title}" Style="{StaticResource H3Text}"
-                       Foreground="{DynamicResource BrandBrush}" />
-            <TextBlock Style="{StaticResource BodyText}" Margin="0,6,0,0" TextWrapping="Wrap"
-                       Text="{DynamicResource Loc.home.welcome.desc}" />
-            <!--
-              获取官方 OBS（V2.9.1）：这张卡只在「未连上 OBS」时出现，正好覆盖
-              「机器上还没有 OBS / 装到了下载站的仿冒包」这类用户，给两条官方入口。
-            -->
-            <StackPanel Orientation="Horizontal" Margin="0,9,0,0">
-              <TextBlock Style="{StaticResource CaptionText}" VerticalAlignment="Center"
-                         Text="{DynamicResource Loc.home.obsMissing.title}" />
-              <Button Content="{DynamicResource Loc.obs.officialPage}" Style="{StaticResource LinkButton}"
-                      Margin="6,0,0,0" Click="OnOpenObsDownload" />
-              <TextBlock Style="{StaticResource CaptionText}" VerticalAlignment="Center"
-                         Text="·" Margin="5,0,0,0" />
-              <Button Content="{DynamicResource Loc.obs.githubPage}" Style="{StaticResource LinkButton}"
-                      Margin="5,0,0,0" Click="OnOpenObsGitHub" />
-              <TextBlock Style="{StaticResource CaptionText}" VerticalAlignment="Center"
-                         Text="{DynamicResource Loc.home.obsMissing.hint}" Margin="5,0,0,0" />
-            </StackPanel>
-          </StackPanel>
-          <Button Grid.Column="1" Style="{StaticResource PrimaryButton}"
-                  VerticalAlignment="Center" Margin="12,0,0,0" Click="OnConnectGuideClick">
-            <StackPanel Orientation="Horizontal">
-              <Image Width="14" Height="14" Source="{StaticResource IconConnect}"
-                     VerticalAlignment="Center" Margin="0,0,6,0" />
-              <TextBlock Text="{DynamicResource Loc.home.goConsole}" VerticalAlignment="Center" />
-            </StackPanel>
-          </Button>
-        </Grid>
-      </Border>
+        <StackPanel Grid.Column="2">
+          <TextBlock Style="{StaticResource SectionEyebrow}">
+            <Run Text="STREAM / " /><Run Text="{DynamicResource Loc.simple.stream.home.title}" />
+          </TextBlock>
+          <ctl:SimpleStreamCard x:Name="SimpleStream" Margin="0,8,0,0" />
+        </StackPanel>
+      </Grid>
 
       <!-- 数据加载失败时的提示（带报错码，便于用户反馈） -->
       <Border x:Name="LoadErrorPanel" Style="{StaticResource SoftPanel}"
@@ -146,7 +175,78 @@
         </Grid>
       </Border>
 
-      <TextBlock Text="{DynamicResource Loc.home.categories}" Style="{StaticResource SectionTitle}" Margin="0,20,0,10" />
+      <!-- ============================================ 03 / 导播计时器 -->
+      <Border Style="{StaticResource HLine}" Margin="0,26,0,0" />
+      <Grid Margin="0,16,0,0">
+        <Grid.ColumnDefinitions>
+          <ColumnDefinition Width="*" />
+          <ColumnDefinition Width="Auto" />
+        </Grid.ColumnDefinitions>
+
+        <StackPanel>
+          <TextBlock Style="{StaticResource SectionEyebrow}">
+            <Run Text="03 / " /><Run Text="{DynamicResource Loc.home.timer.title}" />
+          </TextBlock>
+          <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
+            <TextBlock x:Name="TimerBigText" Style="{StaticResource TimerReadout}" Text="--:--" />
+            <TextBlock x:Name="TimerSummaryText" Style="{StaticResource MutedText}"
+                       VerticalAlignment="Bottom" Margin="16,0,0,6" TextWrapping="Wrap" />
+          </StackPanel>
+        </StackPanel>
+
+        <Button Grid.Column="1" Style="{StaticResource SecondaryButton}" VerticalAlignment="Center"
+                Content="{DynamicResource Loc.home.timer.open}" Click="OnOpenTimer" />
+      </Grid>
+
+      <!-- ============================================ 04 / 欢迎使用（未连 OBS 时显示） -->
+      <Border x:Name="WelcomeCard" Style="{StaticResource Card}" Margin="0,20,0,0"
+              Visibility="Collapsed">
+        <Grid>
+          <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*" />
+            <ColumnDefinition Width="Auto" />
+          </Grid.ColumnDefinitions>
+
+          <StackPanel Grid.Column="0">
+            <TextBlock Style="{StaticResource SectionEyebrow}">
+              <Run Text="04 / " /><Run Text="{DynamicResource Loc.home.welcome.title}" />
+            </TextBlock>
+            <TextBlock Style="{StaticResource BodyText}" Margin="0,6,0,0" TextWrapping="Wrap"
+                       MaxWidth="820" Text="{DynamicResource Loc.home.welcome.desc}" />
+            <!--
+              获取官方 OBS（V2.9.1）：这张卡只在「未连上 OBS」时出现，正好覆盖
+              「机器上还没有 OBS / 装到了下载站的仿冒包」这类用户，给两条官方入口。
+            -->
+            <StackPanel Orientation="Horizontal" Margin="0,9,0,0">
+              <TextBlock Style="{StaticResource CaptionText}" VerticalAlignment="Center"
+                         Text="{DynamicResource Loc.home.obsMissing.title}" />
+              <Button Content="{DynamicResource Loc.obs.officialPage}" Style="{StaticResource LinkButton}"
+                      Margin="6,0,0,0" Click="OnOpenObsDownload" />
+              <TextBlock Style="{StaticResource CaptionText}" VerticalAlignment="Center"
+                         Text="·" Margin="5,0,0,0" />
+              <Button Content="{DynamicResource Loc.obs.githubPage}" Style="{StaticResource LinkButton}"
+                      Margin="5,0,0,0" Click="OnOpenObsGitHub" />
+              <TextBlock Style="{StaticResource CaptionText}" VerticalAlignment="Center"
+                         Text="{DynamicResource Loc.home.obsMissing.hint}" Margin="5,0,0,0" />
+            </StackPanel>
+          </StackPanel>
+
+          <Button Grid.Column="1" Style="{StaticResource PrimaryButton}"
+                  VerticalAlignment="Center" Margin="12,0,0,0" Click="OnConnectGuideClick">
+            <StackPanel Orientation="Horizontal">
+              <Image Width="14" Height="14" Source="{StaticResource IconConnect}"
+                     VerticalAlignment="Center" Margin="0,0,6,0" />
+              <TextBlock Text="{DynamicResource Loc.home.goConsole}" VerticalAlignment="Center" />
+            </StackPanel>
+          </Button>
+        </Grid>
+      </Border>
+
+      <!-- ============================================ 05 / 问题分类 -->
+      <Border Style="{StaticResource HLine}" Margin="0,26,0,0" />
+      <TextBlock Style="{StaticResource SectionEyebrow}" Margin="0,14,0,10">
+        <Run Text="05 / " /><Run Text="{DynamicResource Loc.home.categories}" />
+      </TextBlock>
 
       <!--
         分类卡用 ItemsControl + DataTemplate：卡片结构固定、只有数据不同，
@@ -170,13 +270,13 @@
                 </Grid.ColumnDefinitions>
 
                 <!--
-                  分类图标芯片（P2-1 语义色）：去掉原 4px 彩色竖条（craft-floor 禁用卡片左侧彩色描边），
-                  改为圆角色块 + 图标，语义色以「色块底 + 数量文字」双重编码，深浅主题均清晰。
+                  分类图标芯片（P2-1 语义色）：圆角/直角由皮肤决定（A 12 px / C 0），
+                  语义色以「色块底 + 数量文字」双重编码，深浅主题均清晰。
                 -->
                 <Grid Grid.Column="0" Width="44" Height="44" Margin="0,0,12,0"
                       VerticalAlignment="Top">
                   <Border Background="{Binding Semantic, Converter={StaticResource SemanticBrush}}"
-                          CornerRadius="12" Opacity="0.16" />
+                          CornerRadius="{DynamicResource SkinIconTileRadius}" Opacity="0.16" />
                   <TextBlock Text="{Binding Icon}" FontSize="20"
                              HorizontalAlignment="Center" VerticalAlignment="Center" />
                 </Grid>
@@ -200,9 +300,12 @@
         </ItemsControl.ItemTemplate>
       </ItemsControl>
 
-      <!-- 我的收藏：没有收藏时整块隐藏（与原版一致） -->
+      <!-- ============================================ 06 / 我的收藏 -->
       <StackPanel x:Name="BookmarkSection" Visibility="Collapsed">
-        <TextBlock Text="{DynamicResource Loc.home.bookmarks}" Style="{StaticResource SectionTitle}" Margin="0,14,0,10" />
+        <Border Style="{StaticResource HLine}" Margin="0,26,0,0" />
+        <TextBlock Style="{StaticResource SectionEyebrow}" Margin="0,14,0,10">
+          <Run Text="06 / " /><Run Text="{DynamicResource Loc.home.bookmarks}" />
+        </TextBlock>
         <StackPanel x:Name="BookmarkList" />
       </StackPanel>
 

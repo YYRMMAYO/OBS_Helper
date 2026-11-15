@@ -175,6 +175,11 @@
   <sys:Double x:Key="SkinPageTitleSize">37</sys:Double>
   <FontWeight x:Key="SkinPageTitleWeight">Light</FontWeight>
   <FontFamily x:Key="SkinTitleFont">Segoe UI Light, Microsoft YaHei UI</FontFamily>
+  <!-- 首页 hero 标题（V3.7.2 手册式重排）：A 24/600；C 36/300 -->
+  <sys:Double x:Key="SkinHeroTitleSize">36</sys:Double>
+  <FontWeight x:Key="SkinHeroTitleWeight">Light</FontWeight>
+  <!-- 分类图标色块：A 圆角；C 直角 -->
+  <CornerRadius x:Key="SkinIconTileRadius">0</CornerRadius>
 
   <!-- 顶栏发丝线 -->
   <Thickness x:Key="SkinTopBarBorder">0,0,0,1</Thickness>

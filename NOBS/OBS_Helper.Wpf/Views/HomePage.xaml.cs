@@ -1,5 +1,6 @@
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Threading;
 using OBS_Helper.Wpf.Controls;
 using OBS_Helper.Wpf.Models;
 using OBS_Helper.Wpf.Navigation;
@@ -37,6 +38,9 @@ public partial class HomePage : UserControl, INavigationAware
     /// 同路由原地重放（切语言）会连着走一次 from / to，缺了它就会重复订阅。
     /// </summary>
     private bool _eventsAttached;
+
+    /// <summary>顶部数据条的 1 秒刷新（仅在首页可见时运行）。</summary>
+    private DispatcherTimer? _signalTimer;
 
     public HomePage()
     {
@@ -79,6 +83,7 @@ public partial class HomePage : UserControl, INavigationAware
             await SimpleStream.RefreshAsync();
 
             RefreshTimerSummary();
+            StartSignal();
         }
         catch (Exception ex)
         {
@@ -95,6 +100,7 @@ public partial class HomePage : UserControl, INavigationAware
     {
         SimpleRecord.Detach();
         SimpleStream.Detach();
+        StopSignal();
         DetachEvents();
         return Task.CompletedTask;
     }
@@ -108,6 +114,8 @@ public partial class HomePage : UserControl, INavigationAware
         var planned = settings.PlannedSeconds <= 0
             ? Strings.T("timer.unlimited")
             : TimerCore.FormatDuration(TimeSpan.FromSeconds(settings.PlannedSeconds));
+        // V3.7.2：手册式首页用大号读数展示上次计划时长（与右侧说明形成主次层级）。
+        TimerBigText.Text = planned;
         TimerSummaryText.Text = Strings.T("home.timer.summary", mode, planned,
             AppServices.TimerClock.Records.Count);
     }
@@ -131,6 +139,8 @@ public partial class HomePage : UserControl, INavigationAware
         AppServices.Bookmarks.BookmarksChanged += OnBookmarksChanged;
         // 连接状态变化时同步引导卡显隐（从控制台连接成功返回首页，引导卡自动消失）
         AppServices.Obs.StateChanged += RefreshWelcome;
+        // 顶部数据条也要在连接 / 录制 / 推流状态变化时立即刷新，而不是等下一秒
+        AppServices.Obs.StateChanged += RefreshSignal;
     }
 
     /// <summary>与 <see cref="AttachEvents"/> 严格配对；幂等，重复调用不会误退别人的订阅。</summary>
@@ -141,7 +151,66 @@ public partial class HomePage : UserControl, INavigationAware
 
         AppServices.Bookmarks.BookmarksChanged -= OnBookmarksChanged;
         AppServices.Obs.StateChanged -= RefreshWelcome;
+        AppServices.Obs.StateChanged -= RefreshSignal;
     }
+
+    // ------------------------------------------------------------ 顶部数据条（V3.7.2）
+
+    /// <summary>启动 1 秒刷新；页面不可见时由 <see cref="StopSignal"/> 停表，避免后台空转。</summary>
+    private void StartSignal()
+    {
+        _signalTimer ??= new DispatcherTimer { Interval = TimeSpan.FromSeconds(1) };
+        _signalTimer.Tick -= OnSignalTick;
+        _signalTimer.Tick += OnSignalTick;
+        _signalTimer.Start();
+        RefreshSignal();
+    }
+
+    private void OnSignalTick(object? sender, EventArgs e) => RefreshSignal();
+
+    private void StopSignal()
+    {
+        if (_signalTimer is null) return;
+        _signalTimer.Stop();
+        _signalTimer.Tick -= OnSignalTick;
+    }
+
+    /// <summary>
+    /// 顶部数据条：时钟 / 连接 / 录制 / 推流 / FPS / CPU。
+    /// 未连接时用「—」而不是 0，避免用户把「没有数据」误读成「性能为 0」。
+    /// </summary>
+    private void RefreshSignal()
+    {
+        if (!Dispatcher.CheckAccess())
+        {
+            Dispatcher.BeginInvoke(new Action(RefreshSignal));
+            return;
+        }
+
+        var obs = AppServices.Obs;
+        var connected = obs.IsConnected;
+
+        HomeClockText.Text = DateTime.Now.ToString("HH:mm:ss");
+        HomeConnectionText.Text = Strings.T(connected ? "home.signal.connected" : "home.signal.disconnected");
+        HomeConnectionDot.SetResourceReference(System.Windows.Shapes.Shape.FillProperty,
+            connected ? "OkBrush" : "MutedBrush");
+
+        var recording = obs.RecordStatus.Active;
+        HomeRecordText.Visibility = recording ? Visibility.Visible : Visibility.Collapsed;
+        if (recording)
+            HomeRecordText.Text = Strings.T("home.signal.record") + " " + FormatClock(obs.RecordElapsed);
+
+        var streaming = obs.StreamStatus.Active;
+        HomeStreamText.Visibility = streaming ? Visibility.Visible : Visibility.Collapsed;
+        if (streaming)
+            HomeStreamText.Text = Strings.T("home.signal.stream") + " " + FormatClock(obs.StreamElapsed);
+
+        HomeFpsText.Text = connected ? $"{obs.Stats.ActiveFps:0.0} fps" : "— fps";
+        HomeCpuText.Text = connected ? $"CPU {obs.Stats.CpuUsage:0}%" : "CPU —";
+    }
+
+    private static string FormatClock(TimeSpan value)
+        => $"{(int)value.TotalHours:00}:{value.Minutes:00}:{value.Seconds:00}";
 
     /// <summary>新手引导卡：未连 OBS 时展示，连接后隐藏（StateChanged 可能来自 WebSocket 线程，需切回 UI 线程）。</summary>
     private void RefreshWelcome()

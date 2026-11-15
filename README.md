@@ -6,7 +6,7 @@
 
 **当前版本：V3.7.2**（正式版） · 双主题 UI：黑夜「导播台」/ 白天「排版手册」，编号目录、发丝线分节与 tally 时间码
 
-**本版主线**：把界面拆成两套设计语言——**黑夜 → A · 导播台**（机柜黑、信号青、圆角面板、图标导航、OFF AIR/ON AIR tally 与时间码），**白天 → C · 排版手册**（纸白、信号蓝、发丝线分节、01–16 编号目录、37 px 细体标题、黑色直角按钮）。两套皮肤共用同一路由与页面逻辑，切换不丢焦点、不重连 OBS；自定义浅色背景在 A 下自动压暗。详见 [`NOBS/RELEASE_NOTES_v3.7.2.md`](NOBS/RELEASE_NOTES_v3.7.2.md)。
+**本版主线**：把界面拆成两套设计语言——**黑夜 → A · 导播台**（机柜黑、信号青、圆角面板、图标导航、OFF AIR/ON AIR tally 与时间码），**白天 → C · 排版手册**（纸白、信号蓝、发丝线分节、01–16 编号目录、37 px 细体标题、黑色直角按钮）。首页按排版手册参考图重排为「数据条 + 编号分节 + 大字号 hero + 并排录像/开播 + 大号计时读数」。两套皮肤共用同一路由与页面逻辑，切换不丢焦点、不重连 OBS；自定义浅色背景在 A 下自动压暗。详见 [`NOBS/RELEASE_NOTES_v3.7.2.md`](NOBS/RELEASE_NOTES_v3.7.2.md)。
 
 [![CI](https://github.com/YYRMMAYO/OBS_Helper/actions/workflows/ci.yml/badge.svg)](https://github.com/YYRMMAYO/OBS_Helper/actions/workflows/ci.yml)
 [![平台](https://img.shields.io/badge/Platform-Windows_7_SP1%2B_%2F_10_%2F_11-0078D6.svg)]()

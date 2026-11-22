@@ -47,6 +47,16 @@ public class LocalPluginManageServiceTests : IDisposable
         return Path.Combine(dllDir, name + ".dll");
     }
 
+    private string CreateObs33Nested(string root, string name)
+    {
+        var pluginDir = Path.Combine(root, name);
+        Directory.CreateDirectory(Path.Combine(pluginDir, "data"));
+        var dll = Path.Combine(pluginDir, name + ".dll");
+        File.WriteAllText(dll, "test");
+        File.WriteAllText(Path.Combine(pluginDir, "data", "manifest.json"), "{}");
+        return dll;
+    }
+
     private static InstalledPluginFile PluginFile(string dll, string label = "user") => new()
     {
         FullPath = dll,
@@ -66,6 +76,19 @@ public class LocalPluginManageServiceTests : IDisposable
         Assert.False(Directory.Exists(Path.Combine(_userRoot, "plugin-a")));
         Assert.True(Directory.Exists(result.Path));
         Assert.True(File.Exists(Path.Combine(result.Path, "bin", "64bit", "plugin-a.dll")));
+    }
+
+    [Fact]
+    public async Task Uninstall_Obs33Nested_MovesWholePluginDirectoryWithData()
+    {
+        var dll = CreateObs33Nested(_userRoot, "plugin-33");
+
+        var result = await _service.UninstallAsync(PluginFile(dll), CancellationToken.None);
+
+        Assert.True(result.Ok, result.Code);
+        Assert.False(Directory.Exists(Path.Combine(_userRoot, "plugin-33")));
+        Assert.True(File.Exists(Path.Combine(result.Path, "plugin-33.dll")));
+        Assert.True(File.Exists(Path.Combine(result.Path, "data", "manifest.json")));
     }
 
     [Fact]

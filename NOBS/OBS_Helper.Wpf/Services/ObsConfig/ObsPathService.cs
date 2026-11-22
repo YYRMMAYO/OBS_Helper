@@ -411,7 +411,12 @@ public sealed class ObsPathService
                     {
                         var path = p.MainModule?.FileName;
                         if (!string.IsNullOrEmpty(path))
-                            return Path.GetDirectoryName(path);
+                        {
+                            // OBS 33 安装包不再有 obs-plugins；从 exe 上溯时要按
+                            // bin\64bit\obs64.exe / core / plugins 多布局识别安装根。
+                            var root = ObsLaunchCore.InstallRootFromExe(path, File.Exists, Directory.Exists);
+                            if (!string.IsNullOrEmpty(root)) return root;
+                        }
                     }
                     catch (System.ComponentModel.Win32Exception)
                     {
@@ -453,30 +458,26 @@ public sealed class ObsPathService
         // 信号③：全盘固定驱动器上的常见安装布局（OBS 可能装在任意盘，C 盘默认位置自然覆盖其中）
         foreach (var root in GetStandardObsRoots(GetFixedDriveRoots()))
         {
-            try { if (Directory.Exists(root)) return root; } catch (Exception) { }
+            try
+            {
+                if (ObsLaunchCore.IsInstallRoot(root, File.Exists, Directory.Exists)) return root;
+            }
+            catch (Exception) { }
         }
         return null;
     }
 
-    /// <summary>DisplayIcon 值形如 <c>"C:\...\bin\64bit\obs64.exe",0</c>：取 exe 路径后向上找含 obs-plugins 的安装根。</summary>
+    /// <summary>
+    /// DisplayIcon 值形如 <c>"C:\...\bin\64bit\obs64.exe",0</c>：解析 exe 后向上找安装根。
+    /// V3.7.3 起不再只认 <c>obs-plugins</c>（OBS 33 安装包已移除该目录）。
+    /// </summary>
     private static string? InstallDirFromDisplayIcon(string? displayIcon)
     {
-        if (string.IsNullOrWhiteSpace(displayIcon)) return null;
         try
         {
-            var exe = displayIcon.Trim();
-            // 去掉资源索引后缀（如 ",0"）
-            var comma = exe.LastIndexOf(',');
-            if (comma > 0 && int.TryParse(exe[(comma + 1)..].Trim(), out _)) exe = exe[..comma];
-            exe = exe.Trim('"');
-            if (!exe.EndsWith(".exe", StringComparison.OrdinalIgnoreCase)) return null;
-
-            var dir = Path.GetDirectoryName(exe);
-            for (var i = 0; i < 3 && !string.IsNullOrEmpty(dir); i++)
-            {
-                if (Directory.Exists(Path.Combine(dir, "obs-plugins"))) return dir;
-                dir = Path.GetDirectoryName(dir);
-            }
+            var exe = ObsLaunchCore.ExeFromDisplayIcon(displayIcon);
+            if (string.IsNullOrEmpty(exe)) return null;
+            return ObsLaunchCore.InstallRootFromExe(exe, File.Exists, Directory.Exists);
         }
         catch (Exception)
         {

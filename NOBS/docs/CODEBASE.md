@@ -96,14 +96,14 @@ NOBS/
 
 | 文件 | 职责 |
 |---|---|
-| `Services/ObsConfig/ObsPathService.cs` | OBS 配置目录定位（注册表 + 常见路径探测）。 |
+| `Services/ObsConfig/ObsPathService.cs` | OBS 配置目录定位（注册表 + 常见路径探测）；V3.7.3 安装根探测兼容 OBS 33 无 `obs-plugins` 的安装包。 |
 | `Services/ObsConfig/ObsSafePath.cs` | 路径安全护栏：防目录穿越，越界抛 `SafePathException`。 |
 | `Services/ObsConfig/ObsBackupService.cs` | 配置备份（zip 打包）与导入（校验、事务恢复）。 |
 | `Services/ObsConfig/ObsResetService.cs` | 配置重置（连接态校验、场景清空）。 |
 | `Services/ObsConfig/SceneTemplateService.cs` | 场景模板：在线落地（obs-websocket 建集合/场景/来源）与离线导出（JSON）。 |
 | `Services/ObsConfig/RecordingToolsService.cs` | 录像工具（V2.6）：录像目录解析与直达、ffmpeg 探测、MKV/Hybrid MP4 → MP4 无损转封装。 |
 | `Services/ObsConfig/SimpleRecordingCore.cs` | **简单录像纯逻辑**（V2.9.4）：三档预设、预设 → 推荐项、就绪判定、剩余可录估算、跨会话待回滚记录的存储键与文案口径。 |
-| `Services/ObsConfig/ObsLaunchCore.cs` | **拉起 OBS 的纯逻辑**（V2.9.4）：`DisplayIcon` 解析（含引号 / `,0` 后缀 / 目录名带逗号）、安装根推导四档、去重与存在性过滤。探测留在 `ObsPathService`，这里只做字符串与路径推导。 |
+| `Services/ObsConfig/ObsLaunchCore.cs` | **拉起 OBS 的纯逻辑**（V2.9.4，V3.7.3 扩展）：`DisplayIcon` 解析（含引号 / `,0` 后缀 / 目录名带逗号）、安装根推导四档 + **OBS 33 安装根识别**（`bin\64bit\obs64.exe` / `core` / `plugins` / `obs-plugins`）、去重与存在性过滤。探测留在 `ObsPathService`，这里只做字符串与路径推导。 |
 | `Services/ObsConfig/RecordingEnvService.cs` | 一键部署录制环境（V2.9.3）：双通道落地 + 备份 / 回滚 / 读回校验；V2.9.4 增加「录制 / 推流中」硬阻断（建计划与执行点各判一次）与只读快照。 |
 | `Services/ObsConfig/RecordingEnvCore.cs` | **一键部署录制环境的推荐项纯逻辑**（V2.9.3）与跨会话「待回滚记录」模型（V2.9.4）：每项给出「当前值 → 推荐值」与落地通道，由调用方决定勾选与落地方式。 |
 | `Services/Shell/SimpleRecordingService.cs` | **简单录像服务**（V2.9.4 / V3.1.0）：状态机与落地编排、首次同意后拉起 OBS、主动连接、可选倒计时、停止收尾（含命名模板）、跨会话回滚记录的落盘与恢复。 |
@@ -257,7 +257,7 @@ NOBS/
 |---|---|
 | `Services/Plugins/PluginCatalog.cs` | 目录模型与纯逻辑：JSON 解析、DLL 名匹配、分类分组、repo 归一化、维护状态（`maintain` / `maintainNote`）判定。 |
 | `Services/Plugins/PluginCatalogService.cs` | 目录数据访问（外部覆盖文件优先，内嵌种子兜底，可热重载）。 |
-| `Services/Plugins/PluginScannerCore.cs` | 本机插件扫描纯逻辑（枚举 DLL + 版本信息，只读）+ 候选目录合并 + **OBS 32.x 一插件一目录布局路径推导**（V2.9）。 |
+| `Services/Plugins/PluginScannerCore.cs` | 本机插件扫描纯逻辑（枚举 DLL + 版本信息，只读）+ 候选目录合并 + **OBS 33 / 32 一插件一目录布局路径推导**（V3.7.3）：`<根>\<插件>\<插件>.dll + data` 与 `<根>\<插件>\bin\64bit`。 |
 | `Services/Plugins/LocalPluginScanner.cs` | OBS 安装目录候选定位与体检入口（复用 ObsPathService 探测）。 |
 | `Services/Plugins/PluginReleaseService.cs` | GitHub Releases 最新版本查询（内存 + 磁盘双层缓存、在途合并、失败静默）。 |
 | `Services/Plugins/PluginWatchService.cs` | 关注插件启动静默查新（24h 节流，仅 Toast）。 |
@@ -265,7 +265,7 @@ NOBS/
 | `Services/Plugins/PluginInstallService.cs` | 插件事务安装 / 卸载 / 回滚：下载 → 校验 → staging → 备份 → 替换 → 写清单；OBS 运行中拒绝。 |
 | `Services/Plugins/PluginManagedListCore.cs` | 「本应用管理 + 本机检测」合并列表（V3.5.0）。 |
 | `Services/Plugins/GitHubSearchService.cs` | GitHub 搜索 / 最新 Release 查询（5 分钟搜索缓存、60 秒限流冷却）。 |
-| `Services/Plugins/LocalPluginManageCore.cs` | **本机插件管理纯逻辑（X1031Y2）**：识别一插件一目录 / 扁平布局、计算用户级 ⇄ 全局级迁移目标、校验可操作目录与插件单元。 |
+| `Services/Plugins/LocalPluginManageCore.cs` | **本机插件管理纯逻辑（X1031Y2，V3.7.3 扩展）**：识别 OBS 33 顶层 DLL / OBS 32 `bin\64bit` / 扁平布局，计算用户级 ⇄ 全局级与安装目录、便携模式 → 用户级迁移目标，校验可操作目录与插件单元。 |
 | `Services/Plugins/LocalPluginManageService.cs` | **本机插件管理（X1031Y2）**：卸载（整目录移入 local-backups）、迁移、接管管理、打开目录；OBS 运行中拒绝。 |
 
 ### 2.7 导航 / 错误码
@@ -306,8 +306,8 @@ NOBS/
 | 文件 | 职责 |
 |---|---|
 | `Localization/Strings.cs` | 文案表入口（纯 BCL、零 WPF）：当前语言、`T(key)` / `T(key, args)`、键集、语言标识归一化、缺键回退次序。 |
-| `Localization/StringTableZhHans.cs` | 简体中文文案（默认语言，**3665 条键**，按模块分段）。 |
-| `Localization/StringTableEnUs.cs` | English 文案（**3665 条键**，键集必须与中文表完全一致，有单测钉死）。 |
+| `Localization/StringTableZhHans.cs` | 简体中文文案（默认语言，**3667 条键**，按模块分段）。 |
+| `Localization/StringTableEnUs.cs` | English 文案（**3667 条键**，键集必须与中文表完全一致，有单测钉死）。 |
 | `Localization/ContentAssets.cs` | 随包离线内容的**按语言取资产**统一入口（V2.9.3）：外部缓存 → 当前语言内嵌 → 中文内嵌（最后一级兜底必写 WARN，否则英文用户会「安静地看到中文内容」）。 |
 | `Localization/DataValues.cs` | 数据驱动展示值的**跨语言**判定（severity / level / badge：中文「常见」与英文 `Common` 都认）。 |
 | `Services/LocalizationService.cs` | 语言服务：读 / 写偏好（`prefs.json` 的 `obshelper.language`）、解析首启语言（用户选择 > 安装向导 `language.ini` > 中文）、把整表写进 `Application.Resources`、广播 `Changed`。 |

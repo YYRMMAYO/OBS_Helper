@@ -967,7 +967,7 @@ public partial class MainWindow : Window
 
         Log($"[{DateTime.Now:HH:mm:ss}] done");
         await File.WriteAllTextAsync(Path.Combine(dir, "shots.txt"),
-            $"OBS_Helper V3.7.2 截图自检  {DateTime.Now:yyyy-MM-dd HH:mm:ss}{Environment.NewLine}" +
+            $"OBS_Helper V3.7.3 截图自检  {DateTime.Now:yyyy-MM-dd HH:mm:ss}{Environment.NewLine}" +
             $"窗口 {ActualWidth:0}x{ActualHeight:0} DIP；{shotCases.Length} 条路由 × 2 套皮肤（A 导播台 / C 排版手册）");
         Application.Current.Shutdown();
     }

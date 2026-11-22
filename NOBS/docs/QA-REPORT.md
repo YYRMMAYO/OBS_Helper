@@ -37,6 +37,7 @@
 
 | 文档 | 日期 / 基线 | 内容 | 结论是否仍然有效 |
 |---|---|---|---|
+| [`V3.7.3_IMPLEMENTATION_STATUS.md`](V3.7.3_IMPLEMENTATION_STATUS.md) | 2026-11-22 · V3.7.3 | 适配 OBS Studio 33.0.1：新插件布局、便携模式插件根、无 `obs-plugins` 安装目录探测、33 风格插件包校验；1912 项单测 | 当前版本状态 |
 | [`V3.5.3_IMPLEMENTATION_STATUS.md`](V3.5.3_IMPLEMENTATION_STATUS.md) | 2026-10-31 · V3.5.3 | 同步 X1031Y2 / X1031Y3 全部功能（X 专属图标除外）：插件与依赖一键配置、本机插件管理、手机摄像头推流 / 检测 / 防火墙、whisper 模型、功能中心运行环境准备、自动归档与录像索引；1809 项单测与双 TFM 出包记录 | 当前版本状态；签名边界（无证书）仍成立 |
 | [`V3.5.2_IMPLEMENTATION_STATUS.md`](V3.5.2_IMPLEMENTATION_STATUS.md) | 2026-10-31 · V3.5.2 | 录制 / 直播状态可信度修复、手机刷新状态、批量协议修正、三轮真实 OBS 实测与本地出包记录 | 历史版本记录；状态修复结论仍有效 |
 | [`V3.5.1_IMPLEMENTATION_STATUS.md`](V3.5.1_IMPLEMENTATION_STATUS.md) | 2026-10-31 · V3.5.1 | 图标描边/语义修复、手机改提词稿同步、赞助码、三轮校验与本地出包记录 | 历史版本记录 |

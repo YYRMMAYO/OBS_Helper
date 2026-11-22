@@ -150,12 +150,18 @@ public class PluginInstallCoreTests
     }
 
     [Fact]
-    public void DllLayout_Requires64Bit()
+    public void DllLayout_AcceptsObs33TopLevelAndLegacyLayouts_ButRejectsExplicit32Bit()
     {
+        // OBS 33：DLL 与 data 同级，路径里没有 64bit / x64
+        Assert.Equal("", PluginInstallCore.ValidateDllLayout(new[] { "obs-helper-dock/obs-helper-dock.dll" }));
+        Assert.Equal("", PluginInstallCore.ValidateDllLayout(new[] { "plugin.dll" }));
+        // OBS 32 / 旧布局继续接受
         Assert.Equal("", PluginInstallCore.ValidateDllLayout(new[] { "bin/64bit/plugin.dll" }));
         Assert.Equal("", PluginInstallCore.ValidateDllLayout(new[] { "obs-plugins/64bit/plugin.dll" }));
         Assert.Equal("PLUGIN_NO_DLL", PluginInstallCore.ValidateDllLayout(new[] { "readme.md" }));
+        // 明确标成 32 位的包仍然拒绝；真正的架构随后由 PE 头复核
         Assert.Equal("PLUGIN_NO_X64_DLL", PluginInstallCore.ValidateDllLayout(new[] { "bin/32bit/plugin.dll" }));
+        Assert.Equal("PLUGIN_NO_X64_DLL", PluginInstallCore.ValidateDllLayout(new[] { "x86/plugin.dll" }));
     }
 
     [Fact]

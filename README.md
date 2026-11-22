@@ -4,19 +4,19 @@
 
 **OBS帮助助手 · OBS Helper** —— 面向直播新手的 OBS 排障 / 录制 / 推流助手（Windows 原生 WPF）
 
-**当前版本：V3.7.2**（正式版） · 双主题 UI：黑夜「导播台」/ 白天「排版手册」，编号目录、发丝线分节与 tally 时间码
+**当前版本：V3.7.3**（正式版） · OBS Studio 33.0.1 适配：新插件布局、便携插件根与安装目录探测
 
-**本版主线**：把界面拆成两套设计语言——**黑夜 → A · 导播台**（机柜黑、信号青、圆角面板、图标导航、OFF AIR/ON AIR tally 与时间码），**白天 → C · 排版手册**（纸白、信号蓝、发丝线分节、01–16 编号目录、37 px 细体标题、黑色直角按钮）。首页按排版手册参考图重排为「数据条 + 编号分节 + 大字号 hero + 并排录像/开播 + 大号计时读数」。两套皮肤共用同一路由与页面逻辑，切换不丢焦点、不重连 OBS；自定义浅色背景在 A 下自动压暗。详见 [`NOBS/RELEASE_NOTES_v3.7.2.md`](NOBS/RELEASE_NOTES_v3.7.2.md)。
+**本版主线**：对齐 **OBS Studio 33.0.1**——识别 OBS 33 的「一插件一目录」新布局（`<插件名>\<插件名>.dll + data`）、便携模式插件根 `<OBS 目录>\plugins`，并修正 OBS 33 安装包不再包含 `obs-plugins` 后安装目录探测不到、33 风格插件包被误判为「没有 64 位 DLL」的问题。旧 `bin\64bit` / `obs-plugins\64bit` 布局继续兼容。详见 [`NOBS/RELEASE_NOTES_v3.7.3.md`](NOBS/RELEASE_NOTES_v3.7.3.md)。
 
 [![CI](https://github.com/YYRMMAYO/OBS_Helper/actions/workflows/ci.yml/badge.svg)](https://github.com/YYRMMAYO/OBS_Helper/actions/workflows/ci.yml)
 [![平台](https://img.shields.io/badge/Platform-Windows_7_SP1%2B_%2F_10_%2F_11-0078D6.svg)]()
 [![.NET](https://img.shields.io/badge/.NET-10_%2F_6-512BD4.svg)]()
 [![技术栈](https://img.shields.io/badge/Stack-WPF_%2F_C%23-239120.svg)]()
-[![版本](https://img.shields.io/badge/Release-3.7.2-38bdf8.svg)](https://github.com/YYRMMAYO/OBS_Helper/releases)
-[![OBS](https://img.shields.io/badge/OBS-32.2.2-302E31.svg)](https://github.com/obsproject/obs-studio/releases)
+[![版本](https://img.shields.io/badge/Release-3.7.3-38bdf8.svg)](https://github.com/YYRMMAYO/OBS_Helper/releases)
+[![OBS](https://img.shields.io/badge/OBS-33.0.1-302E31.svg)](https://github.com/obsproject/obs-studio/releases)
 [![离线可用](https://img.shields.io/badge/offline--first-2ea44f.svg)]()
 [![增量更新](https://img.shields.io/badge/Incremental%20Update-3.9MB-7dd3fc.svg)]()
-[![测试](https://img.shields.io/badge/Tests-1902%20passed-2ea44f.svg)]()
+[![测试](https://img.shields.io/badge/Tests-1912%20passed-2ea44f.svg)]()
 [![许可](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
 [English](README.en.md) · **简体中文**
@@ -24,7 +24,7 @@
 </div>
 
 > **本仓库默认分支是 `master`（正式版 / 稳定通道）**：功能收敛、经过完整回归与发布验证，适合日常直播 / 录制。
-> **只有 V 系列与 X 系列两个发布通道**：V 系列使用 `V主.次.修`（如 `V3.7.2`），X 系列使用 `X` + `MMdd` 日期码（如 `X1031`）；没有 DEV 测试版分支或测试标签。
+> **只有 V 系列与 X 系列两个发布通道**：V 系列使用 `V主.次.修`（如 `V3.7.3`），X 系列使用 `X` + `MMdd` 日期码（如 `X1031`）；没有 DEV 测试版分支或测试标签。
 
 **OBS帮助助手**（V2.9.6 前的名字是「OBS 排障助手」，同一个软件、同一条升级链路）是面向直播新手的 OBS Studio 排障与录制助手：**纯离线可用**——208 条问题的知识库、排障指引、日志分析规则全部内嵌在程序里，不联网也能查；连上本机 OBS 之后还能做一键体检、远程控制场景 / 录制 / 推流、部署录制环境。**V2.9.4 起**，从「配好 OBS」到「开始录制」被收进首页一张卡；**V3.1.0 起** OBS 没开也能一键拉起并开录；**V3.1.1** 补齐了提词器的手动上下移动与窗口位置微调；**V3.3.0** 新增「虚拟直播」工作台（Live2D 形象 · 6 套直播间模板 · 16 个平台开播引导）、插件广场一键安装 / 回滚 / GitHub 搜索导入，以及无障碍模式与老年模式；**V3.4.0** 把手机接进直播工作流：扫码遥控 / 监看 / 提词 / 补光 / 快传、手机当 Wi-Fi 摄像头与麦克风，并交付弹幕聚合、本地实时字幕、复盘/切片、多平台转推、MIDI/灯光与团队协作。
 
@@ -32,7 +32,7 @@
 
 > **兼容性**：主构建面向 **Windows 10 / 11**（.NET 10）；另有一套 **Windows 7 SP1 兼容构建**（.NET 6，最后一个支持 Win7 的 .NET 版本），安装包与便携包都在 Release 里，按系统选一个即可。
 >
-> **OBS 版本适配**：当前对齐 **OBS Studio 32.2.2**（截至本版发布时的稳定版）——日志解析、配置键、obs-websocket 协议与本机插件扫描（含 32.x 新增的「一插件一目录」插件根）均已按真实 32.2.2 环境核对，详见 [V2.9.3 发布说明](https://github.com/YYRMMAYO/OBS_Helper/releases/tag/V2.9.3)。
+> **OBS 版本适配**：当前对齐 **OBS Studio 33.0.1**（截至本版发布时的稳定版）——安装目录探测、本机插件扫描 / 管理 / 插件包校验均已按 OBS 33 的官方安装包布局适配：新插件根为 `<插件名>\<插件名>.dll + data`，便携模式为 `<OBS 目录>\plugins`；旧 `bin\64bit` / `obs-plugins\64bit` 布局继续识别（OBS 34 起官方不再加载）。日志分析规则仍以 OBS 32.2.2 的真实日志为核对基线。详见 [`NOBS/RELEASE_NOTES_v3.7.3.md`](NOBS/RELEASE_NOTES_v3.7.3.md)。
 
 > **文档分工**：仓库根这份 README 是**面向用户的完整说明**（功能 · 使用 · 诊断 · 隐私 · 安装 · 构建）；更偏开发与历史的细节（质量基线、逐版本发布说明、代码清单、架构总览）在 [`NOBS/README.md`](NOBS/README.md)。改 README / 发布说明前先读 [`docs/BRANCH_AND_DOC_RULES.md`](docs/BRANCH_AND_DOC_RULES.md)。
 
@@ -50,7 +50,7 @@
 | 先看它能干什么、怎么用 | 往下读「[5 分钟上手](#5-分钟上手)」与「[功能详解](#功能详解)」 |
 | 读开发向的完整文档（质量基线 · 历史版本 · 代码清单） | [`NOBS/README.md`](NOBS/README.md) |
 | Full documentation in English | [`README.en.md`](README.en.md) · [`NOBS/README.en.md`](NOBS/README.en.md) |
-| 这一版改了什么 | [`NOBS/RELEASE_NOTES_v3.7.2.md`](NOBS/RELEASE_NOTES_v3.7.2.md) |
+| 这一版改了什么 | [`NOBS/RELEASE_NOTES_v3.7.3.md`](NOBS/RELEASE_NOTES_v3.7.3.md) |
 | 改文档前先看：哪类文档放 master / 哪类放 dev | [`docs/BRANCH_AND_DOC_RULES.md`](docs/BRANCH_AND_DOC_RULES.md) |
 | 反馈问题 / 上报安全漏洞 | [Issues](https://github.com/YYRMMAYO/OBS_Helper/issues) · [SECURITY.md](SECURITY.md) |
 | 许可证 | [LICENSE](LICENSE)（MIT） |
@@ -79,9 +79,9 @@
 | **一键部署录制环境** | 逐项列出「录制向」推荐值与当前值（录像格式 / 质量 / 目录 / 画布与输出 / 帧率 / 采样率），勾选后**先自动备份**再落地，可一键回滚；连上 OBS 走 obs-websocket 即时生效，OBS 已退出则改 `basic.ini` 并**读回校验** |
 | **提词器（V3.1.0 / V3.1.1）** | 独立置顶窗：自动滚动、速度 / 字号 / 行高 / 透明度 / 边距可调；水平 / 垂直镜像、点击穿透、3-2-1 倒计时、阅读参考线；脚本可编辑 / 粘贴 / 导入 `.txt` `.md`；V3.1.1 补齐**工具栏 / 拖动 / 滚轮 / 键盘**四条手动上下移动，窗口可 `Ctrl + 方向键` 微调 |
 | **远程控制 OBS** | 场景切换、元素显隐、音频静音与音量、录制 / 推流 / 虚拟摄像头、实时统计、定时停止、打开录制目录——**控制台、系统托盘、迷你小窗、全局热键**四种入口随时可用；还能按前台窗口标题自动切场景 |
-| **插件广场 + 本机体检** | **57 个精选插件**（8 大分类，v1.4 目录全量复核），卡片标注维护状态并直达 GitHub Releases；**只读扫描本机已装插件**，全盘定位 OBS 安装目录（注册表多视图 / 全盘驱动器 / Steam 多库）并覆盖 OBS 32.x 的「一插件一目录」插件根 |
+| **插件广场 + 本机体检** | **57 个精选插件**（8 大分类，v1.4 目录全量复核），卡片标注维护状态并直达 GitHub Releases；**只读扫描本机已装插件**，全盘定位 OBS 安装目录（注册表多视图 / 全盘驱动器 / Steam 多库，OBS 33 安装包没有 `obs-plugins` 也能识别），覆盖用户级 / 全局级 / 便携模式三个插件根，并同时识别 OBS 33 的 `<插件名>\<插件名>.dll + data` 与 OBS 32 的 `bin\64bit` 布局 |
 | **场景模板与直播搭建** | **22 套内置直播间模板**（游戏直播 / 竖屏口播带货 / 双人连麦 / 教学录屏 / 电台待机 / 开播·BRB·下播三件套 / 绿幕虚拟背景 / 带货双机位 / 电竞赛事解说 / 播客对谈 / 竖屏短视频录制 / 会议课程多机位），连上 OBS 一键生成场景与来源；未连接时可导出为标准场景集合 JSON。另有 6 步开播流程与 B站 / 抖音 / 快手 / 视频号 / 小红书 / YouTube / Twitch 等主流平台推流配置 |
-| **中文 / English 双语** | 界面、托盘、通知、报错、日志规则、体检结论、诊断报告全部双语（**3388 条文案键**），**默认中文**，切换即时生效、不用重启；随包内容（知识库 / 模板 / 插件目录 / 排障指引）也是中英双份 |
+| **中文 / English 双语** | 界面、托盘、通知、报错、日志规则、体检结论、诊断报告全部双语（**3667 条文案键**），**默认中文**，切换即时生效、不用重启；随包内容（知识库 / 模板 / 插件目录 / 排障指引）也是中英双份 |
 | **数据安全（V3.0 主线）** | 写用户文件统一走**事务通道**：写前快照 + 原子替换 + 校验读回 + 失败回滚；所有写入先解析绝对路径并做**越界护栏**；OBS 密码 / API Key 等机密独立加密存储 |
 | **隐私优先** | 偏好文件不含任何凭据；密码与 API Key **双层加密**（AES-256-GCM + DPAPI，绑定本机与本用户）；只有你主动发起 AI 诊断才联网，请求前先脱敏；插件体检全程只读、结果仅存本机 |
 | **增量更新，更新更轻** | 应用内「增量更新」只下载变更文件（相邻版本增量包通常只有几 MB）；逐文件 SHA-256 校验，失败自动回退完整安装包；安装版自动提权替换并重启。知识库 / 插件目录可单独更新 |
@@ -239,11 +239,11 @@
 
 | 通道 | 版本号样式 | 定位 | 更新来源 |
 | --- | --- | --- | --- |
-| **V 系列**（`master`） | `V3.7.2` | **稳定优先**：功能收敛、经过完整回归与发布验证，适合日常直播 / 录制 | 正式 Release 页 · 蓝奏云 · 应用内增量更新 |
+| **V 系列**（`master`） | `V3.7.3` | **稳定优先**：功能收敛、经过完整回归与发布验证，适合日常直播 / 录制 | 正式 Release 页 · 蓝奏云 · 应用内增量更新 |
 | **X 系列**（`master`） | `X1031` / `X1031Y2` / `X1031Y3` | **独立大版本**：`X` + `MMdd` 日期码，含 X 专属图标；更新检查只看 `X` 标签 | X 系列 Release 页 · 应用内更新 |
 
 - **两个系列共用功能与数据目录**：安装目录、程序集名、`%LocalAppData%\OBS_Helper` 都不变，升级链路一致。
-- **通道过滤在解析层完成**：V 构建只认 `V3.7.2` 这类 V tag，X 构建只认 `X1031` 这类 X tag；两类 tag 挂在同一个仓库里，也不会互相被当成新版本。
+- **通道过滤在解析层完成**：V 构建只认 `V3.7.3` 这类 V tag，X 构建只认 `X1031` 这类 X tag；两类 tag 挂在同一个仓库里，也不会互相被当成新版本。
 - **X 版本号规则**：`X` 后面的四位是日期 `MMdd`（`X1031` = 10 月 31 日）。同一天再次发版时追加 `Y1`、`Y2`、`Y3`…；更新检测先比日期，日期相同再比 Y 序号，所以 `X1031Y2 > X1031`、`X1101 > X1031Y99`。
 - **X 更新提示**：检测到新版本后，更新弹窗会直接从 GitHub Release 拉取本版更新说明并展示；拉取失败时不影响检查与下载。
 - **X1031 范围小于 V3.5.0**：X1031 含需求 1–9 与新图标，但不含全局背景 UI 重构、手机连接页重排与功能中心体验优化；V3.5.0 含这些 UI 内容，但按需求继续使用原应用图标。
@@ -353,7 +353,7 @@ NOBS/
       Obs/                 WebSocket 客户端、连接服务、日志分析、脱敏
       ObsConfig/           OBS 配置定位、备份/导出/导入、重置、场景模板落地、
                            RecordingEnvCore/Service（一键部署录制环境：推荐项 + INI 打补丁）
-      Plugins/             插件广场：目录数据 / 本机体检扫描（含 OBS 32.x 插件根）/ Releases 查新 / 关注提醒
+      Plugins/             插件广场：目录数据 / 本机体检扫描（OBS 33 / 32 双布局 + 用户级 / 全局级 / 便携根）/ Releases 查新 / 关注提醒
       Update/              增量更新、知识库独立更新（按语言分发）、安装包自动清理、
                            ObsDownloadLinks / FeedbackLinks（出站白名单常量）
       Ai/                  本地 / 免费 / 云端诊断引擎与编排（含免费档本地限频器）
@@ -384,15 +384,16 @@ XAML 一律用 `DynamicResource`（主题键直接用、文案键写作 `Loc.<�
 
 ## 质量基线与已知边界
 
-- **1902 项单元测试全部通过**（V3.7.2：连续 4 轮全量 + 双目标构建 + Headless 自检 + 静态检查）；测试工程直接链接纯逻辑源文件，不引用整个 WPF 工程；
+- **1912 项单元测试全部通过**（V3.7.3：双目标构建 + Headless 自检 + 静态检查）；测试工程直接链接纯逻辑源文件，不引用整个 WPF 工程；
 - **Headless 自检 37 项全部 PASS**（覆盖 29 条路由用例 + 8 项非路由检查：新手引导覆盖层（含逐步跳转校验）、迷你小窗、文案资源解析、语言切换往返、逐页语言重放、内容回退提示条、D7 连接态护栏、双构建协议分支），**主构建与 Win7 兼容构建各跑一次**；
 - CI 接入 XAML 资源引用、中英文案键对等、无障碍静态检查、Headless 自检与增量包端到端升级（全文件 SHA-256 比对）等门禁；[`NOBS/docs/reviews/`](NOBS/docs/reviews/) 下保留分视角审校记录，并如实标注哪些结论有机器证据、哪些只是人工核对；
-- **已知边界**：① Windows 7 真机未验证（只做到目标框架可编译 + 安装包 MinVersion 正确下发），旧协议（obs-websocket 4.x）也未对真实 OBS 27 验证；② 英译未经母语者校订、未逐条核对英文版 OBS 菜单路径；③ 一键部署的两条通道按协议 / 键名实现并有单测，但未对真实 OBS 跑过端到端落地；④ 无障碍只做到代码级适配 + 静态检查，未经 NVDA / Narrator 实测（详见 [`ACCESSIBILITY.md`](ACCESSIBILITY.md)）；⑤ 发布产物未做代码签名，SmartScreen 可能提示未知发布者；⑥ .NET 6 已停止安全更新，兼容构建是「必须跑 Win7」时的退路，新机器请用主构建。
+- **已知边界**：① Windows 7 真机未验证（只做到目标框架可编译 + 安装包 MinVersion 正确下发），旧协议（obs-websocket 4.x）也未对真实 OBS 27 验证；② 英译未经母语者校订、未逐条核对英文版 OBS 菜单路径；③ 一键部署的两条通道按协议 / 键名实现并有单测，但未对真实 OBS 跑过端到端落地；④ 无障碍只做到代码级适配 + 静态检查，未经 NVDA / Narrator 实测（详见 [`ACCESSIBILITY.md`](ACCESSIBILITY.md)）；⑤ 发布产物未做代码签名，SmartScreen 可能提示未知发布者；⑥ .NET 6 已停止安全更新，兼容构建是「必须跑 Win7」时的退路，新机器请用主构建；⑦ OBS 33 适配依据官方 33.0.1 安装包的文件布局与单测，未在装有 OBS 33 的机器上逐项点击插件安装 / 卸载 / 迁移全流程。
 
 ## 版本历史
 
 | 版本 | 重点 | 发布说明 |
 | --- | --- | --- |
+| **V3.7.3** | 适配 OBS Studio 33.0.1：新插件布局 `<插件名>\<插件名>.dll + data`、便携模式插件根、无 `obs-plugins` 安装目录探测、33 风格插件包校验；1912 项单测 | [`RELEASE_NOTES_v3.7.3.md`](NOBS/RELEASE_NOTES_v3.7.3.md) |
 | **V3.7.2** | 双主题 UI：黑夜「导播台」/ 白天「排版手册」；编号目录、发丝线分节、tally 时间码、皮肤令牌与对比度修正；1902 项单测 + 50 张截图自检 | [`RELEASE_NOTES_v3.7.2.md`](NOBS/RELEASE_NOTES_v3.7.2.md) |
 | **V3.7.1** | 手机当摄像头链路深化：Larix Grove 扫码、Larix 安装入口、WHIP 低延迟、回环推流鉴权与 key 撤销、WebRTC Origin 收口、浏览器 HTTPS 边界 | [`RELEASE_NOTES_v3.7.1.md`](NOBS/RELEASE_NOTES_v3.7.1.md) |
 | **V3.7.0** | 落实 V3.6 待办：计时器 CSV / 首页卡 / 设置分区 / 托盘状态、控制台搜索、日志筛选、错误码查知识库、连接向导、托盘菜单自定义、热键一键恢复、安全模式、插件查询退避 | [`RELEASE_NOTES_v3.7.0.md`](NOBS/RELEASE_NOTES_v3.7.0.md) |

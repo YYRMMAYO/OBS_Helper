@@ -4,19 +4,19 @@
 
 **OBS Helper · OBS帮助助手** — an OBS troubleshooting / recording / streaming assistant for streamers who are just getting started (native Windows WPF)
 
-**Current release: V3.7.2** (stable) · dual-theme UI: dark “Signal Desk” and light “Field Manual”, numbered contents, hairline sections and tally timecode
+**Current release: V3.7.3** (stable) · OBS Studio 33.0.1 alignment: new plugin layout, portable plugin root and install detection
 
-**Focus of this release**: the interface now has two design languages — **dark → A · Signal Desk** (cabinet black, signal cyan, rounded panels, icon navigation, OFF AIR/ON AIR tally and timecode) and **light → C · Field Manual** (paper white, signal blue, hairline sections, 01–16 numbered contents, 37 px light headings, square black buttons). The home page follows the Field Manual board: live data strip, numbered sections, large hero with a phone-link panel, side-by-side record/stream, and a large timer readout. Both skins share the same routes and page logic: switching keeps focus, scroll position, OBS connection and recording/streaming state. Light custom backgrounds are automatically dimmed in A. See [`NOBS/RELEASE_NOTES_v3.7.2.md`](NOBS/RELEASE_NOTES_v3.7.2.md).
+**Focus of this release**: align with **OBS Studio 33.0.1** — recognise the OBS 33 per-plugin layout (`<name>\<name>.dll + data`), the portable-mode plugin root `<OBS folder>\plugins`, and fix the cases where the OBS 33 installer no longer ships an `obs-plugins` folder (install detection failed) or a 33-style plugin zip was rejected as “no 64-bit DLL”. The older `bin\64bit` / `obs-plugins\64bit` layouts remain supported. See [`NOBS/RELEASE_NOTES_v3.7.3.md`](NOBS/RELEASE_NOTES_v3.7.3.md).
 
 [![CI](https://github.com/YYRMMAYO/OBS_Helper/actions/workflows/ci.yml/badge.svg)](https://github.com/YYRMMAYO/OBS_Helper/actions/workflows/ci.yml)
 [![Platform](https://img.shields.io/badge/Platform-Windows_7_SP1%2B_%2F_10_%2F_11-0078D6.svg)]()
 [![.NET](https://img.shields.io/badge/.NET-10_%2F_6-512BD4.svg)]()
 [![Stack](https://img.shields.io/badge/Stack-WPF_%2F_C%23-239120.svg)]()
-[![Release](https://img.shields.io/badge/Release-3.7.2-38bdf8.svg)](https://github.com/YYRMMAYO/OBS_Helper/releases)
-[![OBS](https://img.shields.io/badge/OBS-32.2.2-302E31.svg)](https://github.com/obsproject/obs-studio/releases)
+[![Release](https://img.shields.io/badge/Release-3.7.3-38bdf8.svg)](https://github.com/YYRMMAYO/OBS_Helper/releases)
+[![OBS](https://img.shields.io/badge/OBS-33.0.1-302E31.svg)](https://github.com/obsproject/obs-studio/releases)
 [![offline-first](https://img.shields.io/badge/offline--first-2ea44f.svg)]()
 [![Incremental Update](https://img.shields.io/badge/Incremental%20Update-3.9MB-7dd3fc.svg)]()
-[![Tests](https://img.shields.io/badge/Tests-1902%20passed-2ea44f.svg)]()
+[![Tests](https://img.shields.io/badge/Tests-1912%20passed-2ea44f.svg)]()
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
 **English** · [简体中文](README.md)
@@ -24,7 +24,7 @@
 </div>
 
 > **The default branch of this repository is `master` (stable channel)**: settled features, full regression and release verification — the right choice for everyday streaming and recording.
-> **There are only two release channels: V series and X series.** V releases use `Vmajor.minor.patch` (such as `V3.7.2`); X releases use `X` + an `MMdd` date code (such as `X1031`). There is no DEV test branch or test tag.
+> **There are only two release channels: V series and X series.** V releases use `Vmajor.minor.patch` (such as `V3.7.3`); X releases use `X` + an `MMdd` date code (such as `X1031`). There is no DEV test branch or test tag.
 
 **OBS Helper** (known as 「OBS 排障助手」 before V2.9.6 — the same app on the same upgrade path) is an OBS Studio troubleshooting and recording assistant for streamers who are just getting started: **it works fully offline** — the 208-entry knowledge base, the troubleshooting guide and the log-analysis rules are all embedded in the app, so they are searchable without a connection; once connected to the local OBS you also get one-click health checks, remote control of scenes / recording / streaming, and recording-environment deployment. **Since V2.9.4** the whole journey from "configure OBS" to "start recording" fits into one card on the home page; **since V3.1.0** OBS can also be launched and recording started with one click when it is not running; **V3.1.1** completed the teleprompter's manual up/down movement and window nudging; **V3.3.0** adds the **Virtual Live** workspace (Live2D avatar · 6 room templates · 16-platform go-live guidance), one-click plugin install / rollback / GitHub search, and Accessibility / Elder modes; **V3.4.0** brings the phone into the streaming workflow: QR remote / monitor / teleprompter / fill light / file upload, phone as a Wi-Fi camera and microphone, plus chat aggregation, local live captions, review/clips, multi-platform relay, MIDI/lighting and team collaboration.
 
@@ -32,7 +32,7 @@ This is the **native WPF rewrite** of the original Blazor WebAssembly + WebView2
 
 > **Compatibility**: the main build targets **Windows 10 / 11** (.NET 10); a separate **Windows 7 SP1 compatible build** (.NET 6, the last .NET version that supports Win7) ships as both installer and portable ZIP in Releases — pick whichever matches your system.
 >
-> **OBS version alignment**: currently aligned with **OBS Studio 32.2.2** (the stable version at the time of this release) — log parsing, config keys, the obs-websocket protocol and the local plugin scan (including the "one folder per plugin" plugin root added in 32.x) have all been verified against a real 32.2.2 environment. See the [V2.9.3 release notes](https://github.com/YYRMMAYO/OBS_Helper/releases/tag/V2.9.3) for details.
+> **OBS version alignment**: currently aligned with **OBS Studio 33.0.1** (the stable version at the time of this release) — install-directory detection, the local plugin scan / management and plugin-package validation follow the official OBS 33 layout: plugins live at `<name>\<name>.dll + data`, and portable mode uses `<OBS folder>\plugins`. The older `bin\64bit` / `obs-plugins\64bit` layouts are still recognised (OBS 34 stops loading them). Log-analysis rules remain tuned against a real OBS 32.2.2 log. See [`NOBS/RELEASE_NOTES_v3.7.3.md`](NOBS/RELEASE_NOTES_v3.7.3.md) for details.
 
 > **Where the docs live**: this README at the repository root is the **complete user-facing guide** (features · usage · diagnostics · privacy · installation · build); developer- and history-oriented details (quality baseline, per-release notes, code inventory, architecture overview) live in [`NOBS/README.md`](NOBS/README.md). Read [`docs/BRANCH_AND_DOC_RULES.md`](docs/BRANCH_AND_DOC_RULES.md) before editing a README or release notes.
 
@@ -50,7 +50,7 @@ This is the **native WPF rewrite** of the original Blazor WebAssembly + WebView2
 | See what it can do and how to use it first | Read on: [5-minute quick start](#5-minute-quick-start) and [Features](#features) |
 | Read the developer-oriented full documentation (quality baseline · release history · code inventory) | [`NOBS/README.md`](NOBS/README.md) |
 | Full documentation in Chinese | [`README.md`](README.md) · [`NOBS/README.md`](NOBS/README.md) |
-| What changed in this release | [`NOBS/RELEASE_NOTES_v3.7.2.md`](NOBS/RELEASE_NOTES_v3.7.2.md) |
+| What changed in this release | [`NOBS/RELEASE_NOTES_v3.7.3.md`](NOBS/RELEASE_NOTES_v3.7.3.md) |
 | Before editing docs: which documents belong on master, which on dev | [`docs/BRANCH_AND_DOC_RULES.md`](docs/BRANCH_AND_DOC_RULES.md) |
 | Report a bug / disclose a security vulnerability | [Issues](https://github.com/YYRMMAYO/OBS_Helper/issues) · [SECURITY.md](SECURITY.md) |
 | License | [LICENSE](LICENSE) (MIT) |
@@ -78,9 +78,9 @@ This is the **native WPF rewrite** of the original Blazor WebAssembly + WebView2
 | **One-click recording environment** | Lists the recording-oriented recommended and current values item by item (recording format / quality / folder / canvas & output / frame rate / sample rate); tick what you want and it **backs up first**, then applies, with one-click rollback. Connected to OBS it goes through obs-websocket and takes effect immediately; if OBS has exited it edits `basic.ini` and **reads it back to verify** |
 | **Teleprompter (V3.1.0 / V3.1.1)** | A separate always-on-top window: auto-scroll, adjustable speed / font size / line height / opacity / margins; horizontal / vertical mirroring, click-through, a 3-2-1 countdown and a reading guide line; the script can be edited / pasted / imported from `.txt` `.md`; V3.1.1 adds **four independent ways to move up and down** — toolbar / dragging / wheel / keyboard — and the window can be nudged with `Ctrl + arrow keys` |
 | **Remote-control OBS** | Scene switching, source visibility, audio mute and volume, record / stream / virtual camera, live stats, scheduled stop, open the recording folder — always at hand through **four entry points: console, system tray, mini window and global hotkeys**; scenes can also switch automatically based on the foreground window title |
-| **Plugin square + local health check** | **57 curated plugins** (8 categories, the v1.4 catalog fully re-audited); cards show maintenance status and link straight to GitHub Releases; a **read-only scan of locally installed plugins** locates the OBS install folder across drives (multi-view registry / every fixed drive / multiple Steam libraries) and covers the OBS 32.x "one folder per plugin" plugin root |
+| **Plugin square + local health check** | **57 curated plugins** (8 categories, the v1.4 catalog fully re-audited); cards show maintenance status and link straight to GitHub Releases; a **read-only scan of locally installed plugins** locates the OBS install folder across drives (multi-view registry / every fixed drive / multiple Steam libraries — even when the OBS 33 installer ships no `obs-plugins` folder), covers per-user / global / portable plugin roots, and recognises both the OBS 33 `<name>\<name>.dll + data` layout and the OBS 32 `bin\64bit` layout |
 | **Scene templates and stream setup** | **12 built-in live-room templates** (Gaming Stream / Vertical Live Selling / Duo Co-Stream / Teaching Screen Recording / Radio Idle / Go-Live / BRB / End Pack / Green Screen Background / Selling Dual Camera / Esports Cast / Podcast Talk / Vertical Short Recording / Meeting/Class Multicam) — with OBS connected, one click creates the scenes and sources; when not connected you can export a standard scene-collection JSON. There is also a 6-step go-live walkthrough plus streaming presets for Bilibili / Douyin / Kuaishou / WeChat Channels / Xiaohongshu / YouTube / Twitch and other major platforms |
-| **Chinese / English bilingual** | The interface, tray, notifications, errors, log rules, health-check verdicts and diagnostic reports are all bilingual (**3388 string keys**), **Simplified Chinese by default**, and switching takes effect instantly with no restart; bundled content (knowledge base / templates / plugin catalog / troubleshooting guide) is bilingual too |
+| **Chinese / English bilingual** | The interface, tray, notifications, errors, log rules, health-check verdicts and diagnostic reports are all bilingual (**3667 string keys**), **Simplified Chinese by default**, and switching takes effect instantly with no restart; bundled content (knowledge base / templates / plugin catalog / troubleshooting guide) is bilingual too |
 | **Data safety (the V3.0 focus)** | All writes to user files go through a **transactional channel**: snapshot before writing + atomic replace + read-back verification + rollback on failure; every write resolves the absolute path first and passes an **out-of-bounds guard**; secrets such as OBS passwords and API keys are encrypted and stored separately |
 | **Privacy first** | Preferences contain no credentials at all; passwords and API keys are **double-encrypted** (AES-256-GCM + DPAPI, bound to this machine and this user); the app only goes online when you start an AI diagnostic, and logs are sanitized first; the plugin health check is entirely read-only and its results stay on this machine |
 | **Incremental updates, lighter by design** | The in-app "incremental update" downloads only changed files (a delta between neighbouring versions is usually just a few MB); every file is verified with SHA-256, and on failure it falls back to the full installer automatically; installed builds auto-elevate, swap files and restart. The knowledge base / plugin catalog can be updated separately |
@@ -238,11 +238,11 @@ This ships in the current build; you only fill in the OBS address once:
 
 | Channel | Version style | What it is | Where updates come from |
 | --- | --- | --- | --- |
-| **V series** (`master`) | `V3.7.2` | **Stable first**: settled features, full regression and release verification — the right choice for everyday streaming / recording | The regular Releases page · the Lanzou mirror · in-app incremental updates |
+| **V series** (`master`) | `V3.7.3` | **Stable first**: settled features, full regression and release verification — the right choice for everyday streaming / recording | The regular Releases page · the Lanzou mirror · in-app incremental updates |
 | **X series** (`master`) | `X1031` / `X1031Y2` / `X1031Y3` | **Independent major line**: `X` + `MMdd` date codes and the X-specific icon; updates only look at `X` tags | X-series Releases · in-app update |
 
 - **Both series share features and the data folder**: install folder, assembly name and `%LocalAppData%\OBS_Helper` are unchanged, so the upgrade path is identical.
-- **Channel filtering happens in the parser**: V builds only recognise `V3.7.2`-style tags; X builds only recognise `X1031`-style tags. They never mistake one another for a newer version.
+- **Channel filtering happens in the parser**: V builds only recognise `V3.7.3`-style tags; X builds only recognise `X1031`-style tags. They never mistake one another for a newer version.
 - **X version rule**: the four digits after `X` are an `MMdd` date (`X1031` = October 31). A second release on the same day appends `Y1`, `Y2`, `Y3`…; update checks compare the date first, then the Y revision, so `X1031Y2 > X1031` and `X1101 > X1031Y99`.
 - **X update prompt**: when an update is found, the dialog fetches this release's notes from GitHub and shows them in place; a failed fetch never blocks checking or downloading.
 - **X1031 is smaller than V3.5.0**: X1031 contains items 1–9 and the new icon, but not the global background UI refactor, mobile page layout or Feature Center UX work. V3.5.0 contains those UI changes but keeps the original icon as requested.
@@ -352,7 +352,7 @@ NOBS/
       Obs/                 WebSocket client, connection service, log analysis, sanitization
       ObsConfig/           OBS config discovery, backup / export / import, reset, scene-template deployment,
                            RecordingEnvCore/Service (one-click recording environment: recommendations + INI patching)
-      Plugins/             Plugin square: catalog data / local health-check scan (incl. OBS 32.x plugin roots) / Releases checks / watch alerts
+      Plugins/             Plugin square: catalog data / local health-check scan (OBS 33 + 32 layouts, per-user / global / portable roots) / Releases checks / watch alerts
       Update/              Incremental update, independent knowledge-base updates (distributed per language), installer auto-cleanup,
                            ObsDownloadLinks / FeedbackLinks (outbound allow-list constants)
       Ai/                  Local / free / cloud diagnostic engines and orchestration (incl. the free-tier local rate limiter)
@@ -383,15 +383,16 @@ Strings assembled in code are refreshed by `LocalizationService` broadcasting an
 
 ## Quality baseline & known limits
 
-- **All 1902 unit tests pass** (V3.7.2: four full rounds + dual-target builds + headless self-test + static checks); the test project links the pure-logic source files directly instead of referencing the whole WPF project;
+- **All 1912 unit tests pass** (V3.7.3: dual-target builds + headless self-test + static checks); the test project links the pure-logic source files directly instead of referencing the whole WPF project;
 - **All 37 headless self-test items PASS** (29 route cases plus 8 non-route checks: the first-run tutorial overlay (including step-by-step navigation checks), the mini window, string-resource resolution, a language-switch round trip, per-page language replay, the content-fallback banner, the D7 connection-state guard and protocol branches for both builds), **run once for the main build and once for the Win7-compatible build**;
 - CI additionally gates on XAML resource references, zh/en string-key parity, accessibility static checks, the headless self-test and an end-to-end delta-package upgrade (full-file SHA-256 comparison); [`NOBS/docs/reviews/`](NOBS/docs/reviews/) keeps per-perspective review records that honestly mark which conclusions have machine evidence and which were only checked by hand;
-- **Known limits**: ① Windows 7 has not been verified on real hardware (only that the target framework compiles and the installer's MinVersion is set correctly), and the legacy protocol (obs-websocket 4.x) has not been verified against a real OBS 27; ② the English translation has not been proofread by a native speaker, nor have the English OBS menu paths been checked one by one; ③ both one-click deployment channels are implemented against the protocol / key names and covered by unit tests, but have never been run end-to-end against a real OBS; ④ accessibility stops at code-level adaptation + static checks, with no NVDA / Narrator testing (see [`ACCESSIBILITY.md`](ACCESSIBILITY.md)); ⑤ release artifacts are not code-signed, so SmartScreen may warn about an unknown publisher; ⑥ .NET 6 no longer receives security updates — the compatible build is the fallback for when you *must* run Windows 7; on a new machine use the main build.
+- **Known limits**: ① Windows 7 has not been verified on real hardware (only that the target framework compiles and the installer's MinVersion is set correctly), and the legacy protocol (obs-websocket 4.x) has not been verified against a real OBS 27; ② the English translation has not been proofread by a native speaker, nor have the English OBS menu paths been checked one by one; ③ both one-click deployment channels are implemented against the protocol / key names and covered by unit tests, but have never been run end-to-end against a real OBS; ④ accessibility stops at code-level adaptation + static checks, with no NVDA / Narrator testing (see [`ACCESSIBILITY.md`](ACCESSIBILITY.md)); ⑤ release artifacts are not code-signed, so SmartScreen may warn about an unknown publisher; ⑥ .NET 6 no longer receives security updates — the compatible build is the fallback for when you *must* run Windows 7; on a new machine use the main build; ⑦ OBS 33 support is based on the official 33.0.1 installer layout and unit tests — the full plugin install / uninstall / migrate flow has not been clicked through on an OBS 33 machine.
 
 ## Version history
 
 | Version | Highlights | Release notes |
 | --- | --- | --- |
+| **V3.7.3** | OBS Studio 33.0.1 alignment: new `<name>\<name>.dll + data` plugin layout, portable plugin root, install detection without `obs-plugins`, 33-style plugin-package validation; 1912 tests | [`RELEASE_NOTES_v3.7.3.md`](NOBS/RELEASE_NOTES_v3.7.3.md) |
 | **V3.7.2** | Dual-theme UI: dark “Signal Desk” / light “Field Manual”; numbered contents, hairline sections, tally timecode, skin tokens and contrast fixes; 1902 tests + 50 screenshots | [`RELEASE_NOTES_v3.7.2.md`](NOBS/RELEASE_NOTES_v3.7.2.md) |
 | **V3.7.1** | Phone-camera path hardening: Larix Grove QR import, Larix install links, WHIP low latency, loopback publish auth and key revocation, narrowed WebRTC origins, browser HTTPS boundary | [`RELEASE_NOTES_v3.7.1.md`](NOBS/RELEASE_NOTES_v3.7.1.md) |
 | **V3.7.0** | Completes the V3.6 backlog: timer CSV / home card / settings section / tray status, console search, log filters, error-code search, connection wizard, tray menu customization, one-click hotkey restore, safe mode, plugin-query backoff | [`RELEASE_NOTES_v3.7.0.md`](NOBS/RELEASE_NOTES_v3.7.0.md) |

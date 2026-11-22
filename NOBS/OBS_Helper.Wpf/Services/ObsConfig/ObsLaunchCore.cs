@@ -61,6 +61,51 @@ public static class ObsLaunchCore
     }
 
     /// <summary>
+    /// 从 <c>obs64.exe</c> 的完整路径向上找 OBS 安装根，找不到返回 null。
+    ///
+    /// V3.7.3：OBS 33 的安装包已经**不再包含 <c>obs-plugins</c> 目录**（核心模块改放 <c>core\</c>），
+    /// 只靠 <c>obs-plugins</c> 判断安装根会让 OBS 33 用户完全探测不到安装目录。
+    /// 这里按多种布局识别：<c>bin\64bit\obs64.exe</c>（28+）、<c>core\</c>（33+）、
+    /// <c>obs-plugins\</c>（旧版）、<c>plugins\</c>（33+ 便携模式插件根）。
+    ///
+    /// 探测与判定分离：存在性由调用方注入，单测可在无 OBS 的机器上覆盖全部布局。
+    /// </summary>
+    public static string? InstallRootFromExe(
+        string? exePath, Func<string, bool> fileExists, Func<string, bool> dirExists)
+    {
+        if (!LooksLikeExe(exePath)) return null;
+
+        var dir = Path.GetDirectoryName(exePath!.Trim().Trim('"'));
+        for (var i = 0; i < 4 && !string.IsNullOrWhiteSpace(dir); i++)
+        {
+            if (IsInstallRoot(dir!, fileExists, dirExists))
+                return dir!.TrimEnd('\\', '/');
+            dir = Path.GetDirectoryName(dir);
+        }
+        return null;
+    }
+
+    /// <summary>目录是否具备 OBS 安装根的任一布局特征（只调用注入谓词，不直接读盘）。</summary>
+    public static bool IsInstallRoot(string? dir, Func<string, bool> fileExists, Func<string, bool> dirExists)
+    {
+        if (string.IsNullOrWhiteSpace(dir)) return false;
+
+        bool FileOk(string rel) => SafeProbe(() => fileExists(Path.Combine(dir, rel)));
+        bool DirOk(string rel) => SafeProbe(() => dirExists(Path.Combine(dir, rel)));
+
+        return FileOk(Path.Combine("bin", "64bit", "obs64.exe"))
+            || FileOk(Path.Combine("bin", "64bit", "obs32.exe"))
+            || DirOk("obs-plugins")   // OBS 27–32
+            || DirOk("core")          // OBS 33+
+            || DirOk("plugins");      // OBS 33+ 便携模式插件根
+    }
+
+    private static bool SafeProbe(Func<bool> probe)
+    {
+        try { return probe(); } catch (Exception) { return false; }
+    }
+
+    /// <summary>
     /// 从安装根目录推导可执行文件路径。找不到返回 null。
     /// 顺序即优先级：<c>bin\64bit\obs64.exe</c>（现行布局）→ <c>bin\64bit\obs32.exe</c> →
     /// <c>obs64.exe</c>（便携解压）→ <c>bin\obs64.exe</c>（历史布局）。

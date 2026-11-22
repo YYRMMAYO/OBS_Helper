@@ -33,6 +33,39 @@ public class LocalPluginManageTests
     }
 
     [Fact]
+    public void Describe_Obs33NestedUserPlugin_DllNextToData_ReturnsPluginDirectory()
+    {
+        // OBS 33：<插件根>\<插件名>\<插件名>.dll（DLL 与 data 同级，没有 bin\64bit）
+        var root = PluginsRoot("user-obs33");
+        var pluginDir = Path.Combine(root, "obs-helper-dock");
+        var dll = Path.Combine(pluginDir, "obs-helper-dock.dll");
+
+        var unit = LocalPluginManageCore.Describe(dll, "user");
+
+        Assert.NotNull(unit);
+        Assert.Equal(LocalPluginUnitKind.Nested, unit!.Kind);
+        Assert.Equal(pluginDir, unit.PluginDirectory);
+        Assert.Equal(root, unit.RootDirectory);
+        Assert.Equal("obs-helper-dock", unit.PluginName);
+        Assert.Equal("user", unit.RootKind);
+    }
+
+    [Fact]
+    public void Describe_Obs33PortablePlugin_IsNestedAndMigratesToUser()
+    {
+        var obsRoot = Path.Combine(Path.GetTempPath(), "obs-helper-tests", "obs33-portable");
+        var portableRoot = Path.Combine(obsRoot, "plugins");
+        var dll = Path.Combine(portableRoot, "obs-helper-dock", "obs-helper-dock.dll");
+
+        var unit = LocalPluginManageCore.Describe(dll, "portable");
+
+        Assert.NotNull(unit);
+        Assert.Equal(LocalPluginUnitKind.Nested, unit!.Kind);
+        Assert.Equal("portable", unit.RootKind);
+        Assert.Equal(PluginsRoot("user-target"), LocalPluginManageCore.MigrationTargetRoot(unit, PluginsRoot("user-target"), null));
+    }
+
+    [Fact]
     public void Describe_NestedInstallPlugin_ClassifiesInstallRoot()
     {
         var obs = Path.Combine(Path.GetTempPath(), "obs-helper-tests", "obs-studio");

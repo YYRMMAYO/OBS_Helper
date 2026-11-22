@@ -210,6 +210,10 @@ public sealed class LocalPluginManageService
             return new LocalPluginActionResult(false, "PLUGIN_LOCAL_UNSAFE", "", "");
         if (unit.Kind != LocalPluginUnitKind.Nested)
             return new LocalPluginActionResult(false, "PLUGIN_LOCAL_FLAT", "", "");
+        // 便携模式 / 自定义插件根：先迁移到用户级或全局级，再接管，
+        // 否则接管后清单里的路径不在卸载护栏认可的插件根下。
+        if (unit.RootKind is not ("user" or "global" or "install"))
+            return new LocalPluginActionResult(false, "PLUGIN_LOCAL_OUTSIDE_ROOT", "", "");
 
         try
         {

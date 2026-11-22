@@ -1523,6 +1523,7 @@ public partial class PluginsPage : UserControl, INavigationAware
         {
             "user" => Strings.T("plugin.health.source.user"),
             "global" => Strings.T("plugin.health.source.global"),
+            "portable" => Strings.T("plugin.health.source.portable"),
             _ => Strings.T("plugin.health.source.install")
         };
 

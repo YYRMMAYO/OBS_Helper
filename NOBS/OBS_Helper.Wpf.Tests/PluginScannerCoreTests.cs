@@ -214,16 +214,34 @@ public class PluginScanLocationsTests
     }
 
     [Fact]
-    public void NestedPluginDirs_BuildsObs322Layout()
+    public void BuildCandidates_IncludesPortablePluginsDir_ForObs33PortableMode()
     {
-        // OBS 32.x 布局：<插件根>\<插件名>\bin\64bit\<插件>.dll
+        var candidates = PluginScanLocations.BuildCandidates(
+            installDir: null,
+            obsInstallRoots: Array.Empty<string>(),
+            steamObsPluginDirs: Array.Empty<string>(),
+            userPluginsDir: @"C:\Users\u\AppData\Roaming\obs-studio\plugins",
+            globalPluginsDir: @"C:\ProgramData\obs-studio\plugins",
+            portablePluginsDir: @"D:\OBS Studio\plugins");
+
+        Assert.Equal(@"D:\OBS Studio\plugins", candidates[^1].Dir);
+        Assert.Equal("portable", candidates[^1].Label);
+    }
+
+    [Fact]
+    public void NestedPluginDirs_BuildsObs33AndObs32Layouts()
+    {
+        // OBS 33：<插件根>\<插件名>\<插件>.dll（DLL 与 data 同级）
+        // OBS 32：<插件根>\<插件名>\bin\64bit\<插件>.dll（33 仍加载，标记 Legacy）
         var dirs = PluginScanLocations.NestedPluginDirs(
             @"C:\ProgramData\obs-studio\plugins",
             new[] { "obs-helper-dock", "advanced-scene-switcher" });
 
         Assert.Equal(new[]
         {
+            @"C:\ProgramData\obs-studio\plugins\obs-helper-dock",
             @"C:\ProgramData\obs-studio\plugins\obs-helper-dock\bin\64bit",
+            @"C:\ProgramData\obs-studio\plugins\advanced-scene-switcher",
             @"C:\ProgramData\obs-studio\plugins\advanced-scene-switcher\bin\64bit",
         }, dirs);
     }
@@ -240,8 +258,9 @@ public class PluginScanLocationsTests
                 @"C:\ProgramData\obs-studio\plugins\OBS-Helper-Dock",
             });
 
-        Assert.Single(dirs);
-        Assert.EndsWith(@"obs-helper-dock\bin\64bit", dirs[0]);
+        Assert.Equal(2, dirs.Count);
+        Assert.Contains(@"C:\ProgramData\obs-studio\plugins\obs-helper-dock", dirs);
+        Assert.Contains(@"C:\ProgramData\obs-studio\plugins\obs-helper-dock\bin\64bit", dirs);
     }
 
     [Theory]

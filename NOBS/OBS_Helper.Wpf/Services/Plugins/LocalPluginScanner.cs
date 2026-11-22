@@ -29,8 +29,13 @@ public sealed class LocalPluginScanResult
 ///   <item>Steam 版：解析各 Steam 根的 steamapps/libraryfolders.vdf，
 ///         覆盖安装在非默认盘的库（D:\SteamLibrary 等）；</item>
 ///   <item>用户级插件根 %AppData%\obs-studio\plugins（V2.9 起同时展开一插件一目录布局）；</item>
-///   <item>全局插件根 %ProgramData%\obs-studio\plugins（OBS 32.x 新增，V2.9 起纳入；同上新布局）。</item>
+///   <item>全局插件根 %ProgramData%\obs-studio\plugins（OBS 32.x 新增，V2.9 起纳入；同上新布局）；</item>
+///   <item>OBS 33 便携模式插件根 &lt;OBS 安装目录&gt;\plugins（V3.7.3 起纳入）。</item>
 /// </list>
+///
+/// V3.7.3：OBS 33 起一插件一目录布局把 DLL 提到插件目录顶层
+/// （<c>&lt;插件根&gt;\&lt;插件名&gt;\&lt;插件&gt;.dll + data</c>），旧 <c>bin\64bit</c> 布局仍会加载
+/// 但被标记为 Legacy（OBS 34.0 起移除）。两种布局都会被展开扫描。
 ///
 /// 原则：只读不改——不提供任何安装 / 卸载 / 移动文件的能力；结果仅存本机。
 /// </summary>
@@ -51,10 +56,12 @@ public sealed class LocalPluginScanner
             GetObsInstallRoots(),
             GetSteamObsPluginDirs(),
             GetUserPluginsDir(),
-            GetGlobalPluginsDir());
+            GetGlobalPluginsDir(),
+            GetPortablePluginsDir(installDir));
 
-        // OBS 32.x 的一插件一目录布局：把两个插件根展开成 <根>\<插件名>\bin\64bit。
-        // 子目录枚举属于 IO，放在这里；路径拼装（可测）放在 PluginScanLocations。
+        // 一插件一目录布局：OBS 33 扫 <根>\<插件名>（DLL 与 data 同级），
+        // OBS 32 扫 <根>\<插件名>\bin\64bit。子目录枚举属于 IO，放在这里；
+        // 路径拼装（可测）放在 PluginScanLocations。
         candidates.AddRange(ExpandPluginRoots(candidates));
 
         var scanned = candidates
@@ -75,7 +82,7 @@ public sealed class LocalPluginScanner
     }
 
     /// <summary>
-    /// 把标记为插件根（user / global）的候选展开成一插件一目录布局下的实际 DLL 目录。
+    /// 把标记为插件根（user / global / portable）的候选展开成一插件一目录布局下的实际 DLL 目录。
     /// 根目录本身保留：老式「直接把 dll 丢进 plugins 根」的摆法仍能被扫到。
     /// </summary>
     private static List<(string Dir, string Label)> ExpandPluginRoots(List<(string Dir, string Label)> candidates)
@@ -83,7 +90,7 @@ public sealed class LocalPluginScanner
         var result = new List<(string Dir, string Label)>();
         foreach (var (dir, label) in candidates)
         {
-            if (label is not ("user" or "global")) continue;
+            if (label is not ("user" or "global" or "portable")) continue;
 
             string[] subDirs;
             try { subDirs = Directory.GetDirectories(dir); }
@@ -208,6 +215,13 @@ public sealed class LocalPluginScanner
             return null;
         }
     }
+
+    /// <summary>
+    /// OBS 33 便携模式插件根 <c>&lt;OBS 安装目录&gt;\plugins</c>。
+    /// 非便携安装通常不存在该目录，交给后续存在性过滤即可。
+    /// </summary>
+    private static string? GetPortablePluginsDir(string? installDir)
+        => string.IsNullOrWhiteSpace(installDir) ? null : Path.Combine(installDir, "plugins");
 
     /// <summary>
     /// 全局插件根 <c>%ProgramData%\obs-studio\plugins</c>（OBS 32.x 新增的机器级插件目录，

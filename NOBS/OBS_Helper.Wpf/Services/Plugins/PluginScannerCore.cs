@@ -17,7 +17,7 @@ public sealed class InstalledPluginFile
     public string FullPath { get; init; } = "";
     public long SizeBytes { get; init; }
     public DateTime ModifiedAt { get; init; }
-    /// <summary>所在目录的友好标签：install=系统安装目录，user=用户插件目录。</summary>
+    /// <summary>所在目录的友好标签：install=系统安装目录，user=用户插件目录，global=全局插件目录，portable=便携模式插件目录。</summary>
     public string SourceLabel { get; init; } = "install";
     /// <summary>命中的广场条目 id；未收录为 null。由调用方借助目录数据回填。</summary>
     public string? CatalogId { get; set; }
@@ -105,21 +105,24 @@ public static class PluginScannerCore
 /// V2.9 补充：OBS 32.x 起（配套 32.1 的插件管理器）插件可以装到「插件根目录」下，
 /// 采用一插件一目录的新布局 <c>&lt;插件根&gt;\&lt;插件名&gt;\bin\64bit\&lt;插件&gt;.dll</c>，
 /// 且新增了全局插件根 <c>%ProgramData%\obs-studio\plugins</c>。
+/// OBS 33 起又把 DLL 提到插件目录顶层（<c>&lt;插件根&gt;\&lt;插件名&gt;\&lt;插件&gt;.dll + data</c>）；
+/// 旧 <c>bin\64bit</c> 布局在 33 里仍可加载（标记为 Legacy），34.0 起不再加载。
 /// 只扫旧扁平布局的话，用新版方式安装的插件在体检里会全部失踪。
 /// </summary>
 public static class PluginScanLocations
 {
     /// <summary>
     /// 合并各来源候选并按优先级排序去重：
-    /// 实际安装目录 → 各安装根下的 obs-plugins\64bit → Steam 库目录 → 用户级插件目录 → 全局插件目录。
-    /// 空白输入直接忽略；存在性检查交给调用方（ScanDirectories 会跳过不存在的目录）。
+    /// 实际安装目录 → 各安装根下的 obs-plugins\64bit → Steam 库目录 → 用户级 / 全局级 /
+    /// 便携模式插件根。空白输入直接忽略；存在性检查交给调用方（ScanDirectories 会跳过不存在的目录）。
     /// </summary>
     public static List<(string Dir, string Label)> BuildCandidates(
         string? installDir,
         IEnumerable<string> obsInstallRoots,
         IEnumerable<string> steamObsPluginDirs,
         string? userPluginsDir,
-        string? globalPluginsDir = null)
+        string? globalPluginsDir = null,
+        string? portablePluginsDir = null)
     {
         var list = new List<(string Dir, string Label)>();
 
@@ -144,15 +147,20 @@ public static class PluginScanLocations
         if (!string.IsNullOrWhiteSpace(globalPluginsDir))
             list.Add((globalPluginsDir, "global"));
 
+        // OBS 33 便携模式：<OBS 安装目录>\plugins（与 ProgramData / AppData 同级布局）。
+        if (!string.IsNullOrWhiteSpace(portablePluginsDir))
+            list.Add((portablePluginsDir, "portable"));
+
         // 大小写不敏感去重，保留首次出现顺序（优先级语义）
         var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         return list.Where(c => seen.Add(c.Dir)).ToList();
     }
 
     /// <summary>
-    /// OBS 32.x 新插件布局下的 DLL 所在目录：给定插件根与它的子目录名，产出
-    /// <c>&lt;插件根&gt;\&lt;子目录&gt;\bin\64bit</c>。纯拼路径、不做 IO，
-    /// 子目录枚举与存在性判断由调用方完成。
+    /// 一插件一目录布局下的 DLL 所在目录：给定插件根与它的子目录名，产出
+    /// OBS 33 的 <c>&lt;插件根&gt;\&lt;子目录&gt;</c>（DLL 与 data 同级）与
+    /// OBS 32 的 <c>&lt;插件根&gt;\&lt;子目录&gt;\bin\64bit</c>。
+    /// 纯拼路径、不做 IO，子目录枚举与存在性判断由调用方完成。
     /// </summary>
     public static List<string> NestedPluginDirs(string? pluginsRoot, IEnumerable<string?> subDirectoryNames)
     {
@@ -166,10 +174,15 @@ public static class PluginScanLocations
             var leaf = Path.GetFileName(name.Trim().TrimEnd('\\', '/'));
             if (leaf.Length == 0 || leaf == "." || leaf == "..") continue;
 
-            var dir = Path.Combine(pluginsRoot, leaf, "bin", "64bit");
-            if (!result.Contains(dir, StringComparer.OrdinalIgnoreCase)) result.Add(dir);
+            AddIfNew(result, Path.Combine(pluginsRoot, leaf));
+            AddIfNew(result, Path.Combine(pluginsRoot, leaf, "bin", "64bit"));
         }
         return result;
+    }
+
+    private static void AddIfNew(List<string> list, string dir)
+    {
+        if (!list.Contains(dir, StringComparer.OrdinalIgnoreCase)) list.Add(dir);
     }
 
     /// <summary>

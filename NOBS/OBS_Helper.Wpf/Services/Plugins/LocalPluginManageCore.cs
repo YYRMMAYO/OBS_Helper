@@ -5,7 +5,10 @@ namespace OBS_Helper.Wpf.Services.Plugins;
 /// <summary>本机插件在磁盘上的摆放方式。</summary>
 public enum LocalPluginUnitKind
 {
-    /// <summary>OBS 32.x 的一插件一目录：<c>&lt;根&gt;\&lt;插件&gt;\bin\64bit\&lt;插件&gt;.dll</c>。</summary>
+    /// <summary>
+    /// 一插件一目录：OBS 33 的 <c>&lt;根&gt;\&lt;插件&gt;\&lt;插件&gt;.dll + data</c>，
+    /// 或 OBS 32 的 <c>&lt;根&gt;\&lt;插件&gt;\bin\64bit\&lt;插件&gt;.dll</c>。
+    /// </summary>
     Nested,
 
     /// <summary>老式扁平摆放：DLL 直接放在插件根或 <c>obs-plugins\64bit</c> 下。</summary>
@@ -50,7 +53,22 @@ public static class LocalPluginManageCore
         var parentName = Path.GetFileName(dir);
         var parentOfParent = Path.GetDirectoryName(dir);
 
-        // 一插件一目录：<根>\<插件>\bin\64bit\<dll>
+        // OBS 33 新布局：<根>\<插件>\<插件>.dll（DLL 与 data 同级）。
+        // 必须放在下面的 64bit 分支之前：<根>\<插件> 目录本身也要被认成插件单元，
+        // 否则 OBS 33 用户级 / 全局级 / 便携模式插件在界面上看不到管理入口。
+        if (IsPluginRoot(parentOfParent) && IsSafeLeaf(parentName) && !IsReservedPluginSubdir(parentName))
+        {
+            var rootDir = parentOfParent!;
+            return new LocalPluginUnit(
+                LocalPluginUnitKind.Nested,
+                Normalize(dir),
+                Normalize(rootDir),
+                ResolveRootKind(rootDir, sourceLabel),
+                full,
+                parentName);
+        }
+
+        // OBS 32 一插件一目录：<根>\<插件>\bin\64bit\<dll>
         if (string.Equals(parentName, "64bit", StringComparison.OrdinalIgnoreCase) &&
             !string.IsNullOrWhiteSpace(parentOfParent))
         {
@@ -69,7 +87,7 @@ public static class LocalPluginManageCore
                             LocalPluginUnitKind.Nested,
                             Normalize(pluginDir),
                             Normalize(rootDir),
-                            ClassifyRoot(rootDir!),
+                            ResolveRootKind(rootDir!, sourceLabel),
                             full,
                             name);
                     }
@@ -83,7 +101,7 @@ public static class LocalPluginManageCore
                     LocalPluginUnitKind.Flat,
                     Normalize(dir),
                     Normalize(binDir),
-                    ClassifyRoot(binDir),
+                    ResolveRootKind(binDir, sourceLabel),
                     full,
                     PluginCatalogCore.NormalizeDllStem(Path.GetFileName(full)));
             }
@@ -95,7 +113,7 @@ public static class LocalPluginManageCore
                     LocalPluginUnitKind.Flat,
                     Normalize(dir),
                     Normalize(grand),
-                    ClassifyRoot(grand!),
+                    ResolveRootKind(grand!, sourceLabel),
                     full,
                     PluginCatalogCore.NormalizeDllStem(Path.GetFileName(full)));
             }
@@ -109,7 +127,7 @@ public static class LocalPluginManageCore
                 LocalPluginUnitKind.Flat,
                 Normalize(dir),
                 Normalize(dir),
-                ClassifyRoot(dir),
+                ResolveRootKind(dir, sourceLabel),
                 full,
                 PluginCatalogCore.NormalizeDllStem(Path.GetFileName(full)));
         }
@@ -165,7 +183,18 @@ public static class LocalPluginManageCore
     }
 
     /// <summary>
-    /// 计算迁移目标插件根：用户级 ⇄ 全局级；OBS 安装目录 → 用户级（不需要管理员权限）。
+    /// 分类插件根；便携模式（<c>&lt;OBS 目录&gt;\plugins</c>）无法只凭目录名识别，
+    /// 由扫描器的来源标签补上。未知根仍返回 <c>unknown</c>，迁移 / 接管会据此拒绝。
+    /// </summary>
+    public static string ResolveRootKind(string? root, string? sourceLabel)
+    {
+        var kind = ClassifyRoot(root);
+        if (kind != "unknown") return kind;
+        return sourceLabel is "user" or "global" or "portable" or "install" ? sourceLabel : "unknown";
+    }
+
+    /// <summary>
+    /// 计算迁移目标插件根：用户级 ⇄ 全局级；安装目录 / 便携模式 → 用户级（不需要管理员权限）。
     /// 扁平摆放 / 未知根 / 目标与当前相同都返回 null。
     /// </summary>
     public static string? MigrationTargetRoot(LocalPluginUnit? unit, string? userPluginsRoot, string? globalPluginsRoot)
@@ -182,7 +211,7 @@ public static class LocalPluginManageCore
         if (global.Length > 0 && string.Equals(current, global, StringComparison.OrdinalIgnoreCase))
             return user.Length > 0 ? user : null;
 
-        if (string.Equals(unit.RootKind, "install", StringComparison.OrdinalIgnoreCase))
+        if (unit.RootKind is "install" or "portable")
             return user.Length > 0 ? user : null;
 
         return null;
@@ -279,4 +308,16 @@ public static class LocalPluginManageCore
         => !string.IsNullOrWhiteSpace(name)
            && name is not ("." or "..")
            && name.IndexOfAny(Path.GetInvalidFileNameChars()) < 0;
+
+    /// <summary>
+    /// 插件的结构性子目录，不能当成 OBS 33 的插件目录名。
+    /// 例如旧扁平布局 <c>obs-plugins\64bit\foo.dll</c> 的父目录是 <c>obs-plugins</c>，
+    /// 若把 <c>64bit</c> 当成插件名，就会把整个 <c>64bit</c> 目录误判为可移动的插件单元。
+    /// </summary>
+    private static bool IsReservedPluginSubdir(string? name)
+        => name is not null
+           && (name.Equals("64bit", StringComparison.OrdinalIgnoreCase)
+               || name.Equals("32bit", StringComparison.OrdinalIgnoreCase)
+               || name.Equals("bin", StringComparison.OrdinalIgnoreCase)
+               || name.Equals("data", StringComparison.OrdinalIgnoreCase));
 }

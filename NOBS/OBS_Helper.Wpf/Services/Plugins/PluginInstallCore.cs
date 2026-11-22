@@ -258,7 +258,13 @@ public static class PluginInstallCore
         return "";
     }
 
-    /// <summary>去掉公共目录后，判断是否至少有一个 64 位（或托管）DLL；返回错误码。</summary>
+    /// <summary>
+    /// 去掉公共目录后，判断是否至少有一个 64 位（或托管）DLL；返回错误码。
+    ///
+    /// V3.7.3：OBS 33 的新布局把 DLL 放在插件目录顶层（<c>obs-helper-dock/obs-helper-dock.dll</c>），
+    /// 路径里不再出现 <c>64bit</c> / <c>x64</c>。因此这里不再要求路径带 64 位字样，
+    /// 而是只排除**明确**标成 32 位的目录；真正的架构由随后的 PE 头复核（<see cref="IsX64OrManaged"/>）兜底。
+    /// </summary>
     public static string ValidateDllLayout(IReadOnlyList<string>? mappedPaths)
     {
         if (mappedPaths is null || mappedPaths.Count == 0) return "PLUGIN_ZIP_EMPTY";
@@ -269,14 +275,17 @@ public static class PluginInstallCore
 
         if (dlls.Count == 0) return "PLUGIN_NO_DLL";
 
-        // OBS 32+：<plugin>/bin/64bit/*.dll；旧布局：obs-plugins/64bit/*.dll
-        var has64 = dlls.Any(p =>
-            p.Split('/').Any(seg => seg.Equals("64bit", StringComparison.OrdinalIgnoreCase))
-            || p.Contains("/64/", StringComparison.OrdinalIgnoreCase)
-            || p.Contains("x64", StringComparison.OrdinalIgnoreCase));
-
+        var has64 = dlls.Any(p => !IsExplicit32BitPath(p));
         return has64 ? "" : "PLUGIN_NO_X64_DLL";
     }
+
+    /// <summary>路径里是否有明确的 32 位目录段（<c>bin/32bit</c>、<c>obs-plugins/32</c> 等）。</summary>
+    private static bool IsExplicit32BitPath(string normalizedPath)
+        => normalizedPath.Split('/', StringSplitOptions.RemoveEmptyEntries)
+            .Any(seg => seg.Equals("32bit", StringComparison.OrdinalIgnoreCase)
+                        || seg.Equals("32", StringComparison.OrdinalIgnoreCase)
+                        || seg.Equals("x86", StringComparison.OrdinalIgnoreCase)
+                        || seg.Equals("win32", StringComparison.OrdinalIgnoreCase));
 
     /// <summary>
     /// PE 头判断：是否 x64 或托管 AnyCPU。

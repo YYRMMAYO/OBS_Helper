@@ -4,9 +4,9 @@
 
 # OBS Helper · OBS帮助助手
 
-**Current release: V3.7.2** — dual-theme UI: dark “Signal Desk” / light “Field Manual”, numbered contents, hairline sections, tally timecode, an editorial Field Manual home page, skin tokens and contrast fixes. 1902 unit tests, 37 headless self-test items and 50 dual-skin screenshots pass. See [RELEASE_NOTES_v3.7.2.md](RELEASE_NOTES_v3.7.2.md).
+**Current release: V3.7.3** — OBS Studio 33.0.1 alignment: recognises the new `<name>\<name>.dll + data` plugin layout and the portable-mode plugin root, fixes install detection when the OBS 33 installer has no `obs-plugins` folder, and accepts 33-style plugin packages. 1912 unit tests and 37 headless self-test items pass. See [RELEASE_NOTES_v3.7.3.md](RELEASE_NOTES_v3.7.3.md).
 
-> **V / X series**: V releases use `V3.7.2`-style versions; X releases use `X` + `MMdd` date codes such as `X1031`, with `Y1`/`Y2`/`Y3` appended for a second release on the same day. Both share features and the data folder (the X series only adds its own icon), but each channel only checks its own tags: V builds only `V*`, X builds only `X*`.
+> **V / X series**: V releases use `V3.7.3`-style versions; X releases use `X` + `MMdd` date codes such as `X1031`, with `Y1`/`Y2`/`Y3` appended for a second release on the same day. Both share features and the data folder (the X series only adds its own icon), but each channel only checks its own tags: V builds only `V*`, X builds only `X*`.
 
 > **This is the developer-facing full documentation for the Windows native WPF version and it lives inside `NOBS/`**;
 > the repository-root [`README.md`](../README.md) is the complete user-facing guide (features · usage · installation),
@@ -19,11 +19,11 @@
 [![Platform](https://img.shields.io/badge/Platform-Windows_7_SP1%2B-0078D6.svg)]()
 [![.NET](https://img.shields.io/badge/.NET-10_%2F_6-512BD4.svg)]()
 [![Stack](https://img.shields.io/badge/Stack-WPF_%2F_C%23-239120.svg)]()
-[![Release](https://img.shields.io/badge/Release-3.7.0-38bdf8.svg)](https://github.com/YYRMMAYO/OBS_Helper/releases)
-[![OBS](https://img.shields.io/badge/OBS-32.2.2-302E31.svg)](https://github.com/obsproject/obs-studio/releases)
+[![Release](https://img.shields.io/badge/Release-3.7.3-38bdf8.svg)](https://github.com/YYRMMAYO/OBS_Helper/releases)
+[![OBS](https://img.shields.io/badge/OBS-33.0.1-302E31.svg)](https://github.com/obsproject/obs-studio/releases)
 [![Offline](https://img.shields.io/badge/offline--first-2ea44f.svg)]()
 [![Incremental Update](https://img.shields.io/badge/Incremental%20Update-3.9MB-7dd3fc.svg)]()
-[![Tests](https://img.shields.io/badge/Tests-1870%20passed-2ea44f.svg)]()
+[![Tests](https://img.shields.io/badge/Tests-1912%20passed-2ea44f.svg)]()
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](../LICENSE)
 
 **English** · [简体中文](README.md)
@@ -253,7 +253,7 @@ A 55-second look at what OBS Helper can do — Chinese and English versions, bot
 | **208 fixes, fully offline** | A built-in knowledge base of **208 curated issues** (knowledge base v2.3, organised into 14 categories on the home screen) — symptoms, root causes, step-by-step fixes, tips and related questions. Steps are checkable and your progress is remembered. The **knowledge base updates independently** from the app. |
 | **First-run tutorial (V2.9, guided since V2.9.1)** | A four-step tour on first launch — connect to OBS → where to look when something breaks → one-click health check → go live & decorate. Since V2.9.1 each step **switches the app to the page it is describing** (card tucked into the bottom-right corner, overlay kept light so the page stays readable) and offers extra jump buttons for the other pages it mentions. Replay it any time from *Settings → Onboarding* without restarting. |
 | **Official OBS download entries (V2.9.1)** | For people who can't get hold of genuine OBS: the build page, the toolbox, the home welcome card, the first tutorial step and the troubleshooting guide all link to the **official site** (obsproject.com, Chinese page) and the **official GitHub releases**, plus a "download the current stable Windows installer" button whose direct link is resolved from the GitHub API. Every URL is forced to https and restricted to official hosts (`obsproject.com`, `cdn-fastly.obsproject.com`, `github.com/obsproject/obs-studio`) — a tampered API response makes the app fall back to the release page instead of opening a third-party site. |
-| **Plugin square + local plugin health check** | **57 curated plugins** across 8 categories, fully re-audited in V2.9 (repository not archived, recently maintained, Windows build available) with a **maintenance status** shown on each card; a **read-only scan** of locally installed plugins locates the OBS install directory across all drives — registry (multi-view + HKCU + DisplayIcon fallback), per-drive standard layouts, Steam libraries and the OBS 32.x per-plugin roots (`%ProgramData%\obs-studio\plugins\<name>\bin\64bit`) — so non-C-drive and new-style installs are never missed. Log analysis can link a suspect module straight to its plugin card. |
+| **Plugin square + local plugin health check** | **57 curated plugins** across 8 categories, fully re-audited in V2.9 (repository not archived, recently maintained, Windows build available) with a **maintenance status** shown on each card; a **read-only scan** of locally installed plugins locates the OBS install directory across all drives — registry (multi-view + HKCU + DisplayIcon fallback), per-drive standard layouts, Steam libraries, and the OBS 32/33 plugin roots (per-user, global `%ProgramData%\obs-studio\plugins`, and portable `<OBS>\plugins`; both the OBS 33 `<name>\<name>.dll + data` and OBS 32 `<name>\bin\64bit` layouts) — so non-C-drive and new-style installs are never missed. Log analysis can link a suspect module straight to its plugin card. |
 | **Incremental updates** | Since V2.1 the in-app "incremental update" downloads only changed files (usually a few MB — the 3.1.1 delta is about **2.5 MB**); every file is SHA-256 verified, with automatic fallback to the full installer; installed versions auto-elevate, swap files and restart. |
 | **Auto-cleanup of installers** | On startup the app scans temp / Downloads / Desktop folders and deletes old OBS_Helper installers & delta packages (newest kept per kind), only ever touching `OBS_Helper_*` files. |
 | **Free AI diagnostics, zero setup** | No API key, no sign-up, no configuration. Two built-in free channels (Zhipu for mainland China, Pollinations worldwide), rate-limited **locally** to protect the free service, with automatic fallback to the offline engine. |
@@ -278,7 +278,7 @@ A 55-second look at what OBS Helper can do — Chinese and English versions, bot
 ### Plugin square
 
 - **Curated plugin directory** — 8 categories × 57 curated plugins (automation / visual FX / AI / audio / multi-platform & vertical / recording / input), externally hot-updatable: link fixes and new entries ship without a new release. The v1.4 catalog was re-audited end to end (not archived + recently maintained + a Windows build exists) and each card shows its maintenance status
-- **Local plugin health check (read-only)** — scans installed DLLs & versions and marks "catalogued / uncatalogued"; the OBS install directory is located via multiple signals — running process, registry uninstall keys (HKLM dual view + HKCU, DisplayIcon fallback), standard layouts on every fixed drive, and Steam library folders — plus portable installs, per-user plugin folders, the OBS 32.x global plugin root (`%ProgramData%\obs-studio\plugins`, per-plugin `bin\64bit` layout) and a manually specified directory
+- **Local plugin health check (read-only)** — scans installed DLLs & versions and marks "catalogued / uncatalogued"; the OBS install directory is located via multiple signals — running process, registry uninstall keys (HKLM dual view + HKCU, DisplayIcon fallback), standard layouts on every fixed drive, and Steam library folders (including OBS 33 installs with no `obs-plugins` folder) — plus portable installs, per-user / global / portable plugin roots, both OBS 33 (`<name>\<name>.dll + data`) and OBS 32 (`bin\64bit`) layouts, and a manually specified directory
 - **Direct downloads** — every card links to the latest GitHub Releases with a "latest vX.Y.Z" badge; "watch" a plugin for silent startup checks (Toast only)
 - **Log × plugin correlation** — log analysis extracts failed/crashing modules and links them to catalog cards; AI plugins carry public cost estimates with live performance-budget hints
 

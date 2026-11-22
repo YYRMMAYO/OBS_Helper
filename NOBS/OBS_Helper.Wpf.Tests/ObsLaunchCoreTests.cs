@@ -102,6 +102,89 @@ public class ObsLaunchCoreTests
         Assert.Null(ObsLaunchCore.ExeFromInstallDir("   "));
     }
 
+    // ------------------------------------------------------------ OBS 安装根识别（V3.7.3）
+
+    [Fact]
+    public void InstallRootFromExe_RecognizesObs33Layout_WithoutObsPlugins()
+    {
+        var root = @"C:\Program Files\obs-studio";
+        var exe = Path.Combine(root, "bin", "64bit", "obs64.exe");
+        var core = Path.Combine(root, "core");
+
+        var found = ObsLaunchCore.InstallRootFromExe(
+            exe,
+            fileExists: _ => false,
+            dirExists: p => p.Equals(core, StringComparison.OrdinalIgnoreCase));
+
+        Assert.Equal(root, found);
+    }
+
+    [Fact]
+    public void InstallRootFromExe_RecognizesLegacyObsPluginsLayout()
+    {
+        var root = @"D:\OBS Studio";
+        var exe = Path.Combine(root, "bin", "64bit", "obs64.exe");
+        var legacy = Path.Combine(root, "obs-plugins");
+
+        var found = ObsLaunchCore.InstallRootFromExe(
+            exe,
+            fileExists: _ => false,
+            dirExists: p => p.Equals(legacy, StringComparison.OrdinalIgnoreCase));
+
+        Assert.Equal(root, found);
+    }
+
+    [Fact]
+    public void InstallRootFromExe_RecognizesPortableObs33PluginsRoot()
+    {
+        var root = @"E:\OBS Portable";
+        var exe = Path.Combine(root, "bin", "64bit", "obs64.exe");
+        var plugins = Path.Combine(root, "plugins");
+
+        var found = ObsLaunchCore.InstallRootFromExe(
+            exe,
+            fileExists: _ => false,
+            dirExists: p => p.Equals(plugins, StringComparison.OrdinalIgnoreCase));
+
+        Assert.Equal(root, found);
+    }
+
+    [Fact]
+    public void InstallRootFromExe_FindsRootFromMarkerFile()
+    {
+        var root = @"C:\OBS";
+        var exe = Path.Combine(root, "bin", "64bit", "obs64.exe");
+        var marker = Path.Combine(root, "bin", "64bit", "obs64.exe");
+
+        var found = ObsLaunchCore.InstallRootFromExe(
+            exe,
+            fileExists: p => p.Equals(marker, StringComparison.OrdinalIgnoreCase),
+            dirExists: _ => false);
+
+        Assert.Equal(root, found);
+    }
+
+    [Fact]
+    public void InstallRootFromExe_UnknownLayout_ReturnsNull()
+    {
+        Assert.Null(ObsLaunchCore.InstallRootFromExe(
+            @"C:\Somewhere\bin\64bit\obs64.exe",
+            _ => false,
+            _ => false));
+        Assert.Null(ObsLaunchCore.InstallRootFromExe(null, _ => true, _ => true));
+    }
+
+    [Fact]
+    public void InstallRootFromExe_TreatsThrowingPredicatesAsNotFound()
+    {
+        var exe = @"C:\OBS\bin\64bit\obs64.exe";
+
+        Assert.Null(ObsLaunchCore.InstallRootFromExe(
+            exe,
+            _ => throw new InvalidOperationException("probe failed"),
+            _ => throw new InvalidOperationException("probe failed")));
+    }
+
     // ------------------------------------------------------------ 候选汇总（探测与判定分离）
 
     [Fact]
